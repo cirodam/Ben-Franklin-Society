@@ -122,6 +122,8 @@ The Federation operates at the federation tier — one instance for the whole ne
 - Hold or custody Franks
 - Govern any individual society
 
+See [federation/federation.md](federation/federation.md) for the full design.
+
 ---
 
 ## Event Flow (example: new member admitted)

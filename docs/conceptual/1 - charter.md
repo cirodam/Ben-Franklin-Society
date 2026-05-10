@@ -86,6 +86,9 @@ A Ben Franklin Society must guarantee that no member is without adequate shelter
 **9. Human Dignity in Practice**
 A Ben Franklin Society must maintain institutional protections for human dignity that give Principle I operational force. No member shall be removed from membership, deprived of their rights, or subjected to institutional action without due process. No institution of the Society shall treat any member as less than fully human. The unconditional dignity of Principle I is not merely a statement of belief — it is a constitutional constraint on every institution the Society maintains.
 
+**10. Fair Dealing with Neighboring Societies**
+A Ben Franklin Society must deal fairly with other member societies. The economic sovereignty guaranteed to members within a society extends, in principle, to the relations between societies. A Ben Franklin Society may not use control of essential resources — water, land access, transport routes, food supply, or infrastructure — to coerce, extract from, or systematically disadvantage another society. Trade and mutual aid between societies must be conducted in good faith. A society that leverages necessity into exploitation has violated the same principle it claims to uphold for its own members. Complaints of inter-society exploitation are subject to Federation mediation and may constitute grounds for compliance review.
+
 ---
 
 ## Part Three — The Nature of This Charter
