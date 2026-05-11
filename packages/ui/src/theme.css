@@ -1,0 +1,98 @@
+/* BFS Design Tokens */
+:root {
+  /* Color */
+  --color-bg:           #f9f9f8;
+  --color-surface:      #ffffff;
+  --color-border:       #d8d8d5;
+  --color-border-faint: #eaeae7;
+
+  --color-text:         #1a1a18;
+  --color-text-muted:   #6b6b66;
+  --color-text-subtle:  #9b9b95;
+
+  --color-accent:       #2d5fa3;
+  --color-accent-hover: #214d8a;
+  --color-accent-subtle:#e8eef7;
+
+  --color-danger:       #b83232;
+  --color-danger-hover: #952828;
+  --color-danger-subtle:#fdf0f0;
+
+  --color-warn:         #8a6200;
+  --color-warn-subtle:  #fdf6e0;
+
+  --color-success:      #2a7a3b;
+  --color-success-subtle:#edf7ef;
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-bold:   700;
+
+  /* Space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Shape */
+  --radius-sm: 3px;
+  --radius:    5px;
+  --radius-lg: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow:    0 1px 4px rgba(0,0,0,0.10);
+}
+
+/* Base reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1, h2, h3, h4 {
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+}
+
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
