@@ -1,0 +1,10 @@
+node_modules/
+.svelte-kit/
+build/
+dist/
+.turbo/
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm

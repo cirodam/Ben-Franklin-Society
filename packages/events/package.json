@@ -1,0 +1,15 @@
+{
+  "name": "@bfs/events",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@bfs/db": "workspace:*",
+    "@bfs/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

@@ -3,7 +3,14 @@
 
 ---
 
-## Principles
+## Development Principles
+
+- **Comprehension before velocity.** Code is written one component at a time. Before a component is built, its purpose and design are understood. Nothing is generated in bulk and accepted without review. Small, reviewable increments.
+- **Real institutions first.** Before any screen or API is designed, the question is: what does this institution actually need to do in the real world? The Assembly meets and votes in a room. The Community Bank is where people's money lives. Colleges credential practitioners who have careers at stake. The software maps onto those real activities — it is a tool for institutions, not a simulation of them.
+
+---
+
+## System Principles
 
 - Each society self-hosts its own stack
 - One identity, one login, across all apps
@@ -151,17 +158,58 @@ See [federation/federation.md](federation/federation.md) for the full design.
 │   ├── community-bank/      # Community Bank app
 │   ├── mail/                # Mail app
 │   ├── marketplace/         # Marketplace app
-│   └── federation/          # Federation tier (separate deployment)
+│   ├── federation/          # Federation tier (separate deployment)
+│   └── federal-bank/        # Federal Bank (separate deployment, federation tier)
 ├── packages/
-│   ├── types/               # Shared TypeScript types: handles, UUIDs, OIDC claims, event payloads, permissions
+│   ├── types/               # Shared TypeScript types (see below)
+│   ├── crypto/              # Inter-society signing and verification primitives (see below)
+│   ├── events/              # Event outbox infrastructure (see below)
 │   ├── db/                  # Shared SQLite/Litestream setup and migration primitives
 │   └── ui/                  # Shared Svelte components and design primitives
-└── turbo.json
+├── turbo.json
+├── pnpm-workspace.yaml
+└── tsconfig.json            # Base compiler options; apps and packages extend this
 ```
 
 Each app under `apps/` is a SvelteKit project and is independently deployable — a society runs `apps/governance`, `apps/community-bank`, `apps/mail`, and `apps/marketplace` as separate Node.js processes. Each process serves both its API routes and its UI. No reverse proxy or separate static host is required. The `apps/federation` lives in the same repo but is deployed at the federation tier, not per-society.
 
-All cross-app contracts (OIDC claim shapes, event payloads, permission names, handle format) are defined once in `packages/types` and imported by the apps that need them.
+#### `packages/types`
+All cross-app contracts defined once and imported by any app that needs them:
+- Handle and UUID formats
+- OIDC claim shapes (member identity, acting-as, permission set)
+- Inter-society message envelope (signed wrapper, nonce, sender handle, payload)
+- Contract party, milestone, and event shapes
+- Insurance fund claim shapes
+- Permission names per app
+- Event payload shapes (membership events, transfer events, etc.)
+
+#### `packages/crypto`
+All apps that communicate across society boundaries need to sign outbound payloads and verify inbound ones using the same keypair scheme. Centralizing this prevents divergence. The package provides:
+- **`signMessage(privateKey, payload)`** — produces a signed envelope: `{ payload, signature, nonce, sender_handle, signed_at }`. The nonce is a random value included to prevent replay attacks.
+- **`verifyMessage(publicKey, envelope)`** — verifies the signature over the payload and checks the nonce has not been seen before. Nonce tracking is the caller's responsibility (stored in the app's DB); the package provides the verification primitive.
+- **`generateKeypair()`** — produces a new Ed25519 keypair for a society. Run once at setup; private key is stored outside the database.
+- **`loadPrivateKey(path)`** — reads the private key from the filesystem path configured at deployment. Never from the database.
+- Type: `SignedEnvelope` — the wire format shared via `packages/types`.
+
+Used by: `apps/mail`, `apps/marketplace` (inter-society listing fetch), `apps/federation`, `apps/governance` (inter-society auth and directory writes).
+
+#### `packages/events`
+A shared outbox primitive used by every app that fires events other apps consume. Implements the transactional outbox pattern: events are written to an `outbox` table in the same SQLite transaction as the state change, then a background worker delivers them and marks them delivered. This guarantees events are never lost even if delivery fails mid-transaction.
+- **`writeToOutbox(db, event)`** — inserts an event row atomically with the caller's transaction.
+- **`startOutboxWorker(db, deliver)`** — polls undelivered rows, calls the caller-supplied `deliver` function, marks delivered on success, retries with backoff on failure.
+- **`OutboxEvent` type** — `{ id, event_type, payload_json, created_at, delivered_at }`. Payload shape is defined per event type in `packages/types`.
+
+Used by: all apps.
+
+### Deployment
+
+Societies deploy using **Docker Compose**. Each app runs as a separate service in the compose file. A single `docker compose up -d` starts the full society stack; updates are `docker compose pull && docker compose up -d`. This is the expected deployment path for society operators who are not necessarily system administrators.
+
+**Litestream** runs as an entrypoint wrapper inside each app container. On startup it restores the SQLite database from the remote replica (S3-compatible storage or SFTP) before starting the Node.js process. While the app runs, Litestream continuously streams the SQLite WAL to the replica. The standby node runs the same compose file — on startup it restores from the same replica and runs the app in read-only or standby mode, ready to take over if the primary is unreachable.
+
+SQLite data is persisted on named Docker volumes, not bind mounts, so the data survives container replacement during updates.
+
+The Federation is a separate Docker Compose deployment, run by the Federation itself on dedicated hardware. Its compose file is structured identically to the per-society compose files but deploys only `apps/federation`.
 
 ---
 

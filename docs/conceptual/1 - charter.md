@@ -53,6 +53,12 @@ We hold ourselves to basic human decency. How we treat each other is not separat
 **XI. Service**
 We hold that positions of leadership and governance exist solely to serve the people subject to them. Leadership is a burden accepted, not a privilege claimed. Anyone who seeks governance authority for personal gain, status, or power is unfit to hold it.
 
+XII. The Limits of Markets
+We acknowledge that markets are ill-suited to providing certain categories of goods. In particular those where human need is too urgent to permit the discipline of price, those where the profit motive is directly opposed to the purpose of the service, and those where the full cost of provision or the full value of preservation cannot be captured in a transaction between buyer and seller.
+
+XIII. Liberty
+The liberty of all people is sacred. The Society explicitly rejects incarceration as a response to poverty, addiction, mental illness, or social conditions the Society itself is obligated to address.
+
 ---
 
 ## Part Two — What Every Ben Franklin Society Must Have
