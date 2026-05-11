@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
 import { createPerson, getPersonByHandle } from '$lib/server/people.js';
+import { createAssociation, addMember } from '$lib/server/associations.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async () => {
@@ -53,7 +54,20 @@ export const actions: Actions = {
 			return fail(400, { error: 'That handle is already taken.' });
 		}
 
-		await createPerson({ handle, given_name: givenName, family_name: familyName, date_of_birth: dob, initial_password: password });
+		const person = await createPerson({ handle, given_name: givenName, family_name: familyName, date_of_birth: dob, initial_password: password });
+
+		// Seed the four system associations and add the founding member
+		const systemAssociations = [
+			{ handle: 'general-assembly',    name: 'General Assembly',    type: 'general_assembly'    },
+			{ handle: 'central-bank',        name: 'Central Bank',        type: 'central_bank'        },
+			{ handle: 'social-insurance',    name: 'Social Insurance Fund', type: 'social_insurance_fund' },
+			{ handle: 'community-bank',      name: 'Community Bank',      type: 'community_bank'      },
+		] as const;
+
+		for (const assoc of systemAssociations) {
+			const created = createAssociation(assoc);
+			addMember(created.uuid, person.uuid);
+		}
 
 		redirect(302, '/login');
 	}

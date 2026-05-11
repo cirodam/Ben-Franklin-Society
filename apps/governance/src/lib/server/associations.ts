@@ -7,7 +7,7 @@ export interface Association {
 	uuid: string;
 	handle: string;
 	name: string;
-	type: 'association' | 'service' | 'college' | 'committee' | 'assembly';
+	type: 'association' | 'service' | 'college' | 'committee' | 'general_assembly' | 'central_bank' | 'social_insurance_fund' | 'community_bank';
 	status: 'active' | 'dissolved';
 	established_by_motion_uuid: string | null;
 	created_at: string;

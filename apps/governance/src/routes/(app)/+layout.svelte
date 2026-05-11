@@ -12,6 +12,13 @@
 		{ href: '/calendar', label: 'Calendar' },
 		{ href: '/config', label: 'Config' },
 	];
+
+	const systemNav = [
+		{ href: '/general-assembly',    label: 'General Assembly' },
+		{ href: '/central-bank',        label: 'Central Bank' },
+		{ href: '/social-insurance',    label: 'Social Insurance Fund' },
+		{ href: '/community-bank',      label: 'Community Bank' },
+	];
 </script>
 
 <div class="shell">
@@ -20,6 +27,10 @@
 		<nav class="sidebar__nav">
 			{#each nav as item}
 				<a href={item.href} class="sidebar__link">{item.label}</a>
+			{/each}
+			<div class="sidebar__section-label">Institutions</div>
+			{#each systemNav as item}
+				<a href={item.href} class="sidebar__link sidebar__link--sub">{item.label}</a>
 			{/each}
 		</nav>
 		<div class="sidebar__footer">
@@ -87,6 +98,19 @@
 		background: var(--color-accent-subtle);
 		color: var(--color-accent);
 		text-decoration: none;
+	}
+
+	.sidebar__section-label {
+		font-size: var(--text-xs);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--color-text-muted);
+		padding: var(--space-3) var(--space-4) var(--space-1);
+	}
+
+	.sidebar__link--sub {
+		font-size: var(--text-xs);
 	}
 
 	.sidebar__footer {
