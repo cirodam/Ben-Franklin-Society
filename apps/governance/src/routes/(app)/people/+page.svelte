@@ -22,7 +22,7 @@
 	<DataTable {columns} rows={data.people} rowKey="uuid" empty="No people yet.">
 		{#snippet row(p)}
 			<tr>
-				<td><code>@{p.handle}</code></td>
+				<td><code>{p.handle}</code></td>
 				<td>{p.given_name} {p.family_name}</td>
 				<td>{p.date_of_birth}</td>
 				<td><Badge label={p.status} variant={statusVariant(p.status)} /></td>

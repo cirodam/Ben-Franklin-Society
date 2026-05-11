@@ -58,10 +58,14 @@ export const actions: Actions = {
 
 		// Seed the four system associations and add the founding member
 		const systemAssociations = [
-			{ handle: 'general-assembly',    name: 'General Assembly',    type: 'general_assembly'    },
-			{ handle: 'central-bank',        name: 'Central Bank',        type: 'central_bank'        },
-			{ handle: 'social-insurance',    name: 'Social Insurance Fund', type: 'social_insurance_fund' },
-			{ handle: 'community-bank',      name: 'Community Bank',      type: 'community_bank'      },
+			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly'     },
+			{ handle: 'central-bank',        name: 'Central Bank',           type: 'central_bank'         },
+			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund'},
+			{ handle: 'community-bank',      name: 'Community Bank',         type: 'community_bank'       },
+			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college'              },
+			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college'              },
+			{ handle: 'food-service',        name: 'Food Service',           type: 'service'              },
+			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service'              },
 		] as const;
 
 		for (const assoc of systemAssociations) {

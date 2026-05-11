@@ -29,7 +29,11 @@
 	};
 
 	function hrefFor(a: { type: string; uuid: string }): string {
-		return systemRoute[a.type] ?? `/associations/${a.uuid}`;
+		return systemRoute[a.type]
+			?? (a.type === 'service'   ? `/services/${a.uuid}`
+			:  a.type === 'committee' ? `/committees/${a.uuid}`
+			:  a.type === 'college'   ? `/colleges/${a.uuid}`
+			:  `/associations/${a.uuid}`);
 	}
 </script>
 
@@ -38,7 +42,7 @@
 	<DataTable {columns} rows={data.associations} rowKey="uuid" empty="No associations yet.">
 		{#snippet row(a)}
 			<tr>
-				<td><a href={hrefFor(a)}><code>@{a.handle}</code></a></td>
+				<td><a href={hrefFor(a)}><code>{a.handle}</code></a></td>
 				<td><a href={hrefFor(a)}>{a.name}</a></td>
 				<td><Badge label={a.type} variant={typeVariant(a.type)} /></td>
 				<td><Badge label={a.status} variant={a.status === 'active' ? 'success' : 'neutral'} /></td>
