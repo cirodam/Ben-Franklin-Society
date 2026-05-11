@@ -7,7 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "seed": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed.ts"
+    "seed": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed.ts",
+    "reset": "bash scripts/reset.sh"
   },
   "dependencies": {
     "@bfs/crypto": "workspace:*",
