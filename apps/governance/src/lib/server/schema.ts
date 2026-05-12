@@ -76,15 +76,33 @@ CREATE TABLE IF NOT EXISTS person_role (
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
   assigned_at      TEXT NOT NULL,
   removed_at       TEXT NULL,
-  PRIMARY KEY (person_uuid, role_uuid)
+  PRIMARY KEY (person_uuid, role_uuid, association_uuid)
+);
+
+CREATE TABLE IF NOT EXISTS vote_rule (
+  uuid             TEXT PRIMARY KEY,
+  association_uuid TEXT NOT NULL REFERENCES association(uuid),
+  name             TEXT NOT NULL,
+  -- threshold: fraction of aye / (aye + nay) required to pass
+  -- stored as numerator/denominator so e.g. simple majority = 1/2, two-thirds = 2/3
+  numerator        INTEGER NOT NULL DEFAULT 1,
+  denominator      INTEGER NOT NULL DEFAULT 2,
+  -- minimum participation: fraction of eligible voters who must cast a vote
+  -- 0 means no minimum (default)
+  quorum_numerator   INTEGER NOT NULL DEFAULT 0,
+  quorum_denominator INTEGER NOT NULL DEFAULT 1,
+  created_at       TEXT NOT NULL,
+  UNIQUE (association_uuid, name)
 );
 
 CREATE TABLE IF NOT EXISTS motion (
   uuid               TEXT PRIMARY KEY,
   title              TEXT NOT NULL,
   body               TEXT NOT NULL,
+  reasoning          TEXT NULL,
   introduced_by_uuid TEXT NOT NULL REFERENCES person(uuid),
   body_uuid          TEXT NOT NULL REFERENCES association(uuid),
+  vote_rule_uuid     TEXT NULL REFERENCES vote_rule(uuid),
   status             TEXT NOT NULL DEFAULT 'draft',
   created_at         TEXT NOT NULL,
   enacted_at         TEXT NULL,
@@ -92,19 +110,26 @@ CREATE TABLE IF NOT EXISTS motion (
 );
 
 CREATE TABLE IF NOT EXISTS document (
-  uuid                   TEXT PRIMARY KEY,
-  title                  TEXT NOT NULL,
-  slug                   TEXT NOT NULL UNIQUE,
-  owner_uuid             TEXT NULL REFERENCES association(uuid),
-  status                 TEXT NOT NULL DEFAULT 'active',
-  created_at             TEXT NOT NULL,
-  created_by_motion_uuid TEXT NULL REFERENCES motion(uuid)
+  uuid                    TEXT PRIMARY KEY,
+  title                   TEXT NOT NULL,
+  slug                    TEXT NOT NULL UNIQUE,
+  owner_uuid              TEXT NULL REFERENCES association(uuid),
+  created_by_uuid         TEXT NULL REFERENCES person(uuid),
+  status                  TEXT NOT NULL DEFAULT 'draft',
+  created_at              TEXT NOT NULL,
+  created_by_motion_uuid  TEXT NULL REFERENCES motion(uuid),
+  proposal_motion_uuid    TEXT NULL REFERENCES motion(uuid),
+  adopted_at              TEXT NULL,
+  adopted_by_motion_uuid  TEXT NULL REFERENCES motion(uuid),
+  repealed_at             TEXT NULL,
+  repealed_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
+  sunsets_at              TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS article (
   uuid          TEXT PRIMARY KEY,
   document_uuid TEXT NOT NULL REFERENCES document(uuid),
-  number        INTEGER NOT NULL,
+  number        TEXT NOT NULL,
   title         TEXT NOT NULL,
   UNIQUE (document_uuid, number)
 );
@@ -113,6 +138,7 @@ CREATE TABLE IF NOT EXISTS section (
   uuid                   TEXT PRIMARY KEY,
   article_uuid           TEXT NOT NULL REFERENCES article(uuid),
   number                 INTEGER NOT NULL,
+  title                  TEXT NOT NULL DEFAULT '',
   prose                  TEXT NOT NULL,
   rationale              TEXT NOT NULL,
   version                INTEGER NOT NULL DEFAULT 1,
@@ -126,7 +152,8 @@ CREATE TABLE IF NOT EXISTS section_history (
   version                INTEGER NOT NULL,
   prose                  TEXT NOT NULL,
   rationale              TEXT NOT NULL,
-  amended_by_motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
+  editor_uuid            TEXT NOT NULL REFERENCES person(uuid),
+  amended_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
   recorded_at            TEXT NOT NULL
 );
 
@@ -158,17 +185,6 @@ CREATE TABLE IF NOT EXISTS motion_comment (
   deleted_at  TEXT NULL
 );
 
-CREATE TABLE IF NOT EXISTS motion_effect (
-  uuid        TEXT PRIMARY KEY,
-  motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
-  seq         INTEGER NOT NULL,
-  type        TEXT NOT NULL,
-  payload     TEXT NOT NULL,
-  executed_at TEXT NULL,
-  error       TEXT NULL,
-  UNIQUE (motion_uuid, seq)
-);
-
 CREATE TABLE IF NOT EXISTS calendar_event (
   uuid                   TEXT PRIMARY KEY,
   title                  TEXT NOT NULL,
@@ -196,6 +212,53 @@ CREATE TABLE IF NOT EXISTS community_config_history (
   value                  TEXT NOT NULL,
   updated_by_motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
   superseded_at          TEXT NOT NULL
+);
+
+-- Sortition system
+
+CREATE TABLE IF NOT EXISTS sortition_body_config (
+  association_uuid    TEXT PRIMARY KEY REFERENCES association(uuid),
+  seat_count          INTEGER NOT NULL,
+  term_days           INTEGER NOT NULL,
+  is_permanent        INTEGER NOT NULL DEFAULT 1,
+  source_college_uuid TEXT NULL REFERENCES association(uuid)
+);
+
+CREATE TABLE IF NOT EXISTS sortition (
+  uuid             TEXT PRIMARY KEY,
+  association_uuid TEXT NOT NULL REFERENCES association(uuid),
+  motion_uuid      TEXT NOT NULL REFERENCES motion(uuid),
+  conducted_at     TEXT NOT NULL,
+  pool_size        INTEGER NOT NULL,
+  notes            TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS seat_term (
+  uuid             TEXT PRIMARY KEY,
+  association_uuid TEXT NOT NULL REFERENCES association(uuid),
+  person_uuid      TEXT NOT NULL REFERENCES person(uuid),
+  motion_uuid      TEXT NOT NULL REFERENCES motion(uuid),
+  started_at       TEXT NOT NULL,
+  ends_at          TEXT NOT NULL,
+  vacated_at       TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS list (
+  uuid         TEXT PRIMARY KEY,
+  motion_uuid  TEXT NOT NULL REFERENCES motion(uuid),
+  name         TEXT NOT NULL,
+  created_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS list_item (
+  uuid          TEXT PRIMARY KEY,
+  list_uuid     TEXT NOT NULL REFERENCES list(uuid),
+  position      INTEGER NOT NULL,
+  item_type     TEXT NOT NULL,
+  item_data     TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'called',
+  status_reason TEXT NULL,
+  UNIQUE (list_uuid, position)
 );
 
 CREATE TABLE IF NOT EXISTS neighboring_society (
@@ -268,6 +331,36 @@ CREATE TABLE IF NOT EXISTS outbox (
   payload_json TEXT NOT NULL,
   created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   delivered_at TEXT NULL
+);
+
+-- The Record: permanent, public, append-only chronicle of official governance acts
+
+CREATE TABLE IF NOT EXISTS record_entry (
+  uuid             TEXT PRIMARY KEY,
+  association_uuid TEXT NOT NULL REFERENCES association(uuid),
+  recorded_by      TEXT NOT NULL REFERENCES person(uuid),
+  action           TEXT NOT NULL,
+  target_type      TEXT NOT NULL,
+  target_uuid      TEXT NOT NULL,
+  body             TEXT NOT NULL,
+  detail           TEXT NULL,
+  created_at       TEXT NOT NULL,
+  edited_at        TEXT NULL,
+  deleted_at       TEXT NULL
+);
+
+-- Audit log: append-only trail of every write in the application
+-- Links the action to the person who performed it and optionally the authorizing motion
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor_uuid       TEXT NOT NULL REFERENCES person(uuid),
+  action           TEXT NOT NULL,   -- e.g. 'document.update', 'member.add', 'vote_rule.set'
+  target_type      TEXT NOT NULL,   -- e.g. 'document', 'person', 'association'
+  target_uuid      TEXT NOT NULL,
+  detail           TEXT NULL,       -- human-readable description
+  motion_uuid      TEXT NULL REFERENCES motion(uuid), -- authorizing motion, if any
+  created_at       TEXT NOT NULL
 );
 
 `;

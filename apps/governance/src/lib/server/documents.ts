@@ -1,21 +1,31 @@
 import { db } from './db.js';
+import { randomUUID } from 'node:crypto';
 
 // --- Types ---
+
+export type DocumentStatus = 'draft' | 'proposed' | 'adopted' | 'repealed';
 
 export interface Document {
 	uuid: string;
 	title: string;
 	slug: string;
 	owner_uuid: string | null;
-	status: 'active' | 'archived';
+	created_by_uuid: string | null;
+	status: DocumentStatus;
 	created_at: string;
 	created_by_motion_uuid: string | null;
+	proposal_motion_uuid: string | null;
+	adopted_at: string | null;
+	adopted_by_motion_uuid: string | null;
+	repealed_at: string | null;
+	repealed_by_motion_uuid: string | null;
+	sunsets_at: string | null;
 }
 
 export interface Article {
 	uuid: string;
 	document_uuid: string;
-	number: number;
+	number: string; // stored as text, e.g. "I", "II", "III"
 	title: string;
 }
 
@@ -23,6 +33,7 @@ export interface Section {
 	uuid: string;
 	article_uuid: string;
 	number: number;
+	title: string;
 	prose: string;
 	rationale: string;
 	version: number;
@@ -35,7 +46,8 @@ export interface SectionHistory {
 	version: number;
 	prose: string;
 	rationale: string;
-	amended_by_motion_uuid: string;
+	editor_uuid: string;
+	amended_by_motion_uuid: string | null;
 	recorded_at: string;
 }
 
@@ -101,6 +113,41 @@ export function getSectionHistory(sectionUuid: string): SectionHistory[] {
 		.all(sectionUuid) as SectionHistory[];
 }
 
+export function updateSection(
+	sectionUuid: string,
+	input: { title: string; prose: string; rationale: string; editorUuid: string; motionUuid?: string | null }
+): Section {
+	const section = getSectionByUuid(sectionUuid);
+	if (!section) throw new Error('Section not found');
+
+	const now = new Date().toISOString();
+
+	db.transaction(() => {
+		// Archive current version
+		db.prepare(
+			`INSERT INTO section_history (uuid, section_uuid, version, prose, rationale, editor_uuid, amended_by_motion_uuid, recorded_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			sectionUuid,
+			section.version,
+			section.prose,
+			section.rationale,
+			input.editorUuid,
+			input.motionUuid ?? null,
+			now
+		);
+
+		// Bump version and update content
+		db.prepare(
+			`UPDATE section SET title = ?, prose = ?, rationale = ?, version = version + 1,
+			 amended_by_motion_uuid = ? WHERE uuid = ?`
+		).run(input.title, input.prose, input.rationale, input.motionUuid ?? null, sectionUuid);
+	})();
+
+	return getSectionByUuid(sectionUuid)!;
+}
+
 // --- Full document tree ---
 // Convenience: returns a document with its articles and sections nested.
 
@@ -136,7 +183,71 @@ export function getDocumentTree(documentUuid: string): DocumentTree | null {
 
 // --- Document status ---
 
-export function archiveDocument(uuid: string): void {
-	db.prepare("UPDATE document SET status = 'archived' WHERE uuid = ?").run(uuid);
+export function repealDocument(uuid: string, motionUuid: string): void {
+	const repealedAt = new Date().toISOString();
+	db.prepare(
+		"UPDATE document SET status = 'repealed', repealed_at = ?, repealed_by_motion_uuid = ? WHERE uuid = ?"
+	).run(repealedAt, motionUuid, uuid);
+}
+
+export function adoptDocument(uuid: string, motionUuid: string | null): void {
+	const adoptedAt = new Date().toISOString();
+	db.prepare(
+		"UPDATE document SET status = 'adopted', adopted_at = ?, adopted_by_motion_uuid = ? WHERE uuid = ?"
+	).run(adoptedAt, motionUuid, uuid);
+}
+
+// --- Import ---
+
+export interface DocumentImportInput {
+	slug: string;
+	title: string;
+	owner_uuid?: string | null;
+	created_by_uuid?: string | null;
+	articles: Array<{
+		number: string;
+		title: string;
+		sections: Array<{
+			title: string;
+			body: string;
+			rationale: string;
+		}>;
+	}>;
+}
+
+/**
+ * Import a document from structured data. Idempotent — skips if the slug already exists.
+ * Returns the document uuid (existing or newly created).
+ */
+export function importDocument(input: DocumentImportInput): string {
+	const existing = getDocumentBySlug(input.slug);
+	if (existing) return existing.uuid;
+
+	const docUuid = randomUUID();
+	const createdAt = new Date().toISOString();
+
+	db.transaction(() => {
+		db.prepare(
+			`INSERT INTO document (uuid, title, slug, owner_uuid, created_by_uuid, status, created_at, created_by_motion_uuid, proposal_motion_uuid, adopted_at, adopted_by_motion_uuid)
+			 VALUES (?, ?, ?, ?, ?, 'adopted', ?, NULL, NULL, ?, NULL)`
+		).run(docUuid, input.title, input.slug, input.owner_uuid ?? null, input.created_by_uuid ?? null, createdAt, createdAt);
+
+		for (const article of input.articles) {
+			const articleUuid = randomUUID();
+			db.prepare(
+				'INSERT INTO article (uuid, document_uuid, number, title) VALUES (?, ?, ?, ?)'
+			).run(articleUuid, docUuid, article.number, article.title);
+
+			for (let i = 0; i < article.sections.length; i++) {
+				const s = article.sections[i];
+				db.prepare(
+					`INSERT INTO section (uuid, article_uuid, number, title, prose, rationale, version)
+					 VALUES (?, ?, ?, ?, ?, ?, 1)`
+				).run(randomUUID(), articleUuid, i + 1, s.title, s.body, s.rationale);
+			}
+		}
+	})();
+
+	return docUuid;
 }
 

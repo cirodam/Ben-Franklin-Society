@@ -7,7 +7,7 @@ export interface Association {
 	uuid: string;
 	handle: string;
 	name: string;
-	type: 'association' | 'service' | 'college' | 'committee' | 'general_assembly' | 'central_bank' | 'social_insurance_fund' | 'community_bank';
+     type: 'society' | 'association' | 'service' | 'college' | 'committee' | 'general_assembly' | 'central_bank' | 'social_insurance_fund' | 'community_bank';
 	status: 'active' | 'dissolved';
 	established_by_motion_uuid: string | null;
 	created_at: string;
@@ -235,4 +235,42 @@ export function resolvePermissions(
 			 WHERE pr.person_uuid = ? AND pr.association_uuid = ? AND pr.removed_at IS NULL`
 		)
 		.all(personUuid, associationUuid) as RolePermission[];
+}
+
+// --- Sortition body config ---
+
+export interface SortitionBodyConfig {
+	association_uuid: string;
+	seat_count: number;
+	term_days: number;
+	is_permanent: 0 | 1;
+	source_college_uuid: string | null;
+}
+
+export function getSortitionConfig(associationUuid: string): SortitionBodyConfig | null {
+	return (
+		(db
+			.prepare('SELECT * FROM sortition_body_config WHERE association_uuid = ?')
+			.get(associationUuid) as SortitionBodyConfig | undefined) ?? null
+	);
+}
+
+export function setSortitionConfig(input: {
+	association_uuid: string;
+	seat_count: number;
+	term_days: number;
+	is_permanent?: 0 | 1;
+	source_college_uuid?: string | null;
+}): SortitionBodyConfig {
+	const { association_uuid, seat_count, term_days, is_permanent = 1, source_college_uuid = null } = input;
+	db.prepare(
+		`INSERT INTO sortition_body_config (association_uuid, seat_count, term_days, is_permanent, source_college_uuid)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(association_uuid) DO UPDATE SET
+		   seat_count = excluded.seat_count,
+		   term_days = excluded.term_days,
+		   is_permanent = excluded.is_permanent,
+		   source_college_uuid = excluded.source_college_uuid`
+	).run(association_uuid, seat_count, term_days, is_permanent, source_college_uuid);
+	return getSortitionConfig(association_uuid)!;
 }

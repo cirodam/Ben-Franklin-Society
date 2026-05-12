@@ -86,6 +86,21 @@ export async function createPerson(input: NewPersonInput): Promise<Person> {
 	return getPersonByUuid(uuid)!;
 }
 
+export function updatePersonProfile(
+	uuid: string,
+	updates: { given_name?: string; family_name?: string; date_of_birth?: string; phone?: string | null }
+): void {
+	const fields: string[] = [];
+	const params: unknown[] = [];
+	if (updates.given_name !== undefined)    { fields.push('given_name = ?');    params.push(updates.given_name); }
+	if (updates.family_name !== undefined)   { fields.push('family_name = ?');   params.push(updates.family_name); }
+	if (updates.date_of_birth !== undefined) { fields.push('date_of_birth = ?'); params.push(updates.date_of_birth); }
+	if (updates.phone !== undefined)         { fields.push('phone = ?');          params.push(updates.phone); }
+	if (!fields.length) return;
+	params.push(uuid);
+	db.prepare(`UPDATE person SET ${fields.join(', ')} WHERE uuid = ?`).run(...params);
+}
+
 export function updateHandle(uuid: string, newHandle: string): void {
 	const handleTaken =
 		db.prepare('SELECT 1 FROM person WHERE handle = ? AND uuid != ?').get(newHandle, uuid) ??

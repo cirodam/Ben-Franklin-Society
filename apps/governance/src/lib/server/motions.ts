@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
+import { getVoteRuleByUuid, evaluateTally } from './vote_rules.js';
 
 // --- Types ---
 
@@ -18,22 +19,14 @@ export interface Motion {
 	uuid: string;
 	title: string;
 	body: string;
+	reasoning: string | null;
 	introduced_by_uuid: string;
-	body_uuid: string; // the association conducting this motion
+	body_uuid: string; // every motion belongs to a body; use the community association for society-wide motions
+	vote_rule_uuid: string | null;
 	status: MotionStatus;
 	created_at: string;
 	enacted_at: string | null;
 	resolved_at: string | null;
-}
-
-export interface MotionEffect {
-	uuid: string;
-	motion_uuid: string;
-	seq: number;
-	type: string;
-	payload: string; // JSON string — interpreted by effects.ts
-	executed_at: string | null;
-	error: string | null;
 }
 
 export interface VoteTally {
@@ -83,10 +76,22 @@ export function listMotions(opts: {
 } = {}): Motion[] {
 	let query = 'SELECT * FROM motion WHERE 1=1';
 	const params: string[] = [];
-	if (opts.bodyUuid) { query += ' AND body_uuid = ?'; params.push(opts.bodyUuid); }
-	if (opts.status)   { query += ' AND status = ?';   params.push(opts.status); }
+	if (opts.bodyUuid !== undefined) {
+		query += ' AND body_uuid = ?'; params.push(opts.bodyUuid);
+	}
+	if (opts.status) { query += ' AND status = ?'; params.push(opts.status); }
 	query += ' ORDER BY created_at DESC';
 	return db.prepare(query).all(...params) as Motion[];
+}
+
+export function listEnactedMotions(): (Motion & { body_name: string })[] {
+	return db.prepare(
+		`SELECT m.*, a.name AS body_name
+		 FROM motion m
+		 JOIN association a ON a.uuid = m.body_uuid
+		 WHERE m.status = 'enacted'
+		 ORDER BY m.enacted_at DESC`
+	).all() as (Motion & { body_name: string })[];
 }
 
 // --- Motion writes ---
@@ -94,14 +99,15 @@ export function listMotions(opts: {
 export function createMotion(input: {
 	title: string;
 	body: string;
+	reasoning?: string | null;
 	introduced_by_uuid: string;
 	body_uuid: string;
 }): Motion {
 	const uuid = randomUUID();
 	db.prepare(
-		`INSERT INTO motion (uuid, title, body, introduced_by_uuid, body_uuid, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, 'draft', ?)`
-	).run(uuid, input.title, input.body, input.introduced_by_uuid, input.body_uuid, now());
+		`INSERT INTO motion (uuid, title, body, reasoning, introduced_by_uuid, body_uuid, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`
+	).run(uuid, input.title, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, now());
 	return getMotionByUuid(uuid)!;
 }
 
@@ -122,13 +128,35 @@ export function advanceMotion(uuid: string, to: MotionStatus): Motion {
 	return getMotionByUuid(uuid)!;
 }
 
+export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): Motion {
+	const motion = getMotionByUuid(motionUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+	if (motion.status === 'vote' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
+		throw new Error(`Cannot change vote rule on a motion in status '${motion.status}'`);
+	}
+	db.prepare('UPDATE motion SET vote_rule_uuid = ? WHERE uuid = ?').run(voteRuleUuid, motionUuid);
+	return getMotionByUuid(motionUuid)!;
+}
+
 // --- Vote ---
 
-export function openVote(motionUuid: string, eligibleCount: number): VoteTally {
+export function openVote(motionUuid: string, eligibleCount?: number): VoteTally {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	if (motion.status !== 'deliberation') {
 		throw new Error(`Motion must be in 'deliberation' to open a vote (current: ${motion.status})`);
+	}
+	if (!motion.vote_rule_uuid) {
+		throw new Error('A vote rule must be assigned before a vote can be opened');
+	}
+
+	// eligible = current members of the body (community association = all active persons)
+	let count = eligibleCount;
+	if (count === undefined) {
+		const row = db.prepare(
+			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
+		).get(motion.body_uuid) as { c: number };
+		count = row.c;
 	}
 
 	const openedAt = now();
@@ -136,7 +164,7 @@ export function openVote(motionUuid: string, eligibleCount: number): VoteTally {
 		db.prepare(
 			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
 			 VALUES (?, ?, 0, 0, 0, ?)`
-		).run(motionUuid, eligibleCount, openedAt);
+		).run(motionUuid, count, openedAt);
 		db.prepare("UPDATE motion SET status = 'vote' WHERE uuid = ?").run(motionUuid);
 	})();
 
@@ -179,7 +207,7 @@ export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoi
 }
 
 // Close the vote and transition to enacted or rejected.
-// Returns the final status. Does NOT run effects — call effects.ts separately.
+// Returns the final status.
 export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
 	const tally = getVoteTally(motionUuid);
 	if (!tally) throw new Error('Vote tally not found');
@@ -188,7 +216,15 @@ export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion || motion.status !== 'vote') throw new Error('Motion is not in vote status');
 
-	const outcome: 'enacted' | 'rejected' = tally.aye_count > tally.nay_count ? 'enacted' : 'rejected';
+	let outcome: 'enacted' | 'rejected';
+	if (motion.vote_rule_uuid) {
+		const rule = getVoteRuleByUuid(motion.vote_rule_uuid);
+		if (!rule) throw new Error(`Vote rule not found: ${motion.vote_rule_uuid}`);
+		outcome = evaluateTally(rule, tally).passed ? 'enacted' : 'rejected';
+	} else {
+		// Fallback: simple majority of aye vs nay
+		outcome = tally.aye_count > tally.nay_count ? 'enacted' : 'rejected';
+	}
 	const resolvedAt = now();
 
 	db.transaction(() => {
@@ -204,40 +240,6 @@ export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
 	})();
 
 	return outcome;
-}
-
-// --- Effects ---
-
-export function addEffect(
-	motionUuid: string,
-	seq: number,
-	type: string,
-	payload: unknown
-): MotionEffect {
-	const uuid = randomUUID();
-	db.prepare(
-		`INSERT INTO motion_effect (uuid, motion_uuid, seq, type, payload)
-		 VALUES (?, ?, ?, ?, ?)`
-	).run(uuid, motionUuid, seq, type, JSON.stringify(payload));
-	return db.prepare('SELECT * FROM motion_effect WHERE uuid = ?').get(uuid) as MotionEffect;
-}
-
-export function getEffects(motionUuid: string): MotionEffect[] {
-	return db
-		.prepare('SELECT * FROM motion_effect WHERE motion_uuid = ? ORDER BY seq')
-		.all(motionUuid) as MotionEffect[];
-}
-
-export function markEffectExecuted(effectUuid: string): void {
-	db.prepare(
-		'UPDATE motion_effect SET executed_at = ? WHERE uuid = ?'
-	).run(now(), effectUuid);
-}
-
-export function markEffectFailed(effectUuid: string, error: string): void {
-	db.prepare(
-		'UPDATE motion_effect SET error = ? WHERE uuid = ?'
-	).run(error, effectUuid);
 }
 
 // --- Comments ---

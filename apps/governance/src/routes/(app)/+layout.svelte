@@ -10,14 +10,10 @@
 		{ href: '/motions', label: 'Motions' },
 		{ href: '/documents', label: 'Documents' },
 		{ href: '/calendar', label: 'Calendar' },
+		{ href: '/record', label: 'The Record' },
+		{ href: '/roles', label: 'Roles' },
+		{ href: '/audit', label: 'Audit Log' },
 		{ href: '/config', label: 'Config' },
-	];
-
-	const systemNav = [
-		{ href: '/general-assembly',    label: 'General Assembly' },
-		{ href: '/central-bank',        label: 'Central Bank' },
-		{ href: '/social-insurance',    label: 'Social Insurance Fund' },
-		{ href: '/community-bank',      label: 'Community Bank' },
 	];
 </script>
 
@@ -27,10 +23,6 @@
 		<nav class="sidebar__nav">
 			{#each nav as item}
 				<a href={item.href} class="sidebar__link">{item.label}</a>
-			{/each}
-			<div class="sidebar__section-label">Institutions</div>
-			{#each systemNav as item}
-				<a href={item.href} class="sidebar__link sidebar__link--sub">{item.label}</a>
 			{/each}
 		</nav>
 		<div class="sidebar__footer">
