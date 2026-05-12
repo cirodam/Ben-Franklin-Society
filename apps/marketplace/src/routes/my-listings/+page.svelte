@@ -1,0 +1,178 @@
+<script lang="ts">
+	import type { PageData } from './$types.js';
+
+	let { data }: { data: PageData } = $props();
+	const { classifieds, services } = $derived(data);
+
+	let tab = $state<'classifieds' | 'services'>('classifieds');
+
+	const STATUS_BADGE: Record<string, string> = {
+		active:    'badge-active',
+		withdrawn: 'badge-withdrawn',
+		removed:   'badge-removed',
+	};
+
+	function fmtPrice(price: number, negotiable: number): string {
+		if (price === 0) return 'Free';
+		return `${price} F${negotiable ? ' (neg.)' : ''}`;
+	}
+	function fmtRate(rate: number, unit: string): string {
+		if (unit === 'negotiable' || rate === 0) return 'Negotiable';
+		return `${rate} F/${unit === 'per_hour' ? 'hr' : 'job'}`;
+	}
+	function fmtDate(iso: string): string {
+		return new Date(iso).toLocaleDateString([], { dateStyle: 'medium' });
+	}
+</script>
+
+<div class="page">
+	<div class="page-header">
+		<h1>My Listings</h1>
+		<a href="/sell" class="btn btn-primary">+ New Listing</a>
+	</div>
+
+	<div class="tabs">
+		<button class="tab {tab === 'classifieds' ? 'tab--active' : ''}" onclick={() => (tab = 'classifieds')}>
+			Classifieds ({classifieds.length})
+		</button>
+		<button class="tab {tab === 'services' ? 'tab--active' : ''}" onclick={() => (tab = 'services')}>
+			Services ({services.length})
+		</button>
+	</div>
+
+	{#if tab === 'classifieds'}
+		{#if classifieds.length === 0}
+			<p class="empty">You haven't posted any classifieds yet. <a href="/sell/classified">Post one now →</a></p>
+		{:else}
+			<div class="listing-list">
+				{#each classifieds as listing}
+					<div class="listing-row">
+						<div class="listing-row__title">
+							<a href="/classifieds/{listing.uuid}">{listing.title}</a>
+						</div>
+						<div class="listing-row__cat">{listing.category}</div>
+						<div class="listing-row__price">{fmtPrice(listing.price, listing.price_negotiable)}</div>
+						<div class="listing-row__date">{fmtDate(listing.created_at)}</div>
+						<div class="listing-row__status">
+							<span class="badge {STATUS_BADGE[listing.status] ?? ''}">{listing.status}</span>
+						</div>
+						<div class="listing-row__actions">
+							{#if listing.status !== 'removed'}
+								<a href="/sell/classified/{listing.uuid}/edit" class="btn-link">Edit</a>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	{:else}
+		{#if services.length === 0}
+			<p class="empty">You haven't posted any services yet. <a href="/sell/service">Post one now →</a></p>
+		{:else}
+			<div class="listing-list">
+				{#each services as listing}
+					<div class="listing-row">
+						<div class="listing-row__title">
+							<a href="/services/{listing.uuid}">{listing.title}</a>
+						</div>
+						<div class="listing-row__cat">{listing.category}</div>
+						<div class="listing-row__price">{fmtRate(listing.rate, listing.rate_unit)}</div>
+						<div class="listing-row__date">{fmtDate(listing.created_at)}</div>
+						<div class="listing-row__status">
+							<span class="badge {STATUS_BADGE[listing.status] ?? ''}">{listing.status}</span>
+						</div>
+						<div class="listing-row__actions">
+							{#if listing.status !== 'removed'}
+								<a href="/sell/service/{listing.uuid}/edit" class="btn-link">Edit</a>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	{/if}
+</div>
+
+<style>
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
+
+	.page-header { display: flex; align-items: center; justify-content: space-between; }
+	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
+
+	.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-border); }
+
+	.tab {
+		padding: var(--space-2) var(--space-5);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-text-muted);
+		background: none;
+		border: none;
+		border-bottom: 2px solid transparent;
+		cursor: pointer;
+		margin-bottom: -1px;
+	}
+	.tab--active { color: var(--color-text); border-bottom-color: var(--color-accent); }
+	.tab:hover:not(.tab--active) { color: var(--color-text); }
+
+	.empty { color: var(--color-text-muted); font-size: var(--text-sm); }
+	.empty a { color: var(--color-accent); }
+
+	.listing-list {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+	}
+
+	.listing-row {
+		display: grid;
+		grid-template-columns: 1fr 140px 100px 100px 90px auto;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-3) var(--space-5);
+		border-bottom: 1px solid var(--color-border-faint);
+		font-size: var(--text-sm);
+	}
+	.listing-row:last-child { border-bottom: none; }
+
+	.listing-row__title a { color: var(--color-text); text-decoration: none; font-weight: var(--weight-medium); }
+	.listing-row__title a:hover { text-decoration: underline; }
+	.listing-row__cat   { font-size: var(--text-xs); color: var(--color-text-muted); }
+	.listing-row__price { font-size: var(--text-sm); }
+	.listing-row__date  { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+	.badge {
+		display: inline-block;
+		padding: 2px 8px;
+		border-radius: 9999px;
+		font-size: var(--text-xs);
+		font-weight: var(--weight-medium);
+		text-transform: capitalize;
+	}
+	.badge-active    { background: #d1fae5; color: #065f46; }
+	.badge-withdrawn { background: #fef3c7; color: #92400e; }
+	.badge-removed   { background: #fee2e2; color: #7f1d1d; }
+
+	.btn-link {
+		font-size: var(--text-xs);
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+	.btn-link:hover { text-decoration: underline; }
+
+	.btn {
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-md);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		cursor: pointer;
+		border: none;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+	}
+	.btn-primary { background: var(--color-accent); color: #fff; }
+	.btn:hover { filter: brightness(0.92); }
+</style>

@@ -14,6 +14,7 @@
 		{ href: '/roles', label: 'Roles' },
 		{ href: '/audit', label: 'Audit Log' },
 		{ href: '/config', label: 'Config' },
+		{ href: '/settings/oidc-clients', label: 'OIDC Clients' },
 	];
 </script>
 

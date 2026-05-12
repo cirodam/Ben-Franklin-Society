@@ -112,12 +112,14 @@ export function verifyAccessToken(token: string): AccessTokenClaims | null {
 // ---------------------------------------------------------------------------
 
 const ACCESS_TOKEN_TTL_SECS = 3600; // 1 hour
+const REFRESH_TOKEN_TTL_DAYS = 30; // 30 days
 
 export interface TokenSet {
 	access_token: string;
 	id_token: string;
 	token_type: 'Bearer';
 	expires_in: number;
+	refresh_token?: string;
 }
 
 function issuerUrl(): string {
@@ -174,11 +176,31 @@ export function issueTokens(params: {
 		acting_as: params.actingAsUuid,
 	};
 
+	// Create refresh token
+	const refreshToken = crypto.randomBytes(32).toString('base64url');
+	const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+	const refreshExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+	// Store refresh token in database
+	db.prepare(
+		`INSERT INTO oidc_refresh_token (token_hash, client_id, person_uuid, acting_as_uuid, scope, issued_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		refreshTokenHash,
+		params.clientId,
+		params.personUuid,
+		params.actingAsUuid,
+		params.scope,
+		new Date().toISOString(),
+		refreshExpiresAt
+	);
+
 	return {
 		access_token: signJwt(accessTokenClaims),
 		id_token: signJwt(idTokenClaims),
 		token_type: 'Bearer',
 		expires_in: ACCESS_TOKEN_TTL_SECS,
+		refresh_token: refreshToken,
 	};
 }
 
@@ -248,43 +270,216 @@ export function exchangeAuthCode(params: {
 	});
 }
 
+export function exchangeRefreshToken(params: {
+	refreshToken: string;
+	clientId: string;
+}): TokenSet {
+	// Hash the refresh token to look it up
+	const tokenHash = crypto.createHash('sha256').update(params.refreshToken).digest('hex');
+	const now = new Date().toISOString();
+
+	// Look up the refresh token
+	const tokenRow = db
+		.prepare(
+			`SELECT client_id, person_uuid, acting_as_uuid, scope
+       FROM oidc_refresh_token
+       WHERE token_hash = ?
+         AND client_id = ?
+         AND expires_at > ?
+         AND revoked_at IS NULL`
+		)
+		.get(tokenHash, params.clientId, now) as
+		| {
+				client_id: string;
+				person_uuid: string;
+				acting_as_uuid: string;
+				scope: string;
+		  }
+		| undefined;
+
+	if (!tokenRow) {
+		throw new Error('Invalid or expired refresh token');
+	}
+
+	// Revoke the old refresh token (rotation)
+	db.prepare('UPDATE oidc_refresh_token SET revoked_at = ? WHERE token_hash = ?').run(
+		now,
+		tokenHash
+	);
+
+	// Issue new tokens (including a new refresh token)
+	return issueTokens({
+		personUuid: tokenRow.person_uuid,
+		actingAsUuid: tokenRow.acting_as_uuid,
+		clientId: tokenRow.client_id,
+		scope: tokenRow.scope,
+	});
+}
+
 // ---------------------------------------------------------------------------
 // Client registry
 // ---------------------------------------------------------------------------
-// Set OIDC_CLIENTS to a JSON array:
-// [{"client_id":"community-bank","client_secret":"s3cr3t","redirect_uris":["https://…/oauth/callback"]}]
-// client_secret may be omitted for public clients (PKCE-only).
+// OIDC clients are now stored in the database for dynamic registration.
+// For backward compatibility, OIDC_CLIENTS env var is loaded on startup.
 
 interface OidcClient {
+	uuid: string;
 	clientId: string;
-	clientSecret: string | null;
+	clientSecretHash: string | null;
+	name: string;
 	redirectUris: string[];
+	createdAt: string;
+	createdBy: string;
 }
 
-let _clients: Map<string, OidcClient> | null = null;
+interface OidcClientRow {
+	uuid: string;
+	client_id: string;
+	client_secret_hash: string | null;
+	name: string;
+	redirect_uris: string;
+	created_at: string;
+	created_by: string;
+}
 
-function loadClients(): Map<string, OidcClient> {
-	const map = new Map<string, OidcClient>();
+function hashClientSecret(secret: string): string {
+	return crypto.createHash('sha256').update(secret).digest('hex');
+}
+
+// Load clients from env var on first run (for backward compatibility)
+function loadClientsFromEnv(): void {
 	const raw = process.env.OIDC_CLIENTS;
-	if (!raw) return map;
+	if (!raw) return;
+	
 	const parsed = JSON.parse(raw) as Array<{
 		client_id: string;
 		client_secret?: string;
 		redirect_uris: string[];
+		name?: string;
 	}>;
+	
 	for (const c of parsed) {
-		map.set(c.client_id, {
-			clientId: c.client_id,
-			clientSecret: c.client_secret ?? null,
-			redirectUris: c.redirect_uris,
-		});
+		const existing = db.prepare('SELECT 1 FROM oidc_client WHERE client_id = ?').get(c.client_id);
+		if (existing) continue; // Don't overwrite existing clients
+		
+		const uuid = crypto.randomUUID();
+		const secretHash = c.client_secret ? hashClientSecret(c.client_secret) : null;
+		
+		db.prepare(
+			`INSERT INTO oidc_client (uuid, client_id, client_secret_hash, name, redirect_uris, created_at, created_by)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			uuid,
+			c.client_id,
+			secretHash,
+			c.name ?? c.client_id,
+			JSON.stringify(c.redirect_uris),
+			new Date().toISOString(),
+			'system' // Created by system during env var migration
+		);
+		
+		console.log(`[oidc] Imported client from env: ${c.client_id}`);
 	}
-	return map;
+}
+
+// Run env import once on module load
+if (process.env.OIDC_CLIENTS) {
+	try {
+		loadClientsFromEnv();
+	} catch (err) {
+		console.error('[oidc] Failed to import clients from env:', err);
+	}
+}
+
+export function createClient(params: {
+	name: string;
+	redirectUris: string[];
+	createdBy: string;
+}): { clientId: string; clientSecret: string } {
+	const uuid = crypto.randomUUID();
+	const clientId = crypto.randomBytes(16).toString('base64url');
+	const clientSecret = crypto.randomBytes(32).toString('base64url');
+	const clientSecretHash = hashClientSecret(clientSecret);
+	
+	db.prepare(
+		`INSERT INTO oidc_client (uuid, client_id, client_secret_hash, name, redirect_uris, created_at, created_by)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		uuid,
+		clientId,
+		clientSecretHash,
+		params.name,
+		JSON.stringify(params.redirectUris),
+		new Date().toISOString(),
+		params.createdBy
+	);
+	
+	return { clientId, clientSecret };
+}
+
+export function listClients(): OidcClient[] {
+	const rows = db.prepare('SELECT * FROM oidc_client ORDER BY created_at DESC').all() as OidcClientRow[];
+	return rows.map(row => ({
+		uuid: row.uuid,
+		clientId: row.client_id,
+		clientSecretHash: row.client_secret_hash,
+		name: row.name,
+		redirectUris: JSON.parse(row.redirect_uris),
+		createdAt: row.created_at,
+		createdBy: row.created_by,
+	}));
 }
 
 export function getClient(clientId: string): OidcClient | null {
-	if (!_clients) _clients = loadClients();
-	return _clients.get(clientId) ?? null;
+	const row = db
+		.prepare('SELECT * FROM oidc_client WHERE client_id = ?')
+		.get(clientId) as OidcClientRow | undefined;
+	
+	if (!row) return null;
+	
+	return {
+		uuid: row.uuid,
+		clientId: row.client_id,
+		clientSecretHash: row.client_secret_hash,
+		name: row.name,
+		redirectUris: JSON.parse(row.redirect_uris),
+		createdAt: row.created_at,
+		createdBy: row.created_by,
+	};
+}
+
+export function getClientByUuid(uuid: string): OidcClient | null {
+	const row = db
+		.prepare('SELECT * FROM oidc_client WHERE uuid = ?')
+		.get(uuid) as OidcClientRow | undefined;
+	
+	if (!row) return null;
+	
+	return {
+		uuid: row.uuid,
+		clientId: row.client_id,
+		clientSecretHash: row.client_secret_hash,
+		name: row.name,
+		redirectUris: JSON.parse(row.redirect_uris),
+		createdAt: row.created_at,
+		createdBy: row.created_by,
+	};
+}
+
+export function updateClientRedirectUris(clientId: string, redirectUris: string[]): void {
+	db.prepare('UPDATE oidc_client SET redirect_uris = ? WHERE client_id = ?')
+		.run(JSON.stringify(redirectUris), clientId);
+}
+
+export function deleteClient(clientId: string): void {
+	db.prepare('DELETE FROM oidc_client WHERE client_id = ?').run(clientId);
+}
+
+export function verifyClientSecret(clientId: string, clientSecret: string): boolean {
+	const client = getClient(clientId);
+	if (!client || !client.clientSecretHash) return false;
+	const hash = hashClientSecret(clientSecret);
+	return hash === client.clientSecretHash;
 }
 
 export function validateRedirectUri(clientId: string, redirectUri: string): boolean {

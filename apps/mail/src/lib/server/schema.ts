@@ -67,4 +67,13 @@ CREATE TABLE IF NOT EXISTS outbox (
   delivered_at TEXT NULL
 );
 
+CREATE TABLE IF NOT EXISTS sync_run (
+  uuid        TEXT PRIMARY KEY,
+  job         TEXT NOT NULL,
+  period_key  TEXT NOT NULL,
+  ran_at      TEXT NOT NULL,
+  result_json TEXT NOT NULL DEFAULT '{}',
+  UNIQUE (job, period_key)
+);
+
 `;

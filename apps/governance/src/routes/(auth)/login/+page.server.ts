@@ -2,10 +2,46 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
 import { authenticatePerson } from '$lib/server/auth.js';
 
+/**
+ * Validate and return a safe redirect URL.
+ * Accepts relative paths or full URLs to configured satellite apps.
+ * 
+ * Note: Satellite apps now use OIDC, so they will redirect users here
+ * for authentication and then handle the OAuth callback themselves.
+ */
+function getSafeRedirectUrl(next: string | null): string {
+	if (!next) return '/people';
+	
+	// Allow relative paths (same-origin)
+	if (next.startsWith('/')) return next;
+	
+	// Allow full URLs to known satellite apps (for OAuth redirect_uri validation)
+	const allowedOrigins = [
+		'http://localhost:5174', // community-bank
+		'http://localhost:5175', // mail
+		'http://localhost:5176', // marketplace
+	];
+	
+	try {
+		const url = new URL(next);
+		if (allowedOrigins.includes(url.origin)) {
+			return next;
+		}
+	} catch {
+		// Invalid URL, fall through to default
+	}
+	
+	return '/people';
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
+	const next = url.searchParams.get('next');
+	console.log('[governance/login/load] Request with next:', next, 'Logged in:', !!locals.session);
+	
 	if (locals.session && locals.person) {
-		const next = url.searchParams.get('next');
-		redirect(302, next && next.startsWith('/') ? next : '/people');
+		const redirectUrl = getSafeRedirectUrl(next);
+		console.log('[governance/login/load] Already logged in, redirecting to:', redirectUrl);
+		redirect(302, redirectUrl);
 	}
 	return {};
 };
@@ -41,6 +77,9 @@ export const actions: Actions = {
 		});
 
 		const next = url.searchParams.get('next');
-		redirect(302, next && next.startsWith('/') ? next : '/people');
+		const redirectUrl = getSafeRedirectUrl(next);
+		
+		console.log('[governance/login/action] Login successful, redirecting to:', redirectUrl);
+		redirect(302, redirectUrl);
 	}
 };

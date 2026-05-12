@@ -36,6 +36,27 @@ CREATE TABLE IF NOT EXISTS session (
   revoked_at         TEXT NULL
 );
 
+CREATE TABLE IF NOT EXISTS oidc_client (
+  uuid           TEXT PRIMARY KEY,
+  client_id      TEXT NOT NULL UNIQUE,
+  client_secret_hash TEXT NULL,
+  name           TEXT NOT NULL,
+  redirect_uris  TEXT NOT NULL,
+  created_at     TEXT NOT NULL,
+  created_by     TEXT NOT NULL REFERENCES person(uuid)
+);
+
+CREATE TABLE IF NOT EXISTS oidc_refresh_token (
+  token_hash      TEXT PRIMARY KEY,
+  client_id       TEXT NOT NULL REFERENCES oidc_client(client_id),
+  person_uuid     TEXT NOT NULL REFERENCES person(uuid),
+  acting_as_uuid  TEXT NOT NULL,
+  scope           TEXT NOT NULL,
+  issued_at       TEXT NOT NULL,
+  expires_at      TEXT NOT NULL,
+  revoked_at      TEXT NULL
+);
+
 CREATE TABLE IF NOT EXISTS association (
   uuid                       TEXT PRIMARY KEY,
   handle                     TEXT NOT NULL UNIQUE,

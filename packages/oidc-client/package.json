@@ -1,0 +1,16 @@
+{
+  "name": "@bfs/oidc-client",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@bfs/types": "workspace:*",
+    "@sveltejs/kit": "^2.59.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.18",
+    "typescript": "^5.8.0"
+  }
+}

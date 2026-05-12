@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS "transaction" (
   slip_serial             TEXT NULL,
   memo                    TEXT NULL,
   scheduled_transfer_uuid TEXT NULL REFERENCES scheduled_transfer(uuid),
+  entered_by_uuid         TEXT NULL,
   created_at              TEXT NOT NULL
 );
 
@@ -62,6 +63,15 @@ CREATE TABLE IF NOT EXISTS outbox (
   payload_json TEXT NOT NULL,
   created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   delivered_at TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS scheduler_run (
+  uuid        TEXT PRIMARY KEY,
+  job         TEXT NOT NULL,
+  period_key  TEXT NOT NULL,
+  ran_at      TEXT NOT NULL,
+  result_json TEXT NOT NULL DEFAULT '{}',
+  UNIQUE (job, period_key)
 );
 
 `;

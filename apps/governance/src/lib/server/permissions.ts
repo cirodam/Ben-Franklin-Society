@@ -23,6 +23,7 @@ export const PERMISSIONS = {
 	PEOPLE_EDIT:       'people:edit',
 	PEOPLE_REMOVE:     'people:remove',
 	CALENDAR_WRITE:    'calendar:write',
+	GOVERNANCE_ADMIN:  'governance:admin',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
