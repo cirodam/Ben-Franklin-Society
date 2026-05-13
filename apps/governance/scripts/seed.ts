@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Seed script: creates the first admin person in the governance database.
+// Seed script: creates a person in the governance database (for testing/development only).
+// For production, use the /setup page on first launch.
 // Usage:
-//   DATABASE_PATH=./dev.sqlite pnpm seed
-//   DATABASE_PATH=./dev.sqlite pnpm seed --handle=alice --given-name=Alice --family-name=Smith --dob=1990-01-01 --password=changeme
+//   DATABASE_PATH=./dev.sqlite pnpm seed --handle=alice --given-name=Alice --family-name=Smith --dob=1990-01-01 --password=testpass123
 
 import * as argon2 from 'argon2';
 import { randomUUID } from 'node:crypto';
@@ -18,11 +18,17 @@ const args = Object.fromEntries(
 		})
 );
 
-const handle     = String(args['handle']     ?? 'admin');
-const givenName  = String(args['given-name'] ?? 'Admin');
-const familyName = String(args['family-name']?? 'User');
-const dob        = String(args['dob']        ?? '1990-01-01');
-const password   = String(args['password']   ?? 'changeme');
+const handle     = String(args['handle']);
+const givenName  = String(args['given-name']);
+const familyName = String(args['family-name']);
+const dob        = String(args['dob']);
+const password   = String(args['password']);
+
+if (!handle || !givenName || !familyName || !dob || !password) {
+	console.error('Error: All parameters are required.');
+	console.error('Usage: pnpm seed --handle=alice --given-name=Alice --family-name=Smith --dob=1990-01-01 --password=secure123');
+	process.exit(1);
+}
 
 const dbPath = process.env.DATABASE_PATH ?? './dev.sqlite';
 

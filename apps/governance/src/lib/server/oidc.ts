@@ -395,11 +395,18 @@ export function createClient(params: {
 	name: string;
 	redirectUris: string[];
 	createdBy: string;
+	clientId?: string; // Optional: for special clients like 'community-bank'
 }): { clientId: string; clientSecret: string } {
 	const uuid = crypto.randomUUID();
-	const clientId = crypto.randomBytes(16).toString('base64url');
+	const clientId = params.clientId ?? crypto.randomBytes(16).toString('base64url');
 	const clientSecret = crypto.randomBytes(32).toString('base64url');
 	const clientSecretHash = hashClientSecret(clientSecret);
+	
+	// Check if client ID already exists
+	const existing = db.prepare('SELECT 1 FROM oidc_client WHERE client_id = ?').get(clientId);
+	if (existing) {
+		throw new Error(`Client with ID '${clientId}' already exists`);
+	}
 	
 	db.prepare(
 		`INSERT INTO oidc_client (uuid, client_id, client_secret_hash, name, redirect_uris, created_at, created_by)

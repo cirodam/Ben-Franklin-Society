@@ -4,6 +4,9 @@ build/
 dist/
 .turbo/
 
+# Environment files
+.env.local
+
 # SQLite
 *.db
 *.db-wal

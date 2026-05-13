@@ -1,5 +1,10 @@
 export const schema = /* sql */ `
 
+CREATE TABLE IF NOT EXISTS config (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS scheduled_transfer_group (
   uuid             TEXT PRIMARY KEY,
   name             TEXT NOT NULL,

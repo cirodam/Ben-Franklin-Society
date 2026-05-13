@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
 import type { Cookies } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
 import { generatePKCEChallenge } from './pkce.js';
 import { verifyAccessToken, verifyIdToken, isTokenExpired } from './crypto.js';
 import type {
@@ -27,9 +26,10 @@ export class OidcClient {
 
 	/**
 	 * Initiate the OIDC login flow
-	 * Generates PKCE challenge and redirects to the authorization endpoint
+	 * Generates PKCE challenge and returns the authorization URL
+	 * The caller should redirect to this URL using SvelteKit's redirect()
 	 */
-	initiateLogin(cookies: Cookies, returnPath?: string): never {
+	initiateLogin(cookies: Cookies, returnPath?: string): string {
 		const { codeVerifier, codeChallenge } = generatePKCEChallenge();
 		const state = randomBytes(16).toString('base64url');
 
@@ -60,7 +60,7 @@ export class OidcClient {
 		cookies.set(PKCE_COOKIE_NAME, codeVerifier, cookieOptions);
 		cookies.set(STATE_COOKIE_NAME, stateData, cookieOptions);
 
-		throw redirect(302, authUrl.toString());
+		return authUrl.toString();
 	}
 
 	/**
@@ -68,9 +68,14 @@ export class OidcClient {
 	 */
 	async handleCallback(
 		code: string,
-		state: string,
+		stateParam: string,
 		cookies: Cookies
 	): Promise<{ tokens: TokenSet; returnPath: string }> {
+		// Decode the state parameter from the URL
+		const { state, returnPath: returnPathFromState } = JSON.parse(
+			Buffer.from(stateParam, 'base64url').toString()
+		);
+
 		// Retrieve and verify PKCE verifier and state from cookies
 		const stateData = cookies.get(STATE_COOKIE_NAME);
 		if (!stateData) {

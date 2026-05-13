@@ -6,8 +6,10 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@bfs/types": "workspace:*",
-    "@sveltejs/kit": "^2.59.1"
+    "@bfs/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@sveltejs/kit": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.18",

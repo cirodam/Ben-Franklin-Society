@@ -12,13 +12,96 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	const clients = listClients();
+	
+	// Check which special clients already exist
+	const hasCommunityBank = clients.some(c => c.clientId === 'community-bank');
+	const hasMail = clients.some(c => c.clientId === 'mail');
+	const hasMarketplace = clients.some(c => c.clientId === 'marketplace');
 
 	return {
 		clients,
+		hasCommunityBank,
+		hasMail,
+		hasMarketplace,
 	};
 };
 
 export const actions: Actions = {
+	createCommunityBank: async ({ locals }) => {
+		const actingAs = locals.session?.acting_as_uuid ?? null;
+		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {
+			return fail(403, { error: 'Permission denied' });
+		}
+
+		try {
+			const { clientId, clientSecret } = createClient({
+				name: 'Community Bank',
+				redirectUris: ['http://localhost:5174/oauth/callback'],
+				createdBy: locals.session!.person_uuid,
+				clientId: 'community-bank',
+			});
+
+			return {
+				success: true,
+				clientId,
+				clientSecret,
+				message: 'Community Bank client created successfully',
+			};
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
+		}
+	},
+
+	createMail: async ({ locals }) => {
+		const actingAs = locals.session?.acting_as_uuid ?? null;
+		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {
+			return fail(403, { error: 'Permission denied' });
+		}
+
+		try {
+			const { clientId, clientSecret } = createClient({
+				name: 'Mail',
+				redirectUris: ['http://localhost:5175/oauth/callback'],
+				createdBy: locals.session!.person_uuid,
+				clientId: 'mail',
+			});
+
+			return {
+				success: true,
+				clientId,
+				clientSecret,
+				message: 'Mail client created successfully',
+			};
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
+		}
+	},
+
+	createMarketplace: async ({ locals }) => {
+		const actingAs = locals.session?.acting_as_uuid ?? null;
+		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {
+			return fail(403, { error: 'Permission denied' });
+		}
+
+		try {
+			const { clientId, clientSecret } = createClient({
+				name: 'Marketplace',
+				redirectUris: ['http://localhost:5176/oauth/callback'],
+				createdBy: locals.session!.person_uuid,
+				clientId: 'marketplace',
+			});
+
+			return {
+				success: true,
+				clientId,
+				clientSecret,
+				message: 'Marketplace client created successfully',
+			};
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
+		}
+	},
+
 	create: async ({ request, locals }) => {
 		const actingAs = locals.session?.acting_as_uuid ?? null;
 		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {

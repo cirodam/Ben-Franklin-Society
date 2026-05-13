@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reset all apps: delete databases and re-seed governance
+# Reset all apps: delete databases
 
 set -e
 
@@ -25,17 +25,10 @@ if [[ "$1" == "--clean" ]]; then
 	rm -rf apps/*/build
 fi
 
-# Re-seed governance database
-echo "  Seeding governance database..."
-cd apps/governance
-DATABASE_PATH=./dev.sqlite pnpm seed
-cd ../..
-
 echo "✅ Reset complete!"
-echo ""
-echo "Default admin credentials:"
-echo "  Handle:   @admin"
-echo "  Password: changeme"
 echo ""
 echo "To start all apps, run:"
 echo "  pnpm start"
+echo ""
+echo "On first launch, governance will redirect to /setup"
+echo "where you can create the first user account."

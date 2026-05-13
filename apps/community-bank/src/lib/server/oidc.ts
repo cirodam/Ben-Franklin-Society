@@ -1,13 +1,47 @@
 import { OidcClient } from '@bfs/oidc-client';
+import { getOidcConfig } from './config.js';
 
-const GOVERNANCE_URL = process.env.GOVERNANCE_URL ?? 'http://localhost:5173';
-const OIDC_CLIENT_ID = process.env.OIDC_CLIENT_ID ?? 'community-bank';
-const OIDC_CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET;
-const OIDC_REDIRECT_URI = process.env.OIDC_REDIRECT_URI ?? 'http://localhost:5174/oauth/callback';
+let _oidcClient: OidcClient | null = null;
+let _lastConfigHash: string | null = null;
 
-export const oidcClient = new OidcClient({
-	issuerUrl: GOVERNANCE_URL,
-	clientId: OIDC_CLIENT_ID,
-	clientSecret: OIDC_CLIENT_SECRET,
-	redirectUri: OIDC_REDIRECT_URI,
-});
+function getConfigHash(config: ReturnType<typeof getOidcConfig>): string {
+	return `${config.governanceUrl}|${config.clientId}|${config.clientSecret}|${config.redirectUri}`;
+}
+
+/**
+ * Get the OIDC client instance, creating it from DB config if needed.
+ * This allows the config to be updated without restarting the server.
+ */
+export function getOidcClient(): OidcClient {
+	const config = getOidcConfig();
+	
+	if (!config.clientSecret) {
+		throw new Error('OIDC client secret not configured');
+	}
+	
+	if (!config.governanceUrl) {
+		throw new Error('OIDC governance URL not configured');
+	}
+	
+	if (!config.clientId) {
+		throw new Error('OIDC client ID not configured');
+	}
+	
+	if (!config.redirectUri) {
+		throw new Error('OIDC redirect URI not configured');
+	}
+	
+	// Recreate client only if config has changed
+	const configHash = getConfigHash(config);
+	if (!_oidcClient || _lastConfigHash !== configHash) {
+		_oidcClient = new OidcClient({
+			issuerUrl: config.governanceUrl,
+			clientId: config.clientId,
+			clientSecret: config.clientSecret,
+			redirectUri: config.redirectUri,
+		});
+		_lastConfigHash = configHash;
+	}
+	
+	return _oidcClient;
+}

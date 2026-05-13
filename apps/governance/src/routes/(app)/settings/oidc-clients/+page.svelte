@@ -38,10 +38,45 @@
 	{/if}
 
 	<section class="card">
-		<div class="section-header">
-			<h2>Registered Clients</h2>
-			<button class="btn btn--primary btn--sm" onclick={() => showCreateForm = !showCreateForm}>
-				{showCreateForm ? 'Cancel' : '+ Register Client'}
+		<h2>Quick Setup</h2>
+		<p class="section-description">Create pre-configured clients for BFS satellite applications.</p>
+		
+		<div class="quick-setup-buttons">
+			<form method="POST" action="?/createCommunityBank" use:enhance>
+				<button 
+					type="submit" 
+					class="btn btn--primary"
+					disabled={data.hasCommunityBank}
+				>
+					{data.hasCommunityBank ? '✓ Community Bank' : '+ Community Bank Client'}
+				</button>
+			</form>
+
+			<form method="POST" action="?/createMail" use:enhance>
+				<button 
+					type="submit" 
+					class="btn btn--primary"
+					disabled={data.hasMail}
+				>
+					{data.hasMail ? '✓ Mail' : '+ Mail Client'}
+				</button>
+			</form>
+
+			<form method="POST" action="?/createMarketplace" use:enhance>
+				<button 
+					type="submit" 
+					class="btn btn--primary"
+					disabled={data.hasMarketplace}
+				>
+					{data.hasMarketplace ? '✓ Marketplace' : '+ Marketplace Client'}
+				</button>
+			</form>
+
+			<button 
+				class="btn btn--secondary"
+				onclick={() => showCreateForm = !showCreateForm}
+			>
+				{showCreateForm ? 'Cancel' : '+ Other OIDC Client'}
 			</button>
 		</div>
 
@@ -53,7 +88,7 @@
 						type="text" 
 						id="name"
 						name="name" 
-						placeholder="e.g., Community Bank" 
+						placeholder="e.g., My Custom App" 
 						required 
 						class="input"
 					/>
@@ -65,7 +100,7 @@
 					<textarea 
 						id="redirect_uris"
 						name="redirect_uris" 
-						placeholder="http://localhost:5174/oauth/callback&#10;https://bank.example.com/oauth/callback"
+						placeholder="http://localhost:3000/oauth/callback&#10;https://app.example.com/oauth/callback"
 						required 
 						rows="4"
 						class="input"
@@ -76,6 +111,12 @@
 				<button type="submit" class="btn btn--primary">Create Client</button>
 			</form>
 		{/if}
+	</section>
+
+	<section class="card">
+		<div class="section-header">
+			<h2>Registered Clients</h2>
+		</div>
 
 		{#if data.clients.length === 0}
 			<p class="empty">No OIDC clients registered yet.</p>
@@ -90,7 +131,7 @@
 							</div>
 							<div class="client-badges">
 								{#if client.clientSecretHash}
-									<Badge label="Confidential" variant="info" />
+								<Badge label="Confidential" variant="accent" />
 								{:else}
 									<Badge label="Public" variant="neutral" />
 								{/if}
@@ -243,6 +284,34 @@
 		margin-bottom: 0;
 		font-weight: 600;
 		font-size: var(--text-sm);
+	}
+
+	.section-description {
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		margin-bottom: var(--space-4);
+	}
+
+	.quick-setup-buttons {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: var(--space-3);
+		margin-bottom: var(--space-5);
+	}
+
+	.quick-setup-buttons form {
+		display: contents;
+	}
+
+	.quick-setup-buttons button {
+		width: 100%;
+	}
+
+	.quick-setup-buttons button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		background: var(--color-success);
+		border-color: var(--color-success);
 	}
 
 	.create-form {

@@ -1,5 +1,10 @@
 export const schema = /* sql */ `
 
+CREATE TABLE IF NOT EXISTS config (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS mailbox (
   principal_uuid TEXT PRIMARY KEY,
   handle_cache   TEXT NOT NULL,

@@ -1,5 +1,10 @@
 export const schema = /* sql */ `
 
+CREATE TABLE IF NOT EXISTS config (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS classified_listing (
   uuid                 TEXT PRIMARY KEY,
   seller_uuid          TEXT NOT NULL,

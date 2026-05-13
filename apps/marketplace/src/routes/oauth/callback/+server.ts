@@ -1,6 +1,6 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { oidcClient } from '$lib/server/oidc.js';
+import { getOidcClient } from '$lib/server/oidc.js';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	const code = url.searchParams.get('code');
@@ -13,14 +13,18 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 
 	try {
 		console.log('[marketplace/oauth/callback] Exchanging authorization code for tokens...');
-		const { tokens, returnPath } = await oidcClient.handleCallback(code, state, cookies);
+		const { tokens, returnPath } = await getOidcClient().handleCallback(code, state, cookies);
 		
 		console.log('[marketplace/oauth/callback] Token exchange successful, setting session');
-		oidcClient.setSession(cookies, tokens);
+		getOidcClient().setSession(cookies, tokens);
 		
 		console.log('[marketplace/oauth/callback] Redirecting to:', returnPath);
-		throw redirect(302, returnPath);
+		redirect(302, returnPath);
 	} catch (err) {
+		// Re-throw redirects - they're not errors
+		if (err && typeof err === 'object' && 'status' in err && 'location' in err) {
+			throw err;
+		}
 		console.error('[marketplace/oauth/callback] OAuth callback error:', err);
 		throw error(500, 'Authentication failed');
 	}

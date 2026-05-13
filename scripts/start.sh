@@ -1,20 +1,10 @@
 #!/usr/bin/env bash
 # Start all BFS applications
-# Prerequisite: governance database must be initialized (run `pnpm reset` first)
+# On first launch, governance will show /setup page to create the first user
 
 set -e
 
 cd "$(dirname "$0")/.."
-
-# Check if governance DB exists
-if [[ ! -f apps/governance/dev.sqlite ]]; then
-	echo "❌ Governance database not found!"
-	echo ""
-	echo "Run this command first to initialize:"
-	echo "  pnpm reset"
-	echo ""
-	exit 1
-fi
 
 echo "🚀 Starting all BFS applications..."
 echo ""
