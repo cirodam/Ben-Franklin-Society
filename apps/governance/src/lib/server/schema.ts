@@ -111,13 +111,25 @@ CREATE TABLE IF NOT EXISTS association_member (
   PRIMARY KEY (association_uuid, person_uuid)
 );
 
+CREATE TABLE IF NOT EXISTS org_section (
+  uuid                  TEXT PRIMARY KEY,
+  association_uuid      TEXT NOT NULL REFERENCES association(uuid),
+  parent_section_uuid   TEXT NULL REFERENCES org_section(uuid),
+  name                  TEXT NOT NULL,
+  mandate               TEXT NULL,
+  created_at            TEXT NOT NULL,
+  removed_at            TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_org_section_association ON org_section(association_uuid);
+CREATE INDEX IF NOT EXISTS idx_org_section_parent ON org_section(parent_section_uuid);
+
 CREATE TABLE IF NOT EXISTS role (
   uuid             TEXT PRIMARY KEY,
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
+  section_uuid     TEXT NULL REFERENCES org_section(uuid),
   name             TEXT NOT NULL,
   level            INTEGER NULL,
   parent_role_uuid TEXT NULL REFERENCES role(uuid),
-  division         TEXT NULL,
   term_days        INTEGER NULL,
   description      TEXT NULL,
   salary_monthly   INTEGER NULL,
@@ -127,6 +139,7 @@ CREATE TABLE IF NOT EXISTS role (
 );
 CREATE INDEX IF NOT EXISTS idx_role_parent ON role(parent_role_uuid);
 CREATE INDEX IF NOT EXISTS idx_role_level ON role(association_uuid, level);
+CREATE INDEX IF NOT EXISTS idx_role_section ON role(section_uuid);
 
 CREATE TABLE IF NOT EXISTS role_permission (
   role_uuid  TEXT NOT NULL REFERENCES role(uuid),

@@ -51,7 +51,7 @@
 		</div>
 
 		<div class="form-group">
-			<label>Card Color</label>
+			<div class="color-section-label">Card Color</div>
 			<div class="color-picker">
 				<div class="preset-colors">
 					{#each presetColors as preset}
@@ -125,6 +125,12 @@
 	}
 
 	.form-group label {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
+	}
+
+	.color-section-label {
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		color: var(--color-text);

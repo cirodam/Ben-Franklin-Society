@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import RoleManagement from '$lib/components/RoleManagement.svelte';
+	import OrgChart from '$lib/components/OrgChart.svelte';
+	import Sections from '$lib/components/Sections.svelte';
 	import type { PageData } from './$types.js';
 	let { data }: { data: PageData } = $props();
 
@@ -102,6 +105,12 @@
 			</table>
 		{/if}
 	</section>
+
+	<Sections sections={data.sections} />
+
+	<RoleManagement roles={data.roles} members={data.members} canAssign={data.canAssign} enactedMotions={data.enactedMotions} />
+
+	<OrgChart roleHierarchy={data.roleHierarchy} />
 
 	<section class="card">
 		<h2>Recent Motions</h2>

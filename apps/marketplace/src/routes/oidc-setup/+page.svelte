@@ -147,14 +147,6 @@
 		margin-bottom: 0;
 	}
 
-	.alert code {
-		background: rgba(0, 0, 0, 0.1);
-		padding: 2px 6px;
-		border-radius: var(--radius-sm);
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-	}
-
 	.instructions {
 		background: var(--color-bg-secondary);
 		border-radius: var(--radius);

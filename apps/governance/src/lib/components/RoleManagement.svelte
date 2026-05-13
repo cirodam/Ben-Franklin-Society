@@ -4,6 +4,7 @@
 	type Role = {
 		uuid: string;
 		name: string;
+		section_name: string | null;
 		holders: Array<{
 			uuid: string;
 			handle: string;
@@ -40,6 +41,31 @@
 		canAssign?: boolean;
 		enactedMotions?: Motion[];
 	} = $props();
+
+	// Group roles by section
+	const rolesBySection = $derived.by(() => {
+		const groups = new Map<string, Role[]>();
+		for (const role of roles) {
+			const key = role.section_name ?? 'Other';
+			if (!groups.has(key)) groups.set(key, []);
+			groups.get(key)!.push(role);
+		}
+		return groups;
+	});
+
+	// Sort sections - body sections first, then support, then others
+	const sortedSections = $derived.by(() => {
+		const divs = Array.from(rolesBySection.keys());
+		return divs.sort((a, b) => {
+			const order = ['Assembly', 'Committee', 'Support'];
+			const aIdx = order.indexOf(a);
+			const bIdx = order.indexOf(b);
+			if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+			if (aIdx !== -1) return -1;
+			if (bIdx !== -1) return 1;
+			return a.localeCompare(b);
+		});
+	});
 </script>
 
 <section class="card">
@@ -47,69 +73,74 @@
 	{#if roles.length === 0}
 		<p class="empty">No roles defined.</p>
 	{:else}
-		<div class="roles-list">
-			{#each roles as role}
-				<div class="role-card-detail">
-					<div class="role-header-detail">
-						<span class="role-name-detail">{role.name}</span>
-						{#if role.permissions.length > 0}
-							<span class="perms-count">{role.permissions.length} permission{role.permissions.length === 1 ? '' : 's'}</span>
-						{/if}
-					</div>
+		{#each sortedSections as section}
+			<div class="division-group">
+				<h3 class="division-label">{section}</h3>
+				<div class="roles-list">
+					{#each rolesBySection.get(section) ?? [] as role}
+						<div class="role-card-detail">
+							<div class="role-header-detail">
+								<span class="role-name-detail">{role.name}</span>
+								{#if role.permissions.length > 0}
+									<span class="perms-count">{role.permissions.length} permission{role.permissions.length === 1 ? '' : 's'}</span>
+								{/if}
+							</div>
 
-					{#if role.holders.length > 0}
-						<ul class="holders-list">
-							{#each role.holders as holder}
-								<li class="holder-item">
-									<a href="/people/{holder.uuid}" class="holder-link">
-										@{holder.handle}
-										{#if holder.given_name || holder.family_name}
-											<span class="holder-name">({holder.given_name} {holder.family_name})</span>
-										{/if}
-									</a>
-									{#if canAssign}
-										<form method="POST" action="?/revokeRole" use:enhance>
-											<input type="hidden" name="person_uuid" value={holder.uuid} />
-											<input type="hidden" name="role_uuid" value={role.uuid} />
-											<select name="motion_uuid" class="select select--xs" required>
-												<option value="">— Motion —</option>
-												{#each enactedMotions as m}
-													<option value={m.uuid}>[{m.body_name}] {m.title}</option>
-												{/each}
-											</select>
-											<button type="submit" class="btn-revoke">Revoke</button>
-										</form>
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="no-holders">No current holders.</p>
-					{/if}
+							{#if role.holders.length > 0}
+								<ul class="holders-list">
+									{#each role.holders as holder}
+										<li class="holder-item">
+											<a href="/people/{holder.uuid}" class="holder-link">
+												@{holder.handle}
+												{#if holder.given_name || holder.family_name}
+													<span class="holder-name">({holder.given_name} {holder.family_name})</span>
+												{/if}
+											</a>
+											{#if canAssign}
+												<form method="POST" action="?/revokeRole" use:enhance>
+													<input type="hidden" name="person_uuid" value={holder.uuid} />
+													<input type="hidden" name="role_uuid" value={role.uuid} />
+													<select name="motion_uuid" class="select select--xs" required>
+														<option value="">— Motion —</option>
+														{#each enactedMotions as m}
+															<option value={m.uuid}>[{m.body_name}] {m.title}</option>
+														{/each}
+													</select>
+													<button type="submit" class="btn-revoke">Revoke</button>
+												</form>
+											{/if}
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="no-holders">No current holders.</p>
+							{/if}
 
-					{#if canAssign && members.length > 0}
-						<form method="POST" action="?/assignRole" use:enhance class="assign-form">
-							<input type="hidden" name="role_uuid" value={role.uuid} />
-							<select name="motion_uuid" required class="select">
-								<option value="">— Enacted motion —</option>
-								{#each enactedMotions as m}
-									<option value={m.uuid}>[{m.body_name}] {m.title}</option>
-								{/each}
-							</select>
-							<select name="person_uuid" required class="select">
-								<option value="">Assign member…</option>
-								{#each members as member}
-									{#if !role.holders.find((h) => h.uuid === member.person?.uuid)}
-										<option value={member.person?.uuid}>{member.person?.handle ?? member.person_uuid}</option>
-									{/if}
-								{/each}
-							</select>
-							<button type="submit" class="btn btn--primary btn--sm">Assign</button>
-						</form>
-					{/if}
+							{#if canAssign && members.length > 0}
+								<form method="POST" action="?/assignRole" use:enhance class="assign-form">
+									<input type="hidden" name="role_uuid" value={role.uuid} />
+									<select name="motion_uuid" required class="select">
+										<option value="">— Enacted motion —</option>
+										{#each enactedMotions as m}
+											<option value={m.uuid}>[{m.body_name}] {m.title}</option>
+										{/each}
+									</select>
+									<select name="person_uuid" required class="select">
+										<option value="">Assign member…</option>
+										{#each members as member}
+											{#if !role.holders.find((h) => h.uuid === member.person?.uuid)}
+												<option value={member.person?.uuid}>{member.person?.handle ?? member.person_uuid}</option>
+											{/if}
+										{/each}
+									</select>
+									<button type="submit" class="btn btn--primary btn--sm">Assign</button>
+								</form>
+							{/if}
+						</div>
+					{/each}
 				</div>
-			{/each}
-		</div>
+			</div>
+		{/each}
 	{/if}
 
 	{#if canAssign}
@@ -153,6 +184,25 @@
 	.empty {
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
+	}
+
+	.division-group {
+		margin-bottom: var(--space-5);
+	}
+
+	.division-group:last-of-type {
+		margin-bottom: 0;
+	}
+
+	.division-label {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: var(--space-3);
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.roles-list {

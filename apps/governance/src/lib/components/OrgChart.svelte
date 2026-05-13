@@ -3,7 +3,7 @@
 		uuid: string;
 		name: string;
 		level: number | null;
-		division: string | null;
+		section_name: string | null;
 		salary_monthly: number | null;
 		daily_rate: number | null;
 		term_days: number | null;
@@ -11,6 +11,14 @@
 	};
 
 	let { roleHierarchy }: { roleHierarchy: RoleNode[] } = $props();
+
+	function formatSection(sectionName: string | null): string {
+		if (!sectionName) return '';
+		if (sectionName === 'Assembly' || sectionName === 'Committee' || sectionName === 'Support') {
+			return sectionName; // Don't add "Section" to body sections
+		}
+		return `${sectionName} Section`;
+	}
 
 	function formatCompensation(role: RoleNode): string {
 		if (role.salary_monthly) {
@@ -50,8 +58,8 @@
 				{/if}
 			</div>
 			<div class="role-details">
-				{#if role.division}
-					<span class="role-division">{role.division} Section</span>
+				{#if role.section_name}
+					<span class="role-division">{formatSection(role.section_name)}</span>
 				{/if}
 				{#if role.salary_monthly || role.daily_rate}
 					<span class="role-comp">{formatCompensation(role)}</span>

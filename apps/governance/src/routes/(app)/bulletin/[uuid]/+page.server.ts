@@ -1,10 +1,9 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { getDatabase } from '@bfs/db';
+import { db } from '$lib/server/db.js';
 import { randomUUID } from 'node:crypto';
 import type { Actions, PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const db = getDatabase();
 
 	const post = db.prepare(`
 		SELECT 
@@ -78,7 +77,6 @@ export const actions: Actions = {
 			return fail(400, { error: 'Comment cannot be empty' });
 		}
 
-		const db = getDatabase();
 		const uuid = randomUUID();
 		const now = new Date().toISOString();
 
@@ -93,8 +91,6 @@ export const actions: Actions = {
 	deletePost: async ({ locals, params }) => {
 		const session = locals.session;
 		if (!session) return fail(401, { error: 'Not authenticated' });
-
-		const db = getDatabase();
 		
 		const post = db.prepare('SELECT author_uuid FROM bulletin_post WHERE uuid = ?').get(params.uuid) as { author_uuid: string } | undefined;
 		
@@ -122,8 +118,6 @@ export const actions: Actions = {
 		if (!commentUuid || typeof commentUuid !== 'string') {
 			return fail(400, { error: 'Comment ID required' });
 		}
-
-		const db = getDatabase();
 		
 		const comment = db.prepare('SELECT author_uuid FROM bulletin_comment WHERE uuid = ?').get(commentUuid) as { author_uuid: string } | undefined;
 		

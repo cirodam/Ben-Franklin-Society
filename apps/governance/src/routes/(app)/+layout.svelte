@@ -94,15 +94,6 @@
 		text-decoration: none;
 	}
 
-	.sidebar__section-label {
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--color-text-muted);
-		padding: var(--space-3) var(--space-4) var(--space-1);
-	}
-
 	.sidebar__footer {
 		border-top: 1px solid var(--color-border-faint);
 		padding: var(--space-4);

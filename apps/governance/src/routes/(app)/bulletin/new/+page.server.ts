@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { getDatabase } from '@bfs/db';
+import { db } from '$lib/server/db.js';
 import { randomUUID } from 'node:crypto';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -28,8 +28,6 @@ export const actions: Actions = {
 		if (!color || typeof color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
 			return fail(400, { error: 'Valid color is required' });
 		}
-
-		const db = getDatabase();
 		const uuid = randomUUID();
 		const now = new Date().toISOString();
 

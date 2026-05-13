@@ -1,8 +1,7 @@
-import { getDatabase } from '@bfs/db';
+import { db } from '$lib/server/db.js';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async () => {
-	const db = getDatabase();
 
 	const posts = db.prepare(`
 		SELECT 

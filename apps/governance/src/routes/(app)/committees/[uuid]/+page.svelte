@@ -1,10 +1,13 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import RoleManagement from '$lib/components/RoleManagement.svelte';
+	import OrgChart from '$lib/components/OrgChart.svelte';
+	import Sections from '$lib/components/Sections.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-const { association, config, sourceCollege, termHolders, draws, roles, motions, canVacate, record } = $derived(data);
+	const { association, config, sourceCollege, termHolders, draws, roles, roleHierarchy, sections, members, canAssign, enactedMotions, motions, canVacate, record } = $derived(data);
 
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 
@@ -115,18 +118,11 @@ const { association, config, sourceCollege, termHolders, draws, roles, motions, 
 			{/if}
 		</section>
 
-		<section class="card">
-			<h2>Roles <span class="count">{roles.length}</span></h2>
-			{#if roles.length === 0}
-				<p class="empty">No roles defined.</p>
-			{:else}
-				<ul class="tag-list">
-					{#each roles as r}
-						<li class="tag">{r.name}</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
+		<Sections {sections} />
+
+		<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
+
+		<OrgChart {roleHierarchy} />
 
 		<section class="card">
 			<h2>Recent Motions</h2>

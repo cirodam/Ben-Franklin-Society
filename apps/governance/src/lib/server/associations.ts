@@ -24,8 +24,25 @@ export interface AssociationMember {
 export interface Role {
 	uuid: string;
 	association_uuid: string;
+	section_uuid: string | null;
 	name: string;
+	level: number | null;
+	parent_role_uuid: string | null;
+	term_days: number | null;
+	description: string | null;
+	salary_monthly: number | null;
+	daily_rate: number | null;
 	created_at: string;
+}
+
+export interface OrgSection {
+	uuid: string;
+	association_uuid: string;
+	parent_section_uuid: string | null;
+	name: string;
+	mandate: string | null;
+	created_at: string;
+	removed_at: string | null;
 }
 
 export interface RolePermission {
@@ -155,6 +172,20 @@ export function getRolesByAssociation(associationUuid: string): Role[] {
 	return db
 		.prepare('SELECT * FROM role WHERE association_uuid = ? ORDER BY name')
 		.all(associationUuid) as Role[];
+}
+
+export function getSectionsByAssociation(associationUuid: string): OrgSection[] {
+	return db
+		.prepare('SELECT * FROM org_section WHERE association_uuid = ? AND removed_at IS NULL ORDER BY name')
+		.all(associationUuid) as OrgSection[];
+}
+
+export function getSectionByUuid(uuid: string): OrgSection | null {
+	return (
+		(db
+			.prepare('SELECT * FROM org_section WHERE uuid = ?')
+			.get(uuid) as OrgSection | undefined) ?? null
+	);
 }
 
 export function createRole(associationUuid: string, name: string): Role {

@@ -4,6 +4,7 @@ import {
 	getAssociationByUuid,
 	getCurrentMembers,
 	getRolesByAssociation,
+	getSectionsByAssociation,
 	createRole,
 	assignRole as assignRoleToMember,
 	removeRole,
@@ -40,8 +41,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const members = getCurrentMembers(association.uuid);
 	const roles = getRolesByAssociation(association.uuid);
+	const sections = getSectionsByAssociation(association.uuid);
 
-	// Enrich roles with holders and permissions
+	// Create section lookup map
+	const sectionMap = new Map<string, { name: string }>();
+	for (const section of sections) {
+		sectionMap.set(section.uuid, { name: section.name });
+	}
+
+	// Enrich roles with holders, permissions, and section names
 	const enrichedRoles = roles.map((role) => {
 		const holders = (
 			db
@@ -54,7 +62,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				.all(role.uuid) as { uuid: string; handle: string; given_name: string; family_name: string }[]
 		);
 		const permissions = getPermissionsForRole(role.uuid);
-		return { ...role, holders, permissions };
+		const section = role.section_uuid ? sectionMap.get(role.section_uuid) : null;
+		return { ...role, holders, permissions, section_name: section?.name ?? null };
 	});
 
 	// Build role hierarchy for org chart
@@ -62,7 +71,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		uuid: string;
 		name: string;
 		level: number | null;
-		division: string | null;
+		section_name: string | null;
 		salary_monthly: number | null;
 		daily_rate: number | null;
 		term_days: number | null;
@@ -73,23 +82,23 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const rootRoles: RoleWithChildren[] = [];
 
 	// First pass: create all role objects
-	for (const role of roles) {
+	for (const role of enrichedRoles) {
 		roleMap.set(role.uuid, {
 			uuid: role.uuid,
 			name: role.name,
-			level: (role as any).level ?? null,
-			division: (role as any).division ?? null,
-			salary_monthly: (role as any).salary_monthly ?? null,
-			daily_rate: (role as any).daily_rate ?? null,
-			term_days: (role as any).term_days ?? null,
+			level: role.level,
+			section_name: role.section_name,
+			salary_monthly: role.salary_monthly,
+			daily_rate: role.daily_rate,
+			term_days: role.term_days,
 			children: []
 		});
 	}
 
 	// Second pass: build hierarchy
-	for (const role of roles) {
+	for (const role of enrichedRoles) {
 		const roleNode = roleMap.get(role.uuid)!;
-		const parentUuid = (role as any).parent_role_uuid;
+		const parentUuid = role.parent_role_uuid;
 		
 		if (parentUuid && roleMap.has(parentUuid)) {
 			roleMap.get(parentUuid)!.children.push(roleNode);
@@ -123,11 +132,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const enactedMotions = canAssign ? listEnactedMotions() : [];
 
-	return { 
-		association, 
-		members: memberDetails, 
-		roles: enrichedRoles, 
-		roleHierarchy: rootRoles, 
+	return {
+		association,
+		members: memberDetails,
+		roles: enrichedRoles,
+		roleHierarchy: rootRoles,
+		sections,
 		motions,
 		canAssign,
 		enactedMotions

@@ -2,11 +2,12 @@
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import RoleManagement from '$lib/components/RoleManagement.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
+	import Sections from '$lib/components/Sections.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, roleHierarchy, motions, canAssign, enactedMotions } = $derived(data);
+	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions } = $derived(data);
 
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 
@@ -54,6 +55,8 @@
 				</ul>
 			{/if}
 		</section>
+
+		<Sections {sections} />
 
 		<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
 
