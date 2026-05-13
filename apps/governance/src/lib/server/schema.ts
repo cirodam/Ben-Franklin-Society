@@ -36,6 +36,41 @@ CREATE TABLE IF NOT EXISTS session (
   revoked_at         TEXT NULL
 );
 
+-- Households: optional organizational units for members and dependents
+CREATE TABLE IF NOT EXISTS household (
+  uuid           TEXT PRIMARY KEY,
+  created_at     TEXT NOT NULL,
+  dissolved_at   TEXT NULL
+);
+
+-- Household membership: full members can optionally join/leave households
+CREATE TABLE IF NOT EXISTS household_member (
+  household_uuid TEXT NOT NULL REFERENCES household(uuid),
+  person_uuid    TEXT NOT NULL REFERENCES person(uuid),
+  joined_at      TEXT NOT NULL,
+  left_at        TEXT NULL,
+  PRIMARY KEY (household_uuid, person_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_household_member_person ON household_member(person_uuid);
+CREATE INDEX IF NOT EXISTS idx_household_member_active ON household_member(household_uuid, left_at);
+
+-- Dependents: non-members who must belong to a household
+CREATE TABLE IF NOT EXISTS dependent (
+  uuid             TEXT PRIMARY KEY,
+  household_uuid   TEXT NOT NULL REFERENCES household(uuid),
+  given_name       TEXT NOT NULL,
+  family_name      TEXT NOT NULL,
+  date_of_birth    TEXT NOT NULL,
+  relationship     TEXT NOT NULL,
+  eligibility_date TEXT NULL,
+  notes            TEXT NULL,
+  created_at       TEXT NOT NULL,
+  removed_at       TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_dependent_household ON dependent(household_uuid);
+CREATE INDEX IF NOT EXISTS idx_dependent_eligibility ON dependent(eligibility_date);
+CREATE INDEX IF NOT EXISTS idx_dependent_active ON dependent(removed_at);
+
 CREATE TABLE IF NOT EXISTS oidc_client (
   uuid           TEXT PRIMARY KEY,
   client_id      TEXT NOT NULL UNIQUE,
@@ -80,9 +115,18 @@ CREATE TABLE IF NOT EXISTS role (
   uuid             TEXT PRIMARY KEY,
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
   name             TEXT NOT NULL,
+  level            INTEGER NULL,
+  parent_role_uuid TEXT NULL REFERENCES role(uuid),
+  division         TEXT NULL,
+  term_days        INTEGER NULL,
+  description      TEXT NULL,
+  salary_monthly   INTEGER NULL,
+  daily_rate       INTEGER NULL,
   created_at       TEXT NOT NULL,
   UNIQUE (association_uuid, name)
 );
+CREATE INDEX IF NOT EXISTS idx_role_parent ON role(parent_role_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_level ON role(association_uuid, level);
 
 CREATE TABLE IF NOT EXISTS role_permission (
   role_uuid  TEXT NOT NULL REFERENCES role(uuid),
@@ -97,6 +141,8 @@ CREATE TABLE IF NOT EXISTS person_role (
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
   assigned_at      TEXT NOT NULL,
   removed_at       TEXT NULL,
+  assignment_type  TEXT NULL,
+  days_worked      INTEGER NULL DEFAULT 0,
   PRIMARY KEY (person_uuid, role_uuid, association_uuid)
 );
 
@@ -134,6 +180,8 @@ CREATE TABLE IF NOT EXISTS document (
   uuid                    TEXT PRIMARY KEY,
   title                   TEXT NOT NULL,
   slug                    TEXT NOT NULL UNIQUE,
+  type                    TEXT NOT NULL DEFAULT 'regulation',
+  body                    TEXT NULL,
   owner_uuid              TEXT NULL REFERENCES association(uuid),
   created_by_uuid         TEXT NULL REFERENCES person(uuid),
   status                  TEXT NOT NULL DEFAULT 'draft',
@@ -382,6 +430,29 @@ CREATE TABLE IF NOT EXISTS audit_log (
   detail           TEXT NULL,       -- human-readable description
   motion_uuid      TEXT NULL REFERENCES motion(uuid), -- authorizing motion, if any
   created_at       TEXT NOT NULL
+);
+
+-- Bulletin Board: community notices and discussion
+
+CREATE TABLE IF NOT EXISTS bulletin_post (
+  uuid       TEXT PRIMARY KEY,
+  author_uuid TEXT NOT NULL REFERENCES person(uuid),
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  color      TEXT NOT NULL,  -- hex color chosen by author
+  created_at TEXT NOT NULL,
+  updated_at TEXT NULL,
+  deleted_at TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bulletin_comment (
+  uuid       TEXT PRIMARY KEY,
+  post_uuid  TEXT NOT NULL REFERENCES bulletin_post(uuid),
+  author_uuid TEXT NOT NULL REFERENCES person(uuid),
+  body       TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NULL,
+  deleted_at TEXT NULL
 );
 
 `;

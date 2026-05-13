@@ -65,8 +65,17 @@ export const actions: Actions = {
 
 		const person = await createPerson({ handle, given_name: givenName, family_name: familyName, date_of_birth: dob, initial_password: password });
 
-		// Save the society name to community config
+		// Save community configuration with sensible defaults
 		setInitialCommunityConfig('society_name', societyName, 'The full name of this local society');
+		setInitialCommunityConfig('dues_rate_monthly', '100', 'Monthly membership dues in Franks');
+		setInitialCommunityConfig('demurrage_rate', '0.02', 'Demurrage rate as a decimal fraction (0.02 = 2% per month)');
+		setInitialCommunityConfig('demurrage_threshold', '5000', 'Balance above which demurrage applies, in Franks');
+		setInitialCommunityConfig('demurrage_type', 'recirculation', 'Where demurrage goes: recirculation (Treasury) or contraction (Central Bank)');
+		setInitialCommunityConfig('demurrage_schedule', '0 6 1 * *', 'Cron expression for demurrage runs (1st of month at 6am)');
+		setInitialCommunityConfig('birthday_issuance_amount', '2000', 'Franks issued per member per birthday');
+		setInitialCommunityConfig('society_latitude', '0.0', 'Decimal latitude of the society\'s primary location');
+		setInitialCommunityConfig('society_longitude', '0.0', 'Decimal longitude of the society\'s primary location');
+		setInitialCommunityConfig('federation_radius_km', '50', 'Default radius in kilometers for browsing neighboring societies');
 
 		// Seed the four system associations and add the founding member
 		const systemAssociations = [
@@ -145,6 +154,113 @@ export const actions: Actions = {
 			const a = getAssociationByHandle(assoc.handle)!;
 			insertPersonRole.run(person.uuid, founderRoleUuid, a.uuid, createdAt);
 		}
+
+		// Seed Food Service with ICS structure
+		const foodService = getAssociationByHandle('food-service')!;
+		
+		// Food Officer (Level 1 - top leadership)
+		const foodOfficerUuid = randomUUID();
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, name, level, parent_role_uuid, division, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			foodOfficerUuid,
+			foodService.uuid,
+			'Food Officer',
+			1,
+			null,
+			null,
+			730, // 2 years
+			'Chief executive of Food Service. Coordinates all food operations, sets policy, manages budget. Reports to General Assembly. Oversees Supply, Processing, Distribution, and Quality sections.',
+			3000,
+			createdAt
+		);
+
+		// Supply Section Chief (Level 2)
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, name, level, parent_role_uuid, division, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			foodService.uuid,
+			'Supply Section Chief',
+			2,
+			foodOfficerUuid,
+			'Supply',
+			365, // 1 year
+			'Manages food procurement, storage, and inventory. Coordinates with Agricultural Service and Marketplace for sourcing. Ensures adequate supplies for processing and distribution.',
+			2200,
+			createdAt
+		);
+
+		// Processing Section Chief (Level 2)
+		const processingSectionChiefUuid = randomUUID();
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, name, level, parent_role_uuid, division, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			processingSectionChiefUuid,
+			foodService.uuid,
+			'Processing Section Chief',
+			2,
+			foodOfficerUuid,
+			'Processing',
+			365,
+			'Manages communal kitchens, food preservation, and meal preparation. Ensures food safety standards. Coordinates with Quality section for compliance.',
+			2200,
+			createdAt
+		);
+
+		// Distribution Section Chief (Level 2)
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, name, level, parent_role_uuid, division, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			foodService.uuid,
+			'Distribution Section Chief',
+			2,
+			foodOfficerUuid,
+			'Distribution',
+			365,
+			'Manages meal service, delivery routes, and emergency food provisions. Coordinates with households for allocation. Ensures equitable access.',
+			2200,
+			createdAt
+		);
+
+		// Quality Section Chief (Level 2)
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, name, level, parent_role_uuid, division, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			foodService.uuid,
+			'Quality Section Chief',
+			2,
+			foodOfficerUuid,
+			'Quality',
+			365,
+			'Manages food safety inspections, nutrition standards, and compliance. Trains staff on safety protocols. Investigates food safety incidents.',
+			2200,
+			createdAt
+		);
+
+		// Kitchen Worker (Level 4 - daily position example)
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, name, level, parent_role_uuid, division, term_days, description, daily_rate, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			foodService.uuid,
+			'Kitchen Worker',
+			4,
+			processingSectionChiefUuid,
+			'Processing',
+			null, // As-needed
+			'Assists with meal preparation, cleaning, and kitchen operations. No prior experience required. Flexible scheduling available.',
+			100,
+			createdAt
+		);
 
 		redirect(302, '/login');
 	}

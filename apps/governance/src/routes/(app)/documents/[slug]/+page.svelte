@@ -21,6 +21,7 @@
 		<a href="/documents" class="back">← Documents</a>
 		<h1>{tree.title}</h1>
 		<div class="meta-row">
+			<span class="type-badge">{tree.type}</span>
 			<span class="status-badge {statusVariant[tree.status] ?? ''}">{tree.status}</span>
 			{#if tree.adopted_at}
 				<span class="meta-item">Adopted {tree.adopted_at.slice(0, 10)}</span>
@@ -36,30 +37,38 @@
 		</div>
 	</div>
 
-	<div class="document">
-		{#each tree.articles as article}
-			<div class="article">
-				<h2 class="article__heading">
-					<span class="article__number">Article {article.number}</span>
-					{article.title}
-				</h2>
-				<div class="sections">
-					{#each article.sections as section}
-						<a class="section" href="/documents/{tree.slug}/sections/{section.uuid}">
-							<div class="section__header">
-								<span class="section__number">§{section.number}</span>
-								{#if section.title}
-									<span class="section__title">{section.title}</span>
-								{/if}
-								<span class="section__arrow">→</span>
-							</div>
-							<p class="section__prose">{section.prose}</p>
-						</a>
-					{/each}
+	{#if tree.type === 'regulation'}
+		<div class="document">
+			{#each tree.articles as article}
+				<div class="article">
+					<h2 class="article__heading">
+						<span class="article__number">Article {article.number}</span>
+						{article.title}
+					</h2>
+					<div class="sections">
+						{#each article.sections as section}
+							<a class="section" href="/documents/{tree.slug}/sections/{section.uuid}">
+								<div class="section__header">
+									<span class="section__number">§{section.number}</span>
+									{#if section.title}
+										<span class="section__title">{section.title}</span>
+									{/if}
+									<span class="section__arrow">→</span>
+								</div>
+								<p class="section__prose">{section.prose}</p>
+							</a>
+						{/each}
+					</div>
 				</div>
+			{/each}
+		</div>
+	{:else}
+		<div class="simple-document">
+			<div class="body-content">
+				{@html tree.body?.replace(/\n/g, '<br>') ?? '<em>No content</em>'}
 			</div>
-		{/each}
-	</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -87,6 +96,18 @@
 		align-items: center;
 		gap: var(--space-3);
 		flex-wrap: wrap;
+	}
+
+	.type-badge {
+		display: inline-block;
+		font-size: var(--text-xs);
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		font-weight: var(--weight-medium);
+		text-transform: capitalize;
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
+		border: 1px solid var(--color-accent);
 	}
 
 	.status-badge {
@@ -181,5 +202,18 @@
 		font-size: var(--text-sm);
 		line-height: 1.7;
 		color: var(--color-text-muted);
+	}
+
+	.simple-document {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-6);
+	}
+
+	.body-content {
+		font-size: var(--text-base);
+		line-height: 1.8;
+		color: var(--color-text);
 	}
 </style>

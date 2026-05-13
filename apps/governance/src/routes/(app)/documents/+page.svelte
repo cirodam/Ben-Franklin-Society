@@ -68,6 +68,7 @@
 						<code class="doc-item__slug">{d.slug}</code>
 					</div>
 					<div class="doc-item__meta">
+						<span class="type-badge">{d.type}</span>
 						{#if d.owner_name}
 							<span class="doc-item__owner">{d.owner_name}</span>
 						{/if}
@@ -196,6 +197,18 @@
 	.doc-item__date {
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
+	}
+
+	.type-badge {
+		font-size: var(--text-xs);
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		font-weight: var(--weight-medium);
+		text-transform: capitalize;
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
+		border: 1px solid var(--color-accent);
+		white-space: nowrap;
 	}
 
 	.status-badge {

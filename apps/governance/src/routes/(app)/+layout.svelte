@@ -5,13 +5,14 @@
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	const nav = [
+		{ href: '/me', label: 'My Profile' },
 		{ href: '/people', label: 'People' },
 		{ href: '/associations', label: 'Associations' },
 		{ href: '/motions', label: 'Motions' },
+		{ href: '/bulletin', label: 'Bulletin Board' },
 		{ href: '/documents', label: 'Documents' },
 		{ href: '/calendar', label: 'Calendar' },
 		{ href: '/record', label: 'The Record' },
-		{ href: '/roles', label: 'Roles' },
 		{ href: '/audit', label: 'Audit Log' },
 		{ href: '/config', label: 'Config' },
 		{ href: '/settings/oidc-clients', label: 'OIDC Clients' },
@@ -100,10 +101,6 @@
 		letter-spacing: 0.06em;
 		color: var(--color-text-muted);
 		padding: var(--space-3) var(--space-4) var(--space-1);
-	}
-
-	.sidebar__link--sub {
-		font-size: var(--text-xs);
 	}
 
 	.sidebar__footer {

@@ -4,11 +4,14 @@ import { randomUUID } from 'node:crypto';
 // --- Types ---
 
 export type DocumentStatus = 'draft' | 'proposed' | 'adopted' | 'repealed';
+export type DocumentType = 'regulation' | 'prose' | 'budget';
 
 export interface Document {
 	uuid: string;
 	title: string;
 	slug: string;
+	type: DocumentType;
+	body: string | null;
 	owner_uuid: string | null;
 	created_by_uuid: string | null;
 	status: DocumentStatus;
@@ -202,6 +205,7 @@ export function adoptDocument(uuid: string, motionUuid: string | null): void {
 export interface DocumentImportInput {
 	slug: string;
 	title: string;
+	type?: DocumentType;
 	owner_uuid?: string | null;
 	created_by_uuid?: string | null;
 	articles: Array<{
@@ -228,9 +232,9 @@ export function importDocument(input: DocumentImportInput): string {
 
 	db.transaction(() => {
 		db.prepare(
-			`INSERT INTO document (uuid, title, slug, owner_uuid, created_by_uuid, status, created_at, created_by_motion_uuid, proposal_motion_uuid, adopted_at, adopted_by_motion_uuid)
-			 VALUES (?, ?, ?, ?, ?, 'adopted', ?, NULL, NULL, ?, NULL)`
-		).run(docUuid, input.title, input.slug, input.owner_uuid ?? null, input.created_by_uuid ?? null, createdAt, createdAt);
+			`INSERT INTO document (uuid, title, slug, type, owner_uuid, created_by_uuid, status, created_at, created_by_motion_uuid, proposal_motion_uuid, adopted_at, adopted_by_motion_uuid)
+			 VALUES (?, ?, ?, ?, ?, ?, 'adopted', ?, NULL, NULL, ?, NULL)`
+		).run(docUuid, input.title, input.slug, input.type ?? 'regulation', input.owner_uuid ?? null, input.created_by_uuid ?? null, createdAt, createdAt);
 
 		for (const article of input.articles) {
 			const articleUuid = randomUUID();
@@ -249,5 +253,46 @@ export function importDocument(input: DocumentImportInput): string {
 	})();
 
 	return docUuid;
+}
+
+/**
+ * Create a simple unstructured document (prose or budget type).
+ */
+export function createSimpleDocument(input: {
+	title: string;
+	slug: string;
+	type: 'prose' | 'budget';
+	body: string;
+	owner_uuid?: string | null;
+	created_by_uuid?: string | null;
+	status?: DocumentStatus;
+}): Document {
+	const uuid = randomUUID();
+	const createdAt = new Date().toISOString();
+	
+	db.prepare(
+		`INSERT INTO document (uuid, title, slug, type, body, owner_uuid, created_by_uuid, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		uuid,
+		input.title,
+		input.slug,
+		input.type,
+		input.body,
+		input.owner_uuid ?? null,
+		input.created_by_uuid ?? null,
+		input.status ?? 'draft',
+		createdAt
+	);
+	
+	return getDocumentByUuid(uuid)!;
+}
+
+/**
+ * Update the body of a simple document (prose or budget type).
+ */
+export function updateSimpleDocument(uuid: string, body: string): Document {
+	db.prepare('UPDATE document SET body = ? WHERE uuid = ?').run(body, uuid);
+	return getDocumentByUuid(uuid)!;
 }
 

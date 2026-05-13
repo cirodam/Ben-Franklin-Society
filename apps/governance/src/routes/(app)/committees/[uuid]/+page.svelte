@@ -165,6 +165,10 @@ const { association, config, sourceCollege, termHolders, draws, roles, motions, 
 			</div>
 		{/if}
 	</section>
+	</div>
+</div>
+
+<style>
 	.page-header__top { display: flex; align-items: center; gap: var(--space-3); }
 	.page-header__badges { display: flex; gap: var(--space-2); }
 	.handle { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-1); }
@@ -229,3 +233,4 @@ const { association, config, sourceCollege, termHolders, draws, roles, motions, 
 		color: var(--color-text-muted);
 	}
 	.meta-sep { color: var(--color-border); }
+</style>

@@ -1,10 +1,12 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import RoleManagement from '$lib/components/RoleManagement.svelte';
+	import OrgChart from '$lib/components/OrgChart.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, motions } = $derived(data);
+	const { association, members, roles, roleHierarchy, motions, canAssign, enactedMotions } = $derived(data);
 
 	const typeLabel: Record<string, string> = {
 		association: 'Association',
@@ -59,19 +61,9 @@
 			{/if}
 		</section>
 
-		<!-- Roles -->
-		<section class="card">
-			<h2>Roles <span class="count">{roles.length}</span></h2>
-			{#if roles.length === 0}
-				<p class="empty">No roles defined.</p>
-			{:else}
-				<ul class="tag-list">
-					{#each roles as r}
-						<li class="tag">{r.name}</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
+		<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
+
+		<OrgChart {roleHierarchy} />
 
 		<!-- Recent motions -->
 		<section class="card">

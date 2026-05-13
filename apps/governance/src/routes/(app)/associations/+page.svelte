@@ -5,6 +5,35 @@
 
 	let { data }: { data: PageData } = $props();
 
+	let searchQuery = $state('');
+	let typeFilter = $state('all');
+	let statusFilter = $state('all');
+
+	const filteredAssociations = $derived.by(() => {
+		let result = data.associations;
+
+		// Apply search
+		if (searchQuery.trim()) {
+			const q = searchQuery.toLowerCase();
+			result = result.filter(a =>
+				a.name.toLowerCase().includes(q) ||
+				a.handle.toLowerCase().includes(q)
+			);
+		}
+
+		// Apply type filter
+		if (typeFilter !== 'all') {
+			result = result.filter(a => a.type === typeFilter);
+		}
+
+		// Apply status filter
+		if (statusFilter !== 'all') {
+			result = result.filter(a => a.status === statusFilter);
+		}
+
+		return result;
+	});
+
 	const columns = [
 		{ key: 'handle' as const,  label: 'Handle',      width: '160px' },
 		{ key: 'name' as const,    label: 'Name' },
@@ -39,14 +68,44 @@
 
 <div class="page">
 	<h1>Associations</h1>
-	<DataTable {columns} rows={data.associations} rowKey="uuid" empty="No associations yet.">
+	
+	<div class="controls">
+		<input
+			type="search"
+			class="search-input"
+			placeholder="Search by name or handle..."
+			bind:value={searchQuery}
+		/>
+		
+		<div class="filters">
+			<select class="filter-select" bind:value={typeFilter}>
+				<option value="all">All Types</option>
+				<option value="general_assembly">General Assembly</option>
+				<option value="central_bank">Central Bank</option>
+				<option value="social_insurance_fund">Social Insurance Fund</option>
+				<option value="community_bank">Community Bank</option>
+				<option value="college">College</option>
+				<option value="service">Service</option>
+				<option value="committee">Committee</option>
+			</select>
+
+			<select class="filter-select" bind:value={statusFilter}>
+				<option value="all">All Statuses</option>
+				<option value="active">Active</option>
+				<option value="inactive">Inactive</option>
+			</select>
+		</div>
+	</div>
+
+	<DataTable {columns} rows={filteredAssociations as any} rowKey="uuid" empty="No associations match your search.">
 		{#snippet row(a)}
+			{@const assoc = a as unknown as typeof data.associations[number]}
 			<tr>
-				<td><a href={hrefFor(a)}><code>{a.handle}</code></a></td>
-				<td><a href={hrefFor(a)}>{a.name}</a></td>
-				<td><Badge label={a.type} variant={typeVariant(a.type)} /></td>
-				<td><Badge label={a.status} variant={a.status === 'active' ? 'success' : 'neutral'} /></td>
-				<td>{a.created_at.slice(0, 10)}</td>
+				<td><a href={hrefFor(assoc)}><code>{assoc.handle}</code></a></td>
+				<td><a href={hrefFor(assoc)}>{assoc.name}</a></td>
+				<td><Badge label={assoc.type} variant={typeVariant(assoc.type)} /></td>
+				<td><Badge label={assoc.status} variant={assoc.status === 'active' ? 'success' : 'neutral'} /></td>
+				<td>{assoc.created_at.slice(0, 10)}</td>
 			</tr>
 		{/snippet}
 	</DataTable>
@@ -57,6 +116,55 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
+	}
+
+	.controls {
+		display: flex;
+		gap: var(--space-3);
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.search-input {
+		flex: 1;
+		min-width: 280px;
+		font-size: var(--text-sm);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-surface);
+		color: var(--color-text);
+	}
+
+	.search-input::placeholder {
+		color: var(--color-text-muted);
+	}
+
+	.search-input:focus {
+		outline: none;
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-subtle);
+	}
+
+	.filters {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.filter-select {
+		font-size: var(--text-sm);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-surface);
+		color: var(--color-text);
+		cursor: pointer;
+	}
+
+	.filter-select:focus {
+		outline: none;
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-subtle);
 	}
 
 	code {

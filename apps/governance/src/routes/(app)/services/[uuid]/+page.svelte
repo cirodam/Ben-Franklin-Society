@@ -1,10 +1,12 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import RoleManagement from '$lib/components/RoleManagement.svelte';
+	import OrgChart from '$lib/components/OrgChart.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, motions } = $derived(data);
+	const { association, members, roles, roleHierarchy, motions, canAssign, enactedMotions } = $derived(data);
 
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 
@@ -53,18 +55,9 @@
 			{/if}
 		</section>
 
-		<section class="card">
-			<h2>Roles <span class="count">{roles.length}</span></h2>
-			{#if roles.length === 0}
-				<p class="empty">No roles defined.</p>
-			{:else}
-				<ul class="tag-list">
-					{#each roles as r}
-						<li class="tag">{r.name}</li>
-					{/each}
-				</ul>
-			{/if}
-		</section>
+		<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
+
+		<OrgChart {roleHierarchy} />
 
 		<section class="card">
 			<h2>Recent Motions</h2>
@@ -104,8 +97,6 @@
 	.member__name.muted { color: var(--color-text-muted); font-weight: normal; }
 	.member__handle { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
 	.member__since { margin-left: auto; font-size: var(--text-xs); color: var(--color-text-muted); }
-	.tag-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-	.tag { font-size: var(--text-xs); background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 999px; padding: var(--space-1) var(--space-3); }
 	.motion-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-3); }
 	.motion { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
 	.motion__title { font-size: var(--text-sm); color: var(--color-text); text-decoration: none; }
