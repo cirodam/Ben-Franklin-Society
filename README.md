@@ -1,6 +1,45 @@
 # BFS (Ben Franklin Society)
 
-Monorepo for the Ben Franklin Society governance and service applications.
+Software for deliberative democratic governance and community services.
+
+## What is This?
+
+The Ben Franklin Society is a platform for communities to govern themselves through structured deliberation and sortition (random selection). It provides:
+
+- **Sortition-based governance**: Random selection for legislative bodies (like jury duty for governance)
+- **Structured deliberation**: A motion system designed to give people time to think, discuss, and decide thoughtfully
+- **Community services**: Integrated banking, mail, and marketplace applications
+- **Formal organization**: Roles, sections, and hierarchies with clear mandates and accountability
+- **Complete record**: Every decision, discussion, and action is permanently recorded
+
+### Core Philosophy
+
+This system is built on the premise that ordinary people, given adequate time and structured deliberation with their peers, can make reasonable, thoughtful, and nuanced collective decisions. Rather than assuming citizens need to be managed by political professionals, it creates the conditions for genuine democratic self-governance.
+
+### Key Features
+
+**Sortition System**
+- General Assembly: 12 randomly-selected citizens serving year-long terms
+- Committees: Specialized bodies drawn from relevant colleges or the whole community
+- No elections, no campaigns, no political theater—just citizens doing their civic duty
+
+**Motion & Deliberation**
+- Draft → Introduced → Deliberation → Vote → Enacted/Rejected
+- Discussion on every motion throughout the process
+- Configurable vote rules (majority, supermajority, quorum requirements)
+- Full voting record and audit trail
+
+**Organization Structure**
+- Services (Food, Agriculture, Energy, etc.) with formal sections and mandates
+- Colleges (professional/vocational groups)
+- Committees (permanent and ad hoc)
+- Hierarchical roles with clear responsibilities and compensation
+
+**Integrated Services**
+- Community banking with lending and deposits
+- Internal mail system
+- Marketplace for goods and services
+- All authenticated through the governance system
 
 ## Quick Start
 
@@ -38,14 +77,94 @@ Applications will be available at:
 - **Mail**: http://localhost:5175
 - **Marketplace**: http://localhost:5176
 
-## Architecture
+## Project Structure
 
-This is a monorepo using:
+### Applications
+
+This is a monorepo containing multiple SvelteKit applications that work together:
+
+**governance** — The core identity and governance system
+- Identity provider (OIDC server)
+- Sortition and seat management
+- Motion system with deliberation and voting
+- Roles, permissions, and organizational structure
+- Community record and audit log
+- Document management
+
+**community-bank** — Local banking services
+- Member accounts with deposits and lending
+- Transaction history
+- Integration with governance identity
+
+**mail** — Internal communication
+- Person-to-person messaging
+- Threaded conversations
+- Authenticated through governance
+
+**marketplace** — Goods and services exchange
+- Listings and transactions
+- Integrated with community banking
+- Member-only access
+
+**federation** — Inter-society communication (planned)
+- Federation between multiple BFS communities
+- Cross-community trade and coordination
+
+### Shared Packages
+
+- **@bfs/db**: SQLite database utilities and helpers
+- **@bfs/types**: Shared TypeScript types across all apps
+- **@bfs/ui**: Common UI components (buttons, cards, badges, etc.)
+- **@bfs/crypto**: Cryptographic utilities for signing and verification
+- **@bfs/events**: Event system for cross-application communication
+- **@bfs/oidc-client**: OAuth 2.0 client library for satellite apps
+
+## Technical Architecture
+
+### Design Principles
+
+**Simplicity over scale** — SQLite databases, no microservices, direct SQL queries. This is designed for communities of hundreds to low thousands, not millions.
+
+**Data sovereignty** — Every community runs its own instance. No central authority, no SaaS vendor lock-in.
+
+**Permanent record** — Nothing is ever deleted. Motions, votes, discussions, and decisions are recorded for perpetuity.
+
+**Strong authentication** — OAuth 2.0 with PKCE, EdDSA signatures, refresh token rotation. Identity is centralized in the governance app.
+
+### Stack
+
 - **pnpm workspaces** for dependency management
-- **Turborepo** for build orchestration
-- **SvelteKit 2** for all applications
-- **SQLite** for data persistence
+- **Turborepo** for build orchestration  
+- **SvelteKit 5** for all applications (with runes)
+- **SQLite** for data persistence (better-sqlite3)
+- **TypeScript** throughout
 - **OAuth 2.0 + PKCE** for authentication
+- **EdDSA (Ed25519)** for JWT signing
+
+### Data Model Highlights
+
+**Sortition System**
+- `sortition_body_config`: Configuration for GA/committees (seat count, term length)
+- `seat`: Fixed numbered seats (never deleted)
+- `seat_term`: Who holds each seat during what period
+- `sortition`: Records each lottery draw event
+
+**Motion System**
+- `motion`: Proposal with title, body, reasoning, status, vote rule
+- `motion_vote_tally`: Real-time vote counts (aye/nay/abstain)
+- `motion_vote_receipt`: Individual vote records (anonymized)
+- `motion_comment`: Discussion thread on each motion
+
+**Organization**
+- `association`: Generic container (services, colleges, committees, GA)
+- `org_section`: Hierarchical sections with mandates
+- `role`: Positions within associations linked to sections
+- `person_role`: Who holds which roles
+
+**Permissions**
+- Role-based permissions stored directly on roles
+- JWT tokens contain all permissions (no database lookups on each request)
+- Granular permissions for motions, votes, roles, documents, etc.
 
 ### Applications
 
@@ -68,17 +187,83 @@ This is a monorepo using:
 
 ### Available Scripts
 
-- `pnpm dev`: Start all apps in development mode
-- `pnpm build`: Build all apps for production
-- `pnpm check`: Type check all apps
-- `pnpm lint`: Lint all apps
-- `pnpm reset`: Reset all databases (development only)
-- `pnpm start`: Start all apps with turbo
+- `pnpm dev` — Start all apps in development mode
+- `pnpm build` — Build all apps for production
+- `pnpm check` — Type check all apps
+- `pnpm lint` — Lint all apps
+- `pnpm reset` — Reset all databases (development only)
+- `pnpm start` — Start all apps with turbo
+
+### Project Layout
+
+```
+apps/
+  governance/        # Core governance and identity system
+  community-bank/    # Banking application
+  mail/             # Mail system
+  marketplace/      # Marketplace
+  federation/       # Inter-society federation (planned)
+
+packages/
+  db/               # Database utilities
+  types/            # Shared TypeScript types
+  ui/               # UI component library
+  crypto/           # Cryptographic helpers
+  events/           # Event system
+  oidc-client/      # OAuth client
+
+docs/
+  architectural/    # Technical architecture docs
+  conceptual/       # Philosophy and design principles
+```
+
+### Key Conventions
+
+**Database queries** — Direct SQL with better-sqlite3, no ORM. Queries live in `src/lib/server/*.ts` modules.
+
+**Server functions** — All data access through server-side functions. Never query the database from components.
+
+**Types first** — Define TypeScript interfaces for all database tables. Export from server modules.
+
+**Permanent record** — Use `removed_at` / `deleted_at` timestamps instead of DELETE. Nothing is ever truly deleted.
+
+**UUID primary keys** — All tables use TEXT PRIMARY KEY with UUIDs (via `randomUUID()`).
+
+**Timestamps** — ISO 8601 strings (`new Date().toISOString()`) stored as TEXT.
+
+## Authentication & Security
+
+### OAuth 2.0 Flow
+
+The governance app acts as an identity provider for all other applications:
+
+1. User visits satellite app (e.g., Community Bank)
+2. App redirects to governance `/oauth/authorize` with PKCE challenge
+3. User logs in at governance (if not already authenticated)
+4. User approves access (consent screen)
+5. Governance redirects back with authorization code
+6. Satellite exchanges code for tokens (access + refresh + ID)
+7. Satellite validates JWT locally for all subsequent requests
+8. Access tokens auto-refresh when expiring
+
+### Security Features
+
+- **PKCE (RFC 7636)** — Protects against authorization code interception
+- **EdDSA signatures** — JWT tokens signed with Ed25519 keys
+- **Refresh token rotation** — Old tokens revoked when new ones issued
+- **Permission claims** — All permissions embedded in JWT (zero API calls for authorization)
+- **HTTP-only cookies** — Tokens stored in secure, SameSite cookies
+- **Setup wizards** — Guided configuration for new deployments
 
 ### Environment Variables
 
-Each satellite app requires OIDC configuration (created via setup wizards):
+**Governance app:**
+```env
+DATABASE_PATH=./dev.sqlite
+OIDC_PRIVATE_KEY=<base64-encoded-ed25519-key>  # Auto-generated if not set
+```
 
+**Satellite apps:**
 ```env
 GOVERNANCE_URL=http://localhost:5173
 OIDC_CLIENT_ID=<app-name>
@@ -86,33 +271,25 @@ OIDC_CLIENT_SECRET=<secret>
 OIDC_REDIRECT_URI=http://localhost:<port>/oauth/callback
 ```
 
-Governance app requires:
+Configuration is created through the web UI setup wizards on first launch.
 
-```env
-DATABASE_PATH=./dev.sqlite
-OIDC_PRIVATE_KEY=<base64-encoded-ed25519-key>  # Optional: auto-generated if not set
-```
+## Documentation
 
-## Authentication Flow
+- **Conceptual docs**: `docs/conceptual/` — Philosophy, principles, and design rationale
+- **Architecture docs**: `docs/architectural/` — Technical design, data models, and implementation details
+- **Code comments**: Inline documentation in server modules
 
-1. User visits satellite app (e.g., Community Bank)
-2. App redirects to governance `/oauth/authorize` with PKCE challenge
-3. User logs in at governance (if not already authenticated)
-4. User approves access (consent screen)
-5. Governance redirects back to satellite with authorization code
-6. Satellite exchanges code for tokens (access + refresh + ID)
-7. Satellite validates JWT locally for all subsequent requests
-8. Access tokens auto-refresh when expiring (within 5 minutes)
+### Key Architectural Documents
 
-## Security Features
-
-- **PKCE (RFC 7636)**: Protects against authorization code interception
-- **EdDSA signatures**: JWT tokens signed with Ed25519
-- **Refresh token rotation**: Old tokens revoked when new ones issued
-- **Permission claims**: All permissions embedded in JWT (zero API calls)
-- **Secure token storage**: HTTP-only cookies with SameSite protection
-- **Setup wizards**: Guided configuration for satellite apps
+- `docs/conceptual/0 - intellectual-foundation.md` — Core premises and philosophy
+- `docs/architectural/governance_app/governance_app.md` — Governance system overview
+- `docs/architectural/sortition/sortition.md` — Sortition implementation
+- `docs/architectural/data_model/` — Detailed schema documentation
 
 ## License
 
 [To be determined]
+
+---
+
+**Note**: This is experimental software for communities exploring alternatives to conventional governance structures. It is not production-ready and should be used only for experimentation and development.
