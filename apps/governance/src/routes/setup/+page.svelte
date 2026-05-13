@@ -17,6 +17,17 @@
 		{/if}
 
 		<form method="POST" use:enhance class="setup-form">
+			<label class="field">
+				<span class="field__label">Society Name</span>
+				<input
+					name="society_name"
+					type="text"
+					placeholder="e.g. Ben Franklin Society of Athens, GA"
+					required
+				/>
+				<span class="field__hint">The full name of your local society</span>
+			</label>
+
 			<div class="field-row">
 				<label class="field">
 					<span class="field__label">Given name</span>

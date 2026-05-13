@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { ActionData } from './$types.js';
+	import type { ActionData, PageData } from './$types.js';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <div class="login-wrap">
 	<div class="login-card">
-		<h1 class="login-title">BFS Governance</h1>
+		<h1 class="login-title">{data.societyName}</h1>
 		{#if form?.error}
 			<p class="login-error">{form.error}</p>
 		{/if}

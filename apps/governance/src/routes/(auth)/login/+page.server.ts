@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
 import { authenticatePerson } from '$lib/server/auth.js';
+import { getCommunityConfig } from '$lib/server/config.js';
 
 /**
  * Validate and return a safe redirect URL.
@@ -43,7 +44,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		console.log('[governance/login/load] Already logged in, redirecting to:', redirectUrl);
 		redirect(302, redirectUrl);
 	}
-	return {};
+	
+	const societyName = getCommunityConfig('society_name') ?? 'BFS Governance';
+	
+	return { societyName };
 };
 
 export const actions: Actions = {

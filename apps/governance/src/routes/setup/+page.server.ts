@@ -8,6 +8,7 @@ import { createAssociation, addMember, getAssociationByHandle, setSortitionConfi
 import { createVoteRule } from '$lib/server/vote_rules.js';
 import { importDocument, type DocumentImportInput } from '$lib/server/documents.js';
 import { ALL_PERMISSIONS } from '$lib/server/permissions.js';
+import { setInitialCommunityConfig } from '$lib/server/config.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async () => {
@@ -20,6 +21,7 @@ export const actions: Actions = {
 	default: async ({ request }) => {
 		const data = await request.formData();
 
+		const societyName = data.get('society_name');
 		const rawHandle   = data.get('handle');
 		const givenName   = data.get('given_name');
 		const familyName  = data.get('family_name');
@@ -28,6 +30,7 @@ export const actions: Actions = {
 		const confirm     = data.get('confirm_password');
 
 		if (
+			typeof societyName !== 'string' || !societyName ||
 			typeof rawHandle !== 'string' || !rawHandle ||
 			typeof givenName !== 'string' || !givenName ||
 			typeof familyName !== 'string' || !familyName ||
@@ -62,6 +65,9 @@ export const actions: Actions = {
 
 		const person = await createPerson({ handle, given_name: givenName, family_name: familyName, date_of_birth: dob, initial_password: password });
 
+		// Save the society name to community config
+		setInitialCommunityConfig('society_name', societyName, 'The full name of this local society');
+
 		// Seed the four system associations and add the founding member
 		const systemAssociations = [
 			{ handle: 'society',             name: 'The Society',            type: 'society'              },
@@ -73,6 +79,8 @@ export const actions: Actions = {
 			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college'              },
 			{ handle: 'food-service',        name: 'Food Service',           type: 'service'              },
 			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service'              },
+			{ handle: 'communications-service', name: 'Communications Service', type: 'service'           },
+			{ handle: 'commerce-service',    name: 'Commerce Service',       type: 'service'              },
 			{ handle: 'agricultural-committee', name: 'Agricultural Committee', type: 'committee'         },
 			{ handle: 'food-committee',      name: 'Food Committee',         type: 'committee'            },
 		] as const;

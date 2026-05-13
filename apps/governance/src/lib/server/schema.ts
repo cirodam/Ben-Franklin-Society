@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS community_config (
   key                    TEXT PRIMARY KEY,
   value                  TEXT NOT NULL,
   description            TEXT NOT NULL,
-  updated_by_motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
+  updated_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
   updated_at             TEXT NOT NULL
 );
 
