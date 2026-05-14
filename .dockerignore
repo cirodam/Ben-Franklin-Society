@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.svelte-kit/
+build/
+dist/
+.turbo/
+
+# Development databases
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+!apps/governance/data/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+
+# Misc
+*.swp
+*.swo
+*~

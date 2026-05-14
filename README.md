@@ -43,7 +43,27 @@ This system is built on the premise that ordinary people, given adequate time an
 
 ## Quick Start
 
-### Development Setup
+### Production Deployment (Docker)
+
+For production deployment with Docker, SSL, and proper domain setup:
+
+See **[DOCKER.md](DOCKER.md)** for complete Docker deployment guide.
+
+Quick version:
+```bash
+cp .env.example .env
+# Edit .env with your domain and secrets
+docker-compose build
+docker-compose up -d
+```
+
+Applications will be available at:
+- **Governance**: https://governance.bfs.example.com
+- **Community Bank**: https://bank.bfs.example.com
+- **Mail**: https://mail.bfs.example.com
+- **Marketplace**: https://marketplace.bfs.example.com
+
+### Development Setup (Local)
 
 1. Reset databases (development only):
    ```bash

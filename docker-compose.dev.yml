@@ -1,0 +1,87 @@
+version: '3.8'
+
+# Development docker-compose configuration
+# For local testing without SSL/domain requirements
+
+services:
+  governance:
+    build:
+      context: .
+      dockerfile: apps/governance/Dockerfile
+    environment:
+      DATABASE_PATH: /app/data/governance.db
+      DOCUMENTS_PATH: /app/data/documents
+      PUBLIC_URL: http://localhost:5173
+      NODE_ENV: development
+      PORT: 5173
+    volumes:
+      - governance-data:/app/data
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+  community-bank:
+    build:
+      context: .
+      dockerfile: apps/community-bank/Dockerfile
+    environment:
+      DATABASE_PATH: /app/data/bank.db
+      GOVERNANCE_URL: http://localhost:5173
+      PUBLIC_URL: http://localhost:5174
+      OIDC_CLIENT_ID: community-bank
+      OIDC_CLIENT_SECRET: dev-secret-bank
+      NODE_ENV: development
+      PORT: 5174
+    volumes:
+      - community-bank-data:/app/data
+    ports:
+      - "5174:5174"
+    depends_on:
+      - governance
+    restart: unless-stopped
+
+  mail:
+    build:
+      context: .
+      dockerfile: apps/mail/Dockerfile
+    environment:
+      DATABASE_PATH: /app/data/mail.db
+      GOVERNANCE_URL: http://localhost:5173
+      PUBLIC_URL: http://localhost:5175
+      OIDC_CLIENT_ID: mail
+      OIDC_CLIENT_SECRET: dev-secret-mail
+      NODE_ENV: development
+      PORT: 5175
+    volumes:
+      - mail-data:/app/data
+    ports:
+      - "5175:5175"
+    depends_on:
+      - governance
+    restart: unless-stopped
+
+  marketplace:
+    build:
+      context: .
+      dockerfile: apps/marketplace/Dockerfile
+    environment:
+      DATABASE_PATH: /app/data/marketplace.db
+      GOVERNANCE_URL: http://localhost:5173
+      PUBLIC_URL: http://localhost:5176
+      OIDC_CLIENT_ID: marketplace
+      OIDC_CLIENT_SECRET: dev-secret-marketplace
+      NODE_ENV: development
+      PORT: 5176
+    volumes:
+      - marketplace-data:/app/data
+    ports:
+      - "5176:5176"
+    depends_on:
+      - governance
+    restart: unless-stopped
+
+volumes:
+  governance-data:
+  community-bank-data:
+  mail-data:
+  marketplace-data:
