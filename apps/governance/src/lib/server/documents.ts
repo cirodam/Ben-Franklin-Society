@@ -1,298 +1,184 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { db } from './db.js';
-import { randomUUID } from 'node:crypto';
 
 // --- Types ---
 
-export type DocumentStatus = 'draft' | 'proposed' | 'adopted' | 'repealed';
-export type DocumentType = 'regulation' | 'prose' | 'budget';
+export type DocumentStatus = 'draft' | 'adopted' | 'repealed';
 
-export interface Document {
-	uuid: string;
+export interface Section {
 	title: string;
-	slug: string;
-	type: DocumentType;
-	body: string | null;
-	owner_uuid: string | null;
-	created_by_uuid: string | null;
-	status: DocumentStatus;
-	created_at: string;
-	created_by_motion_uuid: string | null;
-	proposal_motion_uuid: string | null;
-	adopted_at: string | null;
-	adopted_by_motion_uuid: string | null;
-	repealed_at: string | null;
-	repealed_by_motion_uuid: string | null;
-	sunsets_at: string | null;
+	body: string;
+	rationale?: string;
 }
 
 export interface Article {
-	uuid: string;
-	document_uuid: string;
-	number: string; // stored as text, e.g. "I", "II", "III"
+	number: string; // "I", "II", "III", etc.
 	title: string;
+	sections: Section[];
 }
 
-export interface Section {
-	uuid: string;
-	article_uuid: string;
-	number: number;
+export interface Document {
+	slug: string;
 	title: string;
-	prose: string;
-	rationale: string;
-	version: number;
-	amended_by_motion_uuid: string | null;
+	type: 'governing_document';
+	seniority: number; // 1=charter, 2=constitution, 3=bylaw, 4=ordinance, 5=regulation, 6=policy
+	owner_uuid: string; // person or association UUID; society-owned documents form the Corpus of Law
+	status: DocumentStatus;
+	created_at: string;
+	adopted_at?: string | null;
+	adopted_by_motion_uuid?: string | null;
+	repealed_at?: string | null;
+	repealed_by_motion_uuid?: string | null;
+	articles: Article[];
 }
 
-export interface SectionHistory {
-	uuid: string;
-	section_uuid: string;
-	version: number;
-	prose: string;
-	rationale: string;
-	editor_uuid: string;
-	amended_by_motion_uuid: string | null;
-	recorded_at: string;
+// --- File system helpers ---
+
+const DOCUMENTS_DIR = join(process.cwd(), 'data', 'documents');
+
+/**
+ * Get the society association UUID (the top-level association that owns the Corpus of Law)
+ */
+function getSocietyUuid(): string | null {
+	const result = db.prepare("SELECT uuid FROM association WHERE type = 'society' LIMIT 1").get() as { uuid: string } | undefined;
+	return result?.uuid ?? null;
 }
 
-// --- Document queries ---
-
-export function getDocumentByUuid(uuid: string): Document | null {
-	return (
-		(db.prepare('SELECT * FROM document WHERE uuid = ?').get(uuid) as Document | undefined) ?? null
-	);
+function loadDocumentFile(slug: string): Document | null {
+	try {
+		const filePath = join(DOCUMENTS_DIR, `${slug}.json`);
+		const content = readFileSync(filePath, 'utf-8');
+		const doc = JSON.parse(content) as Document;
+		
+		// Handle special owner_uuid value "SOCIETY" by translating to actual society UUID
+		if (doc.owner_uuid === 'SOCIETY') {
+			const societyUuid = getSocietyUuid();
+			if (societyUuid) {
+				doc.owner_uuid = societyUuid;
+			}
+		}
+		
+		return doc;
+	} catch (err) {
+		return null;
+	}
 }
+
+function listDocumentFiles(): Document[] {
+	try {
+		const files = readdirSync(DOCUMENTS_DIR);
+		const documents: Document[] = [];
+		
+		for (const file of files) {
+			if (file.endsWith('.json')) {
+				const slug = file.replace('.json', '');
+				const doc = loadDocumentFile(slug);
+				if (doc) documents.push(doc);
+			}
+		}
+		
+		return documents.sort((a, b) => a.title.localeCompare(b.title));
+	} catch (err) {
+		return [];
+	}
+}
+
+// --- Public API ---
 
 export function getDocumentBySlug(slug: string): Document | null {
-	return (
-		(db.prepare('SELECT * FROM document WHERE slug = ?').get(slug) as Document | undefined) ?? null
-	);
+	return loadDocumentFile(slug);
 }
 
 export function listDocuments(opts: {
-	ownerUuid?: string;
-	status?: Document['status'];
-} = {}): Document[] {
-	let query = 'SELECT * FROM document WHERE 1=1';
-	const params: string[] = [];
-	if (opts.ownerUuid) { query += ' AND owner_uuid = ?'; params.push(opts.ownerUuid); }
-	if (opts.status)    { query += ' AND status = ?';     params.push(opts.status); }
-	query += ' ORDER BY title';
-	return db.prepare(query).all(...params) as Document[];
-}
-
-// --- Article queries ---
-
-export function getArticlesByDocument(documentUuid: string): Article[] {
-	return db
-		.prepare('SELECT * FROM article WHERE document_uuid = ? ORDER BY number')
-		.all(documentUuid) as Article[];
-}
-
-export function getArticleByUuid(uuid: string): Article | null {
-	return (
-		(db.prepare('SELECT * FROM article WHERE uuid = ?').get(uuid) as Article | undefined) ?? null
-	);
-}
-
-// --- Section queries ---
-
-export function getSectionsByArticle(articleUuid: string): Section[] {
-	return db
-		.prepare('SELECT * FROM section WHERE article_uuid = ? ORDER BY number')
-		.all(articleUuid) as Section[];
-}
-
-export function getSectionByUuid(uuid: string): Section | null {
-	return (
-		(db.prepare('SELECT * FROM section WHERE uuid = ?').get(uuid) as Section | undefined) ?? null
-	);
-}
-
-export function getSectionHistory(sectionUuid: string): SectionHistory[] {
-	return db
-		.prepare(
-			'SELECT * FROM section_history WHERE section_uuid = ? ORDER BY version DESC'
-		)
-		.all(sectionUuid) as SectionHistory[];
-}
-
-export function updateSection(
-	sectionUuid: string,
-	input: { title: string; prose: string; rationale: string; editorUuid: string; motionUuid?: string | null }
-): Section {
-	const section = getSectionByUuid(sectionUuid);
-	if (!section) throw new Error('Section not found');
-
-	const now = new Date().toISOString();
-
-	db.transaction(() => {
-		// Archive current version
-		db.prepare(
-			`INSERT INTO section_history (uuid, section_uuid, version, prose, rationale, editor_uuid, amended_by_motion_uuid, recorded_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			randomUUID(),
-			sectionUuid,
-			section.version,
-			section.prose,
-			section.rationale,
-			input.editorUuid,
-			input.motionUuid ?? null,
-			now
-		);
-
-		// Bump version and update content
-		db.prepare(
-			`UPDATE section SET title = ?, prose = ?, rationale = ?, version = version + 1,
-			 amended_by_motion_uuid = ? WHERE uuid = ?`
-		).run(input.title, input.prose, input.rationale, input.motionUuid ?? null, sectionUuid);
-	})();
-
-	return getSectionByUuid(sectionUuid)!;
-}
-
-// --- Full document tree ---
-// Convenience: returns a document with its articles and sections nested.
-
-export interface SectionWithHistory extends Section {
-	history: SectionHistory[];
-}
-
-export interface ArticleWithSections extends Article {
-	sections: SectionWithHistory[];
-}
-
-export interface DocumentTree extends Document {
-	articles: ArticleWithSections[];
-}
-
-export function getDocumentTree(documentUuid: string): DocumentTree | null {
-	const doc = getDocumentByUuid(documentUuid);
-	if (!doc) return null;
-
-	const articles = getArticlesByDocument(documentUuid);
-
-	return {
-		...doc,
-		articles: articles.map((article) => ({
-			...article,
-			sections: getSectionsByArticle(article.uuid).map((section) => ({
-				...section,
-				history: getSectionHistory(section.uuid),
-			})),
-		})),
-	};
-}
-
-// --- Document status ---
-
-export function repealDocument(uuid: string, motionUuid: string): void {
-	const repealedAt = new Date().toISOString();
-	db.prepare(
-		"UPDATE document SET status = 'repealed', repealed_at = ?, repealed_by_motion_uuid = ? WHERE uuid = ?"
-	).run(repealedAt, motionUuid, uuid);
-}
-
-export function adoptDocument(uuid: string, motionUuid: string | null): void {
-	const adoptedAt = new Date().toISOString();
-	db.prepare(
-		"UPDATE document SET status = 'adopted', adopted_at = ?, adopted_by_motion_uuid = ? WHERE uuid = ?"
-	).run(adoptedAt, motionUuid, uuid);
-}
-
-// --- Import ---
-
-export interface DocumentImportInput {
-	slug: string;
-	title: string;
-	type?: DocumentType;
-	owner_uuid?: string | null;
-	created_by_uuid?: string | null;
-	articles: Array<{
-		number: string;
-		title: string;
-		sections: Array<{
-			title: string;
-			body: string;
-			rationale: string;
-		}>;
-	}>;
-}
-
-/**
- * Import a document from structured data. Idempotent — skips if the slug already exists.
- * Returns the document uuid (existing or newly created).
- */
-export function importDocument(input: DocumentImportInput): string {
-	const existing = getDocumentBySlug(input.slug);
-	if (existing) return existing.uuid;
-
-	const docUuid = randomUUID();
-	const createdAt = new Date().toISOString();
-
-	db.transaction(() => {
-		db.prepare(
-			`INSERT INTO document (uuid, title, slug, type, owner_uuid, created_by_uuid, status, created_at, created_by_motion_uuid, proposal_motion_uuid, adopted_at, adopted_by_motion_uuid)
-			 VALUES (?, ?, ?, ?, ?, ?, 'adopted', ?, NULL, NULL, ?, NULL)`
-		).run(docUuid, input.title, input.slug, input.type ?? 'regulation', input.owner_uuid ?? null, input.created_by_uuid ?? null, createdAt, createdAt);
-
-		for (const article of input.articles) {
-			const articleUuid = randomUUID();
-			db.prepare(
-				'INSERT INTO article (uuid, document_uuid, number, title) VALUES (?, ?, ?, ?)'
-			).run(articleUuid, docUuid, article.number, article.title);
-
-			for (let i = 0; i < article.sections.length; i++) {
-				const s = article.sections[i];
-				db.prepare(
-					`INSERT INTO section (uuid, article_uuid, number, title, prose, rationale, version)
-					 VALUES (?, ?, ?, ?, ?, ?, 1)`
-				).run(randomUUID(), articleUuid, i + 1, s.title, s.body, s.rationale);
-			}
-		}
-	})();
-
-	return docUuid;
-}
-
-/**
- * Create a simple unstructured document (prose or budget type).
- */
-export function createSimpleDocument(input: {
-	title: string;
-	slug: string;
-	type: 'prose' | 'budget';
-	body: string;
-	owner_uuid?: string | null;
-	created_by_uuid?: string | null;
 	status?: DocumentStatus;
-}): Document {
-	const uuid = randomUUID();
-	const createdAt = new Date().toISOString();
+	seniority?: number;
+	owner_uuid?: string;
+} = {}): Document[] {
+	let documents = listDocumentFiles();
 	
-	db.prepare(
-		`INSERT INTO document (uuid, title, slug, type, body, owner_uuid, created_by_uuid, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	).run(
-		uuid,
-		input.title,
-		input.slug,
-		input.type,
-		input.body,
-		input.owner_uuid ?? null,
-		input.created_by_uuid ?? null,
-		input.status ?? 'draft',
-		createdAt
-	);
+	if (opts.status) {
+		documents = documents.filter(doc => doc.status === opts.status);
+	}
 	
-	return getDocumentByUuid(uuid)!;
+	if (opts.seniority !== undefined) {
+		documents = documents.filter(doc => doc.seniority === opts.seniority);
+	}
+	
+	if (opts.owner_uuid !== undefined) {
+		documents = documents.filter(doc => doc.owner_uuid === opts.owner_uuid);
+	}
+	
+	return documents.sort((a, b) => a.seniority - b.seniority || a.title.localeCompare(b.title));
 }
 
 /**
- * Update the body of a simple document (prose or budget type).
+ * Get all documents owned by the society - these constitute the Corpus of Law
  */
-export function updateSimpleDocument(uuid: string, body: string): Document {
-	db.prepare('UPDATE document SET body = ? WHERE uuid = ?').run(body, uuid);
-	return getDocumentByUuid(uuid)!;
+export function getCorpus(): Document[] {
+	const societyUuid = getSocietyUuid();
+	if (!societyUuid) return [];
+	return listDocuments({ owner_uuid: societyUuid });
 }
 
+/**
+ * Get documents by seniority within the corpus
+ */
+export function getConstitutionalDocs(): Document[] {
+	return getCorpus().filter(doc => doc.seniority <= 2); // charter and constitution
+}
+
+export function getBylaws(): Document[] {
+	return getCorpus().filter(doc => doc.seniority === 3);
+}
+
+export function getOrdinances(): Document[] {
+	return getCorpus().filter(doc => doc.seniority === 4);
+}
+
+export function getRegulations(): Document[] {
+	return getCorpus().filter(doc => doc.seniority === 5);
+}
+
+export function getPolicies(): Document[] {
+	return getCorpus().filter(doc => doc.seniority === 6);
+}
+
+/**
+ * Get the display name for a seniority level
+ */
+export function getSeniorityName(seniority: number): string {
+	const names: Record<number, string> = {
+		1: 'Charter',
+		2: 'Constitution',
+		3: 'Bylaw',
+		4: 'Ordinance',
+		5: 'Regulation',
+		6: 'Policy'
+	};
+	return names[seniority] ?? 'Document';
+}
+
+/**
+ * Get a specific section from a document
+ */
+export function getDocumentSection(
+	slug: string, 
+	articleNumber: string, 
+	sectionIndex: number
+): Section | null {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) return null;
+	
+	const article = doc.articles.find(a => a.number === articleNumber);
+	if (!article) return null;
+	
+	return article.sections[sectionIndex] ?? null;
+}
+
+/**
+ * Get full document tree (for compatibility with old API)
+ */
+export function getDocumentTree(slug: string): Document | null {
+	return getDocumentBySlug(slug);
+}

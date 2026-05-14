@@ -1,12 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Actions, PageServerLoad } from './$types.js';
 import { createPerson, getPersonByHandle } from '$lib/server/people.js';
 import { createAssociation, addMember, getAssociationByHandle, setSortitionConfig } from '$lib/server/associations.js';
 import { createVoteRule } from '$lib/server/vote_rules.js';
-import { importDocument, type DocumentImportInput } from '$lib/server/documents.js';
+import { createDeliberationRule } from '$lib/server/deliberation_rules.js';
 import { ALL_PERMISSIONS } from '$lib/server/permissions.js';
 import { setInitialCommunityConfig } from '$lib/server/config.js';
 import { db } from '$lib/server/db.js';
@@ -126,14 +124,20 @@ export const actions: Actions = {
 			createVoteRule({ association_uuid: ga.uuid, ...r });
 		}
 
-		// Seed documents from data/documents/*.json
-		// Constitution and Charter are owned by the Society
-		const dataDir = join(process.cwd(), 'data', 'documents');
-		for (const file of readdirSync(dataDir).filter((f) => f.endsWith('.json'))) {
-			const raw = JSON.parse(readFileSync(join(dataDir, file), 'utf-8')) as DocumentImportInput;
-			const isSocietyDoc = raw.slug === 'constitution' || raw.slug === 'charter';
-			importDocument({ ...raw, owner_uuid: isSocietyDoc ? society.uuid : null, created_by_uuid: person.uuid });
+		// Seed standard deliberation rules
+		const standardDeliberationRules = [
+			{ name: 'Standard (7 days)',     minimum_days: 7 },
+			{ name: 'Extended (14 days)',    minimum_days: 14 },
+			{ name: 'Constitutional (30 days)', minimum_days: 30 },
+			{ name: 'Urgent (1 day)',        minimum_days: 1 },
+		];
+		for (const r of standardDeliberationRules) {
+			createDeliberationRule({ association_uuid: society.uuid, ...r });
+			createDeliberationRule({ association_uuid: ga.uuid, ...r });
 		}
+
+		// Documents are now file-based in data/documents/*.json and loaded directly
+		// No need to import them into the database
 
 		// Create a Founder role in the Society with all permissions; assign in every association
 		const founderRoleUuid = randomUUID();

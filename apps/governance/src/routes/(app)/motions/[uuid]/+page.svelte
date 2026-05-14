@@ -4,7 +4,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const { motion, introducer, body, tally, voteRules, currentRule, comments, canAdvance, canOpenVote, canCloseVote, alreadyVoted, actingAs } = $derived(data);
+	const { motion, introducer, body, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, deliberationComplete, daysRemainingInDeliberation, comments, canAdvance, canOpenVote, canCloseVote, alreadyVoted, actingAs } = $derived(data);
 
 	let editingCommentUuid = $state<string | null>(null);
 	let editingCommentBody = $state('');
@@ -127,6 +127,22 @@
 		<div class="card">
 			<div class="card__label">Actions</div>
 			<div class="action-row">
+				{#if canAdvance && deliberationRules.length > 0 && !['vote','enacted','rejected','withdrawn'].includes(motion.status)}
+					<form method="POST" action="?/setDeliberationRule" use:enhance class="rule-form">
+						<select name="deliberation_rule_uuid" class="rule-select">
+							<option value="">{currentDeliberationRule ? '— clear rule —' : '— no deliberation rule —'}</option>
+							{#each deliberationRules as r}
+								<option value={r.uuid} selected={r.uuid === motion.deliberation_rule_uuid}>{r.name}</option>
+							{/each}
+						</select>
+						<button type="submit" class="btn btn--secondary btn--sm">Set Deliberation Rule</button>
+					</form>
+				{:else if currentDeliberationRule}
+					<span class="rule-label">Deliberation rule: <strong>{currentDeliberationRule.name}</strong></span>
+					{#if motion.status === 'deliberation' && !deliberationComplete}
+						<span class="deliberation-waiting">Vote eligible in {daysRemainingInDeliberation} day(s)</span>
+					{/if}
+				{/if}
 				{#if canAdvance && voteRules.length > 0 && !['vote','enacted','rejected','withdrawn'].includes(motion.status)}
 					<form method="POST" action="?/setVoteRule" use:enhance class="rule-form">
 						<select name="vote_rule_uuid" class="rule-select">
@@ -135,7 +151,7 @@
 								<option value={r.uuid} selected={r.uuid === motion.vote_rule_uuid}>{r.name}</option>
 							{/each}
 						</select>
-						<button type="submit" class="btn btn--secondary btn--sm">Set Rule</button>
+						<button type="submit" class="btn btn--secondary btn--sm">Set Vote Rule</button>
 					</form>
 				{:else if currentRule}
 					<span class="rule-label">Vote rule: <strong>{currentRule.name}</strong></span>
@@ -154,7 +170,13 @@
 				{/if}
 				{#if motion.status === 'deliberation' && canOpenVote}
 					<form method="POST" action="?/openVote">
-						<button class="btn btn--primary">Open Vote</button>
+						<button class="btn btn--primary" disabled={!deliberationComplete}>
+							{#if deliberationComplete}
+								Open Vote
+							{:else}
+								Open Vote ({daysRemainingInDeliberation} days remaining)
+							{/if}
+						</button>
 					</form>
 				{/if}
 				{#if motion.status === 'vote'}
@@ -331,6 +353,36 @@
 		gap: var(--space-3);
 		align-items: center;
 	}
+	
+	.rule-form {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	
+	.rule-select {
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-bg, #fff);
+		font-size: var(--text-sm);
+	}
+	
+	.rule-label {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+	
+	.deliberation-waiting {
+		font-size: var(--text-xs);
+		color: #92400e;
+		background: #fef3c7;
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		border: 1px solid #fcd34d;
+		font-weight: var(--weight-medium);
+	}
+	
 	.vote-form {
 		display: flex;
 		gap: var(--space-2);
@@ -346,6 +398,15 @@
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		cursor: pointer;
+		transition: opacity 0.2s;
+	}
+	.btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+	.btn--sm {
+		padding: var(--space-1) var(--space-3);
+		font-size: var(--text-xs);
 	}
 	.btn--primary   { background: var(--color-primary, #2563eb); color: #fff; }
 	.btn--secondary { background: var(--color-bg, #f3f4f6); color: var(--color-text); border: 1px solid var(--color-border); }

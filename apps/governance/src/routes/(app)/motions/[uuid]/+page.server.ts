@@ -3,10 +3,11 @@ import { randomUUID } from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types.js';
 import {
 	getMotionByUuid, getVoteTally,
-	advanceMotion, openVote, closeVote, castVote, hasVoted, setMotionVoteRule,
+	advanceMotion, openVote, closeVote, castVote, hasVoted, setMotionVoteRule, setMotionDeliberationRule,
 	type MotionStatus, type VoteChoice,
 } from '$lib/server/motions.js';
 import { listVoteRules, getVoteRuleByUuid } from '$lib/server/vote_rules.js';
+import { listDeliberationRules, getDeliberationRuleByUuid, isDeliberationPeriodComplete, getDaysRemainingInDeliberation } from '$lib/server/deliberation_rules.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
 import { addEntry } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
@@ -25,6 +26,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const tally = getVoteTally(motion.uuid);
 	const voteRules = listVoteRules(motion.body_uuid);
 	const currentRule = motion.vote_rule_uuid ? getVoteRuleByUuid(motion.vote_rule_uuid) : null;
+	
+	const deliberationRules = listDeliberationRules(motion.body_uuid);
+	const currentDeliberationRule = motion.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.deliberation_rule_uuid) : null;
+	const deliberationComplete = isDeliberationPeriodComplete(motion.deliberation_opened_at, currentDeliberationRule);
+	const daysRemainingInDeliberation = getDaysRemainingInDeliberation(motion.deliberation_opened_at, currentDeliberationRule);
 
 	const comments = db.prepare(`
 		SELECT mc.uuid, mc.body, mc.created_at, mc.edited_at, mc.author_uuid,
@@ -61,7 +67,24 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
-	return { motion, introducer, body, tally, voteRules, currentRule, comments, canAdvance, canOpenVote, canCloseVote, alreadyVoted, actingAs };
+	return { 
+		motion, 
+		introducer, 
+		body, 
+		tally, 
+		voteRules, 
+		currentRule, 
+		deliberationRules,
+		currentDeliberationRule,
+		deliberationComplete,
+		daysRemainingInDeliberation,
+		comments, 
+		canAdvance, 
+		canOpenVote, 
+		canCloseVote, 
+		alreadyVoted, 
+		actingAs 
+	};
 };
 
 export const actions: Actions = {
@@ -104,6 +127,13 @@ export const actions: Actions = {
 
 		if (!hasPermission(actingAs, PERMISSIONS.VOTES_OPEN, motion.body_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
+		}
+
+		// Check if deliberation period is complete
+		const delibRule = motion.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.deliberation_rule_uuid) : null;
+		if (!isDeliberationPeriodComplete(motion.deliberation_opened_at, delibRule)) {
+			const daysRemaining = getDaysRemainingInDeliberation(motion.deliberation_opened_at, delibRule);
+			return fail(400, { error: `Cannot open vote. Deliberation period requires ${daysRemaining} more day(s).` });
 		}
 
 		openVote(motion.uuid);
@@ -185,6 +215,37 @@ export const actions: Actions = {
 				`Vote rule "${rule?.name ?? vote_rule_uuid}" assigned to motion "${motion.title}"`);
 			audit(actingAs, 'motion.set_vote_rule', 'motion', motion.uuid,
 				`Vote rule "${rule?.name ?? vote_rule_uuid}" set on motion "${motion.title}"`);
+		}
+
+		return { success: true };
+	},
+
+	setDeliberationRule: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+			return fail(403, { error: 'Insufficient permissions' });
+		}
+
+		const data = await request.formData();
+		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
+
+		try {
+			setMotionDeliberationRule(motion.uuid, deliberation_rule_uuid);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set deliberation rule' });
+		}
+
+		if (deliberation_rule_uuid) {
+			const rule = db.prepare('SELECT name FROM deliberation_rule WHERE uuid = ?').get(deliberation_rule_uuid) as { name: string } | undefined;
+			addEntry(motion.body_uuid, actingAs, 'deliberation_rule_set', 'motion', motion.uuid,
+				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" assigned to motion "${motion.title}"`);
+			audit(actingAs, 'motion.set_deliberation_rule', 'motion', motion.uuid,
+				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" set on motion "${motion.title}"`);
 		}
 
 		return { success: true };

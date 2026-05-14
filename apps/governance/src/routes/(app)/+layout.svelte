@@ -5,17 +5,18 @@
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
 	const nav = [
-		{ href: '/me', label: 'My Profile' },
-		{ href: '/people', label: 'People' },
-		{ href: '/associations', label: 'Associations' },
-		{ href: '/motions', label: 'Motions' },
-		{ href: '/bulletin', label: 'Bulletin Board' },
-		{ href: '/documents', label: 'Documents' },
-		{ href: '/calendar', label: 'Calendar' },
-		{ href: '/record', label: 'The Record' },
-		{ href: '/audit', label: 'Audit Log' },
-		{ href: '/config', label: 'Config' },
-		{ href: '/settings/oidc-clients', label: 'OIDC Clients' },
+		{ href: '/', label: '🏛️ Home' },
+		{ href: '/my/documents', label: '📝 My Documents' },
+		{ href: '/my/motions', label: '📋 My Motions' },
+		{ href: '/referenda', label: '📢 Community Referenda' },
+		{ href: '/general-assembly', label: '🏛️ General Assembly' },
+		{ href: '/committees', label: '📋 Committees' },
+		{ href: '/directory', label: '📇 Directory' },
+		{ href: '/services', label: '🏢 Services' },
+		{ href: '/colleges', label: '🎓 Colleges' },
+		{ href: '/documents', label: '📄 Documents' },
+		{ href: '/record', label: '📝 The Record' },
+		{ href: '/config', label: '⚙️ Settings' },
 	];
 </script>
 

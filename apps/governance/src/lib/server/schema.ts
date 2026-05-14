@@ -159,6 +159,15 @@ CREATE TABLE IF NOT EXISTS person_role (
   PRIMARY KEY (person_uuid, role_uuid, association_uuid)
 );
 
+CREATE TABLE IF NOT EXISTS deliberation_rule (
+  uuid             TEXT PRIMARY KEY,
+  association_uuid TEXT NOT NULL REFERENCES association(uuid),
+  name             TEXT NOT NULL,
+  minimum_days     INTEGER NOT NULL DEFAULT 7,
+  created_at       TEXT NOT NULL,
+  UNIQUE (association_uuid, name)
+);
+
 CREATE TABLE IF NOT EXISTS vote_rule (
   uuid             TEXT PRIMARY KEY,
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
@@ -176,67 +185,19 @@ CREATE TABLE IF NOT EXISTS vote_rule (
 );
 
 CREATE TABLE IF NOT EXISTS motion (
-  uuid               TEXT PRIMARY KEY,
-  title              TEXT NOT NULL,
-  body               TEXT NOT NULL,
-  reasoning          TEXT NULL,
-  introduced_by_uuid TEXT NOT NULL REFERENCES person(uuid),
-  body_uuid          TEXT NOT NULL REFERENCES association(uuid),
-  vote_rule_uuid     TEXT NULL REFERENCES vote_rule(uuid),
-  status             TEXT NOT NULL DEFAULT 'draft',
-  created_at         TEXT NOT NULL,
-  enacted_at         TEXT NULL,
-  resolved_at        TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS document (
-  uuid                    TEXT PRIMARY KEY,
-  title                   TEXT NOT NULL,
-  slug                    TEXT NOT NULL UNIQUE,
-  type                    TEXT NOT NULL DEFAULT 'regulation',
-  body                    TEXT NULL,
-  owner_uuid              TEXT NULL REFERENCES association(uuid),
-  created_by_uuid         TEXT NULL REFERENCES person(uuid),
-  status                  TEXT NOT NULL DEFAULT 'draft',
-  created_at              TEXT NOT NULL,
-  created_by_motion_uuid  TEXT NULL REFERENCES motion(uuid),
-  proposal_motion_uuid    TEXT NULL REFERENCES motion(uuid),
-  adopted_at              TEXT NULL,
-  adopted_by_motion_uuid  TEXT NULL REFERENCES motion(uuid),
-  repealed_at             TEXT NULL,
-  repealed_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
-  sunsets_at              TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS article (
-  uuid          TEXT PRIMARY KEY,
-  document_uuid TEXT NOT NULL REFERENCES document(uuid),
-  number        TEXT NOT NULL,
-  title         TEXT NOT NULL,
-  UNIQUE (document_uuid, number)
-);
-
-CREATE TABLE IF NOT EXISTS section (
   uuid                   TEXT PRIMARY KEY,
-  article_uuid           TEXT NOT NULL REFERENCES article(uuid),
-  number                 INTEGER NOT NULL,
-  title                  TEXT NOT NULL DEFAULT '',
-  prose                  TEXT NOT NULL,
-  rationale              TEXT NOT NULL,
-  version                INTEGER NOT NULL DEFAULT 1,
-  amended_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
-  UNIQUE (article_uuid, number)
-);
-
-CREATE TABLE IF NOT EXISTS section_history (
-  uuid                   TEXT PRIMARY KEY,
-  section_uuid           TEXT NOT NULL REFERENCES section(uuid),
-  version                INTEGER NOT NULL,
-  prose                  TEXT NOT NULL,
-  rationale              TEXT NOT NULL,
-  editor_uuid            TEXT NOT NULL REFERENCES person(uuid),
-  amended_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
-  recorded_at            TEXT NOT NULL
+  title                  TEXT NOT NULL,
+  body                   TEXT NOT NULL,
+  reasoning              TEXT NULL,
+  introduced_by_uuid     TEXT NOT NULL REFERENCES person(uuid),
+  body_uuid              TEXT NOT NULL REFERENCES association(uuid),
+  deliberation_rule_uuid TEXT NULL REFERENCES deliberation_rule(uuid),
+  vote_rule_uuid         TEXT NULL REFERENCES vote_rule(uuid),
+  status                 TEXT NOT NULL DEFAULT 'draft',
+  created_at             TEXT NOT NULL,
+  deliberation_opened_at TEXT NULL,
+  enacted_at             TEXT NULL,
+  resolved_at            TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS motion_vote_tally (

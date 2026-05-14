@@ -6,7 +6,7 @@ import {
 	getRolesByAssociation,
 	getSectionsByAssociation,
 	getSortitionConfig,
-	assignRoleToMember,
+	assignRole,
 	removeRole,
 	getPermissionsForRole,
 } from '$lib/server/associations.js';
@@ -14,7 +14,8 @@ import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/serv
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
 import { addEntry, getBodyRecord } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
-import { listEnactedMotions, getMotionByUuid } from '$lib/server/motions.js';
+import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/motions.js';
+import { listDeliberationRules } from '$lib/server/deliberation_rules.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -98,9 +99,43 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		? (db.prepare('SELECT name FROM association WHERE uuid = ?').get(config.source_college_uuid) as { name: string } | undefined)
 		: null;
 
-	const motions = db
-		.prepare('SELECT uuid, title, status, created_at FROM motion WHERE body_uuid = ? ORDER BY created_at DESC LIMIT 10')
-		.all(association.uuid) as { uuid: string; title: string; status: string; created_at: string }[];
+	// Get all motions for this body, grouped by status for deliberation-centric display
+	const allMotions = listMotions({ bodyUuid: association.uuid });
+
+	const openVotes = allMotions
+		.filter((m) => m.status === 'vote')
+		.map((m) => {
+			const tally = getVoteTally(m.uuid);
+			const comments = getComments(m.uuid);
+			return { ...m, tally, comments };
+		});
+
+	const activeDeliberations = allMotions
+		.filter((m) => m.status === 'deliberation')
+		.map((m) => {
+			const comments = getComments(m.uuid);
+			return { ...m, comments };
+		});
+
+	const pending = allMotions
+		.filter((m) => m.status === 'introduced' || m.status === 'draft')
+		.map((m) => {
+			const comments = getComments(m.uuid);
+			return { ...m, comments };
+		});
+
+	const recentDecisions = allMotions
+		.filter((m) => m.status === 'enacted' || m.status === 'rejected')
+		.sort((a, b) => {
+			const aDate = a.enacted_at || a.created_at;
+			const bDate = b.enacted_at || b.created_at;
+			return bDate.localeCompare(aDate);
+		})
+		.slice(0, 10);
+
+	const canCreateMotion = actingAs
+		? hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)
+		: false;
 
 	const canVacate = locals.session
 		? hasPermission(locals.session.acting_as_uuid, PERMISSIONS.SEAT_TERMS_VACATE, association.uuid)
@@ -121,19 +156,56 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		sourceCollege: sourceCollege ?? null,
 		termHolders,
 		draws,
+		openVotes,
+		activeDeliberations,
+		pending,
+		recentDecisions,
 		roles: enrichedRoles,
 		roleHierarchy: roots,
 		sections,
 		members,
 		canAssign,
+		canCreateMotion,
 		enactedMotions,
-		motions,
 		canVacate,
 		record
 	};
 };
 
 export const actions: Actions = {
+	create: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Committee not found' });
+
+		// Check permissions
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)) {
+			return fail(403, { message: 'Not authorized to create motions' });
+		}
+
+		const data = await request.formData();
+		const title = String(data.get('title') ?? '').trim();
+		const body = String(data.get('body') ?? '').trim();
+		const reasoning = String(data.get('reasoning') ?? '').trim() || null;
+		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
+
+		if (!title) return fail(400, { message: 'Title is required' });
+		if (!body) return fail(400, { message: 'Motion text is required' });
+
+		const motion = createMotion({
+			title,
+			body,
+			reasoning,
+			introduced_by_uuid: actingAs,
+			body_uuid: association.uuid,
+			deliberation_rule_uuid,
+		});
+
+		return { created: motion.uuid };
+	},
+
 	vacateTerm: async ({ params, locals, request }) => {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
@@ -173,7 +245,7 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		assignRoleToMember(person_uuid, role_uuid, params.uuid);
+		assignRole(person_uuid, role_uuid, params.uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')

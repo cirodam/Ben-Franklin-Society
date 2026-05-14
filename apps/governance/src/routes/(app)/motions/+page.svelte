@@ -1,19 +1,29 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import DataTable from '@bfs/ui/src/DataTable.svelte';
-	import type { PageData, ActionData } from './$types.js';
+	import type { PageData } from './$types.js';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
-	let showForm = $state(false);
+	let searchInput = $state(data.filters.search ?? '');
+	let statusFilter = $state(data.filters.status ?? '');
+	let bodyFilter = $state(data.filters.body ?? '');
 
-	$effect(() => {
-		if (form && 'created' in form && form.created) {
-			goto(`/motions/${form.created}`);
-		}
-	});
+	function applyFilters() {
+		const params = new URLSearchParams();
+		if (searchInput) params.set('q', searchInput);
+		if (statusFilter) params.set('status', statusFilter);
+		if (bodyFilter) params.set('body', bodyFilter);
+		goto(`/motions?${params.toString()}`);
+	}
+
+	function clearFilters() {
+		searchInput = '';
+		statusFilter = '';
+		bodyFilter = '';
+		goto('/motions');
+	}
 
 	const columns = [
 		{ key: 'title' as const,      label: 'Title' },
@@ -29,64 +39,75 @@
 		: s === 'withdrawn' ? 'neutral'
 		: s === 'vote'      ? 'warn'
 		: 'accent';
+
+	const statuses = ['draft', 'introduced', 'deliberation', 'vote', 'enacted', 'rejected', 'withdrawn'];
 </script>
 
 <div class="page">
 	<div class="page-header">
-		<h1>Motions</h1>
-		<button class="btn btn--primary" onclick={() => (showForm = !showForm)}>
-			{showForm ? 'Cancel' : 'New Motion'}
-		</button>
+		<div>
+			<h1>Motion Archive</h1>
+			<p class="page-subtitle">Search and browse all motions across all deliberative bodies</p>
+		</div>
 	</div>
 
-	{#if showForm}
-		<section class="card new-motion-card">
-			<h2>Draft a Motion</h2>
-			<form method="POST" action="?/create" use:enhance class="motion-form">
-				<div class="field">
-					<label for="title">Title</label>
-					<input id="title" name="title" type="text" required class="input" placeholder="Brief, descriptive title" />
-				</div>
+	<section class="filters-card">
+		<div class="filters">
+			<div class="filter-field">
+				<label for="search">Search</label>
+				<input
+					id="search"
+					type="text"
+					bind:value={searchInput}
+					placeholder="Search titles and text..."
+					class="input"
+					onkeydown={(e) => e.key === 'Enter' && applyFilters()}
+				/>
+			</div>
 
-				<div class="field">
-					<label for="body">Motion Text</label>
-					<textarea id="body" name="body" required class="textarea" rows="6" placeholder="The full text of the motion…"></textarea>
-				</div>
+			<div class="filter-field">
+				<label for="status">Status</label>
+				<select id="status" bind:value={statusFilter} class="select" onchange={applyFilters}>
+					<option value="">All statuses</option>
+					{#each statuses as status}
+						<option value={status}>{status}</option>
+					{/each}
+				</select>
+			</div>
 
-				<div class="field">
-					<label for="reasoning">Reasoning <span class="optional">(optional)</span></label>
-					<textarea id="reasoning" name="reasoning" class="textarea" rows="3" placeholder="Why this motion should be adopted…"></textarea>
-				</div>
+			<div class="filter-field">
+				<label for="body">Body</label>
+				<select id="body" bind:value={bodyFilter} class="select" onchange={applyFilters}>
+					<option value="">All bodies</option>
+					{#each data.associations as assoc}
+						<option value={assoc.uuid}>{assoc.name}</option>
+					{/each}
+				</select>
+			</div>
+		</div>
 
-				<div class="field">
-					<label for="body_uuid">Propose to</label>
-					<select id="body_uuid" name="body_uuid" class="select">
-					{#if data.community}
-						<option value={data.community.uuid}>The Community (society-wide)</option>
-					{/if}
-					{#each data.associations.filter((a) => a.type !== 'society') as assoc}
-							<option value={assoc.uuid}>{assoc.name}</option>
-						{/each}
-					</select>
-				</div>
+		<div class="filter-actions">
+			<button type="button" class="btn btn--primary" onclick={applyFilters}>Apply Filters</button>
+			{#if searchInput || statusFilter || bodyFilter}
+				<button type="button" class="btn btn--secondary" onclick={clearFilters}>Clear Filters</button>
+			{/if}
+		</div>
 
-				{#if form && 'message' in form && form.message}
-					<p class="error">{form.message}</p>
-				{/if}
+		{#if searchInput || statusFilter || bodyFilter}
+			<div class="filter-summary">
+				Showing {data.motions.length} motion{data.motions.length === 1 ? '' : 's'}
+				{#if searchInput}matching "{searchInput}"{/if}
+				{#if statusFilter}with status "{statusFilter}"{/if}
+				{#if bodyFilter}from {data.associations.find(a => a.uuid === bodyFilter)?.name ?? 'selected body'}{/if}
+			</div>
+		{/if}
+	</section>
 
-				<div class="form-actions">
-					<button type="submit" class="btn btn--primary">Save Draft</button>
-					<button type="button" class="btn btn--secondary" onclick={() => (showForm = false)}>Cancel</button>
-				</div>
-			</form>
-		</section>
-	{/if}
-
-	<DataTable {columns} rows={data.motions} rowKey="uuid" empty="No motions yet.">
+	<DataTable {columns} rows={data.motions} rowKey="uuid" empty="No motions match your filters.">
 		{#snippet row(m)}
 			<tr>
 				<td class="title-cell"><a href="/motions/{m.uuid}">{m.title}</a></td>
-				<td>{m.body_name ?? 'Community'}</td>
+				<td>{m.body_name}</td>
 				<td><Badge label={m.status} variant={statusVariant(m.status)} /></td>
 				<td>{m.created_at.slice(0, 10)}</td>
 				<td>{m.resolved_at ? m.resolved_at.slice(0, 10) : '—'}</td>
@@ -104,10 +125,19 @@
 
 	.page-header {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
+		flex-direction: column;
+		gap: var(--space-2);
 	}
-	.page-header h1 { margin: 0; }
+
+	.page-header h1 {
+		margin: 0;
+	}
+
+	.page-subtitle {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0;
+	}
 
 	:global(.title-cell) {
 		max-width: 400px;
@@ -116,23 +146,72 @@
 		text-overflow: ellipsis;
 	}
 
-	/* New motion form */
-	.new-motion-card h2 { margin: 0 0 var(--space-5); }
-	.motion-form { display: flex; flex-direction: column; gap: var(--space-4); }
-	.field { display: flex; flex-direction: column; gap: var(--space-1); }
-	.field label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
-	.optional { font-weight: var(--weight-normal); color: var(--color-text-muted); }
-	.input, .textarea, .select {
+	/* Filters */
+	.filters-card {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-5);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.filters {
+		display: grid;
+		grid-template-columns: 2fr 1fr 1fr;
+		gap: var(--space-4);
+	}
+
+	.filter-field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.filter-field label {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
+
+	.input,
+	.select {
 		font-size: var(--text-sm);
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
-		background: var(--color-surface);
+		background: var(--color-background);
 		color: var(--color-text);
 		width: 100%;
 		box-sizing: border-box;
 	}
-	.textarea { resize: vertical; font-family: inherit; line-height: 1.5; }
-	.form-actions { display: flex; gap: var(--space-3); }
-	.error { color: #dc2626; font-size: var(--text-sm); margin: 0; }
+
+	.filter-actions {
+		display: flex;
+		gap: var(--space-3);
+	}
+
+	.filter-summary {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		padding: var(--space-2);
+		background: var(--color-accent-subtle);
+		border-radius: var(--radius);
+		text-align: center;
+	}
+
+	/* Responsive design */
+	@media (max-width: 768px) {
+		.filters {
+			grid-template-columns: 1fr;
+		}
+
+		.filter-actions {
+			flex-direction: column;
+		}
+
+		.filter-actions button {
+			width: 100%;
+		}
+	}
 </style>

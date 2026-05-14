@@ -22,9 +22,11 @@ export interface Motion {
 	reasoning: string | null;
 	introduced_by_uuid: string;
 	body_uuid: string; // every motion belongs to a body; use the community association for society-wide motions
+	deliberation_rule_uuid: string | null;
 	vote_rule_uuid: string | null;
 	status: MotionStatus;
 	created_at: string;
+	deliberation_opened_at: string | null;
 	enacted_at: string | null;
 	resolved_at: string | null;
 }
@@ -102,12 +104,13 @@ export function createMotion(input: {
 	reasoning?: string | null;
 	introduced_by_uuid: string;
 	body_uuid: string;
+	deliberation_rule_uuid?: string | null;
 }): Motion {
 	const uuid = randomUUID();
 	db.prepare(
-		`INSERT INTO motion (uuid, title, body, reasoning, introduced_by_uuid, body_uuid, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`
-	).run(uuid, input.title, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, now());
+		`INSERT INTO motion (uuid, title, body, reasoning, introduced_by_uuid, body_uuid, deliberation_rule_uuid, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, 'introduced', ?)`
+	).run(uuid, input.title, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, input.deliberation_rule_uuid ?? null, now());
 	return getMotionByUuid(uuid)!;
 }
 
@@ -121,9 +124,11 @@ export function advanceMotion(uuid: string, to: MotionStatus): Motion {
 	}
 
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
+	const deliberationOpenedAt = (to === 'deliberation' && !motion.deliberation_opened_at) ? now() : null;
+	
 	db.prepare(
-		'UPDATE motion SET status = ?, resolved_at = COALESCE(?, resolved_at) WHERE uuid = ?'
-	).run(to, resolvedAt, uuid);
+		'UPDATE motion SET status = ?, resolved_at = COALESCE(?, resolved_at), deliberation_opened_at = COALESCE(?, deliberation_opened_at) WHERE uuid = ?'
+	).run(to, resolvedAt, deliberationOpenedAt, uuid);
 
 	return getMotionByUuid(uuid)!;
 }
@@ -135,6 +140,16 @@ export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | nul
 		throw new Error(`Cannot change vote rule on a motion in status '${motion.status}'`);
 	}
 	db.prepare('UPDATE motion SET vote_rule_uuid = ? WHERE uuid = ?').run(voteRuleUuid, motionUuid);
+	return getMotionByUuid(motionUuid)!;
+}
+
+export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUuid: string | null): Motion {
+	const motion = getMotionByUuid(motionUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+	if (motion.status === 'vote' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
+		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.status}'`);
+	}
+	db.prepare('UPDATE motion SET deliberation_rule_uuid = ? WHERE uuid = ?').run(deliberationRuleUuid, motionUuid);
 	return getMotionByUuid(motionUuid)!;
 }
 

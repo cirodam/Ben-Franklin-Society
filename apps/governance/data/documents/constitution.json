@@ -1,6 +1,13 @@
 {
   "slug": "constitution",
   "title": "Community Constitution",
+  "type": "governing_document",
+  "seniority": 2,
+  "owner_uuid": "SOCIETY",
+  "status": "adopted",
+  "created_at": "2026-01-01T00:00:00Z",
+  "adopted_at": "2026-01-01T00:00:00Z",
+  "adopted_by_motion_uuid": null,
   "articles": [
     {
       "number": "I",
