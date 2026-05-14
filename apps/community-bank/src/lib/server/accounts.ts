@@ -11,6 +11,11 @@ export interface Account {
 	balance: number;
 	status: 'active' | 'frozen';
 	account_type: AccountType;
+	created_at: string;
+}
+
+export interface AccountOwnerPermissions {
+	principal_uuid: string;
 	can_auto_pull: number;
 	created_at: string;
 }
@@ -20,20 +25,18 @@ export function createAccount(opts: {
 	name: string;
 	handle_cache?: string;
 	account_type?: AccountType;
-	can_auto_pull?: boolean;
 }): Account {
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
 	db.prepare(
-		`INSERT INTO account (uuid, principal_uuid, name, handle_cache, balance, status, account_type, can_auto_pull, created_at)
-     VALUES (?, ?, ?, ?, 0, 'active', ?, ?, ?)`
+		`INSERT INTO account (uuid, principal_uuid, name, handle_cache, balance, status, account_type, created_at)
+     VALUES (?, ?, ?, ?, 0, 'active', ?, ?)`
 	).run(
 		uuid,
 		opts.principal_uuid,
 		opts.name,
 		opts.handle_cache ?? '',
 		opts.account_type ?? 'standard',
-		opts.can_auto_pull ? 1 : 0,
 		now
 	);
 	return getAccountByUuid(uuid)!;
@@ -75,17 +78,37 @@ export function unfreezeAccount(uuid: string): void {
 
 export function updateAccountMetadata(uuid: string, opts: {
 	account_type?: AccountType;
-	can_auto_pull?: boolean;
 }): void {
 	if (opts.account_type !== undefined) {
 		db.prepare('UPDATE account SET account_type = ? WHERE uuid = ?').run(opts.account_type, uuid);
 	}
-	if (opts.can_auto_pull !== undefined) {
-		db.prepare('UPDATE account SET can_auto_pull = ? WHERE uuid = ?').run(
-			opts.can_auto_pull ? 1 : 0,
-			uuid
-		);
-	}
+}
+
+// ---------------------------------------------------------------------------
+// Account Owner Permissions
+// ---------------------------------------------------------------------------
+
+export function getAccountOwnerPermissions(principal_uuid: string): AccountOwnerPermissions | null {
+	return db
+		.prepare('SELECT * FROM account_owner_permissions WHERE principal_uuid = ?')
+		.get(principal_uuid) as AccountOwnerPermissions | null;
+}
+
+export function setAccountOwnerPermissions(opts: {
+	principal_uuid: string;
+	can_auto_pull: boolean;
+}): void {
+	const now = new Date().toISOString();
+	db.prepare(
+		`INSERT INTO account_owner_permissions (principal_uuid, can_auto_pull, created_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(principal_uuid) DO UPDATE SET can_auto_pull = excluded.can_auto_pull`
+	).run(opts.principal_uuid, opts.can_auto_pull ? 1 : 0, now);
+}
+
+export function principalCanAutoPull(principal_uuid: string): boolean {
+	const perms = getAccountOwnerPermissions(principal_uuid);
+	return perms ? perms.can_auto_pull === 1 : false;
 }
 
 export function searchAccounts(query: string): Account[] {

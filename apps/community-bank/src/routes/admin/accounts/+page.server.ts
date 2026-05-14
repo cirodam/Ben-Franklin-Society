@@ -25,7 +25,6 @@ export const actions: Actions = {
 		const name = String(data.get('name') ?? '').trim();
 		const handleCache = String(data.get('handle_cache') ?? '').trim();
 		const accountType = String(data.get('account_type') ?? 'standard').trim() as AccountType;
-		const canAutoPull = data.get('can_auto_pull') === 'on';
 
 		// Validation
 		if (!principalUuid) return fail(400, { error: 'Principal UUID is required' });
@@ -44,7 +43,6 @@ export const actions: Actions = {
 				name,
 				handle_cache: handleCache,
 				account_type: accountType,
-				can_auto_pull: canAutoPull,
 			});
 
 			logAdminAction({
@@ -65,14 +63,12 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const accountUuid = String(data.get('account_uuid') ?? '').trim();
 		const accountType = data.get('account_type') as AccountType | null;
-		const canAutoPull = data.get('can_auto_pull');
 
 		if (!accountUuid) return fail(400, { error: 'Account UUID is required' });
 
 		try {
-			const updates: { account_type?: AccountType; can_auto_pull?: boolean } = {};
+			const updates: { account_type?: AccountType } = {};
 			if (accountType) updates.account_type = accountType;
-			if (canAutoPull !== null) updates.can_auto_pull = canAutoPull === 'on';
 
 			updateAccountMetadata(accountUuid, updates);
 

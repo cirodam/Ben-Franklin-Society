@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
-import { getAccountByUuid, type Account } from './accounts.js';
+import { getAccountByUuid, principalCanAutoPull, type Account } from './accounts.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,16 +38,6 @@ export interface EnrichedGroupedTransfer extends GroupedTransfer {
 }
 
 // ---------------------------------------------------------------------------
-// System/official account detection
-// ---------------------------------------------------------------------------
-
-function isSystemOrOfficialAccount(accountUuid: string): boolean {
-	const account = getAccountByUuid(accountUuid);
-	if (!account) return false;
-	return account.account_type === 'system' || account.account_type === 'official';
-}
-
-// ---------------------------------------------------------------------------
 // Authorization logic
 // ---------------------------------------------------------------------------
 
@@ -56,9 +46,9 @@ function isSystemOrOfficialAccount(accountUuid: string): boolean {
  * 
  * Rules:
  * 1. Motion-created → 'active' (governance authorized)
- * 2. Percentage mode (from_uuid is null) → 'active' (system/official account pulls)
+ * 2. Percentage mode (from_uuid is null) → 'active' (authorized principals can pull)
  * 3. Self-push (requester owns from_account) → 'active' (self-authorized)
- * 4. System/official account pull → 'active' (system-authorized)
+ * 4. Authorized principal pull → 'active' (principal has can_auto_pull permission)
  * 5. Regular pull → 'pending_authorization' (needs payer approval)
  */
 function determineInitialStatus(opts: {
@@ -73,9 +63,14 @@ function determineInitialStatus(opts: {
 		return { status: 'active', authorized_by: 'governance' };
 	}
 
-	// Percentage mode (system/official accounts pulling from many)
+	// Percentage mode (authorized principals pulling from many)
 	if (opts.transfer_mode === 'percentage') {
-		return { status: 'active', authorized_by: 'system' };
+		const toAccount = getAccountByUuid(opts.to_uuid);
+		if (toAccount && principalCanAutoPull(toAccount.principal_uuid)) {
+			return { status: 'active', authorized_by: 'system' };
+		}
+		// Percentage mode without auto-pull permission needs authorization
+		return { status: 'pending_authorization', authorized_by: null };
 	}
 
 	// Flat mode with specific from account
@@ -86,9 +81,9 @@ function determineInitialStatus(opts: {
 			return { status: 'active', authorized_by: opts.requested_by_principal_uuid };
 		}
 
-		// System/official account pull
+		// Authorized principal pull (has can_auto_pull permission)
 		const toAccount = getAccountByUuid(opts.to_uuid);
-		if (toAccount && toAccount.principal_uuid === opts.requested_by_principal_uuid && isSystemOrOfficialAccount(opts.to_uuid)) {
+		if (toAccount && toAccount.principal_uuid === opts.requested_by_principal_uuid && principalCanAutoPull(toAccount.principal_uuid)) {
 			return { status: 'active', authorized_by: 'system' };
 		}
 	}

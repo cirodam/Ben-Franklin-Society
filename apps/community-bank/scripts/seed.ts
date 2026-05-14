@@ -33,8 +33,7 @@ function ensureAccount(
 	principal_uuid: string,
 	name: string,
 	handle_cache: string,
-	account_type: 'standard' | 'official' | 'system' = 'standard',
-	can_auto_pull: boolean = false
+	account_type: 'standard' | 'official' | 'system' = 'standard'
 ): void {
 	const existing = bankDb
 		.prepare('SELECT 1 FROM account WHERE principal_uuid = ? AND name = ?')
@@ -45,8 +44,8 @@ function ensureAccount(
 	}
 	bankDb
 		.prepare(
-			`INSERT INTO account (uuid, principal_uuid, name, handle_cache, balance, status, account_type, can_auto_pull, created_at)
-       VALUES (?, ?, ?, ?, 0, 'active', ?, ?, ?)`
+			`INSERT INTO account (uuid, principal_uuid, name, handle_cache, balance, status, account_type, created_at)
+       VALUES (?, ?, ?, ?, 0, 'active', ?, ?)`
 		)
 		.run(
 			randomUUID(),
@@ -54,10 +53,26 @@ function ensureAccount(
 			name,
 			handle_cache,
 			account_type,
-			can_auto_pull ? 1 : 0,
 			now()
 		);
 	console.log(`  +     [${handle_cache}] ${name} (${account_type})`);
+}
+
+function ensureAccountOwnerPermissions(principal_uuid: string, can_auto_pull: boolean): void {
+	const existing = bankDb
+		.prepare('SELECT 1 FROM account_owner_permissions WHERE principal_uuid = ?')
+		.get(principal_uuid);
+	if (existing) {
+		console.log(`  skip  permissions for ${principal_uuid.slice(0, 8)}… — already exist`);
+		return;
+	}
+	bankDb
+		.prepare(
+			`INSERT INTO account_owner_permissions (principal_uuid, can_auto_pull, created_at)
+       VALUES (?, ?, ?)`
+		)
+		.run(principal_uuid, can_auto_pull ? 1 : 0, now());
+	console.log(`  +     permissions for ${principal_uuid.slice(0, 8)}… (can_auto_pull=${can_auto_pull})`);
 }
 
 console.log('Seeding Community Bank special accounts…');
@@ -76,15 +91,17 @@ if (!centralBankUuid || !treasuryUuid || !sifUuid || !clearinghouseUuid) {
 }
 
 // Central Bank — its balance will be ≤ 0; absolute value = total Frank supply.
-ensureAccount(centralBankUuid, 'Central Bank', 'central-bank', 'system', false);
+ensureAccount(centralBankUuid, 'Central Bank', 'central-bank', 'system');
+ensureAccountOwnerPermissions(centralBankUuid, true);
 
 // Treasury — receives issuance and demurrage; source of Assembly appropriations.
-ensureAccount(treasuryUuid, 'Treasury', 'treasury', 'official', false);
+ensureAccount(treasuryUuid, 'Treasury', 'treasury', 'official');
+ensureAccountOwnerPermissions(treasuryUuid, true);
 
 // Social Insurance Fund — disburses monthly allowances.
-ensureAccount(sifUuid, 'Social Insurance Fund', 'social-insurance', 'official', false);
+ensureAccount(sifUuid, 'Social Insurance Fund', 'social-insurance', 'official');
 
 // Clearinghouse — the society's inter-society net position account.
-ensureAccount(clearinghouseUuid, 'Clearinghouse', 'society', 'official', false);
+ensureAccount(clearinghouseUuid, 'Clearinghouse', 'society', 'official');
 
 console.log('Done.');

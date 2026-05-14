@@ -124,14 +124,7 @@
 						<option value="official">Official (Treasury, SIF, etc.)</option>
 						<option value="system">System (Central Bank only)</option>
 					</select>
-				</div>
-
-				<div class="form-field">
-					<label class="checkbox-label">
-						<input type="checkbox" name="can_auto_pull" />
-						<span>Can Auto-Pull (allow auto-debit from this account)</span>
-					</label>
-					<p class="hint">Enable for system accounts that need to pull funds automatically</p>
+					<p class="hint">Auto-pull permissions are managed separately via account owner permissions</p>
 				</div>
 
 				<div class="form-actions">

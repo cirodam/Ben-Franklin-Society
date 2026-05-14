@@ -1,4 +1,4 @@
-# BFS (Ben Franklin Society)
+# Ben Franklin Society
 
 Software for deliberative democratic governance and community services.
 

@@ -4,7 +4,13 @@
 
 import { openDatabase } from '@bfs/db';
 import { schema } from '../src/lib/server/schema.js';
-import { createAccount, searchAccounts, updateAccountMetadata } from '../src/lib/server/accounts.js';
+import { 
+	createAccount, 
+	searchAccounts, 
+	updateAccountMetadata,
+	setAccountOwnerPermissions,
+	principalCanAutoPull
+} from '../src/lib/server/accounts.js';
 
 const db = openDatabase('./bank.sqlite');
 
@@ -20,21 +26,30 @@ const account = createAccount({
 	name: 'Test Account',
 	handle_cache: 'test',
 	account_type: 'standard',
-	can_auto_pull: false,
 });
 
 console.log('✅ Created account:', {
 	uuid: account.uuid,
 	name: account.name,
 	account_type: account.account_type,
-	can_auto_pull: account.can_auto_pull,
 });
 console.log('');
+
+// Set account owner permissions
+setAccountOwnerPermissions({
+	principal_uuid: 'test-uuid-123',
+	can_auto_pull: true,
+});
+
+console.log('✅ Set account owner permissions (can_auto_pull=true)\n');
+
+// Check permissions
+const canAutoPull = principalCanAutoPull('test-uuid-123');
+console.log('✅ Principal can auto-pull:', canAutoPull, '\n');
 
 // Update account metadata
 updateAccountMetadata(account.uuid, {
 	account_type: 'official',
-	can_auto_pull: true,
 });
 
 console.log('✅ Updated account metadata\n');
@@ -48,9 +63,7 @@ const updated = results[0];
 if (updated) {
 	console.log('Account after update:', {
 		account_type: updated.account_type,
-		can_auto_pull: updated.can_auto_pull,
 	});
 }
 
 console.log('\n✅ All tests passed!');
-db.close();

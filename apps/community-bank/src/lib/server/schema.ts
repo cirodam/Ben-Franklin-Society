@@ -20,9 +20,14 @@ CREATE TABLE IF NOT EXISTS account (
   balance        INTEGER NOT NULL DEFAULT 0,
   status         TEXT NOT NULL DEFAULT 'active',
   account_type   TEXT NOT NULL DEFAULT 'standard',
-  can_auto_pull  INTEGER NOT NULL DEFAULT 0,
   created_at     TEXT NOT NULL,
   UNIQUE (principal_uuid, name)
+);
+
+CREATE TABLE IF NOT EXISTS account_owner_permissions (
+  principal_uuid TEXT PRIMARY KEY,
+  can_auto_pull  INTEGER NOT NULL DEFAULT 0,
+  created_at     TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS scheduled_transfer (
