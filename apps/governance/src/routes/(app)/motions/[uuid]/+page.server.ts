@@ -12,6 +12,7 @@ import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
 import { addEntry } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { db } from '$lib/server/db.js';
+import { createProceduralVote, type ProceduralVoteType } from '$lib/server/procedural-votes.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const motion = getMotionByUuid(params.uuid);
@@ -326,6 +327,46 @@ export const actions: Actions = {
 
 		db.prepare('UPDATE motion_comment SET deleted_at = ? WHERE uuid = ?')
 			.run(new Date().toISOString(), commentUuid);
+
+		return { success: true };
+	},
+
+	callProceduralVote: async ({ params, locals, request }) => {
+		if (!locals.session) return fail(401, { error: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		// Must be able to advance motions to call procedural votes
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+			return fail(403, { error: 'Insufficient permissions' });
+		}
+
+		const data = await request.formData();
+		const motion_uuid = String(data.get('motion_uuid') ?? '').trim();
+		const vote_type = String(data.get('vote_type') ?? '').trim();
+
+		if (!motion_uuid || !vote_type) return fail(400, { error: 'Missing fields' });
+
+		createProceduralVote({
+			motion_uuid,
+			called_by_uuid: actingAs,
+			vote_type: vote_type as ProceduralVoteType,
+			duration_hours: 48
+		});
+
+		addEntry(
+			motion.body_uuid,
+			actingAs,
+			'procedural_vote_called',
+			'motion',
+			motion.uuid,
+			`Procedural vote called: ${vote_type} on "${motion.title}"`
+		);
+
+		audit(actingAs, 'procedural_vote.call', 'motion', motion.uuid,
+			`Called procedural vote: ${vote_type}`);
 
 		return { success: true };
 	},

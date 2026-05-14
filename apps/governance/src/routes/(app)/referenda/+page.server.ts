@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const actingAs = locals.session?.acting_as_uuid ?? null;
 
 	// Get all motions for this body
-	const allMotions = listMotions({ body_uuid: association.uuid });
+	const allMotions = listMotions({ bodyUuid: association.uuid });
 
 	// Group motions by status for deliberation-centric display
 	const openVotes = allMotions
@@ -44,8 +44,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const recentDecisions = allMotions
 		.filter((m) => m.status === 'enacted' || m.status === 'rejected')
 		.sort((a, b) => {
-			const aDate = a.enacted_at || a.rejected_at || a.created_at;
-			const bDate = b.enacted_at || b.rejected_at || b.created_at;
+			const aDate = a.resolved_at || a.enacted_at || a.created_at;
+			const bDate = b.resolved_at || b.enacted_at || b.created_at;
 			return bDate.localeCompare(aDate);
 		})
 		.slice(0, 10)
@@ -93,6 +93,9 @@ export const actions: Actions = {
 
 		if (!title) return fail(400, { message: 'Title is required' });
 		if (!body) return fail(400, { message: 'Motion text is required' });
+
+		const society = getAssociationByHandle('society');
+		if (!society) return fail(500, { message: 'Society association not found' });
 
 		const motion = createMotion({
 			title,

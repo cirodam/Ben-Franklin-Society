@@ -5,13 +5,6 @@ CREATE TABLE IF NOT EXISTS config (
   value TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS scheduled_transfer_group (
-  uuid             TEXT PRIMARY KEY,
-  name             TEXT NOT NULL,
-  association_uuid TEXT NOT NULL,
-  created_at       TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS account (
   uuid           TEXT PRIMARY KEY,
   principal_uuid TEXT NOT NULL,
@@ -42,7 +35,6 @@ CREATE TABLE IF NOT EXISTS scheduled_transfer (
   threshold                   INTEGER NULL,
   type                        TEXT NOT NULL,
   schedule                    TEXT NOT NULL,
-  group_uuid                  TEXT NULL REFERENCES scheduled_transfer_group(uuid),
   status                      TEXT NOT NULL DEFAULT 'active',
   requested_by_principal_uuid TEXT NOT NULL,
   authorized_by_principal_uuid TEXT NULL,
@@ -73,44 +65,6 @@ CREATE TABLE IF NOT EXISTS admin_action_log (
   actor_uuid  TEXT NOT NULL,
   memo        TEXT NOT NULL,
   created_at  TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS collection_policy (
-  uuid                   TEXT PRIMARY KEY,
-  name                   TEXT NOT NULL,
-  collector_uuid         TEXT NOT NULL,
-  target_filter          TEXT NOT NULL,
-  rate_percentage        REAL NOT NULL,
-  schedule               TEXT NOT NULL,
-  day_of_month           INTEGER NULL,
-  status                 TEXT NOT NULL DEFAULT 'active',
-  created_by_motion_uuid TEXT NULL,
-  created_at             TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS collection_batch (
-  uuid               TEXT PRIMARY KEY,
-  policy_uuid        TEXT NOT NULL REFERENCES collection_policy(uuid),
-  period_key         TEXT NOT NULL,
-  status             TEXT NOT NULL DEFAULT 'pending',
-  total_transactions INTEGER NOT NULL,
-  total_amount       INTEGER NOT NULL,
-  approved_by_uuid   TEXT NULL,
-  approved_at        TEXT NULL,
-  executed_at        TEXT NULL,
-  created_at         TEXT NOT NULL,
-  UNIQUE (policy_uuid, period_key)
-);
-
-CREATE TABLE IF NOT EXISTS collection_batch_item (
-  uuid             TEXT PRIMARY KEY,
-  batch_uuid       TEXT NOT NULL REFERENCES collection_batch(uuid),
-  from_account_uuid TEXT NOT NULL REFERENCES account(uuid),
-  amount           INTEGER NOT NULL,
-  balance_snapshot INTEGER NOT NULL,
-  status           TEXT NOT NULL DEFAULT 'pending',
-  transaction_uuid TEXT NULL,
-  error            TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS outbox (

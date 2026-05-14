@@ -21,7 +21,6 @@ export interface GroupedTransfer {
 	threshold: number | null; // for all_above_threshold filter
 	type: string;
 	schedule: string;
-	group_uuid: string | null;
 	status: 'active' | 'pending_authorization' | 'paused' | 'cancelled' | 'rejected';
 	requested_by_principal_uuid: string;
 	authorized_by_principal_uuid: string | null;
@@ -111,7 +110,6 @@ export function createGroupedTransfer(opts: {
 	rate_percentage?: number | null;
 	threshold?: number | null;
 	// Optional
-	group_uuid?: string | null;
 	created_by_motion_uuid?: string | null;
 }): GroupedTransfer {
 	// Validate mode-specific requirements
@@ -158,10 +156,10 @@ export function createGroupedTransfer(opts: {
 	db.prepare(
 		`INSERT INTO scheduled_transfer (
 			uuid, name, from_uuid, to_uuid, amount, transfer_mode, target_filter, 
-			rate_percentage, threshold, type, schedule, group_uuid, status, 
+			rate_percentage, threshold, type, schedule, status, 
 			requested_by_principal_uuid, authorized_by_principal_uuid, 
 			created_by_motion_uuid, created_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	).run(
 		uuid,
 		opts.name,
@@ -174,7 +172,6 @@ export function createGroupedTransfer(opts: {
 		opts.threshold ?? null,
 		opts.type,
 		opts.schedule,
-		opts.group_uuid ?? null,
 		status,
 		opts.requested_by_principal_uuid,
 		authorized_by,

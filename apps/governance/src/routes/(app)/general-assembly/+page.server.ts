@@ -6,7 +6,7 @@ import {
 	getRolesByAssociation,
 	getSectionsByAssociation,
 	getSortitionConfig,
-	assignRoleToMember,
+	assignRole,
 	removeRole,
 	getPermissionsForRole,
 } from '$lib/server/associations.js';
@@ -16,7 +16,16 @@ import { addEntry, getBodyRecord } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/motions.js';
 import { listDeliberationRules } from '$lib/server/deliberation_rules.js';
+import { getDocumentBySlug } from '$lib/server/documents.js';
 import { db } from '$lib/server/db.js';
+import { 
+	listActiveProceduralVotes, 
+	createProceduralVote, 
+	castProceduralBallot,
+	getProceduralVoteTally,
+	hasVoted,
+	type BallotPosition 
+} from '$lib/server/procedural-votes.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const association = getAssociationByHandle('general-assembly');
@@ -92,7 +101,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const draws = listSortitions(association.uuid);
 
 	// Get all motions for this body, grouped by status for deliberation-centric display
-	const allMotions = listMotions({ body_uuid: association.uuid });
+	const allMotions = listMotions({ bodyUuid: association.uuid });
 
 	const openVotes = allMotions
 		.filter((m) => m.status === 'vote')
@@ -119,8 +128,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const recentDecisions = allMotions
 		.filter((m) => m.status === 'enacted' || m.status === 'rejected')
 		.sort((a, b) => {
-			const aDate = a.enacted_at || a.rejected_at || a.created_at;
-			const bDate = b.enacted_at || b.rejected_at || b.created_at;
+			const aDate = a.resolved_at || a.enacted_at || a.created_at;
+			const bDate = b.resolved_at || b.enacted_at || b.created_at;
 			return bDate.localeCompare(aDate);
 		})
 		.slice(0, 10);
@@ -143,6 +152,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 	});
 
 	const deliberationRules = listDeliberationRules(association.uuid);
+	const assemblyRules = getDocumentBySlug('assembly-rules');
+
+	// Load active procedural votes with enriched data
+	const activeProceduralVotes = listActiveProceduralVotes()
+		.filter(pv => {
+			const motion = allMotions.find(m => m.uuid === pv.motion_uuid);
+			return motion && motion.body_uuid === association.uuid;
+		})
+		.map(pv => {
+			const motion = allMotions.find(m => m.uuid === pv.motion_uuid)!;
+			const tally = getProceduralVoteTally(pv.uuid, termHolders.length);
+			const userHasVoted = actingAs ? hasVoted(pv.uuid, actingAs) : false;
+			return { ...pv, motion, tally, userHasVoted };
+		});
 
 	return {
 		association,
@@ -162,7 +185,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		enactedMotions,
 		canVacate,
 		record,
-		deliberationRules
+		deliberationRules,
+		assemblyRules,
+		activeProceduralVotes
 	};
 };
 
@@ -242,7 +267,7 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		assignRoleToMember(person_uuid, role_uuid, association.uuid);
+		assignRole(person_uuid, role_uuid, association.uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')
@@ -304,4 +329,72 @@ export const actions: Actions = {
 			`@${person?.handle ?? person_uuid} removed from role "${role?.name ?? role_uuid}"`, motion_uuid);
 		return { success: true };
 	},
+
+	callProceduralVote: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		// Must be a seated member to call procedural votes
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)) {
+			return fail(403, { message: 'Only seated members can call procedural votes' });
+		}
+
+		const data = await request.formData();
+		const motion_uuid = String(data.get('motion_uuid') ?? '').trim();
+		const vote_type = String(data.get('vote_type') ?? '').trim();
+
+		if (!motion_uuid || !vote_type) return fail(400, { message: 'Missing fields' });
+
+		const motion = getMotionByUuid(motion_uuid);
+		if (!motion) return fail(404, { message: 'Motion not found' });
+		if (motion.body_uuid !== association.uuid) return fail(403, { message: 'Motion not in this body' });
+
+		createProceduralVote({
+			motion_uuid,
+			called_by_uuid: actingAs,
+			vote_type: vote_type as any,
+			duration_hours: 48
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'procedural_vote_called',
+			'motion',
+			motion_uuid,
+			`Procedural vote called: ${vote_type}`
+		);
+
+		return { success: true };
+	},
+
+	castProceduralBallot: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		// Must be a seated member to vote on procedural questions
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)) {
+			return fail(403, { message: 'Only seated members can vote' });
+		}
+
+		const data = await request.formData();
+		const procedural_vote_uuid = String(data.get('procedural_vote_uuid') ?? '').trim();
+		const position = String(data.get('position') ?? '').trim();
+
+		if (!procedural_vote_uuid || !position) return fail(400, { message: 'Missing fields' });
+
+		castProceduralBallot({
+			procedural_vote_uuid,
+			voter_uuid: actingAs,
+			position: position as BallotPosition
+		});
+
+		return { success: true };
+	}
 };

@@ -27,7 +27,9 @@
 		enactedMotions,
 		canVacate,
 		record,
-		deliberationRules
+		deliberationRules,
+		assemblyRules,
+		activeProceduralVotes
 	} = $derived(data);
 
 	let showModal = $state(false);
@@ -55,6 +57,10 @@
 			<span>{termHolders.length} currently seated</span>
 			<span>·</span>
 			<span>{config?.term_days ?? '—'} day terms</span>
+			{#if assemblyRules}
+				<span>·</span>
+				<a href="/documents/assembly-rules" class="rules-link">📜 Rules of the Assembly</a>
+			{/if}
 		</div>
 	</header>
 
@@ -65,6 +71,59 @@
 			<div class="cards">
 				{#each openVotes as motion}
 					<MotionCard {motion} comments={motion.comments} tally={motion.tally} variant="vote" />
+				{/each}
+			</div>
+		</section>
+	{/if}
+
+	{#if activeProceduralVotes.length > 0}
+		<section class="section">
+			<h2 class="section__title">⚡ Active Procedural Votes</h2>
+			<p class="section__desc">Quick yes/no votes on process questions</p>
+			<div class="procedural-votes">
+				{#each activeProceduralVotes as pv}
+					<div class="procedural-vote-card">
+						<div class="procedural-vote-card__header">
+							<h3 class="procedural-vote-card__title">
+								{#if pv.vote_type === 'open_deliberation'}
+									🎙️ Open Deliberation
+								{:else if pv.vote_type === 'close_deliberation'}
+									🔚 Close Deliberation
+								{:else if pv.vote_type === 'priority'}
+									⏫ Prioritize Motion
+								{/if}
+							</h3>
+							<span class="badge badge-active">Active</span>
+						</div>
+						<p class="procedural-vote-card__motion">
+							<a href="/motions/{pv.motion.uuid}">{pv.motion.title}</a>
+						</p>
+						<div class="procedural-vote-card__tally">
+							<div class="tally-bar">
+								<div class="tally-bar__yea" style="width: {pv.tally.eligible_count > 0 ? (pv.tally.yea_count / pv.tally.eligible_count * 100) : 0}%"></div>
+								<div class="tally-bar__nay" style="width: {pv.tally.eligible_count > 0 ? (pv.tally.nay_count / pv.tally.eligible_count * 100) : 0}%"></div>
+							</div>
+							<div class="tally-counts">
+								<span>👍 {pv.tally.yea_count}</span>
+								<span>👎 {pv.tally.nay_count}</span>
+								<span>🤐 {pv.tally.abstain_count}</span>
+								<span>· {pv.tally.yea_count + pv.tally.nay_count + pv.tally.abstain_count}/{pv.tally.eligible_count}</span>
+							</div>
+						</div>
+						{#if !pv.userHasVoted}
+							<form method="POST" action="?/castProceduralBallot" class="procedural-vote-card__actions">
+								<input type="hidden" name="procedural_vote_uuid" value={pv.uuid} />
+								<button type="submit" name="position" value="yea" class="btn btn--small btn--yea">Yea</button>
+								<button type="submit" name="position" value="nay" class="btn btn--small btn--nay">Nay</button>
+								<button type="submit" name="position" value="abstain" class="btn btn--small btn--abstain">Abstain</button>
+							</form>
+						{:else}
+							<p class="procedural-vote-card__voted">✓ You have voted</p>
+						{/if}
+						<p class="procedural-vote-card__closes">
+							Closes: {new Date(pv.closes_at).toLocaleString()}
+						</p>
+					</div>
 				{/each}
 			</div>
 		</section>
@@ -294,6 +353,16 @@
 		color: var(--color-text-muted);
 		display: flex;
 		gap: var(--space-2);
+	}
+
+	.rules-link {
+		color: var(--color-accent);
+		text-decoration: none;
+		font-weight: var(--weight-medium);
+	}
+
+	.rules-link:hover {
+		text-decoration: underline;
 	}
 
 	.section {
@@ -553,5 +622,133 @@
 		.roster td {
 			padding: var(--space-1) var(--space-2);
 		}
+	}
+
+	/* Procedural votes */
+	.procedural-votes {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+		gap: var(--space-4);
+	}
+
+	.procedural-vote-card {
+		background: var(--color-surface);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.procedural-vote-card__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.procedural-vote-card__title {
+		font-size: var(--text-base);
+		font-weight: var(--weight-semibold);
+		margin: 0;
+	}
+
+	.procedural-vote-card__motion {
+		font-size: var(--text-sm);
+		margin: 0;
+		color: var(--color-text-muted);
+	}
+
+	.procedural-vote-card__motion a {
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+
+	.procedural-vote-card__motion a:hover {
+		text-decoration: underline;
+	}
+
+	.procedural-vote-card__tally {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.tally-bar {
+		height: 24px;
+		background: var(--color-border);
+		border-radius: var(--radius);
+		display: flex;
+		overflow: hidden;
+	}
+
+	.tally-bar__yea {
+		background: var(--color-success);
+		transition: width 0.3s;
+	}
+
+	.tally-bar__nay {
+		background: var(--color-danger);
+		transition: width 0.3s;
+	}
+
+	.tally-counts {
+		display: flex;
+		gap: var(--space-3);
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.procedural-vote-card__actions {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.btn--small {
+		padding: var(--space-2) var(--space-3);
+		font-size: var(--text-sm);
+		flex: 1;
+	}
+
+	.btn--yea {
+		background: var(--color-success);
+		color: white;
+	}
+
+	.btn--yea:hover {
+		opacity: 0.9;
+	}
+
+	.btn--nay {
+		background: var(--color-danger);
+		color: white;
+	}
+
+	.btn--nay:hover {
+		opacity: 0.9;
+	}
+
+	.btn--abstain {
+		background: var(--color-muted);
+		color: var(--color-text);
+	}
+
+	.btn--abstain:hover {
+		opacity: 0.9;
+	}
+
+	.procedural-vote-card__voted {
+		font-size: var(--text-sm);
+		color: var(--color-success);
+		font-weight: var(--weight-medium);
+		margin: 0;
+		text-align: center;
+	}
+
+	.procedural-vote-card__closes {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		margin: 0;
 	}
 </style>

@@ -3,6 +3,9 @@ import { listMotions } from '$lib/server/motions.js';
 import { getAssociationByUuid } from '$lib/server/associations.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.person) {
+		return { motions: [] };
+	}
 	const personUuid = locals.person.uuid;
 	
 	// Get all motions introduced by this person

@@ -207,9 +207,14 @@
 					</form>
 				{/if}
 				{#if motion.status === 'introduced' && canAdvance}
+					<form method="POST" action="?/callProceduralVote" class="procedural-form">
+						<input type="hidden" name="motion_uuid" value={motion.uuid} />
+						<input type="hidden" name="vote_type" value="open_deliberation" />
+						<button class="btn btn--secondary">Call for Deliberation (Vote)</button>
+					</form>
 					<form method="POST" action="?/advance">
 						<input type="hidden" name="to" value="deliberation" />
-						<button class="btn btn--primary">Begin Deliberation</button>
+						<button class="btn btn--primary">Begin Deliberation (Direct)</button>
 					</form>
 				{/if}
 				{#if motion.status === 'deliberation' && canOpenVote}
