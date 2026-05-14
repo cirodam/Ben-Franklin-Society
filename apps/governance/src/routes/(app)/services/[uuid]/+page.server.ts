@@ -15,6 +15,7 @@ import { addEntry } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid } from '$lib/server/motions.js';
 import { db } from '$lib/server/db.js';
+import { getDocumentBySlug } from '$lib/server/documents.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const association = getAssociationByUuid(params.uuid);
@@ -117,6 +118,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const enactedMotions = canAssign ? listEnactedMotions() : [];
 
+	// Load governing document if slug is set
+	const governingDocument = association.governing_document_slug
+		? getDocumentBySlug(association.governing_document_slug)
+		: null;
+
 	return { 
 		association, 
 		members: memberDetails, 
@@ -125,7 +131,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		sections,
 		motions,
 		canAssign,
-		enactedMotions
+		enactedMotions,
+		governingDocument
 	};
 };
 

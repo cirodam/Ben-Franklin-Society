@@ -6,6 +6,7 @@ import {
 	getRolesByAssociation,
 } from '$lib/server/associations.js';
 import { db } from '$lib/server/db.js';
+import { getDocumentBySlug } from '$lib/server/documents.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const association = getAssociationByUuid(params.uuid);
@@ -26,5 +27,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		.prepare('SELECT uuid, title, status, created_at FROM motion WHERE body_uuid = ? ORDER BY created_at DESC LIMIT 10')
 		.all(association.uuid) as { uuid: string; title: string; status: string; created_at: string }[];
 
-	return { association, members: memberDetails, roles, motions };
+	// Load governing document if slug is set
+	const governingDocument = association.governing_document_slug
+		? getDocumentBySlug(association.governing_document_slug)
+		: null;
+
+	return { association, members: memberDetails, roles, motions, governingDocument };
 };

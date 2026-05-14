@@ -7,8 +7,10 @@ export interface Association {
 	uuid: string;
 	handle: string;
 	name: string;
+	abbreviation: string | null;
      type: 'society' | 'association' | 'service' | 'college' | 'committee' | 'general_assembly' | 'central_bank' | 'social_insurance_fund' | 'community_bank';
 	status: 'active' | 'dissolved';
+	governing_document_slug: string | null;
 	established_by_motion_uuid: string | null;
 	created_at: string;
 	dissolved_at: string | null;
@@ -92,8 +94,10 @@ export function listAssociations(opts: {
 export function createAssociation(input: {
 	handle: string;
 	name: string;
+	abbreviation?: string;
 	type: Association['type'];
 	established_by_motion_uuid?: string;
+	governing_document_slug?: string;
 }): Association {
 	const handleTaken =
 		db.prepare('SELECT 1 FROM person WHERE handle = ?').get(input.handle) ??
@@ -104,9 +108,9 @@ export function createAssociation(input: {
 	const createdAt = now();
 
 	db.prepare(
-		`INSERT INTO association (uuid, handle, name, type, status, established_by_motion_uuid, created_at)
-		 VALUES (?, ?, ?, ?, 'active', ?, ?)`
-	).run(uuid, input.handle, input.name, input.type, input.established_by_motion_uuid ?? null, createdAt);
+		`INSERT INTO association (uuid, handle, name, abbreviation, type, status, governing_document_slug, established_by_motion_uuid, created_at)
+		 VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`
+	).run(uuid, input.handle, input.name, input.abbreviation ?? null, input.type, input.governing_document_slug ?? null, input.established_by_motion_uuid ?? null, createdAt);
 
 	return getAssociationByUuid(uuid)!;
 }
@@ -115,6 +119,37 @@ export function dissolveAssociation(uuid: string): void {
 	db.prepare(
 		"UPDATE association SET status = 'dissolved', dissolved_at = ? WHERE uuid = ?"
 	).run(now(), uuid);
+}
+
+export function updateAssociation(uuid: string, input: {
+	name?: string;
+	governing_document_slug?: string | null;
+	status?: 'active' | 'inactive' | 'dissolved';
+}): void {
+	const updates: string[] = [];
+	const params: any[] = [];
+
+	if (input.name !== undefined) {
+		updates.push('name = ?');
+		params.push(input.name);
+	}
+	if (input.governing_document_slug !== undefined) {
+		updates.push('governing_document_slug = ?');
+		params.push(input.governing_document_slug);
+	}
+	if (input.status !== undefined) {
+		updates.push('status = ?');
+		params.push(input.status);
+		if (input.status === 'dissolved') {
+			updates.push('dissolved_at = ?');
+			params.push(now());
+		}
+	}
+
+	if (updates.length === 0) return;
+
+	params.push(uuid);
+	db.prepare(`UPDATE association SET ${updates.join(', ')} WHERE uuid = ?`).run(...params);
 }
 
 // --- Membership ---

@@ -8,10 +8,18 @@
 	const { association, members, openVotes, activeDeliberations, pending, recentDecisions, canCreateMotion, deliberationRules } = $derived(data);
 
 	let showModal = $state(false);
+	let activeTab = $state<'deliberations' | 'votes' | 'pending' | 'decisions'>('deliberations');
 
 	$effect(() => {
 		if (form?.created) {
 			goto(`/motions/${form.created}`);
+		}
+	});
+
+	// Auto-switch to votes tab if there are open votes but no deliberations
+	$effect(() => {
+		if (activeDeliberations.length === 0 && openVotes.length > 0 && activeTab === 'deliberations') {
+			activeTab = 'votes';
 		}
 	});
 
@@ -84,76 +92,108 @@
 		</div>
 	</header>
 
-	{#if openVotes.length > 0}
-		<section class="section">
-			<h2 class="section__title">🗳️ Open Votes</h2>
-			<p class="section__desc">Action required — cast your vote now</p>
-			<div class="cards">
-				{#each openVotes as motion}
-					<a href="/motions/{motion.uuid}" class="card card--vote">
-						<div class="card__header">
-							<h3 class="card__title">{motion.title}</h3>
-							<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
-						</div>
-						{#if motion.tally}
-							<div class="vote-progress">
-								<div class="vote-progress__bar">
-									<div class="vote-progress__fill" style="width: {getVotePercentage(motion.tally)}%"></div>
+	<!-- Tab Navigation -->
+	<div class="tab-nav">
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'deliberations'}
+			onclick={() => activeTab = 'deliberations'}>
+			📊 Deliberations {#if activeDeliberations.length > 0}<span class="badge">{activeDeliberations.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'votes'}
+			onclick={() => activeTab = 'votes'}>
+			🗳️ Votes {#if openVotes.length > 0}<span class="badge badge--urgent">{openVotes.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'pending'}
+			onclick={() => activeTab = 'pending'}>
+			📋 Pending {#if pending.length > 0}<span class="badge">{pending.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'decisions'}
+			onclick={() => activeTab = 'decisions'}>
+			✅ Decisions
+		</button>
+	</div>
+
+	<!-- Tab Content -->
+	<div class="tab-content">
+		{#if activeTab === 'deliberations'}
+			{#if activeDeliberations.length > 0}
+				<section class="section">
+					<h2 class="section__title">📊 Active Deliberations</h2>
+					<p class="section__desc">Ongoing discussion and debate</p>
+					<div class="cards">
+						{#each activeDeliberations as motion}
+							<a href="/motions/{motion.uuid}" class="card card--deliberation">
+								<div class="card__header">
+									<h3 class="card__title">{motion.title}</h3>
+									<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
 								</div>
-								<div class="vote-stats">
-									<span>{motion.tally.voted} of {motion.tally.eligible} voted ({getVotePercentage(motion.tally)}%)</span>
-									<span class="vote-stats__breakdown">
-										{motion.tally.aye} aye · {motion.tally.nay} nay · {motion.tally.abstain} abstain
-									</span>
+								<div class="card__meta">
+									<span>Introduced {formatDate(motion.created_at)}</span>
+									<span>{motion.comments.length} comments</span>
 								</div>
-							</div>
-						{/if}
-						<div class="card__meta">
-							<span>Opened {formatDate(motion.vote_opened_at || motion.created_at)}</span>
-							<span>{motion.comments.length} comments</span>
-						</div>
-					</a>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	{#if activeDeliberations.length > 0}
-		<section class="section">
-			<h2 class="section__title">📊 Active Deliberations</h2>
-			<p class="section__desc">Ongoing discussion and debate</p>
-			<div class="cards">
-				{#each activeDeliberations as motion}
-					<a href="/motions/{motion.uuid}" class="card card--deliberation">
-						<div class="card__header">
-							<h3 class="card__title">{motion.title}</h3>
-							<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
-						</div>
-						<div class="card__meta">
-							<span>Introduced {formatDate(motion.created_at)}</span>
-							<span>{motion.comments.length} comments</span>
-						</div>
-					</a>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	{#if canCreateMotion}
-		<div class="create-section">
-			<button type="button" class="btn btn--primary" onclick={openCreateModal}>
-				+ Put a Question to the Community
-			</button>
-		</div>
-	{/if}
-
-	<div class="tabs">
-		<details class="tab">
-			<summary class="tab__header">
-				📋 Pending Questions ({pending.length})
-			</summary>
-			<div class="tab__content">
-				{#if pending.length > 0}
+							</a>
+						{/each}
+					</div>
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No questions currently in deliberation</p>
+					{#if canCreateMotion}
+						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+							+ Put a Question to the Community
+						</button>
+					{/if}
+				</div>
+			{/if}
+		{:else if activeTab === 'votes'}
+			{#if openVotes.length > 0}
+				<section class="section">
+					<h2 class="section__title">🗳️ Open Votes</h2>
+					<p class="section__desc">Action required — cast your vote now</p>
+					<div class="cards">
+						{#each openVotes as motion}
+							<a href="/motions/{motion.uuid}" class="card card--vote">
+								<div class="card__header">
+									<h3 class="card__title">{motion.title}</h3>
+									<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
+								</div>
+								{#if motion.tally}
+									<div class="vote-progress">
+										<div class="vote-progress__bar">
+											<div class="vote-progress__fill" style="width: {getVotePercentage(motion.tally)}%"></div>
+										</div>
+										<div class="vote-stats">
+											<span>{motion.tally.voted} of {motion.tally.eligible} voted ({getVotePercentage(motion.tally)}%)</span>
+											<span class="vote-stats__breakdown">
+												{motion.tally.aye} aye · {motion.tally.nay} nay · {motion.tally.abstain} abstain
+											</span>
+										</div>
+									</div>
+								{/if}
+								<div class="card__meta">
+									<span>Opened {formatDate(motion.vote_opened_at || motion.created_at)}</span>
+									<span>{motion.comments.length} comments</span>
+								</div>
+							</a>
+						{/each}
+					</div>
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No open votes at this time</p>
+				</div>
+			{/if}
+		{:else if activeTab === 'pending'}
+			{#if pending.length > 0}
+				<section class="section">
+					<h2 class="section__title">📋 Pending Questions</h2>
 					<div class="list">
 						{#each pending as motion}
 							<a href="/motions/{motion.uuid}" class="list-item">
@@ -165,18 +205,21 @@
 							</a>
 						{/each}
 					</div>
-				{:else}
-					<p class="empty">No pending questions</p>
-				{/if}
-			</div>
-		</details>
-
-		<details class="tab">
-			<summary class="tab__header">
-				✅ Recent Decisions
-			</summary>
-			<div class="tab__content">
-				{#if recentDecisions.length > 0}
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No pending questions</p>
+					{#if canCreateMotion}
+						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+							+ Put a Question to the Community
+						</button>
+					{/if}
+				</div>
+			{/if}
+		{:else if activeTab === 'decisions'}
+			{#if recentDecisions.length > 0}
+				<section class="section">
+					<h2 class="section__title">✅ Recent Decisions</h2>
 					<div class="list">
 						{#each recentDecisions as motion}
 							<a href="/motions/{motion.uuid}" class="list-item">
@@ -190,20 +233,14 @@
 							</a>
 						{/each}
 					</div>
-				{:else}
-					<p class="empty">No recent decisions</p>
-				{/if}
-			</div>
-		</details>
-
-		<details class="tab">
-			<summary class="tab__header">
-				📚 Full Archive
-			</summary>
-			<div class="tab__content">
-				<p><a href="/motions?body={association.uuid}">View all community referenda →</a></p>
-			</div>
-		</details>
+					<p class="archive-link"><a href="/motions?body={association.uuid}">View full archive →</a></p>
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No decisions yet</p>
+				</div>
+			{/if}
+		{/if}
 	</div>
 </div>
 
@@ -395,42 +432,93 @@
 	.badge-rejected { background: #fee2e2; color: #991b1b; }
 	.badge-withdrawn { background: #f3f4f6; color: #6b7280; }
 
-	.create-section {
-		margin: var(--space-6) 0;
-		padding: var(--space-6);
-		background: var(--color-surface);
-		border: 2px dashed var(--color-border);
-		border-radius: var(--radius-lg);
-		text-align: center;
-	}
-
-	.tabs {
-		margin-top: var(--space-8);
+	/* Tab Navigation */
+	.tab-nav {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+		border-bottom: 2px solid var(--color-border);
+		flex-wrap: wrap;
 	}
 
-	.tab {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-	}
-
-	.tab__header {
-		padding: var(--space-4);
+	.tab-nav__button {
+		padding: var(--space-3) var(--space-4);
 		font-size: var(--text-base);
-		font-weight: var(--weight-semibold);
+		font-weight: var(--weight-medium);
+		background: transparent;
+		border: none;
+		border-bottom: 3px solid transparent;
 		cursor: pointer;
-		user-select: none;
+		color: var(--color-text-muted);
+		transition: all 0.2s;
+		position: relative;
+		bottom: -2px;
 	}
 
-	.tab__header:hover {
+	.tab-nav__button:hover {
+		color: var(--color-text);
 		background: var(--color-accent-subtle);
 	}
 
-	.tab__content {
-		padding: 0 var(--space-4) var(--space-4);
+	.tab-nav__button.active {
+		color: var(--color-accent);
+		border-bottom-color: var(--color-accent);
+		font-weight: var(--weight-semibold);
+	}
+
+	.tab-nav__button .badge {
+		margin-left: var(--space-2);
+		background: var(--color-border);
+		color: var(--color-text);
+	}
+
+	.tab-nav__button .badge--urgent {
+		background: var(--color-danger-subtle);
+		color: var(--color-danger);
+	}
+
+	.tab-nav__button.active .badge {
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
+	}
+
+	.tab-nav__button.active .badge--urgent {
+		background: var(--color-danger);
+		color: white;
+	}
+
+	.tab-content {
+		min-height: 400px;
+	}
+
+	.empty-state {
+		padding: var(--space-12) var(--space-6);
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+	}
+
+	.empty-state__message {
+		font-size: var(--text-lg);
+		color: var(--color-text-muted);
+		margin: 0;
+	}
+
+	.archive-link {
+		margin-top: var(--space-4);
+		text-align: center;
+	}
+
+	.archive-link a {
+		color: var(--color-accent);
+		text-decoration: none;
+		font-weight: var(--weight-medium);
+	}
+
+	.archive-link a:hover {
+		text-decoration: underline;
 	}
 
 	.list {
@@ -470,13 +558,6 @@
 	.list-item__meta {
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		font-style: italic;
-		text-align: center;
-		padding: var(--space-4);
 	}
 
 	.btn {
@@ -575,7 +656,8 @@
 	}
 
 	.form-group input,
-	.form-group textarea {
+	.form-group textarea,
+	.form-group select {
 		width: 100%;
 		padding: var(--space-2);
 		border: 1px solid var(--color-border);

@@ -39,8 +39,13 @@
 
 <div class="page">
 	<div class="page-header">
-		<h1>Directory</h1>
-		<p class="page-subtitle">Search for people and associations</p>
+		<div class="page-header-row">
+			<div>
+				<h1>Directory</h1>
+				<p class="page-subtitle">Search for people and associations</p>
+			</div>
+			<a href="/directory/new" class="btn btn--primary">+ Add Person</a>
+		</div>
 	</div>
 
 	<div class="toolbar">
@@ -132,6 +137,13 @@
 		gap: var(--space-6);
 	}
 
+	.page-header-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-4);
+	}
+
 	.page-header h1 {
 		margin: 0;
 		font-size: var(--text-3xl);
@@ -141,6 +153,28 @@
 		margin: var(--space-2) 0 0;
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
+	}
+
+	.btn {
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-md);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		cursor: pointer;
+		border: none;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		white-space: nowrap;
+	}
+
+	.btn--primary {
+		background: var(--color-accent);
+		color: #fff;
+	}
+
+	.btn:hover {
+		filter: brightness(0.92);
 	}
 
 	.toolbar {

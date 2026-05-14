@@ -28,10 +28,13 @@
 		canCreateMotion,
 		enactedMotions,
 		canVacate,
-		record
+		record,
+		deliberationRules,
+		governingDocument
 	} = $derived(data);
 
 	let showModal = $state(false);
+	let activeTab = $state<'deliberations' | 'votes' | 'pending' | 'decisions' | 'members' | 'organization' | 'record'>('deliberations');
 
 	$effect(() => {
 		if (form?.created) {
@@ -43,13 +46,23 @@
 		showModal = true;
 	}
 
+	// Auto-switch to votes tab if there are open votes but no deliberations
+	$effect(() => {
+		if (activeDeliberations.length === 0 && openVotes.length > 0 && activeTab === 'deliberations') {
+			activeTab = 'votes';
+		}
+	});
+
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 </script>
 
 <div class="page">
 	<header class="header">
 		<div class="header__top">
-			<h1>{association.name}</h1>
+			<div class="title-row">
+				<h1>{association.name}</h1>
+				<a href="/committees/{association.uuid}/edit" class="btn btn--secondary">✏️ Edit</a>
+			</div>
 			<div class="header__badges">
 				<Badge label={config?.is_permanent ? 'Permanent' : 'Ad Hoc'} variant="neutral" />
 				<Badge label={association.status} variant={statusVariant(association.status)} />
@@ -64,48 +77,102 @@
 			<span>{config?.term_days ?? '—'} day terms</span>
 			<span>·</span>
 			<span>Pool: {sourceCollege ? sourceCollege.name : 'Community'}</span>
+			{#if governingDocument}
+				<span>·</span>
+				<a href="/documents/{governingDocument.slug}" class="rules-link">📜 {governingDocument.title}</a>
+			{/if}
 		</div>
 	</header>
 
-	{#if openVotes.length > 0}
-		<section class="section">
-			<h2 class="section__title">🗳️ Open Votes</h2>
-			<p class="section__desc">Action required — cast your vote now</p>
-			<div class="cards">
-				{#each openVotes as motion}
-					<MotionCard {motion} comments={motion.comments} tally={motion.tally} variant="vote" />
-				{/each}
-			</div>
-		</section>
-	{/if}
+	<!-- Tab Navigation -->
+	<div class="tab-nav">
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'deliberations'}
+			onclick={() => activeTab = 'deliberations'}>
+			📊 Deliberations {#if activeDeliberations.length > 0}<span class="badge">{activeDeliberations.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'votes'}
+			onclick={() => activeTab = 'votes'}>
+			🗳️ Votes {#if openVotes.length > 0}<span class="badge badge--urgent">{openVotes.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'pending'}
+			onclick={() => activeTab = 'pending'}>
+			📋 Pending {#if pending.length > 0}<span class="badge">{pending.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'decisions'}
+			onclick={() => activeTab = 'decisions'}>
+			✅ Decisions
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'members'}
+			onclick={() => activeTab = 'members'}>
+			👥 Members ({termHolders.length})
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'organization'}
+			onclick={() => activeTab = 'organization'}>
+			🏢 Organization
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'record'}
+			onclick={() => activeTab = 'record'}>
+			📝 Record
+		</button>
+	</div>
 
-	{#if activeDeliberations.length > 0}
-		<section class="section">
-			<h2 class="section__title">📊 Active Deliberations</h2>
-			<p class="section__desc">Ongoing discussion and debate</p>
-			<div class="cards">
-				{#each activeDeliberations as motion}
-					<MotionCard {motion} comments={motion.comments} variant="deliberation" />
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	{#if canCreateMotion}
-		<div class="create-section">
-			<button type="button" class="btn btn--primary" onclick={openCreateModal}>
-				+ New Motion Before This Committee
-			</button>
-		</div>
-	{/if}
-
-	<div class="tabs">
-		<details class="tab">
-			<summary class="tab__header">
-				📋 Pending Motions ({pending.length})
-			</summary>
-			<div class="tab__content">
-				{#if pending.length > 0}
+	<!-- Tab Content -->
+	<div class="tab-content">
+		{#if activeTab === 'deliberations'}
+			{#if activeDeliberations.length > 0}
+				<section class="section">
+					<h2 class="section__title">📊 Active Deliberations</h2>
+					<p class="section__desc">Motions currently under debate</p>
+					<div class="cards">
+						{#each activeDeliberations as motion}
+							<MotionCard {motion} comments={motion.comments} variant="deliberation" />
+						{/each}
+					</div>
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No motions currently in deliberation</p>
+					{#if canCreateMotion}
+						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+							+ New Motion Before This Committee
+						</button>
+					{/if}
+				</div>
+			{/if}
+		{:else if activeTab === 'votes'}
+			{#if openVotes.length > 0}
+				<section class="section">
+					<h2 class="section__title">🗳️ Open Votes</h2>
+					<p class="section__desc">Action required — cast your vote now</p>
+					<div class="cards">
+						{#each openVotes as motion}
+							<MotionCard {motion} comments={motion.comments} tally={motion.tally} variant="vote" />
+						{/each}
+					</div>
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No open votes at this time</p>
+				</div>
+			{/if}
+		{:else if activeTab === 'pending'}
+			{#if pending.length > 0}
+				<section class="section">
+					<h2 class="section__title">📋 Pending Motions</h2>
 					<div class="list">
 						{#each pending as motion}
 							<a href="/motions/{motion.uuid}" class="list-item">
@@ -116,18 +183,21 @@
 							</a>
 						{/each}
 					</div>
-				{:else}
-					<p class="empty">No pending motions</p>
-				{/if}
-			</div>
-		</details>
-
-		<details class="tab">
-			<summary class="tab__header">
-				✅ Recent Decisions
-			</summary>
-			<div class="tab__content">
-				{#if recentDecisions.length > 0}
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No pending motions</p>
+					{#if canCreateMotion}
+						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+							+ New Motion Before This Committee
+						</button>
+					{/if}
+				</div>
+			{/if}
+		{:else if activeTab === 'decisions'}
+			{#if recentDecisions.length > 0}
+				<section class="section">
+					<h2 class="section__title">✅ Recent Decisions</h2>
 					<div class="list">
 						{#each recentDecisions as motion}
 							<a href="/motions/{motion.uuid}" class="list-item">
@@ -138,17 +208,15 @@
 							</a>
 						{/each}
 					</div>
-				{:else}
-					<p class="empty">No recent decisions</p>
-				{/if}
-			</div>
-		</details>
-
-		<details class="tab">
-			<summary class="tab__header">
-				👥 Current Members ({termHolders.length})
-			</summary>
-			<div class="tab__content">
+				</section>
+			{:else}
+				<div class="empty-state">
+					<p class="empty-state__message">No decisions yet</p>
+				</div>
+			{/if}
+		{:else if activeTab === 'members'}
+			<section class="section">
+				<h2 class="section__title">👥 Current Members</h2>
 				{#if termHolders.length === 0}
 					<p class="empty">No seats currently filled. A sortition draw is needed.</p>
 				{:else}
@@ -187,14 +255,8 @@
 						</tbody>
 					</table>
 				{/if}
-			</div>
-		</details>
 
-		<details class="tab">
-			<summary class="tab__header">
-				🎲 Draw History
-			</summary>
-			<div class="tab__content">
+				<h3 class="subsection__title">🎲 Draw History</h3>
 				{#if draws.length === 0}
 					<p class="empty">No draws conducted yet.</p>
 				{:else}
@@ -217,41 +279,23 @@
 						</tbody>
 					</table>
 				{/if}
-			</div>
-		</details>
-
-		<details class="tab">
-			<summary class="tab__header">
-				📂 Sections
-			</summary>
-			<div class="tab__content">
+			</section>
+		{:else if activeTab === 'organization'}
+			<section class="section">
+				<h2 class="section__title">🏢 Organization</h2>
+				
+				<h3 class="subsection__title">📂 Sections</h3>
 				<Sections {sections} />
-			</div>
-		</details>
 
-		<details class="tab">
-			<summary class="tab__header">
-				👔 Roles & Assignments
-			</summary>
-			<div class="tab__content">
+				<h3 class="subsection__title">👔 Roles & Assignments</h3>
 				<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
-			</div>
-		</details>
 
-		<details class="tab">
-			<summary class="tab__header">
-				🏢 Organization Chart
-			</summary>
-			<div class="tab__content">
+				<h3 class="subsection__title">🏢 Organization Chart</h3>
 				<OrgChart {roleHierarchy} />
-			</div>
-		</details>
-
-		<details class="tab">
-			<summary class="tab__header">
-				📝 The Record
-			</summary>
-			<div class="tab__content">
+			</section>
+		{:else if activeTab === 'record'}
+			<section class="section">
+				<h2 class="section__title">📝 The Record</h2>
 				{#if record.length === 0}
 					<p class="empty">No entries yet.</p>
 				{:else}
@@ -268,8 +312,8 @@
 					</div>
 					<p class="record-link"><a href="/record">View full record →</a></p>
 				{/if}
-			</div>
-		</details>
+			</section>
+		{/if}
 	</div>
 </div>
 
@@ -340,15 +384,6 @@
 		gap: var(--space-4);
 	}
 
-	.create-section {
-		margin: var(--space-6) 0;
-		padding: var(--space-6);
-		background: var(--color-surface);
-		border: 2px dashed var(--color-border);
-		border-radius: var(--radius-lg);
-		text-align: center;
-	}
-
 	.btn {
 		padding: var(--space-3) var(--space-5);
 		font-size: var(--text-base);
@@ -368,33 +403,92 @@
 		background: var(--color-accent-hover);
 	}
 
-	.tabs {
-		margin-top: var(--space-8);
+	/* Tab Navigation */
+	.tab-nav {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+		border-bottom: 2px solid var(--color-border);
+		flex-wrap: wrap;
 	}
 
-	.tab {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-	}
-
-	.tab__header {
-		padding: var(--space-4);
+	.tab-nav__button {
+		padding: var(--space-3) var(--space-4);
 		font-size: var(--text-base);
-		font-weight: var(--weight-semibold);
+		font-weight: var(--weight-medium);
+		background: transparent;
+		border: none;
+		border-bottom: 3px solid transparent;
 		cursor: pointer;
-		user-select: none;
+		color: var(--color-text-muted);
+		transition: all 0.2s;
+		position: relative;
+		bottom: -2px;
 	}
 
-	.tab__header:hover {
+	.tab-nav__button:hover {
+		color: var(--color-text);
 		background: var(--color-accent-subtle);
 	}
 
-	.tab__content {
-		padding: 0 var(--space-4) var(--space-4);
+	.tab-nav__button.active {
+		color: var(--color-accent);
+		border-bottom-color: var(--color-accent);
+		font-weight: var(--weight-semibold);
+	}
+
+	.tab-nav__button .badge {
+		margin-left: var(--space-2);
+		background: var(--color-border);
+		color: var(--color-text);
+	}
+
+	.tab-nav__button .badge--urgent {
+		background: var(--color-danger-subtle);
+		color: var(--color-danger);
+	}
+
+	.tab-nav__button.active .badge {
+		background: var(--color-accent-subtle);
+		color: var(--color-accent);
+	}
+
+	.tab-nav__button.active .badge--urgent {
+		background: var(--color-danger);
+		color: white;
+	}
+
+	.tab-content {
+		min-height: 400px;
+	}
+
+	.empty-state {
+		padding: var(--space-12) var(--space-6);
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+	}
+
+	.empty-state__message {
+		font-size: var(--text-lg);
+		color: var(--color-text-muted);
+		margin: 0;
+	}
+
+	.subsection__title {
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		margin: var(--space-8) 0 var(--space-4) 0;
+		padding-top: var(--space-6);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.subsection__title:first-child {
+		margin-top: 0;
+		padding-top: 0;
+		border-top: none;
 	}
 
 	.list {

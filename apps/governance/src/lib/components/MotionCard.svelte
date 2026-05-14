@@ -1,6 +1,7 @@
 <script lang="ts">
 	interface Motion {
 		uuid: string;
+		motion_number: number;
 		title: string;
 		status: string;
 		created_at: string;
@@ -23,15 +24,24 @@
 
 	let { 
 		motion, 
+		bodyAbbreviation = null,
 		comments = [], 
 		tally = null,
 		variant = 'default'
 	}: { 
 		motion: Motion; 
+		bodyAbbreviation?: string | null;
 		comments?: Comment[]; 
 		tally?: Tally | null;
 		variant?: 'default' | 'vote' | 'deliberation';
 	} = $props();
+
+	const motionId = $derived(() => {
+		if (bodyAbbreviation) {
+			return `${bodyAbbreviation} ${motion.motion_number}`;
+		}
+		return `#${motion.motion_number}`;
+	});
 
 	function getStatusBadgeClass(status: string): string {
 		switch (status) {
@@ -86,7 +96,10 @@
 
 <a href="/motions/{motion.uuid}" class={cardClass()}>
 	<div class="card__header">
-		<h3 class="card__title">{motion.title}</h3>
+		<div class="card__title-row">
+			<span class="motion-id">{motionId()}</span>
+			<h3 class="card__title">{motion.title}</h3>
+		</div>
 		<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
 	</div>
 	
@@ -154,6 +167,21 @@
 		align-items: start;
 		gap: var(--space-3);
 		margin-bottom: var(--space-3);
+	}
+
+	.card__title-row {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-3);
+		flex: 1;
+	}
+
+	.motion-id {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text-muted);
+		flex-shrink: 0;
 	}
 
 	.card__title {

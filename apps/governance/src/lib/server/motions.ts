@@ -17,6 +17,7 @@ export type VoteChoice = 'aye' | 'nay' | 'abstain';
 
 export interface Motion {
 	uuid: string;
+	motion_number: number;
 	title: string;
 	body: string;
 	reasoning: string | null;
@@ -26,6 +27,7 @@ export interface Motion {
 	vote_rule_uuid: string | null;
 	status: MotionStatus;
 	clerk_notes: string | null;
+	parliamentarian_notes: string | null;
 	created_at: string;
 	deliberation_opened_at: string | null;
 	enacted_at: string | null;
@@ -87,14 +89,14 @@ export function listMotions(opts: {
 	return db.prepare(query).all(...params) as Motion[];
 }
 
-export function listEnactedMotions(): (Motion & { body_name: string })[] {
+export function listEnactedMotions(): (Motion & { body_name: string; body_abbreviation: string | null })[] {
 	return db.prepare(
-		`SELECT m.*, a.name AS body_name
+		`SELECT m.*, a.name AS body_name, a.abbreviation AS body_abbreviation
 		 FROM motion m
 		 JOIN association a ON a.uuid = m.body_uuid
 		 WHERE m.status = 'enacted'
 		 ORDER BY m.enacted_at DESC`
-	).all() as (Motion & { body_name: string })[];
+	).all() as (Motion & { body_name: string; body_abbreviation: string | null })[];
 }
 
 // --- Motion writes ---
@@ -108,10 +110,17 @@ export function createMotion(input: {
 	deliberation_rule_uuid?: string | null;
 }): Motion {
 	const uuid = randomUUID();
+	
+	// Get next motion number for this body
+	const result = db.prepare(
+		'SELECT COALESCE(MAX(motion_number), 0) + 1 AS next_number FROM motion WHERE body_uuid = ?'
+	).get(input.body_uuid) as { next_number: number };
+	const motionNumber = result.next_number;
+	
 	db.prepare(
-		`INSERT INTO motion (uuid, title, body, reasoning, introduced_by_uuid, body_uuid, deliberation_rule_uuid, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, 'introduced', ?)`
-	).run(uuid, input.title, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, input.deliberation_rule_uuid ?? null, now());
+		`INSERT INTO motion (uuid, motion_number, title, body, reasoning, introduced_by_uuid, body_uuid, deliberation_rule_uuid, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'introduced', ?)`
+	).run(uuid, motionNumber, input.title, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, input.deliberation_rule_uuid ?? null, now());
 	return getMotionByUuid(uuid)!;
 }
 
@@ -158,6 +167,13 @@ export function setMotionClerkNotes(motionUuid: string, clerkNotes: string | nul
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	db.prepare('UPDATE motion SET clerk_notes = ? WHERE uuid = ?').run(clerkNotes || null, motionUuid);
+	return getMotionByUuid(motionUuid)!;
+}
+
+export function setMotionParliamentarianNotes(motionUuid: string, parliamentarianNotes: string | null): Motion {
+	const motion = getMotionByUuid(motionUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+	db.prepare('UPDATE motion SET parliamentarian_notes = ? WHERE uuid = ?').run(parliamentarianNotes || null, motionUuid);
 	return getMotionByUuid(motionUuid)!;
 }
 

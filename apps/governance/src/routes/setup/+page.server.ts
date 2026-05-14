@@ -77,21 +77,21 @@ export const actions: Actions = {
 
 		// Seed the four system associations and add the founding member
 		const systemAssociations = [
-			{ handle: 'society',             name: 'The Society',            type: 'society'              },
-			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly'     },
-			{ handle: 'central-bank',        name: 'Central Bank',           type: 'central_bank'         },
-			{ handle: 'treasury',            name: 'Treasury',               type: 'association'          },
-			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund'},
-			{ handle: 'community-bank',      name: 'Community Bank',         type: 'community_bank'       },
-			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college'              },
-			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college'              },
-			{ handle: 'food-service',        name: 'Food Service',           type: 'service'              },
-			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service'              },
-			{ handle: 'energy-service',      name: 'Energy Service',         type: 'service'              },
-			{ handle: 'communications-service', name: 'Communications Service', type: 'service'           },
-			{ handle: 'commerce-service',    name: 'Commerce Service',       type: 'service'              },
-			{ handle: 'agricultural-committee', name: 'Agricultural Committee', type: 'committee'         },
-			{ handle: 'food-committee',      name: 'Food Committee',         type: 'committee'            },
+			{ handle: 'society',             name: 'The Society',            type: 'society',              abbreviation: 'SOC'  },
+			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly',     abbreviation: 'GA'   },
+			{ handle: 'central-bank',        name: 'Central Bank',           type: 'central_bank',         abbreviation: 'CB'   },
+			{ handle: 'treasury',            name: 'Treasury',               type: 'association',          abbreviation: 'TRES' },
+			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund', abbreviation: 'SIF' },
+			{ handle: 'community-bank',      name: 'Community Bank',         type: 'community_bank',       abbreviation: 'CMB'  },
+			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college',              abbreviation: 'AGCOL', governing_document_slug: 'agricultural-college' },
+			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college',              abbreviation: 'CACOL' },
+			{ handle: 'food-service',        name: 'Food Service',           type: 'service',              abbreviation: 'FOOD'  },
+			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service',              abbreviation: 'AGSVC' },
+			{ handle: 'energy-service',      name: 'Energy Service',         type: 'service',              abbreviation: 'ENRG'  },
+			{ handle: 'communications-service', name: 'Communications Service', type: 'service',           abbreviation: 'COMM'  },
+			{ handle: 'commerce-service',    name: 'Commerce Service',       type: 'service',              abbreviation: 'CMRC'  },
+			{ handle: 'agricultural-committee', name: 'Agricultural Committee', type: 'committee',        abbreviation: 'AGCOM', governing_document_slug: 'committee-rules' },
+			{ handle: 'food-committee',      name: 'Food Committee',         type: 'committee',            abbreviation: 'FDCOM', governing_document_slug: 'committee-rules' },
 		] as const;
 
 		for (const assoc of systemAssociations) {

@@ -23,6 +23,8 @@ export const PERMISSIONS = {
 	PEOPLE_EDIT:       'people:edit',
 	PEOPLE_REMOVE:     'people:remove',
 	CALENDAR_WRITE:    'calendar:write',
+	CONTRACTS_CREATE:  'contracts:create',
+	CONTRACTS_VIEW:    'contracts:view',
 	GOVERNANCE_ADMIN:  'governance:admin',
 } as const;
 

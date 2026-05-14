@@ -20,3 +20,22 @@ export function setInitialCommunityConfig(key: string, value: string, descriptio
 		 VALUES (?, ?, ?, NULL, ?)`
 	).run(key, value, description, now);
 }
+
+/**
+ * Update a community configuration value (no motion tracking for manual edits)
+ * For production use, config changes should go through the motion system.
+ */
+export function updateCommunityConfig(key: string, value: string): void {
+	const now = new Date().toISOString();
+	
+	db.prepare(
+		`UPDATE community_config SET value = ?, updated_at = ? WHERE key = ?`
+	).run(value, now, key);
+}
+
+/**
+ * Get all community configuration entries
+ */
+export function getAllCommunityConfig(): Array<{key: string; value: string; description: string; updated_at: string}> {
+	return db.prepare('SELECT * FROM community_config ORDER BY key ASC').all() as Array<{key: string; value: string; description: string; updated_at: string}>;
+}

@@ -54,7 +54,7 @@
 
 		<div class="field-row">
 			<div class="field">
-				<label for="rate">Rate (Florins)</label>
+				<label for="rate">Rate (Franks)</label>
 				<input id="rate" name="rate" type="number" min="0" step="1" value={rate} />
 			</div>
 			<div class="field">

@@ -10,6 +10,8 @@
 	let editingCommentBody = $state('');
 	let editingClerkNotes = $state(false);
 	let clerkNotesValue = $state(motion.clerk_notes || '');
+	let editingParliamentarianNotes = $state(false);
+	let parliamentarianNotesValue = $state(motion.parliamentarian_notes || '');
 
 	function startEditComment(uuid: string, currentBody: string) {
 		editingCommentUuid = uuid;
@@ -19,6 +21,11 @@
 	function startEditClerkNotes() {
 		editingClerkNotes = true;
 		clerkNotesValue = motion.clerk_notes || '';
+	}
+
+	function startEditParliamentarianNotes() {
+		editingParliamentarianNotes = true;
+		parliamentarianNotesValue = motion.parliamentarian_notes || '';
 	}
 
 	const statusVariant: Record<string, string> = {
@@ -57,7 +64,16 @@
 	<div class="page-header">
 		<a href="/motions" class="back">← Motions</a>
 		<div class="header-row">
-			<h1>{motion.title}</h1>
+			<div class="title-row">
+				<span class="motion-id">
+					{#if body?.abbreviation}
+						{body.abbreviation} {motion.motion_number}
+					{:else}
+						#{motion.motion_number}
+					{/if}
+				</span>
+				<h1>{motion.title}</h1>
+			</div>
 			<span class="status-badge {statusVariant[motion.status] ?? ''}">{statusLabel[motion.status] ?? motion.status}</span>
 		</div>
 		<div class="meta-row">
@@ -130,11 +146,11 @@
 		</div>
 	{/if}
 
-	{#if canAdvance}
+	{#if motion.clerk_notes || canAdvance}
 		<div class="card">
 			<div class="card__label">
 				Clerk's Notes
-				{#if !editingClerkNotes}
+				{#if canAdvance && !editingClerkNotes}
 					<button type="button" class="btn-inline" onclick={startEditClerkNotes}>
 						{motion.clerk_notes ? 'Edit' : 'Add Notes'}
 					</button>
@@ -161,6 +177,43 @@
 				</form>
 			{:else if motion.clerk_notes}
 				<p class="prose clerk-notes-display">{motion.clerk_notes}</p>
+			{:else}
+				<p class="muted">No notes yet</p>
+			{/if}
+		</div>
+	{/if}
+
+	{#if motion.parliamentarian_notes || canAdvance}
+		<div class="card">
+			<div class="card__label">
+				Parliamentarian's Notes
+				{#if canAdvance && !editingParliamentarianNotes}
+					<button type="button" class="btn-inline" onclick={startEditParliamentarianNotes}>
+						{motion.parliamentarian_notes ? 'Edit' : 'Add Notes'}
+					</button>
+				{/if}
+			</div>
+			{#if editingParliamentarianNotes}
+				<form method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
+					return ({ update }) => {
+						update().then(() => {
+							editingParliamentarianNotes = false;
+						});
+					};
+				}}>
+					<textarea 
+						name="parliamentarian_notes" 
+						bind:value={parliamentarianNotesValue}
+						class="clerk-notes-input"
+						rows="4"
+						placeholder="Procedural notes, rule interpretations, precedent references..."></textarea>
+					<div class="form-actions">
+						<button type="submit" class="btn btn--primary btn--sm">Save</button>
+						<button type="button" class="btn btn--secondary btn--sm" onclick={() => editingParliamentarianNotes = false}>Cancel</button>
+					</div>
+				</form>
+			{:else if motion.parliamentarian_notes}
+				<p class="prose clerk-notes-display">{motion.parliamentarian_notes}</p>
 			{:else}
 				<p class="muted">No notes yet</p>
 			{/if}
@@ -332,6 +385,21 @@
 		flex-wrap: wrap;
 	}
 	.header-row h1 { margin: 0; flex: 1; }
+
+	.title-row {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-3);
+		flex: 1;
+	}
+
+	.motion-id {
+		font-family: var(--font-mono);
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text-muted);
+		flex-shrink: 0;
+	}
 
 	.meta-row {
 		display: flex;

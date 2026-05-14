@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types.js';
 import {
 	getMotionByUuid, getVoteTally,
-	advanceMotion, openVote, closeVote, castVote, hasVoted, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes,
+	advanceMotion, openVote, closeVote, castVote, hasVoted, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes, setMotionParliamentarianNotes,
 	type MotionStatus, type VoteChoice,
 } from '$lib/server/motions.js';
 import { listVoteRules, getVoteRuleByUuid } from '$lib/server/vote_rules.js';
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.prepare('SELECT given_name, family_name, handle FROM person WHERE uuid = ?')
 		.get(motion.introduced_by_uuid) as { given_name: string; family_name: string; handle: string } | null;
 
-	const body = db.prepare('SELECT name, handle FROM association WHERE uuid = ?').get(motion.body_uuid) as { name: string; handle: string } | null;
+	const body = db.prepare('SELECT name, handle, abbreviation FROM association WHERE uuid = ?').get(motion.body_uuid) as { name: string; handle: string; abbreviation: string | null } | null;
 
 	const tally = getVoteTally(motion.uuid);
 	const voteRules = listVoteRules(motion.body_uuid);
@@ -270,6 +270,29 @@ export const actions: Actions = {
 			setMotionClerkNotes(motion.uuid, clerk_notes);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set clerk notes' });
+		}
+
+		return { success: true };
+	},
+
+	setParliamentarianNotes: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+			return fail(403, { error: 'Insufficient permissions' });
+		}
+
+		const data = await request.formData();
+		const parliamentarian_notes = String(data.get('parliamentarian_notes') ?? '').trim() || null;
+
+		try {
+			setMotionParliamentarianNotes(motion.uuid, parliamentarian_notes);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set parliamentarian notes' });
 		}
 
 		return { success: true };

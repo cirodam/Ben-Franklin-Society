@@ -43,7 +43,7 @@
 
 			<div class="field-row">
 				<div class="field">
-					<label for="rate">Rate (Florins)</label>
+					<label for="rate">Rate (Franks)</label>
 					<input id="rate" name="rate" type="number" min="0" step="1" value={form?.rate ?? '0'} />
 					<span class="field-hint">Leave 0 if negotiable or per-job with no fixed rate.</span>
 				</div>

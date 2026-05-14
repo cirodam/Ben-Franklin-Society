@@ -96,8 +96,10 @@ CREATE TABLE IF NOT EXISTS association (
   uuid                       TEXT PRIMARY KEY,
   handle                     TEXT NOT NULL UNIQUE,
   name                       TEXT NOT NULL,
+  abbreviation               TEXT NULL,
   type                       TEXT NOT NULL,
   status                     TEXT NOT NULL DEFAULT 'active',
+  governing_document_slug    TEXT NULL,
   established_by_motion_uuid TEXT NULL,
   created_at                 TEXT NOT NULL,
   dissolved_at               TEXT NULL
@@ -186,6 +188,7 @@ CREATE TABLE IF NOT EXISTS vote_rule (
 
 CREATE TABLE IF NOT EXISTS motion (
   uuid                   TEXT PRIMARY KEY,
+  motion_number          INTEGER NOT NULL,
   title                  TEXT NOT NULL,
   body                   TEXT NOT NULL,
   reasoning              TEXT NULL,
@@ -195,10 +198,12 @@ CREATE TABLE IF NOT EXISTS motion (
   vote_rule_uuid         TEXT NULL REFERENCES vote_rule(uuid),
   status                 TEXT NOT NULL DEFAULT 'draft',
   clerk_notes            TEXT NULL,
+  parliamentarian_notes  TEXT NULL,
   created_at             TEXT NOT NULL,
   deliberation_opened_at TEXT NULL,
   enacted_at             TEXT NULL,
-  resolved_at            TEXT NULL
+  resolved_at            TEXT NULL,
+  UNIQUE(body_uuid, motion_number)
 );
 
 CREATE TABLE IF NOT EXISTS motion_vote_tally (

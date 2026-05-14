@@ -376,6 +376,7 @@ export function createService(opts: CreateServiceOpts): string {
 		opts.rate,
 		opts.rate_unit,
 		opts.service_area,
+		opts.scope,
 		new Date().toISOString()
 	);
 	return uuid;

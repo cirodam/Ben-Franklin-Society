@@ -7,8 +7,13 @@
 
 <div class="page">
 	<header class="header">
-		<h1>Committees</h1>
-		<p class="header__subtitle">Specialized deliberative bodies</p>
+		<div class="header-row">
+			<div>
+				<h1>Committees</h1>
+				<p class="header__subtitle">Specialized deliberative bodies</p>
+			</div>
+			<a href="/committees/new" class="btn btn--primary">+ Create Committee</a>
+		</div>
 	</header>
 
 	<div class="description">
@@ -46,6 +51,13 @@
 		margin-bottom: var(--space-6);
 	}
 
+	.header-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-4);
+	}
+
 	.header h1 {
 		font-size: var(--text-3xl);
 		font-weight: var(--weight-bold);
@@ -56,6 +68,28 @@
 		font-size: var(--text-lg);
 		color: var(--color-text-muted);
 		margin: 0;
+	}
+
+	.btn {
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-md);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		cursor: pointer;
+		border: none;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		white-space: nowrap;
+	}
+
+	.btn--primary {
+		background: var(--color-accent);
+		color: #fff;
+	}
+
+	.btn:hover {
+		filter: brightness(0.92);
 	}
 
 	.description {

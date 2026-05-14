@@ -55,7 +55,7 @@
 
 		<div class="field-row">
 			<div class="field">
-				<label for="price">Price (Florins)</label>
+				<label for="price">Price (Franks)</label>
 				<input id="price" name="price" type="number" min="0" step="1" value={price} />
 			</div>
 			<div class="field field--check">

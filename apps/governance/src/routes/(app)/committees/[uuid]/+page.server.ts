@@ -16,6 +16,7 @@ import { addEntry, getBodyRecord } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/motions.js';
 import { listDeliberationRules } from '$lib/server/deliberation_rules.js';
+import { getDocumentBySlug } from '$lib/server/documents.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -150,6 +151,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		return { ...e, recorder_handle: recorder?.handle ?? null };
 	});
 
+	const deliberationRules = listDeliberationRules(association.uuid);
+
+	// Load governing document if slug is set
+	const governingDocument = association.governing_document_slug
+		? getDocumentBySlug(association.governing_document_slug)
+		: null;
+
 	return {
 		association,
 		config,
@@ -168,7 +176,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		canCreateMotion,
 		enactedMotions,
 		canVacate,
-		record
+		record,
+		deliberationRules,
+		governingDocument
 	};
 };
 
