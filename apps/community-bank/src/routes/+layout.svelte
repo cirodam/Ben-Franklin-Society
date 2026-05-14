@@ -9,8 +9,6 @@
 		{ href: '/',         label: 'My Account' },
 		{ href: '/history',  label: 'History' },
 		{ href: '/send',     label: 'Send Franks' },
-		{ href: '/ledger',   label: 'Public Ledger' },
-		{ href: '/treasury', label: 'Treasury & SIF' },
 	];
 
 	const { isTeller, isAdmin } = $derived(data);

@@ -4,7 +4,6 @@ import { getAccountByUuid, freezeAccount, unfreezeAccount } from '$lib/server/ac
 import { getTransactionsForAccount, postTransaction } from '$lib/server/ledger.js';
 import { logAdminAction, getAdminActionsForTarget } from '$lib/server/admin.js';
 import { db } from '$lib/server/db.js';
-import { lookupPersonByHandle, lookupAssociationByHandle } from '$lib/server/governance-api.js';
 
 const PAGE_SIZE = 50;
 
@@ -22,18 +21,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	const transactions = getTransactionsForAccount(account.uuid, { limit: PAGE_SIZE, offset });
 	const auditLog = getAdminActionsForTarget(account.uuid);
 
-	// Resolve principal name from governance API (person or association).
-	const person = await lookupPersonByHandle(account.handle_cache);
-
-	const assoc = !person
-		? await lookupAssociationByHandle(account.handle_cache)
-		: undefined;
-
-	const principalLabel = person
-		? `${person.given_name} ${person.family_name} (@${person.handle})`
-		: assoc
-		? `${assoc.name} (@${assoc.handle})`
-		: account.principal_uuid;
+	// Use handle_cache as principal label (bank doesn't query governance for names)
+	const principalLabel = account.handle_cache 
+		? `@${account.handle_cache}`
+		: `Principal: ${account.principal_uuid.slice(0, 8)}…`;
 
 	return { account, transactions, auditLog, principalLabel, page, pageSize: PAGE_SIZE };
 };

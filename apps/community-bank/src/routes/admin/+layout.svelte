@@ -10,6 +10,7 @@
 		<nav class="admin-header__nav">
 			<a href="/admin" class="admin-nav-link">Accounts</a>
 			<a href="/admin/scheduled-transfers" class="admin-nav-link">Scheduled Transfers</a>
+			<a href="/admin/collection-batches" class="admin-nav-link">Collection Batches</a>
 			<a href="/" class="admin-nav-link admin-nav-link--exit">← Member View</a>
 		</nav>
 	</header>

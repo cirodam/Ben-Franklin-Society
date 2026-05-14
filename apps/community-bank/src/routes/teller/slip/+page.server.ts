@@ -1,22 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountByPrincipalAndName, getAccountByUuid } from '$lib/server/accounts.js';
+import { getAccountByHandle, getAccountByUuid } from '$lib/server/accounts.js';
 import { postTransaction, getSlipsForTellerToday } from '$lib/server/ledger.js';
-import { lookupPersonByHandle, lookupAssociationByHandle } from '$lib/server/governance-api.js';
-
-async function resolveHandle(handle: string): Promise<string | null> {
-	const person = await lookupPersonByHandle(handle);
-	if (person && person.status !== 'revoked') {
-		const acct = getAccountByPrincipalAndName(person.uuid, 'Primary');
-		return acct?.uuid ?? null;
-	}
-	const assoc = await lookupAssociationByHandle(handle);
-	if (assoc && assoc.status === 'active') {
-		const acct = getAccountByPrincipalAndName(assoc.uuid, 'Primary');
-		return acct?.uuid ?? null;
-	}
-	return null;
-}
+import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = locals.session!;
@@ -45,28 +31,25 @@ export const actions: Actions = {
 		if (from_handle === to_handle)
 			return fail(400, { error: 'From and to handles must be different.' });
 
-		const from_uuid = await resolveHandle(from_handle);
-		if (!from_uuid)
+		const fromAccount = getAccountByHandle(from_handle);
+		if (!fromAccount)
 			return fail(400, { error: `No account found for @${from_handle}.` });
 
-		const to_uuid = await resolveHandle(to_handle);
-		if (!to_uuid)
+		const toAccount = getAccountByHandle(to_handle);
+		if (!toAccount)
 			return fail(400, { error: `No account found for @${to_handle}.` });
 
-		const fromAccount = getAccountByUuid(from_uuid);
-		const toAccount   = getAccountByUuid(to_uuid);
-
-		if (fromAccount?.status === 'frozen')
+		if (fromAccount.status === 'frozen')
 			return fail(400, { error: `Account for @${from_handle} is frozen.` });
-		if (toAccount?.status === 'frozen')
+		if (toAccount.status === 'frozen')
 			return fail(400, { error: `Account for @${to_handle} is frozen.` });
 
 		postTransaction({
-			from_uuid,
-			to_uuid,
+			from_uuid: fromAccount.uuid,
+			to_uuid: toAccount.uuid,
 			amount,
-			type: 'transfer',
-			source: 'slip',
+			type: TransactionType.TRANSFER,
+			source: TransactionSource.TELLER,
 			slip_serial,
 			memo,
 			entered_by_uuid: session.acting_as_uuid,

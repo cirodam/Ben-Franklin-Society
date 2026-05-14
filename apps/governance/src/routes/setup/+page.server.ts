@@ -80,6 +80,7 @@ export const actions: Actions = {
 			{ handle: 'society',             name: 'The Society',            type: 'society'              },
 			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly'     },
 			{ handle: 'central-bank',        name: 'Central Bank',           type: 'central_bank'         },
+			{ handle: 'treasury',            name: 'Treasury',               type: 'association'          },
 			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund'},
 			{ handle: 'community-bank',      name: 'Community Bank',         type: 'community_bank'       },
 			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college'              },
@@ -421,6 +422,73 @@ export const actions: Actions = {
 			365, // 1 year
 			'Manages population data collection and analysis. Tracks births, deaths, migrations, household formation. Provides demographic forecasts for economic planning and resource allocation.',
 			2400,
+			createdAt
+		);
+
+		// Seed Treasury with organizational structure
+		const treasury = getAssociationByHandle('treasury')!;
+		
+		// Create organizational sections for Treasury
+		const revenueSection = randomUUID();
+		const expenditureSection = randomUUID();
+		db.prepare(
+			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, mandate, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?)`
+		).run(revenueSection, treasury.uuid, null, 'Revenue', 'Manage collection of dues, fees, and other community revenues. Ensure timely and fair collection practices.', createdAt);
+		db.prepare(
+			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, mandate, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?)`
+		).run(expenditureSection, treasury.uuid, null, 'Expenditure', 'Manage disbursement of funds for community services, infrastructure, and operations. Track spending and ensure fiscal responsibility.', createdAt);
+		
+		// Treasurer (Level 1 - top leadership)
+		const treasurerUuid = randomUUID();
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, section_uuid, name, level, parent_role_uuid, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			treasurerUuid,
+			treasury.uuid,
+			null,
+			'Treasurer',
+			1,
+			null,
+			730, // 2 years
+			'Chief executive of Treasury. Manages community finances, revenue collection, and expenditure authorization. Reports to General Assembly. Coordinates Revenue and Expenditure sections.',
+			3000,
+			createdAt
+		);
+
+		// Revenue Section Chief (Level 2)
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, section_uuid, name, level, parent_role_uuid, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			treasury.uuid,
+			revenueSection,
+			'Revenue Section Chief',
+			2,
+			treasurerUuid,
+			365, // 1 year
+			'Manages collection of dues, fees, and other community revenues. Oversees scheduled transfers for dues collection. Ensures timely and fair collection practices.',
+			2200,
+			createdAt
+		);
+
+		// Expenditure Section Chief (Level 2)
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, section_uuid, name, level, parent_role_uuid, term_days, description, salary_monthly, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			randomUUID(),
+			treasury.uuid,
+			expenditureSection,
+			'Expenditure Section Chief',
+			2,
+			treasurerUuid,
+			365, // 1 year
+			'Manages disbursement of funds for community services, infrastructure, and operations. Authorizes spending, tracks expenditures, ensures fiscal responsibility and alignment with Assembly budget.',
+			2200,
 			createdAt
 		);
 

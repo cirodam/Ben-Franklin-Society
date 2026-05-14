@@ -4,6 +4,19 @@ import type { Account } from './accounts.js';
 import type { EnrichedTransaction } from './ledger.js';
 
 // ---------------------------------------------------------------------------
+// Transaction types — re-export for convenience
+// ---------------------------------------------------------------------------
+
+export {
+	TransactionType,
+	TransactionSource,
+	getTransactionTypeLabel,
+	getTransactionSourceLabel,
+	type TransactionTypeValue,
+	type TransactionSourceValue,
+} from './transaction-types.js';
+
+// ---------------------------------------------------------------------------
 // Admin action log
 // ---------------------------------------------------------------------------
 
@@ -66,53 +79,17 @@ export function searchAccounts(q: string): Account[] {
 }
 
 // ---------------------------------------------------------------------------
-// Scheduled transfers
+// Grouped transfers — re-export from dedicated module
 // ---------------------------------------------------------------------------
 
-export interface ScheduledTransfer {
-	uuid: string;
-	name: string;
-	from_uuid: string;
-	to_uuid: string;
-	amount: number;
-	type: string;
-	schedule: string;
-	group_uuid: string | null;
-	status: string;
-	created_by_motion_uuid: string | null;
-	created_at: string;
-	cancelled_at: string | null;
-	// Enriched
-	from_handle: string;
-	from_name: string;
-	to_handle: string;
-	to_name: string;
-}
-
-export function getAllScheduledTransfers(): ScheduledTransfer[] {
-	return db
-		.prepare(
-			`SELECT st.*,
-              fa.handle_cache AS from_handle, fa.name AS from_name,
-              ta.handle_cache AS to_handle,   ta.name AS to_name
-       FROM scheduled_transfer st
-       JOIN account fa ON fa.uuid = st.from_uuid
-       JOIN account ta ON ta.uuid = st.to_uuid
-       ORDER BY st.status, st.created_at DESC`
-		)
-		.all() as ScheduledTransfer[];
-}
-
-export function pauseScheduledTransfer(uuid: string): void {
-	db.prepare(`UPDATE scheduled_transfer SET status = 'paused' WHERE uuid = ?`).run(uuid);
-}
-
-export function unpauseScheduledTransfer(uuid: string): void {
-	db.prepare(`UPDATE scheduled_transfer SET status = 'active' WHERE uuid = ?`).run(uuid);
-}
-
-export function cancelScheduledTransfer(uuid: string): void {
-	db.prepare(
-		`UPDATE scheduled_transfer SET status = 'cancelled', cancelled_at = ? WHERE uuid = ?`
-	).run(new Date().toISOString(), uuid);
-}
+export {
+	type GroupedTransfer,
+	type EnrichedGroupedTransfer,
+	type TransferMode,
+	type TargetFilter,
+	createGroupedTransfer,
+	getAllGroupedTransfers,
+	pauseGroupedTransfer,
+	unpauseGroupedTransfer,
+	cancelGroupedTransfer,
+} from './grouped-transfers.js';
