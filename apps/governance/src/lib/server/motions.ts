@@ -25,6 +25,7 @@ export interface Motion {
 	deliberation_rule_uuid: string | null;
 	vote_rule_uuid: string | null;
 	status: MotionStatus;
+	clerk_notes: string | null;
 	created_at: string;
 	deliberation_opened_at: string | null;
 	enacted_at: string | null;
@@ -150,6 +151,13 @@ export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUu
 		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.status}'`);
 	}
 	db.prepare('UPDATE motion SET deliberation_rule_uuid = ? WHERE uuid = ?').run(deliberationRuleUuid, motionUuid);
+	return getMotionByUuid(motionUuid)!;
+}
+
+export function setMotionClerkNotes(motionUuid: string, clerkNotes: string | null): Motion {
+	const motion = getMotionByUuid(motionUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+	db.prepare('UPDATE motion SET clerk_notes = ? WHERE uuid = ?').run(clerkNotes || null, motionUuid);
 	return getMotionByUuid(motionUuid)!;
 }
 

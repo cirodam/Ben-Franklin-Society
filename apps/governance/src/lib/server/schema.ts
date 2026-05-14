@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS motion (
   deliberation_rule_uuid TEXT NULL REFERENCES deliberation_rule(uuid),
   vote_rule_uuid         TEXT NULL REFERENCES vote_rule(uuid),
   status                 TEXT NOT NULL DEFAULT 'draft',
+  clerk_notes            TEXT NULL,
   created_at             TEXT NOT NULL,
   deliberation_opened_at TEXT NULL,
   enacted_at             TEXT NULL,

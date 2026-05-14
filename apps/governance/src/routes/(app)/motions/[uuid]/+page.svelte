@@ -8,10 +8,17 @@
 
 	let editingCommentUuid = $state<string | null>(null);
 	let editingCommentBody = $state('');
+	let editingClerkNotes = $state(false);
+	let clerkNotesValue = $state(motion.clerk_notes || '');
 
 	function startEditComment(uuid: string, currentBody: string) {
 		editingCommentUuid = uuid;
 		editingCommentBody = currentBody;
+	}
+
+	function startEditClerkNotes() {
+		editingClerkNotes = true;
+		clerkNotesValue = motion.clerk_notes || '';
 	}
 
 	const statusVariant: Record<string, string> = {
@@ -120,6 +127,43 @@
 				{tally.aye_count + tally.nay_count + tally.abstain_count} of {tally.eligible_count} eligible members voted
 				({ayePct}% aye)
 			</p>
+		</div>
+	{/if}
+
+	{#if canAdvance}
+		<div class="card">
+			<div class="card__label">
+				Clerk's Notes
+				{#if !editingClerkNotes}
+					<button type="button" class="btn-inline" onclick={startEditClerkNotes}>
+						{motion.clerk_notes ? 'Edit' : 'Add Notes'}
+					</button>
+				{/if}
+			</div>
+			{#if editingClerkNotes}
+				<form method="POST" action="?/setClerkNotes" use:enhance={() => {
+					return ({ update }) => {
+						update().then(() => {
+							editingClerkNotes = false;
+						});
+					};
+				}}>
+					<textarea 
+						name="clerk_notes" 
+						bind:value={clerkNotesValue}
+						class="clerk-notes-input"
+						rows="4"
+						placeholder="Administrative reminders for actions needed if this motion passes..."></textarea>
+					<div class="form-actions">
+						<button type="submit" class="btn btn--primary btn--sm">Save</button>
+						<button type="button" class="btn btn--secondary btn--sm" onclick={() => editingClerkNotes = false}>Cancel</button>
+					</div>
+				</form>
+			{:else if motion.clerk_notes}
+				<p class="prose clerk-notes-display">{motion.clerk_notes}</p>
+			{:else}
+				<p class="muted">No notes yet</p>
+			{/if}
 		</div>
 	{/if}
 
@@ -338,6 +382,10 @@
 		letter-spacing: 0.08em;
 		color: var(--color-text-muted);
 		font-weight: var(--weight-medium);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
 
 	.prose {
@@ -543,4 +591,32 @@
 	}
 	.rule-label { font-size: var(--text-sm); color: var(--color-text-muted); }
 	.btn--sm { padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+
+	/* Clerk notes */
+	.clerk-notes-input {
+		width: 100%;
+		box-sizing: border-box;
+		padding: var(--space-2);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		font-family: inherit;
+		font-size: var(--text-sm);
+		line-height: 1.6;
+		resize: vertical;
+		background: var(--color-background, #fff);
+	}
+	.clerk-notes-display {
+		white-space: pre-wrap;
+		margin: 0;
+		padding: var(--space-2);
+		background: var(--color-bg, #f9fafb);
+		border-radius: var(--radius-sm);
+		border-left: 3px solid var(--color-border);
+		font-size: var(--text-sm);
+	}
+	.form-actions {
+		display: flex;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
 </style>
