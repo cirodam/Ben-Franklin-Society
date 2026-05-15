@@ -14,7 +14,6 @@
 		config, 
 		termHolders, 
 		draws,
-		openVotes, 
 		activeDeliberations, 
 		pending, 
 		recentDecisions,
@@ -28,12 +27,11 @@
 		canVacate,
 		record,
 		deliberationRules,
-		assemblyRules,
-		activeProceduralVotes
+		assemblyRules
 	} = $derived(data);
 
 	let showModal = $state(false);
-	let activeTab = $state<'deliberations' | 'votes' | 'procedural' | 'pending' | 'decisions' | 'members' | 'organization'>('deliberations');
+	let activeTab = $state<'deliberations' | 'pending' | 'decisions' | 'members' | 'organization'>('deliberations');
 
 	$effect(() => {
 		if (form?.created) {
@@ -45,12 +43,6 @@
 		showModal = true;
 	}
 
-	// Auto-switch to votes tab if there are open votes but no deliberations
-	$effect(() => {
-		if (activeDeliberations.length === 0 && openVotes.length > 0 && activeTab === 'deliberations') {
-			activeTab = 'votes';
-		}
-	});
 </script>
 
 <div class="page">
@@ -78,19 +70,7 @@
 			class="tab-nav__button" 
 			class:active={activeTab === 'deliberations'}
 			onclick={() => activeTab = 'deliberations'}>
-			📊 Deliberations {#if activeDeliberations.length > 0}<span class="badge">{activeDeliberations.length}</span>{/if}
-		</button>
-		<button 
-			class="tab-nav__button" 
-			class:active={activeTab === 'votes'}
-			onclick={() => activeTab = 'votes'}>
-			🗳️ Votes {#if openVotes.length > 0}<span class="badge badge--urgent">{openVotes.length}</span>{/if}
-		</button>
-		<button 
-			class="tab-nav__button" 
-			class:active={activeTab === 'procedural'}
-			onclick={() => activeTab = 'procedural'}>
-			⚡ Procedural {#if activeProceduralVotes.length > 0}<span class="badge badge--urgent">{activeProceduralVotes.length}</span>{/if}
+			�️ Deliberations & Voting {#if activeDeliberations.length > 0}<span class="badge badge--urgent">{activeDeliberations.length}</span>{/if}
 		</button>
 		<button 
 			class="tab-nav__button" 
@@ -123,113 +103,19 @@
 		{#if activeTab === 'deliberations'}
 			{#if activeDeliberations.length > 0}
 				<section class="deliberation-section">
-					<h2 class="section__title">📊 Active Deliberations</h2>
-					<p class="section__desc">Motions currently under debate by the Assembly</p>
-					<div class="paper-stack">
-						{#each activeDeliberations as motion, idx}
-							<a href="/motions/{motion.uuid}" class="paper" style="--paper-index: {idx}">
-								<div class="paper__header">
-									<div class="paper__title-row">
-										<span class="paper__motion-id">
-											{#if association.abbreviation}
-												{association.abbreviation} {motion.motion_number}
-											{:else}
-												#{motion.motion_number}
-											{/if}
-										</span>
-										<h3 class="paper__title">{motion.title}</h3>
-									</div>
-									<span class="paper__badge">In Deliberation</span>
-								</div>
-								<p class="paper__body">{motion.body.slice(0, 200)}{motion.body.length > 200 ? '...' : ''}</p>
-								<div class="paper__meta">
-									<span class="paper__comments">{motion.comments.length} comment{motion.comments.length !== 1 ? 's' : ''}</span>
-									<span class="paper__date">{new Date(motion.created_at).toLocaleDateString()}</span>
-								</div>
-							</a>
-						{/each}
-					</div>
-				</section>
-			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No motions currently in deliberation</p>
-				</div>
-			{/if}
-		{:else if activeTab === 'votes'}
-			{#if openVotes.length > 0}
-				<section class="section">
-					<h2 class="section__title">🗳️ Open Votes</h2>
-					<p class="section__desc">Action required — cast your vote now</p>
+					<h2 class="section__title">�️ Deliberation & Voting</h2>
+					<p class="section__desc">Active discussions and open votes — your participation is needed</p>
 					<div class="cards">
-						{#each openVotes as motion}
-							<MotionCard {motion} bodyAbbreviation={association.abbreviation} comments={motion.comments} tally={motion.tally} variant="vote" />
+						{#each activeDeliberations as motion}
+							<MotionCard {motion} bodyAbbreviation={association.abbreviation} comments={motion.comments} tally={motion.tally} variant="deliberation" />
 						{/each}
 					</div>
 				</section>
 			{:else}
 				<div class="empty-state">
-					<p class="empty-state__message">No open votes at this time</p>
+					<p class="empty-state__message">No motions currently in deliberation or voting</p>
 				</div>
 			{/if}
-		{:else if activeTab === 'procedural'}
-			{#if activeProceduralVotes.length > 0}
-				<section class="section">
-					<h2 class="section__title">⚡ Active Procedural Votes</h2>
-					<p class="section__desc">Quick yes/no votes on process questions</p>
-					<div class="procedural-votes">
-						{#each activeProceduralVotes as pv}
-							<div class="procedural-vote-card">
-								<div class="procedural-vote-card__header">
-									<h3 class="procedural-vote-card__title">
-										{#if pv.vote_type === 'open_deliberation'}
-											🎙️ Open Deliberation
-										{:else if pv.vote_type === 'close_deliberation'}
-											🔚 Close Deliberation
-										{:else if pv.vote_type === 'priority'}
-											⏫ Prioritize Motion
-										{/if}
-									</h3>
-									<span class="badge badge-active">Active</span>
-								</div>
-								<p class="procedural-vote-card__motion">
-									<a href="/motions/{pv.motion.uuid}">{pv.motion.title}</a>
-								</p>
-								<div class="procedural-vote-card__tally">
-									<div class="tally-bar">
-										<div class="tally-bar__yea" style="width: {pv.tally.eligible_count > 0 ? (pv.tally.yea_count / pv.tally.eligible_count * 100) : 0}%"></div>
-										<div class="tally-bar__nay" style="width: {pv.tally.eligible_count > 0 ? (pv.tally.nay_count / pv.tally.eligible_count * 100) : 0}%"></div>
-									</div>
-									<div class="tally-counts">
-										<span>👍 {pv.tally.yea_count}</span>
-										<span>👎 {pv.tally.nay_count}</span>
-										<span>🤐 {pv.tally.abstain_count}</span>
-										<span>· {pv.tally.yea_count + pv.tally.nay_count + pv.tally.abstain_count}/{pv.tally.eligible_count}</span>
-									</div>
-								</div>
-								{#if !pv.userHasVoted}
-									<form method="POST" action="?/castProceduralBallot" class="procedural-vote-card__actions">
-										<input type="hidden" name="procedural_vote_uuid" value={pv.uuid} />
-										<button type="submit" name="position" value="yea" class="btn btn--small btn--yea">Yea</button>
-										<button type="submit" name="position" value="nay" class="btn btn--small btn--nay">Nay</button>
-										<button type="submit" name="position" value="abstain" class="btn btn--small btn--abstain">Abstain</button>
-									</form>
-								{:else}
-									<p class="procedural-vote-card__voted">✓ You have voted</p>
-								{/if}
-								<p class="procedural-vote-card__closes">
-									Closes: {new Date(pv.closes_at).toLocaleString()}
-								</p>
-							</div>
-						{/each}
-					</div>
-				</section>
-			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No active procedural votes</p>
-				</div>
-			{/if}
-		{:else if activeTab === 'pending'}
-			{#if pending.length > 0}
 				<section class="section">
 					<h2 class="section__title">📋 Pending Motions</h2>
 					<div class="list">
@@ -800,134 +686,6 @@
 		.roster td {
 			padding: var(--space-1) var(--space-2);
 		}
-	}
-
-	/* Procedural votes */
-	.procedural-votes {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-		gap: var(--space-4);
-	}
-
-	.procedural-vote-card {
-		background: var(--color-surface);
-		border: 2px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-	}
-
-	.procedural-vote-card__header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.procedural-vote-card__title {
-		font-size: var(--text-base);
-		font-weight: var(--weight-semibold);
-		margin: 0;
-	}
-
-	.procedural-vote-card__motion {
-		font-size: var(--text-sm);
-		margin: 0;
-		color: var(--color-text-muted);
-	}
-
-	.procedural-vote-card__motion a {
-		color: var(--color-accent);
-		text-decoration: none;
-	}
-
-	.procedural-vote-card__motion a:hover {
-		text-decoration: underline;
-	}
-
-	.procedural-vote-card__tally {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
-
-	.tally-bar {
-		height: 24px;
-		background: var(--color-border);
-		border-radius: var(--radius);
-		display: flex;
-		overflow: hidden;
-	}
-
-	.tally-bar__yea {
-		background: var(--color-success);
-		transition: width 0.3s;
-	}
-
-	.tally-bar__nay {
-		background: var(--color-danger);
-		transition: width 0.3s;
-	}
-
-	.tally-counts {
-		display: flex;
-		gap: var(--space-3);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.procedural-vote-card__actions {
-		display: flex;
-		gap: var(--space-2);
-	}
-
-	.btn--small {
-		padding: var(--space-2) var(--space-3);
-		font-size: var(--text-sm);
-		flex: 1;
-	}
-
-	.btn--yea {
-		background: var(--color-success);
-		color: white;
-	}
-
-	.btn--yea:hover {
-		opacity: 0.9;
-	}
-
-	.btn--nay {
-		background: var(--color-danger);
-		color: white;
-	}
-
-	.btn--nay:hover {
-		opacity: 0.9;
-	}
-
-	.btn--abstain {
-		background: var(--color-muted);
-		color: var(--color-text);
-	}
-
-	.btn--abstain:hover {
-		opacity: 0.9;
-	}
-
-	.procedural-vote-card__voted {
-		font-size: var(--text-sm);
-		color: var(--color-success);
-		font-weight: var(--weight-medium);
-		margin: 0;
-		text-align: center;
-	}
-
-	.procedural-vote-card__closes {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		margin: 0;
 	}
 
 	/* Paper stack for deliberations */

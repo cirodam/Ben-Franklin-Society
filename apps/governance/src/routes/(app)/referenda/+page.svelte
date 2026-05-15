@@ -5,21 +5,14 @@
 
 	let { data, form }: { data: PageData; form: any } = $props();
 
-	const { association, members, openVotes, activeDeliberations, pending, recentDecisions, canCreateMotion, deliberationRules } = $derived(data);
+	const { association, members, activeDeliberations, pending, recentDecisions, canCreateMotion, deliberationRules } = $derived(data);
 
 	let showModal = $state(false);
-	let activeTab = $state<'deliberations' | 'votes' | 'pending' | 'decisions'>('deliberations');
+	let activeTab = $state<'deliberations' | 'pending' | 'decisions'>('deliberations');
 
 	$effect(() => {
 		if (form?.created) {
 			goto(`/motions/${form.created}`);
-		}
-	});
-
-	// Auto-switch to votes tab if there are open votes but no deliberations
-	$effect(() => {
-		if (activeDeliberations.length === 0 && openVotes.length > 0 && activeTab === 'deliberations') {
-			activeTab = 'votes';
 		}
 	});
 
@@ -36,7 +29,6 @@
 			case 'draft': return 'badge-draft';
 			case 'introduced': return 'badge-introduced';
 			case 'deliberation': return 'badge-deliberation';
-			case 'vote': return 'badge-vote';
 			case 'enacted': return 'badge-enacted';
 			case 'rejected': return 'badge-rejected';
 			case 'withdrawn': return 'badge-withdrawn';
@@ -48,8 +40,7 @@
 		switch (status) {
 			case 'draft': return 'Draft';
 			case 'introduced': return 'Introduced';
-			case 'deliberation': return 'Deliberation';
-			case 'vote': return 'Voting';
+			case 'deliberation': return 'Deliberation & Voting';
 			case 'enacted': return 'Enacted';
 			case 'rejected': return 'Rejected';
 			case 'withdrawn': return 'Withdrawn';
@@ -102,12 +93,6 @@
 		</button>
 		<button 
 			class="tab-nav__button" 
-			class:active={activeTab === 'votes'}
-			onclick={() => activeTab = 'votes'}>
-			🗳️ Votes {#if openVotes.length > 0}<span class="badge badge--urgent">{openVotes.length}</span>{/if}
-		</button>
-		<button 
-			class="tab-nav__button" 
 			class:active={activeTab === 'pending'}
 			onclick={() => activeTab = 'pending'}>
 			📋 Pending {#if pending.length > 0}<span class="badge">{pending.length}</span>{/if}
@@ -125,41 +110,11 @@
 		{#if activeTab === 'deliberations'}
 			{#if activeDeliberations.length > 0}
 				<section class="section">
-					<h2 class="section__title">📊 Active Deliberations</h2>
-					<p class="section__desc">Ongoing discussion and debate</p>
+					<h2 class="section__title">�️ Deliberation & Voting</h2>
+					<p class="section__desc">Active discussions and open votes — your participation is needed</p>
 					<div class="cards">
 						{#each activeDeliberations as motion}
 							<a href="/motions/{motion.uuid}" class="card card--deliberation">
-								<div class="card__header">
-									<h3 class="card__title">{motion.title}</h3>
-									<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
-								</div>
-								<div class="card__meta">
-									<span>Introduced {formatDate(motion.created_at)}</span>
-									<span>{motion.comments.length} comments</span>
-								</div>
-							</a>
-						{/each}
-					</div>
-				</section>
-			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No questions currently in deliberation</p>
-					{#if canCreateMotion}
-						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
-							+ Put a Question to the Community
-						</button>
-					{/if}
-				</div>
-			{/if}
-		{:else if activeTab === 'votes'}
-			{#if openVotes.length > 0}
-				<section class="section">
-					<h2 class="section__title">🗳️ Open Votes</h2>
-					<p class="section__desc">Action required — cast your vote now</p>
-					<div class="cards">
-						{#each openVotes as motion}
-							<a href="/motions/{motion.uuid}" class="card card--vote">
 								<div class="card__header">
 									<h3 class="card__title">{motion.title}</h3>
 									<span class="badge {getStatusBadgeClass(motion.status)}">{getStatusLabel(motion.status)}</span>
@@ -178,7 +133,7 @@
 									</div>
 								{/if}
 								<div class="card__meta">
-									<span>Opened {formatDate(motion.vote_opened_at || motion.created_at)}</span>
+									<span>Introduced {formatDate(motion.created_at)}</span>
 									<span>{motion.comments.length} comments</span>
 								</div>
 							</a>
@@ -187,7 +142,12 @@
 				</section>
 			{:else}
 				<div class="empty-state">
-					<p class="empty-state__message">No open votes at this time</p>
+					<p class="empty-state__message">No questions currently in deliberation or voting</p>
+					{#if canCreateMotion}
+						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+							+ Put a Question to the Community
+						</button>
+					{/if}
 				</div>
 			{/if}
 		{:else if activeTab === 'pending'}

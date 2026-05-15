@@ -48,7 +48,6 @@
 			case 'draft': return 'badge-draft';
 			case 'introduced': return 'badge-introduced';
 			case 'deliberation': return 'badge-deliberation';
-			case 'vote': return 'badge-vote';
 			case 'enacted': return 'badge-enacted';
 			case 'rejected': return 'badge-rejected';
 			case 'withdrawn': return 'badge-withdrawn';
@@ -60,8 +59,7 @@
 		switch (status) {
 			case 'draft': return 'Draft';
 			case 'introduced': return 'Introduced';
-			case 'deliberation': return 'Deliberation';
-			case 'vote': return 'Voting';
+			case 'deliberation': return 'Deliberation & Voting';
 			case 'enacted': return 'Enacted';
 			case 'rejected': return 'Rejected';
 			case 'withdrawn': return 'Withdrawn';

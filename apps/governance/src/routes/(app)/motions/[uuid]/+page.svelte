@@ -4,7 +4,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const { motion, introducer, body, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, deliberationComplete, daysRemainingInDeliberation, comments, canAdvance, canOpenVote, canCloseVote, alreadyVoted, actingAs } = $derived(data);
+	const { motion, introducer, body, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, deliberationComplete, daysRemainingInDeliberation, comments, canAdvance, canCloseVote, alreadyVoted, hasMarkedMotionReady, readinessCount, readinessSigners, actingAs } = $derived(data);
 
 	let editingCommentUuid = $state<string | null>(null);
 	let editingCommentBody = $state('');
@@ -32,7 +32,6 @@
 		draft:        'status--draft',
 		introduced:   'status--introduced',
 		deliberation: 'status--deliberation',
-		vote:         'status--vote',
 		enacted:      'status--enacted',
 		rejected:     'status--rejected',
 		withdrawn:    'status--withdrawn',
@@ -41,8 +40,7 @@
 	const statusLabel: Record<string, string> = {
 		draft:        'Draft',
 		introduced:   'Introduced',
-		deliberation: 'In Deliberation',
-		vote:         'Vote Open',
+		deliberation: 'Deliberation & Voting',
 		enacted:      'Enacted',
 		rejected:     'Rejected',
 		withdrawn:    'Withdrawn',
@@ -58,64 +56,215 @@
 			? Math.round((tally.nay_count / tally.eligible_count) * 100)
 			: 0
 	);
+
+	// Live countdown timer for deliberation
+	let timeRemaining = $state<{ days: number; hours: number; minutes: number; seconds: number; expired: boolean } | null>(null);
+
+	$effect(() => {
+		if (motion.status !== 'deliberation' || !motion.deliberation_opened_at || !currentDeliberationRule) {
+			timeRemaining = null;
+			return;
+		}
+
+		function updateTimer() {
+			if (!motion.deliberation_opened_at || !currentDeliberationRule) return;
+			
+			const openedAt = new Date(motion.deliberation_opened_at);
+			const durationMs = currentDeliberationRule.minimum_days * 24 * 60 * 60 * 1000;
+			const endTime = new Date(openedAt.getTime() + durationMs);
+			const now = new Date();
+			const diff = endTime.getTime() - now.getTime();
+
+			if (diff <= 0) {
+				timeRemaining = { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+			} else {
+				const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+				const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+				const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+				const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+				timeRemaining = { days, hours, minutes, seconds, expired: false };
+			}
+		}
+
+		updateTimer();
+		const interval = setInterval(updateTimer, 1000);
+
+		return () => clearInterval(interval);
+	});
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<a href="/motions" class="back">← Motions</a>
-		<div class="header-row">
-			<div class="title-row">
-				<span class="motion-id">
-					{#if body?.abbreviation}
-						{body.abbreviation} {motion.motion_number}
+	<a href="/motions" class="back">← Motions</a>
+
+	<!-- Paper Document -->
+	<div class="paper">
+		<div class="paper__header">
+			<div class="paper__letterhead">
+				{#if body}
+					{body.name}
+				{:else}
+					The Ben Franklin Society
+				{/if}
+			</div>
+			<div class="paper__motion-number">
+				{#if body?.abbreviation}
+					{body.abbreviation} {motion.motion_number}
+				{:else}
+					Motion #{motion.motion_number}
+				{/if}
+			</div>
+		</div>
+
+		<div class="paper__title">
+			{motion.title}
+		</div>
+
+		<div class="paper__meta">
+			<div class="paper__meta-row">
+				<span class="paper__meta-label">Introduced by:</span>
+				<span class="paper__meta-value">
+					{#if introducer}
+						{introducer.given_name} {introducer.family_name}
 					{:else}
-						#{motion.motion_number}
+						Unknown
 					{/if}
 				</span>
-				<h1>{motion.title}</h1>
 			</div>
-			<span class="status-badge {statusVariant[motion.status] ?? ''}">{statusLabel[motion.status] ?? motion.status}</span>
+			<div class="paper__meta-row">
+				<span class="paper__meta-label">Date:</span>
+				<span class="paper__meta-value">{new Date(motion.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+			</div>
+			<div class="paper__meta-row">
+				<span class="paper__meta-label">Status:</span>
+				<span class="paper__status {statusVariant[motion.status] ?? ''}">{statusLabel[motion.status] ?? motion.status}</span>
+			</div>
+			{#if timeRemaining}
+				<div class="paper__meta-row">
+					<span class="paper__meta-label">Time Remaining:</span>
+					<span class="paper__timer {timeRemaining.expired ? 'paper__timer--expired' : ''}">
+						{#if timeRemaining.expired}
+							<span class="timer-ready">✓ Ready to Close</span>
+						{:else}
+							<span class="timer-segment">{timeRemaining.days}<span class="timer-unit">d</span></span>
+							<span class="timer-segment">{timeRemaining.hours.toString().padStart(2, '0')}<span class="timer-unit">h</span></span>
+							<span class="timer-segment">{timeRemaining.minutes.toString().padStart(2, '0')}<span class="timer-unit">m</span></span>
+							<span class="timer-segment timer-segment--seconds">{timeRemaining.seconds.toString().padStart(2, '0')}<span class="timer-unit">s</span></span>
+						{/if}
+					</span>
+				</div>
+			{/if}
 		</div>
-		<div class="meta-row">
-			<span class="meta-item">
-				Introduced by
-				{#if introducer}
-					<strong>{introducer.given_name} {introducer.family_name}</strong>
-					<span class="handle">@{introducer.handle}</span>
-				{:else}
-					<span class="muted">Unknown</span>
-				{/if}
-			</span>
-			<span class="meta-sep">·</span>
-			<span class="meta-item">
-				{#if body}
-					<a href="/associations/{body.handle}">{body.name}</a>
-				{:else}
-					Community referendum
-				{/if}
-			</span>
-			<span class="meta-sep">·</span>
-			<span class="meta-item muted">{motion.created_at.slice(0, 10)}</span>
+
+		<div class="paper__divider"></div>
+
+		<div class="paper__body">
+			{motion.body}
 		</div>
+
+		{#if motion.reasoning}
+			<div class="paper__section">
+				<div class="paper__section-title">Reasoning</div>
+				<div class="paper__section-body">
+					{motion.reasoning}
+				</div>
+			</div>
+		{/if}
+
+		{#if motion.clerk_notes}
+			<div class="paper__section">
+				<div class="paper__section-title">Clerk's Notes</div>
+				<div class="paper__section-body">
+					{motion.clerk_notes}
+				</div>
+			</div>
+		{/if}
+
+		{#if motion.parliamentarian_notes}
+			<div class="paper__section">
+				<div class="paper__section-title">Parliamentarian's Notes</div>
+				<div class="paper__section-body">
+					{motion.parliamentarian_notes}
+				</div>
+			</div>
+		{/if}
 	</div>
 
-	<div class="card">
-		<div class="card__label">Motion Text</div>
-		<p class="prose">{motion.body}</p>
-	</div>
+	<!-- Readiness Indicator (for introduced motions) -->
+	{#if motion.status === 'introduced'}
+		<div class="card readiness-card">
+			<div class="card__header">
+				<h3 class="card__title">Motion Readiness</h3>
+				<span class="readiness-badge">
+					{readinessCount} of 15
+				</span>
+			</div>
+			
+			<div class="readiness-progress">
+				<div class="readiness-progress__bar">
+					<div class="readiness-progress__fill" style="width: {Math.min((readinessCount / 15) * 100, 100)}%"></div>
+				</div>
+				<p class="readiness-progress__text">
+					{#if readinessCount >= 15}
+						✓ Ready to advance to deliberation
+					{:else}
+						{15 - readinessCount} more {15 - readinessCount === 1 ? 'member' : 'members'} needed to advance
+					{/if}
+				</p>
+			</div>
 
-	{#if motion.reasoning}
-		<div class="card card--reasoning">
-			<div class="card__label">Why this motion was introduced</div>
-			<p class="prose">{motion.reasoning}</p>
+			{#if actingAs}
+				<div class="readiness-actions">
+					{#if hasMarkedMotionReady}
+						<form method="POST" action="?/unmarkReady" use:enhance>
+							<button type="submit" class="btn btn--secondary btn--sm">
+								✓ Marked Ready
+							</button>
+						</form>
+						<p class="muted" style="font-size: var(--text-xs);">You've indicated this motion is ready to advance</p>
+					{:else}
+						<form method="POST" action="?/markReady" use:enhance>
+							<button type="submit" class="btn btn--primary btn--sm">
+								Mark Ready to Advance
+							</button>
+						</form>
+						<p class="muted" style="font-size: var(--text-xs);">Signal that you're ready for this motion to enter deliberation</p>
+					{/if}
+				</div>
+			{/if}
+
+			{#if readinessSigners.length > 0}
+				<div class="readiness-signers">
+					<h4 class="readiness-signers__title">Members Ready ({readinessSigners.length})</h4>
+					<div class="readiness-signers__list">
+						{#each readinessSigners as signer}
+							<div class="signer-badge">
+								<span class="signer-badge__avatar">
+									{signer.given_name[0]}{signer.family_name[0]}
+								</span>
+								<span class="signer-badge__name">
+									{signer.given_name} {signer.family_name}
+								</span>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
+	<!-- Vote Tally (if voting) -->
 	{#if tally}
-		<div class="card">
-			<div class="card__label">
-				{tally.closed_at ? `Vote closed ${tally.closed_at.slice(0, 10)}` : 'Vote in progress'}
-				{#if currentRule}<span class="rule-badge">{currentRule.name}</span>{/if}
+		<div class="vote-card">
+			<div class="vote-card__header">
+				<span class="vote-card__title">
+					{tally.closed_at ? `Vote Closed` : 'Vote in Progress'}
+				</span>
+				{#if currentRule}
+					<span class="vote-card__rule">{currentRule.name}</span>
+				{/if}
+				{#if tally.closed_at}
+					<span class="vote-card__date">{new Date(tally.closed_at).toLocaleDateString()}</span>
+				{/if}
 			</div>
 			<div class="vote-stats">
 				<div class="vote-stat vote-stat--aye">
@@ -140,20 +289,19 @@
 				<div class="vote-bar__nay" style="width: {nayPct}%"></div>
 			</div>
 			<p class="vote-caption">
-				{tally.aye_count + tally.nay_count + tally.abstain_count} of {tally.eligible_count} eligible members voted
+				{tally.aye_count + tally.nay_count + tally.abstain_count} of {tally.eligible_count} voted
 				({ayePct}% aye)
 			</p>
 		</div>
 	{/if}
 
-	{#if motion.clerk_notes || canAdvance}
+	<!-- Administrative Cards -->
+	{#if (motion.clerk_notes || canAdvance) && !motion.clerk_notes}
 		<div class="card">
 			<div class="card__label">
 				Clerk's Notes
 				{#if canAdvance && !editingClerkNotes}
-					<button type="button" class="btn-inline" onclick={startEditClerkNotes}>
-						{motion.clerk_notes ? 'Edit' : 'Add Notes'}
-					</button>
+					<button type="button" class="btn-inline" onclick={startEditClerkNotes}>Add Notes</button>
 				{/if}
 			</div>
 			{#if editingClerkNotes}
@@ -175,22 +323,18 @@
 						<button type="button" class="btn btn--secondary btn--sm" onclick={() => editingClerkNotes = false}>Cancel</button>
 					</div>
 				</form>
-			{:else if motion.clerk_notes}
-				<p class="prose clerk-notes-display">{motion.clerk_notes}</p>
 			{:else}
 				<p class="muted">No notes yet</p>
 			{/if}
 		</div>
 	{/if}
 
-	{#if motion.parliamentarian_notes || canAdvance}
+	{#if (motion.parliamentarian_notes || canAdvance) && !motion.parliamentarian_notes}
 		<div class="card">
 			<div class="card__label">
 				Parliamentarian's Notes
 				{#if canAdvance && !editingParliamentarianNotes}
-					<button type="button" class="btn-inline" onclick={startEditParliamentarianNotes}>
-						{motion.parliamentarian_notes ? 'Edit' : 'Add Notes'}
-					</button>
+					<button type="button" class="btn-inline" onclick={startEditParliamentarianNotes}>Add Notes</button>
 				{/if}
 			</div>
 			{#if editingParliamentarianNotes}
@@ -212,19 +356,75 @@
 						<button type="button" class="btn btn--secondary btn--sm" onclick={() => editingParliamentarianNotes = false}>Cancel</button>
 					</div>
 				</form>
-			{:else if motion.parliamentarian_notes}
-				<p class="prose clerk-notes-display">{motion.parliamentarian_notes}</p>
 			{:else}
 				<p class="muted">No notes yet</p>
 			{/if}
 		</div>
 	{/if}
 
+	<!-- Edit Notes (if notes exist) -->
+	{#if canAdvance && (motion.clerk_notes || motion.parliamentarian_notes)}
+		<div class="card card--compact">
+			<div class="card__label">Administrative Actions</div>
+			<div class="admin-actions">
+				{#if motion.clerk_notes && !editingClerkNotes}
+					<button type="button" class="btn btn--sm btn--secondary" onclick={startEditClerkNotes}>
+						Edit Clerk's Notes
+					</button>
+				{/if}
+				{#if motion.parliamentarian_notes && !editingParliamentarianNotes}
+					<button type="button" class="btn btn--sm btn--secondary" onclick={startEditParliamentarianNotes}>
+						Edit Parliamentarian's Notes
+					</button>
+				{/if}
+			</div>
+			{#if editingClerkNotes}
+				<form method="POST" action="?/setClerkNotes" use:enhance={() => {
+					return ({ update }) => {
+						update().then(() => {
+							editingClerkNotes = false;
+						});
+					};
+				}} class="edit-form">
+					<textarea 
+						name="clerk_notes" 
+						bind:value={clerkNotesValue}
+						class="clerk-notes-input"
+						rows="4"></textarea>
+					<div class="form-actions">
+						<button type="submit" class="btn btn--primary btn--sm">Save</button>
+						<button type="button" class="btn btn--secondary btn--sm" onclick={() => editingClerkNotes = false}>Cancel</button>
+					</div>
+				</form>
+			{/if}
+			{#if editingParliamentarianNotes}
+				<form method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
+					return ({ update }) => {
+						update().then(() => {
+							editingParliamentarianNotes = false;
+						});
+					};
+				}} class="edit-form">
+					<textarea 
+						name="parliamentarian_notes" 
+						bind:value={parliamentarianNotesValue}
+						class="clerk-notes-input"
+						rows="4"></textarea>
+					<div class="form-actions">
+						<button type="submit" class="btn btn--primary btn--sm">Save</button>
+						<button type="button" class="btn btn--secondary btn--sm" onclick={() => editingParliamentarianNotes = false}>Cancel</button>
+					</div>
+				</form>
+			{/if}
+		</div>
+	{/if}
+
+	<!-- Actions -->
 	{#if !['enacted','rejected','withdrawn'].includes(motion.status)}
 		<div class="card">
 			<div class="card__label">Actions</div>
 			<div class="action-row">
-				{#if canAdvance && deliberationRules.length > 0 && !['vote','enacted','rejected','withdrawn'].includes(motion.status)}
+				{#if canAdvance && deliberationRules.length > 0 && motion.status === 'introduced'}
 					<form method="POST" action="?/setDeliberationRule" use:enhance class="rule-form">
 						<select name="deliberation_rule_uuid" class="rule-select">
 							<option value="">{currentDeliberationRule ? '— clear rule —' : '— no deliberation rule —'}</option>
@@ -234,13 +434,10 @@
 						</select>
 						<button type="submit" class="btn btn--secondary btn--sm">Set Deliberation Rule</button>
 					</form>
-				{:else if currentDeliberationRule}
+				{:else if currentDeliberationRule && motion.status === 'introduced'}
 					<span class="rule-label">Deliberation rule: <strong>{currentDeliberationRule.name}</strong></span>
-					{#if motion.status === 'deliberation' && !deliberationComplete}
-						<span class="deliberation-waiting">Vote eligible in {daysRemainingInDeliberation} day(s)</span>
-					{/if}
 				{/if}
-				{#if canAdvance && voteRules.length > 0 && !['vote','enacted','rejected','withdrawn'].includes(motion.status)}
+				{#if canAdvance && voteRules.length > 0 && motion.status === 'introduced'}
 					<form method="POST" action="?/setVoteRule" use:enhance class="rule-form">
 						<select name="vote_rule_uuid" class="rule-select">
 							<option value="">{currentRule ? '— clear rule —' : '— no vote rule —'}</option>
@@ -250,7 +447,7 @@
 						</select>
 						<button type="submit" class="btn btn--secondary btn--sm">Set Vote Rule</button>
 					</form>
-				{:else if currentRule}
+				{:else if currentRule && motion.status === 'introduced'}
 					<span class="rule-label">Vote rule: <strong>{currentRule.name}</strong></span>
 				{/if}
 				{#if motion.status === 'draft' && canAdvance}
@@ -260,28 +457,26 @@
 					</form>
 				{/if}
 				{#if motion.status === 'introduced' && canAdvance}
-					<form method="POST" action="?/callProceduralVote" class="procedural-form">
-						<input type="hidden" name="motion_uuid" value={motion.uuid} />
-						<input type="hidden" name="vote_type" value="open_deliberation" />
-						<button class="btn btn--secondary">Call for Deliberation (Vote)</button>
-					</form>
 					<form method="POST" action="?/advance">
 						<input type="hidden" name="to" value="deliberation" />
-						<button class="btn btn--primary">Begin Deliberation (Direct)</button>
-					</form>
-				{/if}
-				{#if motion.status === 'deliberation' && canOpenVote}
-					<form method="POST" action="?/openVote">
-						<button class="btn btn--primary" disabled={!deliberationComplete}>
-							{#if deliberationComplete}
-								Open Vote
-							{:else}
-								Open Vote ({daysRemainingInDeliberation} days remaining)
-							{/if}
+						<button class="btn btn--primary">
+							Begin Deliberation & Voting
 						</button>
 					</form>
 				{/if}
-				{#if motion.status === 'vote'}
+				{#if motion.status === 'deliberation'}
+					{#if currentDeliberationRule}
+						<div class="deliberation-info">
+							<span class="rule-label">Rule: <strong>{currentDeliberationRule.name}</strong></span>
+							{#if !deliberationComplete}
+								<span class="deliberation-waiting">
+									{daysRemainingInDeliberation} day(s) remaining
+								</span>
+							{:else}
+								<span class="deliberation-ready">Ready to close</span>
+							{/if}
+						</div>
+					{/if}
 					{#if !alreadyVoted}
 						<form method="POST" action="?/castVote" class="vote-form">
 							<button class="btn btn--aye" name="choice" value="aye">Aye</button>
@@ -293,7 +488,13 @@
 					{/if}
 					{#if canCloseVote}
 						<form method="POST" action="?/closeVote">
-							<button class="btn btn--secondary">Close Vote</button>
+							<button class="btn btn--secondary" disabled={!deliberationComplete}>
+								{#if deliberationComplete}
+									Close Vote & Finalize
+								{:else}
+									Close Vote ({daysRemainingInDeliberation} days remaining)
+								{/if}
+							</button>
 						</form>
 					{/if}
 				{/if}
@@ -307,55 +508,73 @@
 		</div>
 	{/if}
 
-	<div class="card">
-		<div class="card__label">Discussion ({comments.length})</div>
+	<!-- Discussion Thread -->
+	<div class="discussion">
+		<div class="discussion__header">
+			<h2 class="discussion__title">Discussion</h2>
+			<span class="discussion__count">{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</span>
+		</div>
+
 		{#if comments.length > 0}
-			<div class="comments">
+			<div class="thread">
 				{#each comments as c}
 					<div class="comment">
-						<div class="comment__header">
-							<strong>{c.given_name} {c.family_name}</strong>
-							<span class="handle">@{c.handle}</span>
-							<span class="muted">{c.created_at.slice(0, 10)}</span>
-							{#if c.edited_at}<span class="muted">(edited)</span>{/if}
-							{#if c.author_uuid === actingAs}
-								<span class="comment__actions">
-									<button class="btn-inline" onclick={() => startEditComment(c.uuid, c.body)}>Edit</button>
-									<form method="POST" action="?/deleteComment" use:enhance>
-										<input type="hidden" name="comment_uuid" value={c.uuid} />
-										<button class="btn-inline btn-inline--danger" type="submit">Delete</button>
-									</form>
-								</span>
+						<div class="comment__avatar">
+							{c.given_name[0]}{c.family_name[0]}
+						</div>
+						<div class="comment__content">
+							<div class="comment__header">
+								<strong class="comment__author">{c.given_name} {c.family_name}</strong>
+								<span class="comment__handle">@{c.handle}</span>
+								<span class="comment__date">{new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+								{#if c.edited_at}<span class="comment__edited">(edited)</span>{/if}
+								{#if c.author_uuid === actingAs}
+									<div class="comment__actions">
+										<button class="comment__action" onclick={() => startEditComment(c.uuid, c.body)}>Edit</button>
+										<form method="POST" action="?/deleteComment" use:enhance style="display: inline;">
+											<input type="hidden" name="comment_uuid" value={c.uuid} />
+											<button class="comment__action comment__action--danger" type="submit">Delete</button>
+										</form>
+									</div>
+								{/if}
+							</div>
+							{#if editingCommentUuid === c.uuid}
+								<form method="POST" action="?/editComment" use:enhance={() => {
+									return ({ result, update }) => {
+										if (result.type === 'success') editingCommentUuid = null;
+										update();
+									};
+								}} class="comment__edit-form">
+									<input type="hidden" name="comment_uuid" value={c.uuid} />
+									<textarea class="comment__edit-input" name="body" rows="3" bind:value={editingCommentBody} required></textarea>
+									<div class="comment__edit-actions">
+										<button type="submit" class="btn btn--sm btn--primary">Save</button>
+										<button type="button" class="btn btn--sm btn--secondary" onclick={() => editingCommentUuid = null}>Cancel</button>
+									</div>
+								</form>
+							{:else}
+								<p class="comment__body">{c.body}</p>
 							{/if}
 						</div>
-						{#if editingCommentUuid === c.uuid}
-							<form method="POST" action="?/editComment" use:enhance={() => {
-								return ({ result, update }) => {
-									if (result.type === 'success') editingCommentUuid = null;
-									update();
-								};
-							}}>
-								<input type="hidden" name="comment_uuid" value={c.uuid} />
-								<textarea class="comment-edit-input" name="body" rows="3" bind:value={editingCommentBody} required></textarea>
-								<div class="comment-edit-actions">
-									<button type="submit" class="btn btn--sm btn--primary">Save</button>
-									<button type="button" class="btn btn--sm" onclick={() => editingCommentUuid = null}>Cancel</button>
-								</div>
-							</form>
-						{:else}
-							<p class="comment__body">{c.body}</p>
-						{/if}
 					</div>
 				{/each}
 			</div>
+		{:else}
+			<p class="discussion__empty">No comments yet. Be the first to share your thoughts.</p>
 		{/if}
+
 		{#if actingAs}
-			<form method="POST" action="?/comment" use:enhance>
-				<div class="comment-form">
-					<textarea class="comment-input" name="body" rows="3" placeholder="Add to the discussion…" required></textarea>
-					<button type="submit" class="btn btn--sm btn--primary">Post</button>
+			<form method="POST" action="?/comment" use:enhance class="comment-form">
+				<div class="comment-form__avatar">
+					You
+				</div>
+				<div class="comment-form__input-wrapper">
+					<textarea class="comment-form__input" name="body" rows="3" placeholder="Add to the discussion…" required></textarea>
+					<button type="submit" class="btn btn--primary btn--sm">Post Comment</button>
 				</div>
 			</form>
+		{:else}
+			<p class="discussion__login">Please log in to comment.</p>
 		{/if}
 	</div>
 </div>
@@ -364,9 +583,10 @@
 	.page {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-6);
-		max-width: 740px;
+		gap: var(--space-8);
+		max-width: 900px;
 		margin: 0 auto;
+		padding: var(--space-6) var(--space-4);
 	}
 
 	.back {
@@ -374,69 +594,235 @@
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 		text-decoration: none;
-		margin-bottom: var(--space-3);
+		transition: color 0.2s;
 	}
 	.back:hover { color: var(--color-text); }
 
-	.header-row {
+	/* Paper Document */
+	.paper {
+		background: #fefefe;
+		background-image:
+			linear-gradient(to bottom, transparent 0%, transparent 98%, rgba(0,0,0,0.02) 98%, rgba(0,0,0,0.02) 100%);
+		background-size: 100% 24px;
+		box-shadow:
+			0 1px 2px rgba(0,0,0,0.05),
+			0 4px 8px rgba(0,0,0,0.08),
+			0 8px 16px rgba(0,0,0,0.06),
+			inset 0 0 0 1px rgba(0,0,0,0.03);
+		border-radius: 2px;
+		padding: var(--space-12) var(--space-10);
+		position: relative;
+		margin: var(--space-6) 0;
+	}
+
+	.paper::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: 
+			repeating-linear-gradient(
+				90deg,
+				transparent,
+				transparent 1px,
+				rgba(0,0,0,0.005) 1px,
+				rgba(0,0,0,0.005) 2px
+			);
+		pointer-events: none;
+		border-radius: 2px;
+	}
+
+	.paper__header {
 		display: flex;
+		justify-content: space-between;
 		align-items: flex-start;
-		gap: var(--space-3);
-		flex-wrap: wrap;
-	}
-	.header-row h1 { margin: 0; flex: 1; }
-
-	.title-row {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-3);
-		flex: 1;
+		margin-bottom: var(--space-8);
+		padding-bottom: var(--space-4);
+		border-bottom: 2px solid #e5e7eb;
 	}
 
-	.motion-id {
-		font-family: var(--font-mono);
-		font-size: var(--text-lg);
+	.paper__letterhead {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: #6b7280;
+	}
+
+	.paper__motion-number {
+		font-family: var(--font-mono, 'Courier New', monospace);
+		font-size: var(--text-sm);
+		color: #6b7280;
 		font-weight: var(--weight-semibold);
-		color: var(--color-text-muted);
-		flex-shrink: 0;
 	}
 
-	.meta-row {
+	.paper__title {
+		font-size: var(--text-3xl, 2rem);
+		font-weight: var(--weight-bold);
+		line-height: 1.3;
+		margin-bottom: var(--space-6);
+		color: #111827;
+	}
+
+	.paper__meta {
 		display: flex;
-		align-items: center;
+		flex-direction: column;
 		gap: var(--space-2);
-		flex-wrap: wrap;
-		margin-top: var(--space-2);
+		margin-bottom: var(--space-8);
 		font-size: var(--text-sm);
 	}
-	.meta-item { color: var(--color-text-muted); }
-	.meta-item a { color: var(--color-text); text-decoration: none; }
-	.meta-item a:hover { text-decoration: underline; }
-	.meta-sep { color: var(--color-border); }
-	.handle { color: var(--color-text-muted); font-size: var(--text-xs); margin-left: var(--space-1); }
-	.muted { color: var(--color-text-muted); }
 
-	.status-badge {
-		flex-shrink: 0;
+	.paper__meta-row {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.paper__meta-label {
+		font-weight: var(--weight-medium);
+		color: #6b7280;
+		min-width: 120px;
+	}
+
+	.paper__meta-value {
+		color: #111827;
+	}
+
+	.paper__status {
 		display: inline-block;
 		font-size: var(--text-xs);
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
+		padding: 2px 8px;
+		border-radius: 3px;
 		font-weight: var(--weight-medium);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		border: 1px solid transparent;
-		white-space: nowrap;
-		margin-top: var(--space-1);
 	}
-	.status--draft        { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-muted); }
-	.status--introduced   { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
-	.status--deliberation { background: #faf5ff; border-color: #c4b5fd; color: #6d28d9; }
-	.status--vote         { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
-	.status--enacted      { background: #dcfce7; border-color: #86efac; color: #166534; }
-	.status--rejected     { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
-	.status--withdrawn    { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-muted); }
+	.status--draft        { background: #f3f4f6; color: #6b7280; }
+	.status--introduced   { background: #dbeafe; color: #1e40af; }
+	.status--deliberation { background: #f3e8ff; color: #6b21a8; }
+	.status--vote         { background: #f1fae5; color: #065f46; }
+	.status--rejected     { background: #fee2e2; color: #991b1b; }
+	.status--withdrawn    { background: #f3f4f6; color: #6b7280; }
 
+	.paper__divider {
+		height: 1px;
+		background: #e5e7eb;
+		margin: var(--space-6) 0;
+	}
+
+	.paper__body {
+		font-size: var(--text-base);
+		line-height: 1.9;
+		color: #1f2937;
+		white-space: pre-wrap;
+		margin-bottom: var(--space-6);
+		font-family: 'Georgia', 'Times New Roman', serif;
+	}
+
+	.paper__section {
+		margin-top: var(--space-8);
+		padding-top: var(--space-6);
+		border-top: 1px solid #e5e7eb;
+	}
+
+	.paper__section-title {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #6b7280;
+		margin-bottom: var(--space-3);
+	}
+
+	.paper__section-body {
+		font-size: var(--text-sm);
+		line-height: 1.8;
+		color: #4b5563;
+		white-space: pre-wrap;
+		font-family: 'Georgia', 'Times New Roman', serif;
+	}
+
+	/* Vote Card */
+	.vote-card {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.vote-card__header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.vote-card__title {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-text-muted);
+	}
+
+	.vote-card__rule {
+		font-size: var(--text-xs);
+		background: var(--color-surface-raised);
+		color: var(--color-text-muted);
+		padding: 2px 8px;
+		border-radius: 999px;
+		font-weight: var(--weight-medium);
+	}
+
+	.vote-card__date {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		margin-left: auto;
+	}
+
+	.vote-stats {
+		display: flex;
+		gap: var(--space-6);
+	}
+	.vote-stat {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+	.vote-stat__count {
+		font-size: var(--text-2xl);
+		font-weight: var(--weight-bold);
+	}
+	.vote-stat__label {
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-text-muted);
+	}
+	.vote-stat--aye .vote-stat__count { color: #065f46; }
+	.vote-stat--nay .vote-stat__count { color: #991b1b; }
+
+	.vote-bar {
+		height: 8px;
+		background: var(--color-border);
+		border-radius: var(--radius-full, 9999px);
+		overflow: hidden;
+		display: flex;
+	}
+	.vote-bar__aye { background: #86efac; height: 100%; }
+	.vote-bar__nay { background: #fca5a5; height: 100%; }
+
+	.vote-caption {
+		margin: 0;
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	/* Cards (for actions, etc) */
 	.card {
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
@@ -446,9 +832,12 @@
 		flex-direction: column;
 		gap: var(--space-3);
 	}
-	.card--reasoning {
-		border-left: 3px solid var(--color-primary, #3b82f6);
+
+	.card--compact {
+		padding: var(--space-4);
+		gap: var(--space-2);
 	}
+
 	.card__label {
 		font-size: var(--text-xs);
 		text-transform: uppercase;
@@ -461,10 +850,17 @@
 		gap: var(--space-2);
 	}
 
-	.prose {
-		margin: 0;
-		font-size: var(--text-base);
-		line-height: 1.8;
+	.admin-actions {
+		display: flex;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
+	.edit-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
 	}
 
 	/* Actions */
@@ -494,6 +890,13 @@
 		color: var(--color-text-muted);
 	}
 	
+	.deliberation-info {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
 	.deliberation-waiting {
 		font-size: var(--text-xs);
 		color: #92400e;
@@ -501,6 +904,16 @@
 		padding: var(--space-1) var(--space-2);
 		border-radius: var(--radius-sm);
 		border: 1px solid #fcd34d;
+		font-weight: var(--weight-medium);
+	}
+
+	.deliberation-ready {
+		font-size: var(--text-xs);
+		color: #065f46;
+		background: #d1fae5;
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		border: 1px solid #86efac;
 		font-weight: var(--weight-medium);
 	}
 	
@@ -512,6 +925,7 @@
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 	}
+
 	.btn {
 		padding: var(--space-2) var(--space-4);
 		border: none;
@@ -536,100 +950,6 @@
 	.btn--nay       { background: #fee2e2; color: #991b1b; }
 	.btn--abstain   { background: var(--color-bg, #f3f4f6); color: var(--color-text-muted); border: 1px solid var(--color-border); }
 
-	/* Vote */
-	.vote-stats {
-		display: flex;
-		gap: var(--space-6);
-	}
-	.vote-stat {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-	.vote-stat__count {
-		font-size: var(--text-2xl);
-		font-weight: var(--weight-bold);
-	}
-	.vote-stat__label {
-		font-size: var(--text-xs);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--color-text-muted);
-	}
-	.vote-stat--aye .vote-stat__count { color: #166534; }
-	.vote-stat--nay .vote-stat__count { color: #991b1b; }
-
-	.vote-bar {
-		height: 6px;
-		background: var(--color-border);
-		border-radius: var(--radius-full, 9999px);
-		overflow: hidden;
-		display: flex;
-	}
-	.vote-bar__aye { background: #86efac; height: 100%; }
-	.vote-bar__nay { background: #fca5a5; height: 100%; }
-
-	.vote-caption {
-		margin: 0;
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-	}
-
-	/* Comments */
-	.comments {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
-	.comment {
-		border-top: 1px solid var(--color-border);
-		padding-top: var(--space-4);
-	}
-	.comment:first-child { border-top: none; padding-top: 0; }
-	.comment__header {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
-		margin-bottom: var(--space-2);
-		font-size: var(--text-sm);
-		flex-wrap: wrap;
-	}
-	.comment__actions {
-		margin-left: auto;
-		display: flex;
-		gap: var(--space-2);
-	}
-	.comment__body {
-		margin: 0;
-		font-size: var(--text-sm);
-		line-height: 1.7;
-	}
-	.comment-edit-input, .comment-input {
-		width: 100%;
-		box-sizing: border-box;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		padding: var(--space-2) var(--space-3);
-		font-size: var(--text-sm);
-		font-family: inherit;
-		background: var(--color-bg);
-		color: var(--color-text);
-		resize: vertical;
-		line-height: 1.6;
-	}
-	.comment-edit-actions {
-		display: flex;
-		gap: var(--space-2);
-		margin-top: var(--space-2);
-	}
-	.comment-form {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		border-top: 1px solid var(--color-border);
-		padding-top: var(--space-4);
-		margin-top: var(--space-2);
-	}
 	.btn-inline {
 		background: none;
 		border: none;
@@ -640,32 +960,7 @@
 		text-decoration: underline;
 	}
 	.btn-inline:hover { color: var(--color-text); }
-	.btn-inline--danger:hover { color: #991b1b; }
 
-	/* Vote rule */
-	.rule-form { display: flex; align-items: center; gap: var(--space-2); }
-	.rule-select {
-		font-size: var(--text-sm);
-		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-	.rule-badge {
-		display: inline-block;
-		margin-left: var(--space-2);
-		font-size: var(--text-xs);
-		background: var(--color-surface-raised);
-		color: var(--color-text-muted);
-		padding: 1px 8px;
-		border-radius: 999px;
-		font-weight: var(--weight-normal);
-	}
-	.rule-label { font-size: var(--text-sm); color: var(--color-text-muted); }
-	.btn--sm { padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
-
-	/* Clerk notes */
 	.clerk-notes-input {
 		width: 100%;
 		box-sizing: border-box;
@@ -678,18 +973,361 @@
 		resize: vertical;
 		background: var(--color-background, #fff);
 	}
-	.clerk-notes-display {
-		white-space: pre-wrap;
-		margin: 0;
-		padding: var(--space-2);
-		background: var(--color-bg, #f9fafb);
-		border-radius: var(--radius-sm);
-		border-left: 3px solid var(--color-border);
-		font-size: var(--text-sm);
-	}
+
 	.form-actions {
 		display: flex;
 		gap: var(--space-2);
-		margin-top: var(--space-2);
+	}
+
+	.muted { color: var(--color-text-muted); }
+
+	/* Discussion Thread */
+	.discussion {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+
+	.discussion__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-bottom: var(--space-4);
+		border-bottom: 2px solid var(--color-border);
+	}
+
+	.discussion__title {
+		margin: 0;
+		font-size: var(--text-xl);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text);
+	}
+
+	.discussion__count {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.discussion__empty {
+		text-align: center;
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		padding: var(--space-8) 0;
+	}
+
+	.discussion__login {
+		text-align: center;
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		padding: var(--space-4);
+		background: var(--color-bg);
+		border-radius: var(--radius-md);
+	}
+
+	.thread {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+
+	.comment {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+	}
+
+	.comment__avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: var(--radius-full, 50%);
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		flex-shrink: 0;
+	}
+
+	.comment__content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.comment__header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+		flex-wrap: wrap;
+		font-size: var(--text-sm);
+	}
+
+	.comment__author {
+		font-weight: var(--weight-semibold);
+		color: var(--color-text);
+	}
+
+	.comment__handle {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
+
+	.comment__date {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
+
+	.comment__edited {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+		font-style: italic;
+	}
+
+	.comment__actions {
+		margin-left: auto;
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.comment__action {
+		background: none;
+		border: none;
+		padding: 0;
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		cursor: pointer;
+		text-decoration: underline;
+	}
+	.comment__action:hover { color: var(--color-text); }
+	.comment__action--danger:hover { color: #991b1b; }
+
+	.comment__body {
+		margin: 0;
+		font-size: var(--text-sm);
+		line-height: 1.7;
+		color: var(--color-text);
+		white-space: pre-wrap;
+	}
+
+	.comment__edit-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.comment__edit-input {
+		width: 100%;
+		box-sizing: border-box;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--space-2) var(--space-3);
+		font-size: var(--text-sm);
+		font-family: inherit;
+		background: var(--color-bg);
+		color: var(--color-text);
+		resize: vertical;
+		line-height: 1.6;
+	}
+
+	.comment__edit-actions {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.comment-form {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.comment-form__avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: var(--radius-full, 50%);
+		background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		flex-shrink: 0;
+	}
+
+	.comment-form__input-wrapper {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.comment-form__input {
+		width: 100%;
+		box-sizing: border-box;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--space-2) var(--space-3);
+		font-size: var(--text-sm);
+		font-family: inherit;
+		background: var(--color-bg);
+		color: var(--color-text);
+		resize: vertical;
+		line-height: 1.6;
+	}
+
+	.comment-form__input:focus {
+		outline: none;
+		border-color: var(--color-primary, #2563eb);
+		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+	}
+
+	/* Countdown Timer */
+	.paper__timer {
+		font-family: 'Courier New', monospace;
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		color: #2563eb;
+		display: flex;
+		gap: var(--space-2);
+		align-items: baseline;
+	}
+
+	.paper__timer--expired {
+		color: #059669;
+	}
+
+	.timer-segment {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 1px;
+	}
+
+	.timer-unit {
+		font-size: var(--text-xs);
+		font-weight: var(--weight-normal);
+		opacity: 0.7;
+		margin-left: 1px;
+	}
+
+	.timer-segment--seconds {
+		opacity: 0.8;
+	}
+
+	.timer-ready {
+		color: #059669;
+		font-weight: var(--weight-bold);
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	/* Readiness Card */
+	.readiness-card {
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.readiness-badge {
+		background: #dbeafe;
+		color: #1e40af;
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-full);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+	}
+
+	.readiness-progress {
+		margin: var(--space-4) 0;
+	}
+
+	.readiness-progress__bar {
+		height: 12px;
+		background: var(--color-border-light, #e5e7eb);
+		border-radius: var(--radius-full);
+		overflow: hidden;
+		margin-bottom: var(--space-2);
+	}
+
+	.readiness-progress__fill {
+		height: 100%;
+		background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+		transition: width 0.3s ease;
+	}
+
+	.readiness-progress__text {
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		text-align: center;
+		margin: 0;
+	}
+
+	.readiness-actions {
+		margin-top: var(--space-4);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--color-border);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.readiness-signers {
+		margin-top: var(--space-6);
+		padding-top: var(--space-6);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.readiness-signers__title {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-3) 0;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.readiness-signers__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	.signer-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		background: #f3f4f6;
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-full);
+		font-size: var(--text-sm);
+	}
+
+	.signer-badge__avatar {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 10px;
+		font-weight: var(--weight-bold);
+		flex-shrink: 0;
+	}
+
+	.signer-badge__name {
+		color: var(--color-text);
+		font-weight: var(--weight-medium);
 	}
 </style>

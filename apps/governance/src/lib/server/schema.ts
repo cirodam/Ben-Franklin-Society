@@ -234,24 +234,12 @@ CREATE TABLE IF NOT EXISTS motion_comment (
   deleted_at  TEXT NULL
 );
 
-CREATE TABLE IF NOT EXISTS procedural_vote (
-  uuid         TEXT PRIMARY KEY,
-  motion_uuid  TEXT NOT NULL REFERENCES motion(uuid),
-  called_by_uuid TEXT NOT NULL REFERENCES person(uuid),
-  vote_type    TEXT NOT NULL,
-  status       TEXT NOT NULL,
-  created_at   TEXT NOT NULL,
-  closes_at    TEXT NOT NULL,
-  closed_at    TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS procedural_ballot (
-  uuid                 TEXT PRIMARY KEY,
-  procedural_vote_uuid TEXT NOT NULL REFERENCES procedural_vote(uuid),
-  voter_uuid           TEXT NOT NULL REFERENCES person(uuid),
-  position             TEXT NOT NULL,
-  cast_at              TEXT NOT NULL,
-  UNIQUE(procedural_vote_uuid, voter_uuid)
+CREATE TABLE IF NOT EXISTS motion_readiness (
+  uuid        TEXT PRIMARY KEY,
+  motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
+  member_uuid TEXT NOT NULL REFERENCES person(uuid),
+  marked_at   TEXT NOT NULL,
+  UNIQUE (motion_uuid, member_uuid)
 );
 
 CREATE TABLE IF NOT EXISTS calendar_event (

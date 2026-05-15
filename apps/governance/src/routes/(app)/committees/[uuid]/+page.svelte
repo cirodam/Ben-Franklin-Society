@@ -16,7 +16,6 @@
 		sourceCollege,
 		termHolders,
 		draws,
-		openVotes,
 		activeDeliberations,
 		pending,
 		recentDecisions,
@@ -34,7 +33,7 @@
 	} = $derived(data);
 
 	let showModal = $state(false);
-	let activeTab = $state<'deliberations' | 'votes' | 'pending' | 'decisions' | 'members' | 'organization' | 'record'>('deliberations');
+	let activeTab = $state<'deliberations' | 'pending' | 'decisions' | 'members' | 'organization' | 'record'>('deliberations');
 
 	$effect(() => {
 		if (form?.created) {
@@ -46,12 +45,7 @@
 		showModal = true;
 	}
 
-	// Auto-switch to votes tab if there are open votes but no deliberations
-	$effect(() => {
-		if (activeDeliberations.length === 0 && openVotes.length > 0 && activeTab === 'deliberations') {
-			activeTab = 'votes';
-		}
-	});
+
 
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 </script>
@@ -90,13 +84,7 @@
 			class="tab-nav__button" 
 			class:active={activeTab === 'deliberations'}
 			onclick={() => activeTab = 'deliberations'}>
-			📊 Deliberations {#if activeDeliberations.length > 0}<span class="badge">{activeDeliberations.length}</span>{/if}
-		</button>
-		<button 
-			class="tab-nav__button" 
-			class:active={activeTab === 'votes'}
-			onclick={() => activeTab = 'votes'}>
-			🗳️ Votes {#if openVotes.length > 0}<span class="badge badge--urgent">{openVotes.length}</span>{/if}
+			�️ Deliberation & Voting {#if activeDeliberations.length > 0}<span class="badge badge--urgent">{activeDeliberations.length}</span>{/if}
 		</button>
 		<button 
 			class="tab-nav__button" 
@@ -135,38 +123,22 @@
 		{#if activeTab === 'deliberations'}
 			{#if activeDeliberations.length > 0}
 				<section class="section">
-					<h2 class="section__title">📊 Active Deliberations</h2>
-					<p class="section__desc">Motions currently under debate</p>
+					<h2 class="section__title">�️ Deliberation & Voting</h2>
+					<p class="section__desc">Active discussions and open votes — your participation is needed</p>
 					<div class="cards">
 						{#each activeDeliberations as motion}
-							<MotionCard {motion} comments={motion.comments} variant="deliberation" />
+							<MotionCard {motion} comments={motion.comments} tally={motion.tally} variant="deliberation" />
 						{/each}
 					</div>
 				</section>
 			{:else}
 				<div class="empty-state">
-					<p class="empty-state__message">No motions currently in deliberation</p>
+					<p class="empty-state__message">No motions currently in deliberation or voting</p>
 					{#if canCreateMotion}
 						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
 							+ New Motion Before This Committee
 						</button>
 					{/if}
-				</div>
-			{/if}
-		{:else if activeTab === 'votes'}
-			{#if openVotes.length > 0}
-				<section class="section">
-					<h2 class="section__title">🗳️ Open Votes</h2>
-					<p class="section__desc">Action required — cast your vote now</p>
-					<div class="cards">
-						{#each openVotes as motion}
-							<MotionCard {motion} comments={motion.comments} tally={motion.tally} variant="vote" />
-						{/each}
-					</div>
-				</section>
-			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No open votes at this time</p>
 				</div>
 			{/if}
 		{:else if activeTab === 'pending'}

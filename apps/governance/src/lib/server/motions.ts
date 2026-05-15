@@ -7,8 +7,7 @@ import { getVoteRuleByUuid, evaluateTally } from './vote_rules.js';
 export type MotionStatus =
 	| 'draft'
 	| 'introduced'
-	| 'deliberation'
-	| 'vote'
+	| 'deliberation' // Combined deliberation and voting phase
 	| 'enacted'
 	| 'rejected'
 	| 'withdrawn';
@@ -63,8 +62,7 @@ function now(): string {
 const ALLOWED_TRANSITIONS: Partial<Record<MotionStatus, MotionStatus[]>> = {
 	draft: ['introduced', 'withdrawn'],
 	introduced: ['deliberation', 'withdrawn'],
-	deliberation: ['withdrawn'], // deliberation → vote goes through openVote()
-	vote: ['withdrawn'],        // vote → enacted/rejected goes through closeVote()
+	deliberation: ['withdrawn'], // deliberation → enacted/rejected goes through closeVote()
 };
 
 // --- Motion queries ---
@@ -133,20 +131,50 @@ export function advanceMotion(uuid: string, to: MotionStatus): Motion {
 		throw new Error(`Cannot transition motion from '${motion.status}' to '${to}'`);
 	}
 
+	// Require 15 readiness votes to advance from introduced to deliberation
+	if (motion.status === 'introduced' && to === 'deliberation') {
+		const readinessCount = getReadinessCount(uuid);
+		if (readinessCount < 15) {
+			throw new Error(`Motion requires 15 members to mark it ready before deliberation. Currently ${readinessCount}/15.`);
+		}
+	}
+
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
 	const deliberationOpenedAt = (to === 'deliberation' && !motion.deliberation_opened_at) ? now() : null;
 	
-	db.prepare(
-		'UPDATE motion SET status = ?, resolved_at = COALESCE(?, resolved_at), deliberation_opened_at = COALESCE(?, deliberation_opened_at) WHERE uuid = ?'
-	).run(to, resolvedAt, deliberationOpenedAt, uuid);
+	db.transaction(() => {
+		db.prepare(
+			'UPDATE motion SET status = ?, resolved_at = COALESCE(?, resolved_at), deliberation_opened_at = COALESCE(?, deliberation_opened_at) WHERE uuid = ?'
+		).run(to, resolvedAt, deliberationOpenedAt, uuid);
 
+		// When advancing to deliberation, open voting immediately
+		if (to === 'deliberation') {
+			// Check if vote rule is set
+			if (!motion.vote_rule_uuid) {
+				throw new Error('A vote rule must be assigned before deliberation can begin');
+			}
+
+			// Get eligible voter count
+			const row = db.prepare(
+				`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
+			).get(motion.body_uuid) as { c: number };
+			const count = row.c;
+
+			// Create vote tally
+			db.prepare(
+				`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
+				 VALUES (?, ?, 0, 0, 0, ?)`
+			).run(uuid, count, deliberationOpenedAt);
+		}
+	})();
+	
 	return getMotionByUuid(uuid)!;
 }
 
 export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): Motion {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status === 'vote' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
+	if (motion.status === 'deliberation' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
 		throw new Error(`Cannot change vote rule on a motion in status '${motion.status}'`);
 	}
 	db.prepare('UPDATE motion SET vote_rule_uuid = ? WHERE uuid = ?').run(voteRuleUuid, motionUuid);
@@ -156,7 +184,7 @@ export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | nul
 export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUuid: string | null): Motion {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status === 'vote' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
+	if (motion.status === 'deliberation' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
 		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.status}'`);
 	}
 	db.prepare('UPDATE motion SET deliberation_rule_uuid = ? WHERE uuid = ?').run(deliberationRuleUuid, motionUuid);
@@ -179,35 +207,10 @@ export function setMotionParliamentarianNotes(motionUuid: string, parliamentaria
 
 // --- Vote ---
 
+// openVote is now called internally by advanceMotion when moving to deliberation
+// This function is kept for backward compatibility but should not be called directly
 export function openVote(motionUuid: string, eligibleCount?: number): VoteTally {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status !== 'deliberation') {
-		throw new Error(`Motion must be in 'deliberation' to open a vote (current: ${motion.status})`);
-	}
-	if (!motion.vote_rule_uuid) {
-		throw new Error('A vote rule must be assigned before a vote can be opened');
-	}
-
-	// eligible = current members of the body (community association = all active persons)
-	let count = eligibleCount;
-	if (count === undefined) {
-		const row = db.prepare(
-			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
-		).get(motion.body_uuid) as { c: number };
-		count = row.c;
-	}
-
-	const openedAt = now();
-	db.transaction(() => {
-		db.prepare(
-			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
-			 VALUES (?, ?, 0, 0, 0, ?)`
-		).run(motionUuid, count, openedAt);
-		db.prepare("UPDATE motion SET status = 'vote' WHERE uuid = ?").run(motionUuid);
-	})();
-
-	return getVoteTally(motionUuid)!;
+	throw new Error('openVote should not be called directly. Vote opens automatically when advancing to deliberation.');
 }
 
 export function getVoteTally(motionUuid: string): VoteTally | null {
@@ -227,7 +230,7 @@ export function hasVoted(motionUuid: string, voterUuid: string): boolean {
 export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoice): void {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status !== 'vote') throw new Error('Vote is not open');
+	if (motion.status !== 'deliberation') throw new Error('Motion is not in deliberation/voting phase');
 	if (hasVoted(motionUuid, voterUuid)) throw new Error('Already voted');
 
 	const tally = getVoteTally(motionUuid);
@@ -253,7 +256,7 @@ export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
 	if (tally.closed_at) throw new Error('Vote is already closed');
 
 	const motion = getMotionByUuid(motionUuid);
-	if (!motion || motion.status !== 'vote') throw new Error('Motion is not in vote status');
+	if (!motion || motion.status !== 'deliberation') throw new Error('Motion is not in deliberation status');
 
 	let outcome: 'enacted' | 'rejected';
 	if (motion.vote_rule_uuid) {
@@ -311,4 +314,63 @@ export function getComments(motionUuid: string): MotionComment[] {
 			'SELECT * FROM motion_comment WHERE motion_uuid = ? AND deleted_at IS NULL ORDER BY created_at'
 		)
 		.all(motionUuid) as MotionComment[];
+}
+
+// --- Motion Readiness ---
+
+export function markReady(motionUuid: string, memberUuid: string): void {
+	const motion = getMotionByUuid(motionUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+	if (motion.status !== 'introduced') throw new Error('Motion must be in introduced status');
+
+	// Check if already marked
+	const existing = db
+		.prepare('SELECT 1 FROM motion_readiness WHERE motion_uuid = ? AND member_uuid = ?')
+		.get(motionUuid, memberUuid);
+	
+	if (existing) return; // Already marked, no-op
+
+	db.prepare(
+		'INSERT INTO motion_readiness (uuid, motion_uuid, member_uuid, marked_at) VALUES (?, ?, ?, ?)'
+	).run(randomUUID(), motionUuid, memberUuid, now());
+}
+
+export function unmarkReady(motionUuid: string, memberUuid: string): void {
+	db.prepare('DELETE FROM motion_readiness WHERE motion_uuid = ? AND member_uuid = ?')
+		.run(motionUuid, memberUuid);
+}
+
+export function hasMarkedReady(motionUuid: string, memberUuid: string): boolean {
+	return !!db
+		.prepare('SELECT 1 FROM motion_readiness WHERE motion_uuid = ? AND member_uuid = ?')
+		.get(motionUuid, memberUuid);
+}
+
+export function getReadinessCount(motionUuid: string): number {
+	const result = db
+		.prepare('SELECT COUNT(*) as count FROM motion_readiness WHERE motion_uuid = ?')
+		.get(motionUuid) as { count: number };
+	return result.count;
+}
+
+export function getReadinessSigners(motionUuid: string): Array<{
+	uuid: string;
+	given_name: string;
+	family_name: string;
+	handle: string;
+	marked_at: string;
+}> {
+	return db.prepare(`
+		SELECT p.uuid, p.given_name, p.family_name, p.handle, mr.marked_at
+		FROM motion_readiness mr
+		JOIN person p ON p.uuid = mr.member_uuid
+		WHERE mr.motion_uuid = ?
+		ORDER BY mr.marked_at ASC
+	`).all(motionUuid) as Array<{
+		uuid: string;
+		given_name: string;
+		family_name: string;
+		handle: string;
+		marked_at: string;
+	}>;
 }

@@ -19,19 +19,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
 	// Group motions by status for deliberation-centric display
-	const openVotes = allMotions
-		.filter((m) => m.status === 'vote')
-		.map((m) => {
-			const tally = getVoteTally(m.uuid);
-			const comments = getComments(m.uuid);
-			return { ...m, tally, comments };
-		});
-
 	const activeDeliberations = allMotions
 		.filter((m) => m.status === 'deliberation')
 		.map((m) => {
+			const voteTally = getVoteTally(m.uuid);
+			const tally = voteTally ? {
+				eligible: voteTally.eligible_count,
+				voted: voteTally.aye_count + voteTally.nay_count + voteTally.abstain_count,
+				aye: voteTally.aye_count,
+				nay: voteTally.nay_count,
+				abstain: voteTally.abstain_count
+			} : null;
 			const comments = getComments(m.uuid);
-			return { ...m, comments };
+			return { ...m, tally, comments };
 		});
 
 	const pending = allMotions
@@ -63,7 +63,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		association,
 		members,
-		openVotes,
 		activeDeliberations,
 		pending,
 		recentDecisions,
