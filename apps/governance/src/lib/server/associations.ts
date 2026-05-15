@@ -231,6 +231,173 @@ export function createRole(associationUuid: string, name: string): Role {
 	return db.prepare('SELECT * FROM role WHERE uuid = ?').get(uuid) as Role;
 }
 
+export function createRoleDetailed(input: {
+	association_uuid: string;
+	name: string;
+	section_uuid?: string | null;
+	parent_role_uuid?: string | null;
+	level?: number | null;
+	term_days?: number | null;
+	description?: string | null;
+	salary_monthly?: number | null;
+	daily_rate?: number | null;
+}): Role {
+	const uuid = randomUUID();
+	db.prepare(
+		`INSERT INTO role (uuid, association_uuid, section_uuid, name, level, parent_role_uuid, term_days, description, salary_monthly, daily_rate, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	).run(
+		uuid,
+		input.association_uuid,
+		input.section_uuid ?? null,
+		input.name,
+		input.level ?? null,
+		input.parent_role_uuid ?? null,
+		input.term_days ?? null,
+		input.description ?? null,
+		input.salary_monthly ?? null,
+		input.daily_rate ?? null,
+		now()
+	);
+	return db.prepare('SELECT * FROM role WHERE uuid = ?').get(uuid) as Role;
+}
+
+export function getRoleByUuid(uuid: string): Role | null {
+	return (
+		(db
+			.prepare('SELECT * FROM role WHERE uuid = ?')
+			.get(uuid) as Role | undefined) ?? null
+	);
+}
+
+export function updateRole(uuid: string, input: {
+	name?: string;
+	section_uuid?: string | null;
+	parent_role_uuid?: string | null;
+	level?: number | null;
+	term_days?: number | null;
+	description?: string | null;
+	salary_monthly?: number | null;
+	daily_rate?: number | null;
+}): void {
+	const updates: string[] = [];
+	const params: any[] = [];
+
+	if (input.name !== undefined) {
+		updates.push('name = ?');
+		params.push(input.name);
+	}
+	if (input.section_uuid !== undefined) {
+		updates.push('section_uuid = ?');
+		params.push(input.section_uuid);
+	}
+	if (input.parent_role_uuid !== undefined) {
+		updates.push('parent_role_uuid = ?');
+		params.push(input.parent_role_uuid);
+	}
+	if (input.level !== undefined) {
+		updates.push('level = ?');
+		params.push(input.level);
+	}
+	if (input.term_days !== undefined) {
+		updates.push('term_days = ?');
+		params.push(input.term_days);
+	}
+	if (input.description !== undefined) {
+		updates.push('description = ?');
+		params.push(input.description);
+	}
+	if (input.salary_monthly !== undefined) {
+		updates.push('salary_monthly = ?');
+		params.push(input.salary_monthly);
+	}
+	if (input.daily_rate !== undefined) {
+		updates.push('daily_rate = ?');
+		params.push(input.daily_rate);
+	}
+
+	if (updates.length === 0) return;
+
+	params.push(uuid);
+	db.prepare(`UPDATE role SET ${updates.join(', ')} WHERE uuid = ?`).run(...params);
+}
+
+export function deleteRole(uuid: string): void {
+	// Remove all person assignments first
+	db.prepare(
+		'UPDATE person_role SET removed_at = ? WHERE role_uuid = ? AND removed_at IS NULL'
+	).run(now(), uuid);
+	// Delete role permissions
+	db.prepare('DELETE FROM role_permission WHERE role_uuid = ?').run(uuid);
+	// Delete the role
+	db.prepare('DELETE FROM role WHERE uuid = ?').run(uuid);
+}
+
+// --- Sections ---
+
+export function createSection(input: {
+	association_uuid: string;
+	name: string;
+	parent_section_uuid?: string | null;
+	mandate?: string | null;
+}): OrgSection {
+	const uuid = randomUUID();
+	db.prepare(
+		`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, mandate, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`
+	).run(
+		uuid,
+		input.association_uuid,
+		input.parent_section_uuid ?? null,
+		input.name,
+		input.mandate ?? null,
+		now()
+	);
+	return getSectionByUuid(uuid)!;
+}
+
+export function updateSection(uuid: string, input: {
+	name?: string;
+	parent_section_uuid?: string | null;
+	mandate?: string | null;
+}): void {
+	const updates: string[] = [];
+	const params: any[] = [];
+
+	if (input.name !== undefined) {
+		updates.push('name = ?');
+		params.push(input.name);
+	}
+	if (input.parent_section_uuid !== undefined) {
+		updates.push('parent_section_uuid = ?');
+		params.push(input.parent_section_uuid);
+	}
+	if (input.mandate !== undefined) {
+		updates.push('mandate = ?');
+		params.push(input.mandate);
+	}
+
+	if (updates.length === 0) return;
+
+	params.push(uuid);
+	db.prepare(`UPDATE org_section SET ${updates.join(', ')} WHERE uuid = ?`).run(...params);
+}
+
+export function deleteSection(uuid: string): void {
+	// Set removed_at instead of hard delete to preserve history
+	db.prepare(
+		'UPDATE org_section SET removed_at = ? WHERE uuid = ?'
+	).run(now(), uuid);
+	// Also remove child sections
+	db.prepare(
+		'UPDATE org_section SET removed_at = ? WHERE parent_section_uuid = ? AND removed_at IS NULL'
+	).run(now(), uuid);
+	// Unlink roles from this section
+	db.prepare(
+		'UPDATE role SET section_uuid = NULL WHERE section_uuid = ?'
+	).run(uuid);
+}
+
 // --- Role permissions ---
 
 export function getPermissionsForRole(roleUuid: string): RolePermission[] {

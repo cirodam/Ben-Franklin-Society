@@ -9,6 +9,13 @@ import {
 	assignRole,
 	removeRole,
 	getPermissionsForRole,
+	createSection,
+	updateSection,
+	deleteSection,
+	createRoleDetailed,
+	getRoleByUuid,
+	updateRole,
+	deleteRole,
 } from '$lib/server/associations.js';
 import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/server/sortition.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
@@ -304,6 +311,215 @@ export const actions: Actions = {
 		);
 		audit(actingAs, 'role.revoke', 'person', person_uuid,
 			`@${person?.handle ?? person_uuid} removed from role "${role?.name ?? role_uuid}"`, motion_uuid);
+		return { success: true };
+	},
+
+	// --- Section management ---
+	createSection: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		// TODO: Add permission check once we have section management permission
+		// if (!hasPermission(actingAs, PERMISSIONS.SECTIONS_MANAGE, association.uuid)) {
+		// 	return fail(403, { message: 'Not authorized to manage sections' });
+		// }
+
+		const data = await request.formData();
+		const name = String(data.get('name') ?? '').trim();
+		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
+		const mandate = String(data.get('mandate') ?? '').trim() || null;
+
+		if (!name) return fail(400, { message: 'Section name is required' });
+
+		const section = createSection({
+			association_uuid: association.uuid,
+			name,
+			parent_section_uuid,
+			mandate,
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'section_created',
+			'section',
+			section.uuid,
+			`Created section "${name}"`
+		);
+
+		return { success: true, section_uuid: section.uuid };
+	},
+
+	updateSection: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		const data = await request.formData();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim();
+		const name = String(data.get('name') ?? '').trim();
+		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
+		const mandate = String(data.get('mandate') ?? '').trim() || null;
+
+		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
+		if (!name) return fail(400, { message: 'Section name is required' });
+
+		updateSection(section_uuid, { name, parent_section_uuid, mandate });
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'section_updated',
+			'section',
+			section_uuid,
+			`Updated section "${name}"`
+		);
+
+		return { success: true };
+	},
+
+	deleteSection: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		const data = await request.formData();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim();
+
+		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
+
+		deleteSection(section_uuid);
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'section_deleted',
+			'section',
+			section_uuid,
+			'Deleted section'
+		);
+
+		return { success: true };
+	},
+
+	// --- Role management ---
+	createRole: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		const data = await request.formData();
+		const name = String(data.get('name') ?? '').trim();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
+		const parent_role_uuid = String(data.get('parent_role_uuid') ?? '').trim() || null;
+		const level = data.get('level') ? Number(data.get('level')) : null;
+		const term_days = data.get('term_days') ? Number(data.get('term_days')) : null;
+		const description = String(data.get('description') ?? '').trim() || null;
+		const salary_monthly = data.get('salary_monthly') ? Number(data.get('salary_monthly')) : null;
+		const daily_rate = data.get('daily_rate') ? Number(data.get('daily_rate')) : null;
+
+		if (!name) return fail(400, { message: 'Role name is required' });
+
+		const role = createRoleDetailed({
+			association_uuid: association.uuid,
+			name,
+			section_uuid,
+			parent_role_uuid,
+			level,
+			term_days,
+			description,
+			salary_monthly,
+			daily_rate,
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'role_created',
+			'role',
+			role.uuid,
+			`Created role "${name}"`
+		);
+
+		return { success: true, role_uuid: role.uuid };
+	},
+
+	updateRole: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		const data = await request.formData();
+		const role_uuid = String(data.get('role_uuid') ?? '').trim();
+		const name = String(data.get('name') ?? '').trim();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
+		const parent_role_uuid = String(data.get('parent_role_uuid') ?? '').trim() || null;
+		const level = data.get('level') ? Number(data.get('level')) : null;
+		const term_days = data.get('term_days') ? Number(data.get('term_days')) : null;
+		const description = String(data.get('description') ?? '').trim() || null;
+		const salary_monthly = data.get('salary_monthly') ? Number(data.get('salary_monthly')) : null;
+		const daily_rate = data.get('daily_rate') ? Number(data.get('daily_rate')) : null;
+
+		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
+		if (!name) return fail(400, { message: 'Role name is required' });
+
+		updateRole(role_uuid, {
+			name,
+			section_uuid,
+			parent_role_uuid,
+			level,
+			term_days,
+			description,
+			salary_monthly,
+			daily_rate,
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'role_updated',
+			'role',
+			role_uuid,
+			`Updated role "${name}"`
+		);
+
+		return { success: true };
+	},
+
+	deleteRole: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		const data = await request.formData();
+		const role_uuid = String(data.get('role_uuid') ?? '').trim();
+
+		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
+
+		deleteRole(role_uuid);
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'role_deleted',
+			'role',
+			role_uuid,
+			'Deleted role'
+		);
+
 		return { success: true };
 	}
 };

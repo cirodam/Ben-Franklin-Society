@@ -5,6 +5,7 @@
 	import RoleManagement from '$lib/components/RoleManagement.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import Sections from '$lib/components/Sections.svelte';
+	import OrgStructureBuilder from '$lib/components/OrgStructureBuilder.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: any } = $props();
@@ -245,7 +246,16 @@
 				<h2 class="section__title">🏢 Organization</h2>
 				
 				<div class="subsection">
-					<h3>📂 Sections</h3>
+					<h3>🏗️ Structure Builder</h3>
+					<p class="subsection-description">
+						Define your organization's structure by creating sections (departments) and roles. 
+						Build hierarchies using parent relationships.
+					</p>
+					<OrgStructureBuilder {sections} {roles} />
+				</div>
+
+				<div class="subsection">
+					<h3>📂 Sections Overview</h3>
 					<Sections {sections} />
 				</div>
 
@@ -399,6 +409,13 @@
 		font-size: var(--text-lg);
 		font-weight: var(--weight-semibold);
 		margin: 0 0 var(--space-4) 0;
+	}
+
+	.subsection-description {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-4) 0;
+		line-height: 1.5;
 	}
 
 	.record {

@@ -3,6 +3,7 @@
 	import RoleManagement from '$lib/components/RoleManagement.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import Sections from '$lib/components/Sections.svelte';
+	import OrgStructureBuilder from '$lib/components/OrgStructureBuilder.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -89,7 +90,7 @@
 	<div class="tab-content">
 		{#if activeTab === 'members'}
 			<section class="card">
-				<h2>Members</h2>
+				<h2>👥 Members</h2>
 				{#if members.length === 0}
 					<p class="empty">No current members.</p>
 				{:else}
@@ -112,8 +113,23 @@
 			</section>
 		{:else if activeTab === 'roles'}
 			<div class="roles-org-container">
-				<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
-				<OrgChart {roleHierarchy} />
+				<section class="section-block">
+					<h2>🏗️ Structure Builder</h2>
+					<p class="section-description">
+						Define your service's organizational structure by creating sections and roles with hierarchies.
+					</p>
+					<OrgStructureBuilder {sections} {roles} />
+				</section>
+
+				<section class="section-block">
+					<h2>👔 Roles & Assignments</h2>
+					<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
+				</section>
+
+				<section class="section-block">
+					<h2>🏢 Organization Chart</h2>
+					<OrgChart {roleHierarchy} />
+				</section>
 			</div>
 		{:else if activeTab === 'sections'}
 			<Sections {sections} />
@@ -273,6 +289,25 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
+	}
+
+	.section-block {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.section-block h2 {
+		font-size: var(--text-xl);
+		font-weight: var(--weight-semibold);
+		margin: 0;
+	}
+
+	.section-description {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0;
+		line-height: 1.5;
 	}
 
 	.card {

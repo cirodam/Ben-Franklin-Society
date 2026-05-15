@@ -9,6 +9,13 @@ import {
 	assignRole as assignRoleToMember,
 	removeRole,
 	getPermissionsForRole,
+	createSection,
+	updateSection,
+	deleteSection,
+	createRoleDetailed,
+	getRoleByUuid,
+	updateRole,
+	deleteRole,
 } from '$lib/server/associations.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
 import { addEntry } from '$lib/server/record.js';
@@ -140,25 +147,44 @@ export const actions: Actions = {
 	createRole: async ({ request, locals, params }) => {
 		if (!locals.session) return fail(401, { message: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;
+
 		const data = await request.formData();
 		const name = String(data.get('name') ?? '').trim();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
+		const parent_role_uuid = String(data.get('parent_role_uuid') ?? '').trim() || null;
+		const level = data.get('level') ? Number(data.get('level')) : null;
+		const term_days = data.get('term_days') ? Number(data.get('term_days')) : null;
+		const description = String(data.get('description') ?? '').trim() || null;
+		const salary_monthly = data.get('salary_monthly') ? Number(data.get('salary_monthly')) : null;
+		const daily_rate = data.get('daily_rate') ? Number(data.get('daily_rate')) : null;
 
-		if (!name) return fail(400, { message: 'Missing role name' });
+		if (!name) return fail(400, { message: 'Role name is required' });
 		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		const role = createRole(params.uuid, name);
+		const role = createRoleDetailed({
+			association_uuid: params.uuid,
+			name,
+			section_uuid,
+			parent_role_uuid,
+			level,
+			term_days,
+			description,
+			salary_monthly,
+			daily_rate,
+		});
+
 		addEntry(
 			params.uuid,
 			actingAs,
 			'role_created',
 			'role',
 			role.uuid,
-			`Role "${name}" created.`
+			`Created role "${name}"`
 		);
 		audit(actingAs, 'role.create', 'role', role.uuid, `Role "${name}" created in service ${params.uuid}`);
-		return { success: true };
+		return { success: true, role_uuid: role.uuid };
 	},
 
 	assignRole: async ({ request, locals, params }) => {
@@ -236,4 +262,164 @@ export const actions: Actions = {
 			`@${person?.handle ?? person_uuid} removed from role "${role?.name ?? role_uuid}"`, motion_uuid);
 		return { success: true };
 	},
+
+	// --- Section management ---
+	createSection: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const data = await request.formData();
+		const name = String(data.get('name') ?? '').trim();
+		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
+		const mandate = String(data.get('mandate') ?? '').trim() || null;
+
+		if (!name) return fail(400, { message: 'Section name is required' });
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		const section = createSection({
+			association_uuid: params.uuid,
+			name,
+			parent_section_uuid,
+			mandate,
+		});
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'section_created',
+			'section',
+			section.uuid,
+			`Created section "${name}"`
+		);
+
+		return { success: true, section_uuid: section.uuid };
+	},
+
+	updateSection: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const data = await request.formData();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim();
+		const name = String(data.get('name') ?? '').trim();
+		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
+		const mandate = String(data.get('mandate') ?? '').trim() || null;
+
+		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
+		if (!name) return fail(400, { message: 'Section name is required' });
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		updateSection(section_uuid, { name, parent_section_uuid, mandate });
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'section_updated',
+			'section',
+			section_uuid,
+			`Updated section "${name}"`
+		);
+
+		return { success: true };
+	},
+
+	deleteSection: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const data = await request.formData();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim();
+
+		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		deleteSection(section_uuid);
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'section_deleted',
+			'section',
+			section_uuid,
+			'Deleted section'
+		);
+
+		return { success: true };
+	},
+
+	updateRole: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const data = await request.formData();
+		const role_uuid = String(data.get('role_uuid') ?? '').trim();
+		const name = String(data.get('name') ?? '').trim();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
+		const parent_role_uuid = String(data.get('parent_role_uuid') ?? '').trim() || null;
+		const level = data.get('level') ? Number(data.get('level')) : null;
+		const term_days = data.get('term_days') ? Number(data.get('term_days')) : null;
+		const description = String(data.get('description') ?? '').trim() || null;
+		const salary_monthly = data.get('salary_monthly') ? Number(data.get('salary_monthly')) : null;
+		const daily_rate = data.get('daily_rate') ? Number(data.get('daily_rate')) : null;
+
+		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
+		if (!name) return fail(400, { message: 'Role name is required' });
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		updateRole(role_uuid, {
+			name,
+			section_uuid,
+			parent_role_uuid,
+			level,
+			term_days,
+			description,
+			salary_monthly,
+			daily_rate,
+		});
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'role_updated',
+			'role',
+			role_uuid,
+			`Updated role "${name}"`
+		);
+
+		return { success: true };
+	},
+
+	deleteRole: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const data = await request.formData();
+		const role_uuid = String(data.get('role_uuid') ?? '').trim();
+
+		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		deleteRole(role_uuid);
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'role_deleted',
+			'role',
+			role_uuid,
+			'Deleted role'
+		);
+
+		return { success: true };
+	}
 };
