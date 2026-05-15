@@ -6,19 +6,9 @@
 		return text.slice(0, length) + '...';
 	}
 
-	function formatCompensation(role: any): string {
-		if (role.salary_monthly) {
-			return `${role.salary_monthly}F/month`;
-		} else if (role.daily_rate) {
-			return `${role.daily_rate}F/day`;
-		}
-		return 'Volunteer';
-	}
-
-	function formatTerm(days: number | null): string {
-		if (!days) return 'As-needed';
-		if (days >= 365) return `${Math.floor(days / 365)}yr term`;
-		return `${Math.floor(days / 30)}mo term`;
+	function formatCompensation(franks: number): string {
+		if (franks === 0) return 'Volunteer';
+		return `${franks.toLocaleString()}F`;
 	}
 </script>
 
@@ -56,22 +46,18 @@
 					{#each data.roles as role}
 						<div class="role-card">
 							<div class="role-header">
-								<h3 class="role-name">{role.name}</h3>
-								{#if role.level}
-									<span class="role-level">Level {role.level}</span>
-								{/if}
+								<h3 class="role-name">{role.title}</h3>
 							</div>
 							<div class="role-association">
 								<a href="/associations/{role.association_uuid}">
 									{role.association_name}
 								</a>
 							</div>
-							{#if role.division}
-								<div class="role-division">{role.division}</div>
+							{#if role.description}
+								<div class="role-description">{role.description}</div>
 							{/if}
 							<div class="role-meta">
-								<span>{formatCompensation(role)}</span>
-								<span>{formatTerm(role.term_days)}</span>
+								<span>{formatCompensation(role.compensation_franks)}</span>
 								<span>Since {new Date(role.assigned_at).toLocaleDateString()}</span>
 							</div>
 						</div>

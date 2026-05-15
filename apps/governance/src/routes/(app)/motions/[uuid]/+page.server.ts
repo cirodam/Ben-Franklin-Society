@@ -239,6 +239,47 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	setMotionRules: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+			return fail(403, { error: 'Insufficient permissions' });
+		}
+
+		const data = await request.formData();
+		const vote_rule_uuid = String(data.get('vote_rule_uuid') ?? '').trim() || null;
+		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
+
+		try {
+			setMotionVoteRule(motion.uuid, vote_rule_uuid);
+			setMotionDeliberationRule(motion.uuid, deliberation_rule_uuid);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set rules' });
+		}
+
+		// Log changes
+		if (vote_rule_uuid) {
+			const rule = db.prepare('SELECT name FROM vote_rule WHERE uuid = ?').get(vote_rule_uuid) as { name: string } | undefined;
+			addEntry(motion.body_uuid, actingAs, 'vote_rule_set', 'motion', motion.uuid,
+				`Vote rule "${rule?.name ?? vote_rule_uuid}" assigned to motion "${motion.title}"`);
+			audit(actingAs, 'motion.set_vote_rule', 'motion', motion.uuid,
+				`Vote rule "${rule?.name ?? vote_rule_uuid}" set on motion "${motion.title}"`);
+		}
+		if (deliberation_rule_uuid) {
+			const rule = db.prepare('SELECT name FROM deliberation_rule WHERE uuid = ?').get(deliberation_rule_uuid) as { name: string } | undefined;
+			addEntry(motion.body_uuid, actingAs, 'deliberation_rule_set', 'motion', motion.uuid,
+				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" assigned to motion "${motion.title}"`);
+			audit(actingAs, 'motion.set_deliberation_rule', 'motion', motion.uuid,
+				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" set on motion "${motion.title}"`);
+		}
+
+		return { success: true };
+	},
+
 	setClerkNotes: async ({ params, locals, request }) => {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;

@@ -34,10 +34,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	if (locals.session) {
 		const actingAs = locals.session.acting_as_uuid;
 		const rows = db.prepare(
-			`SELECT DISTINCT pr.association_uuid
-			 FROM person_role pr
-			 JOIN role_permission rp ON rp.role_uuid = pr.role_uuid
-			 WHERE pr.person_uuid = ? AND pr.removed_at IS NULL
+			`SELECT DISTINCT r.association_uuid
+			 FROM role_assignment ra
+			 JOIN role r ON r.uuid = ra.role_uuid
+			 JOIN role_permission rp ON rp.role_uuid = ra.role_uuid
+			 WHERE ra.person_uuid = ? AND ra.removed_at IS NULL
 			   AND rp.app = 'governance' AND rp.permission = ?`
 		).all(actingAs, PERMISSIONS.RECORD_WRITE) as { association_uuid: string }[];
 		writeableAssociationUuids.push(...rows.map(r => r.association_uuid));

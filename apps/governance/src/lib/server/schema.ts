@@ -113,53 +113,78 @@ CREATE TABLE IF NOT EXISTS association_member (
   PRIMARY KEY (association_uuid, person_uuid)
 );
 
+-- Organizational sections: divisions within associations
 CREATE TABLE IF NOT EXISTS org_section (
   uuid                  TEXT PRIMARY KEY,
   association_uuid      TEXT NOT NULL REFERENCES association(uuid),
   parent_section_uuid   TEXT NULL REFERENCES org_section(uuid),
   name                  TEXT NOT NULL,
-  mandate               TEXT NULL,
-  created_at            TEXT NOT NULL,
-  removed_at            TEXT NULL
+  description           TEXT NULL,
+  created_at            TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_org_section_association ON org_section(association_uuid);
 CREATE INDEX IF NOT EXISTS idx_org_section_parent ON org_section(parent_section_uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_org_section_unique_name ON org_section(association_uuid, name);
 
-CREATE TABLE IF NOT EXISTS role (
-  uuid             TEXT PRIMARY KEY,
-  association_uuid TEXT NOT NULL REFERENCES association(uuid),
-  section_uuid     TEXT NULL REFERENCES org_section(uuid),
-  name             TEXT NOT NULL,
-  level            INTEGER NULL,
-  parent_role_uuid TEXT NULL REFERENCES role(uuid),
-  term_days        INTEGER NULL,
-  description      TEXT NULL,
-  salary_monthly   INTEGER NULL,
-  daily_rate       INTEGER NULL,
-  created_at       TEXT NOT NULL,
-  UNIQUE (association_uuid, name)
+-- Role templates: reusable role definitions
+CREATE TABLE IF NOT EXISTS role_template (
+  uuid              TEXT PRIMARY KEY,
+  association_uuid  TEXT NOT NULL REFERENCES association(uuid),
+  template_key      TEXT NOT NULL,
+  title             TEXT NOT NULL,
+  description       TEXT NULL,
+  compensation_franks INTEGER NOT NULL DEFAULT 0,
+  created_at        TEXT NOT NULL,
+  UNIQUE (association_uuid, template_key)
 );
-CREATE INDEX IF NOT EXISTS idx_role_parent ON role(parent_role_uuid);
-CREATE INDEX IF NOT EXISTS idx_role_level ON role(association_uuid, level);
-CREATE INDEX IF NOT EXISTS idx_role_section ON role(section_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_template_association ON role_template(association_uuid);
 
+-- Permissions for role templates
+CREATE TABLE IF NOT EXISTS role_template_permission (
+  template_uuid TEXT NOT NULL REFERENCES role_template(uuid) ON DELETE CASCADE,
+  app           TEXT NOT NULL,
+  permission    TEXT NOT NULL,
+  PRIMARY KEY (template_uuid, app, permission)
+);
+
+-- Roles: positions in the organizational chart
+CREATE TABLE IF NOT EXISTS role (
+  uuid                 TEXT PRIMARY KEY,
+  association_uuid     TEXT NOT NULL REFERENCES association(uuid),
+  section_uuid         TEXT NULL REFERENCES org_section(uuid),
+  template_uuid        TEXT NULL REFERENCES role_template(uuid),
+  title                TEXT NOT NULL,
+  description          TEXT NULL,
+  compensation_franks  INTEGER NOT NULL DEFAULT 0,
+  reports_to_role_uuid TEXT NULL REFERENCES role(uuid),
+  created_at           TEXT NOT NULL,
+  UNIQUE (association_uuid, title)
+);
+CREATE INDEX IF NOT EXISTS idx_role_association ON role(association_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_section ON role(section_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_template ON role(template_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_reports_to ON role(reports_to_role_uuid);
+
+-- Permissions for roles (can override template permissions)
 CREATE TABLE IF NOT EXISTS role_permission (
-  role_uuid  TEXT NOT NULL REFERENCES role(uuid),
+  role_uuid  TEXT NOT NULL REFERENCES role(uuid) ON DELETE CASCADE,
   app        TEXT NOT NULL,
   permission TEXT NOT NULL,
   PRIMARY KEY (role_uuid, app, permission)
 );
 
-CREATE TABLE IF NOT EXISTS person_role (
-  person_uuid      TEXT NOT NULL REFERENCES person(uuid),
-  role_uuid        TEXT NOT NULL REFERENCES role(uuid),
-  association_uuid TEXT NOT NULL REFERENCES association(uuid),
-  assigned_at      TEXT NOT NULL,
-  removed_at       TEXT NULL,
-  assignment_type  TEXT NULL,
-  days_worked      INTEGER NULL DEFAULT 0,
-  PRIMARY KEY (person_uuid, role_uuid, association_uuid)
+-- Role assignments: maps people to roles
+CREATE TABLE IF NOT EXISTS role_assignment (
+  uuid        TEXT PRIMARY KEY,
+  role_uuid   TEXT NOT NULL REFERENCES role(uuid) ON DELETE CASCADE,
+  person_uuid TEXT NOT NULL REFERENCES person(uuid),
+  assigned_at TEXT NOT NULL,
+  removed_at  TEXT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_role_assignment_role ON role_assignment(role_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_assignment_person ON role_assignment(person_uuid);
+CREATE INDEX IF NOT EXISTS idx_role_assignment_active ON role_assignment(role_uuid, removed_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_role_assignment_one_per_role ON role_assignment(role_uuid) WHERE removed_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS deliberation_rule (
   uuid             TEXT PRIMARY KEY,

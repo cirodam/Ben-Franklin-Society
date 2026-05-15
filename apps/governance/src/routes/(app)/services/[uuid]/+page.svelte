@@ -1,14 +1,12 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
-	import RoleManagement from '$lib/components/RoleManagement.svelte';
-	import OrgChart from '$lib/components/OrgChart.svelte';
 	import Sections from '$lib/components/Sections.svelte';
-	import OrgStructureBuilder from '$lib/components/OrgStructureBuilder.svelte';
+	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions, governingDocument } = $derived(data);
+	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions, governingDocument, templates, vacantRoles, budgetTotal } = $derived(data);
 
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 
@@ -18,7 +16,7 @@
 		: s === 'vote' ? 'warn'
 		: 'neutral';
 
-	let activeTab: 'members' | 'roles' | 'sections' | 'activity' = $state('members');
+	let activeTab: 'members' | 'roles' | 'activity' = $state('members');
 </script>
 
 <div class="page">
@@ -67,16 +65,6 @@
 		</button>
 		<button
 			class="tab"
-			class:active={activeTab === 'sections'}
-			onclick={() => (activeTab = 'sections')}
-		>
-			Sections
-			{#if sections.length > 0}
-				<span class="badge">{sections.length}</span>
-			{/if}
-		</button>
-		<button
-			class="tab"
 			class:active={activeTab === 'activity'}
 			onclick={() => (activeTab = 'activity')}
 		>
@@ -113,26 +101,12 @@
 			</section>
 		{:else if activeTab === 'roles'}
 			<div class="roles-org-container">
-				<section class="section-block">
-					<h2>🏗️ Structure Builder</h2>
-					<p class="section-description">
-						Define your service's organizational structure by creating sections and roles with hierarchies.
-					</p>
-					<OrgStructureBuilder {sections} {roles} />
-				</section>
+				{#if canAssign}
+					<RoleTemplates {templates} associationUuid={association.uuid} />
+				{/if}
 
-				<section class="section-block">
-					<h2>👔 Roles & Assignments</h2>
-					<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
-				</section>
-
-				<section class="section-block">
-					<h2>🏢 Organization Chart</h2>
-					<OrgChart {roleHierarchy} />
-				</section>
+				<Sections {sections} />
 			</div>
-		{:else if activeTab === 'sections'}
-			<Sections {sections} />
 		{:else if activeTab === 'activity'}
 			<section class="card">
 				<h2>Recent Activity</h2>

@@ -52,11 +52,12 @@ export function hasPermission(
 		const row = db
 			.prepare(
 				`SELECT 1
-				 FROM person_role pr
-				 JOIN role_permission rp ON rp.role_uuid = pr.role_uuid
-				 WHERE pr.person_uuid = ?
-				   AND pr.association_uuid = ?
-				   AND pr.removed_at IS NULL
+				 FROM role_assignment ra
+				 JOIN role r ON r.uuid = ra.role_uuid
+				 JOIN role_permission rp ON rp.role_uuid = ra.role_uuid
+				 WHERE ra.person_uuid = ?
+				   AND r.association_uuid = ?
+				   AND ra.removed_at IS NULL
 				   AND rp.app = ?
 				   AND rp.permission = ?
 				 LIMIT 1`
@@ -67,10 +68,10 @@ export function hasPermission(
 		const row = db
 			.prepare(
 				`SELECT 1
-				 FROM person_role pr
-				 JOIN role_permission rp ON rp.role_uuid = pr.role_uuid
-				 WHERE pr.person_uuid = ?
-				   AND pr.removed_at IS NULL
+				 FROM role_assignment ra
+				 JOIN role_permission rp ON rp.role_uuid = ra.role_uuid
+				 WHERE ra.person_uuid = ?
+				   AND ra.removed_at IS NULL
 				   AND rp.app = ?
 				   AND rp.permission = ?
 				 LIMIT 1`
@@ -91,11 +92,12 @@ export function getPersonPermissions(
 		const rows = db
 			.prepare(
 				`SELECT DISTINCT rp.permission
-				 FROM person_role pr
-				 JOIN role_permission rp ON rp.role_uuid = pr.role_uuid
-				 WHERE pr.person_uuid = ?
-				   AND pr.association_uuid = ?
-				   AND pr.removed_at IS NULL
+				 FROM role_assignment ra
+				 JOIN role r ON r.uuid = ra.role_uuid
+				 JOIN role_permission rp ON rp.role_uuid = ra.role_uuid
+				 WHERE ra.person_uuid = ?
+				   AND r.association_uuid = ?
+				   AND ra.removed_at IS NULL
 				   AND rp.app = ?`
 			)
 			.all(personUuid, associationUuid, APP) as { permission: string }[];
@@ -104,10 +106,10 @@ export function getPersonPermissions(
 		const rows = db
 			.prepare(
 				`SELECT DISTINCT rp.permission
-				 FROM person_role pr
-				 JOIN role_permission rp ON rp.role_uuid = pr.role_uuid
-				 WHERE pr.person_uuid = ?
-				   AND pr.removed_at IS NULL
+				 FROM role_assignment ra
+				 JOIN role_permission rp ON rp.role_uuid = ra.role_uuid
+				 WHERE ra.person_uuid = ?
+				   AND ra.removed_at IS NULL
 				   AND rp.app = ?`
 			)
 			.all(personUuid, APP) as { permission: string }[];

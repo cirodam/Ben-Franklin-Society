@@ -1,13 +1,12 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
-	import RoleManagement from '$lib/components/RoleManagement.svelte';
-	import OrgChart from '$lib/components/OrgChart.svelte';
 	import Sections from '$lib/components/Sections.svelte';
+	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions } = $derived(data);
+	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions, templates, vacantRoles, budgetTotal } = $derived(data);
 
 	const typeLabel: Record<string, string> = {
 		association: 'Association',
@@ -64,9 +63,9 @@
 
 		<Sections {sections} />
 
-		<RoleManagement {roles} {members} {canAssign} {enactedMotions} />
-
-		<OrgChart {roleHierarchy} />
+		{#if canAssign}
+			<RoleTemplates {templates} associationUuid={association.uuid} />
+		{/if}
 
 		<!-- Recent motions -->
 		<section class="card">

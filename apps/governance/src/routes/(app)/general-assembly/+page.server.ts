@@ -7,12 +7,12 @@ import {
 	getSectionsByAssociation,
 	getSortitionConfig,
 	assignRole,
-	removeRole,
+	unassignRole,
 	getPermissionsForRole,
 	createSection,
 	updateSection,
 	deleteSection,
-	createRoleDetailed,
+	createRole,
 	getRoleByUuid,
 	updateRole,
 	deleteRole,
@@ -52,13 +52,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 			db
 				.prepare(
 					`SELECT p.uuid, p.handle, p.given_name, p.family_name
-					 FROM person_role pr
-					 JOIN person p ON p.uuid = pr.person_uuid
-					 WHERE pr.role_uuid = ? AND pr.removed_at IS NULL`
+					 FROM role_assignment ra
+					 JOIN person p ON p.uuid = ra.person_uuid
+					 WHERE ra.role_uuid = ? AND ra.removed_at IS NULL`
 				)
 				.all(role.uuid) as { uuid: string; handle: string; given_name: string; family_name: string }[]
 		);
-		const permissions = getPermissionsForRole(role.uuid);
+		const rolePermissions = getPermissionsForRole(role.uuid);
+		const permissions = rolePermissions.map(p => ({ name: `${p.app}:${p.permission}` }));
 		const section = role.section_uuid ? sectionMap.get(role.section_uuid) : null;
 		return { ...role, holders, permissions, section_name: section?.name ?? null };
 	});
@@ -66,12 +67,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Build role hierarchy for org chart
 	interface RoleWithChildren {
 		uuid: string;
-		name: string;
-		level: number | null;
+		title: string;
 		section_name: string | null;
-		salary_monthly: number | null;
-		daily_rate: number | null;
-		term_days: number | null;
+		compensation_franks: number;
 		children: RoleWithChildren[];
 	}
 
@@ -83,8 +81,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const roots: RoleWithChildren[] = [];
 	for (const r of enrichedRoles) {
 		const node = roleMap.get(r.uuid)!;
-		if (r.parent_role_uuid && roleMap.has(r.parent_role_uuid)) {
-			roleMap.get(r.parent_role_uuid)!.children.push(node);
+		if (r.reports_to_role_uuid && roleMap.has(r.reports_to_role_uuid)) {
+			roleMap.get(r.reports_to_role_uuid)!.children.push(node);
 		} else {
 			roots.push(node);
 		}
@@ -251,7 +249,7 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		assignRole(person_uuid, role_uuid, association.uuid);
+assignRole(role_uuid, person_uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')
@@ -292,7 +290,7 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		removeRole(person_uuid, role_uuid);
+unassignRole(role_uuid, person_uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')
@@ -330,7 +328,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const name = String(data.get('name') ?? '').trim();
 		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
-		const mandate = String(data.get('mandate') ?? '').trim() || null;
+		const description = String(data.get('description') ?? '').trim() || null;
 
 		if (!name) return fail(400, { message: 'Section name is required' });
 
@@ -338,7 +336,7 @@ export const actions: Actions = {
 			association_uuid: association.uuid,
 			name,
 			parent_section_uuid,
-			mandate,
+			description,
 		});
 
 		addEntry(
@@ -364,12 +362,12 @@ export const actions: Actions = {
 		const section_uuid = String(data.get('section_uuid') ?? '').trim();
 		const name = String(data.get('name') ?? '').trim();
 		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
-		const mandate = String(data.get('mandate') ?? '').trim() || null;
+		const description = String(data.get('description') ?? '').trim() || null;
 
 		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
 		if (!name) return fail(400, { message: 'Section name is required' });
 
-		updateSection(section_uuid, { name, parent_section_uuid, mandate });
+		updateSection(section_uuid, { name, parent_section_uuid, description });
 
 		addEntry(
 			association.uuid,
@@ -418,27 +416,21 @@ export const actions: Actions = {
 		if (!association) return fail(404, { message: 'General Assembly not found' });
 
 		const data = await request.formData();
-		const name = String(data.get('name') ?? '').trim();
+		const title = String(data.get('title') ?? '').trim();
 		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
-		const parent_role_uuid = String(data.get('parent_role_uuid') ?? '').trim() || null;
-		const level = data.get('level') ? Number(data.get('level')) : null;
-		const term_days = data.get('term_days') ? Number(data.get('term_days')) : null;
+		const reports_to_role_uuid = String(data.get('reports_to_role_uuid') ?? '').trim() || null;
 		const description = String(data.get('description') ?? '').trim() || null;
-		const salary_monthly = data.get('salary_monthly') ? Number(data.get('salary_monthly')) : null;
-		const daily_rate = data.get('daily_rate') ? Number(data.get('daily_rate')) : null;
+		const compensation_franks = data.get('compensation_franks') ? Number(data.get('compensation_franks')) : 0;
 
-		if (!name) return fail(400, { message: 'Role name is required' });
+		if (!title) return fail(400, { message: 'Role title is required' });
 
-		const role = createRoleDetailed({
+		const role = createRole({
 			association_uuid: association.uuid,
-			name,
+			title,
 			section_uuid,
-			parent_role_uuid,
-			level,
-			term_days,
+			reports_to_role_uuid,
 			description,
-			salary_monthly,
-			daily_rate,
+			compensation_franks,
 		});
 
 		addEntry(
@@ -447,7 +439,7 @@ export const actions: Actions = {
 			'role_created',
 			'role',
 			role.uuid,
-			`Created role "${name}"`
+			`Created role "${title}"`
 		);
 
 		return { success: true, role_uuid: role.uuid };
@@ -462,27 +454,21 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const role_uuid = String(data.get('role_uuid') ?? '').trim();
-		const name = String(data.get('name') ?? '').trim();
+		const title = String(data.get('title') ?? '').trim();
 		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
-		const parent_role_uuid = String(data.get('parent_role_uuid') ?? '').trim() || null;
-		const level = data.get('level') ? Number(data.get('level')) : null;
-		const term_days = data.get('term_days') ? Number(data.get('term_days')) : null;
+		const reports_to_role_uuid = String(data.get('reports_to_role_uuid') ?? '').trim() || null;
 		const description = String(data.get('description') ?? '').trim() || null;
-		const salary_monthly = data.get('salary_monthly') ? Number(data.get('salary_monthly')) : null;
-		const daily_rate = data.get('daily_rate') ? Number(data.get('daily_rate')) : null;
+		const compensation_franks = data.get('compensation_franks') ? Number(data.get('compensation_franks')) : undefined;
 
 		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
-		if (!name) return fail(400, { message: 'Role name is required' });
+		if (!title) return fail(400, { message: 'Role title is required' });
 
 		updateRole(role_uuid, {
-			name,
+			title,
 			section_uuid,
-			parent_role_uuid,
-			level,
-			term_days,
+			reports_to_role_uuid,
 			description,
-			salary_monthly,
-			daily_rate,
+			compensation_franks,
 		});
 
 		addEntry(
@@ -491,7 +477,7 @@ export const actions: Actions = {
 			'role_updated',
 			'role',
 			role_uuid,
-			`Updated role "${name}"`
+			`Updated role "${title}"`
 		);
 
 		return { success: true };

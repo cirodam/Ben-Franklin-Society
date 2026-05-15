@@ -7,7 +7,7 @@ import {
 	getSectionsByAssociation,
 	getSortitionConfig,
 	assignRole,
-	removeRole,
+	unassignRole,
 	getPermissionsForRole,
 } from '$lib/server/associations.js';
 import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/server/sortition.js';
@@ -48,13 +48,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			db
 				.prepare(
 					`SELECT p.uuid, p.handle, p.given_name, p.family_name
-					 FROM person_role pr
-					 JOIN person p ON p.uuid = pr.person_uuid
-					 WHERE pr.role_uuid = ? AND pr.removed_at IS NULL`
+					 FROM role_assignment ra
+					 JOIN person p ON p.uuid = ra.person_uuid
+					 WHERE ra.role_uuid = ? AND ra.removed_at IS NULL`
 				)
 				.all(role.uuid) as { uuid: string; handle: string; given_name: string; family_name: string }[]
 		);
-		const permissions = getPermissionsForRole(role.uuid);
+		const rolePermissions = getPermissionsForRole(role.uuid);
+		const permissions = rolePermissions.map(p => ({ name: `${p.app}:${p.permission}` }));
 		const section = role.section_uuid ? sectionMap.get(role.section_uuid) : null;
 		return { ...role, holders, permissions, section_name: section?.name ?? null };
 	});
@@ -62,12 +63,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Build role hierarchy for org chart
 	interface RoleWithChildren {
 		uuid: string;
-		name: string;
-		level: number | null;
+		title: string;
 		section_name: string | null;
-		salary_monthly: number | null;
-		daily_rate: number | null;
-		term_days: number | null;
+		compensation_franks: number;
 		children: RoleWithChildren[];
 	}
 
@@ -79,8 +77,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const roots: RoleWithChildren[] = [];
 	for (const r of enrichedRoles) {
 		const node = roleMap.get(r.uuid)!;
-		if (r.parent_role_uuid && roleMap.has(r.parent_role_uuid)) {
-			roleMap.get(r.parent_role_uuid)!.children.push(node);
+		if (r.reports_to_role_uuid && roleMap.has(r.reports_to_role_uuid)) {
+			roleMap.get(r.reports_to_role_uuid)!.children.push(node);
 		} else {
 			roots.push(node);
 		}
@@ -254,7 +252,7 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		assignRole(person_uuid, role_uuid, params.uuid);
+assignRole(role_uuid, person_uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')
@@ -292,7 +290,7 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		removeRole(person_uuid, role_uuid);
+unassignRole(role_uuid, person_uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')

@@ -4,20 +4,17 @@
 	type Section = {
 		uuid: string;
 		name: string;
-		mandate: string | null;
+		description: string | null;
 		parent_section_uuid: string | null;
 	};
 
 	type Role = {
 		uuid: string;
-		name: string;
+		title: string;
 		section_uuid: string | null;
-		parent_role_uuid: string | null;
-		level: number | null;
-		term_days: number | null;
+		reports_to_role_uuid: string | null;
 		description: string | null;
-		salary_monthly: number | null;
-		daily_rate: number | null;
+		compensation_franks: number;
 	};
 
 	let { sections, roles }: { sections: Section[]; roles: Role[] } = $props();
@@ -32,23 +29,20 @@
 	let sectionForm = $state({
 		name: '',
 		parent_section_uuid: '',
-		mandate: ''
+		description: ''
 	});
 
 	let roleForm = $state({
-		name: '',
+		title: '',
 		section_uuid: '',
-		parent_role_uuid: '',
-		level: '',
-		term_days: '',
+		reports_to_role_uuid: '',
 		description: '',
-		salary_monthly: '',
-		daily_rate: ''
+		compensation_franks: ''
 	});
 
 	function startNewSection() {
 		editingSection = null;
-		sectionForm = { name: '', parent_section_uuid: '', mandate: '' };
+		sectionForm = { name: '', parent_section_uuid: '', description: '' };
 		showSectionForm = true;
 	}
 
@@ -57,7 +51,7 @@
 		sectionForm = {
 			name: section.name,
 			parent_section_uuid: section.parent_section_uuid ?? '',
-			mandate: section.mandate ?? ''
+			description: section.description ?? ''
 		};
 		showSectionForm = true;
 	}
@@ -65,14 +59,11 @@
 	function startNewRole() {
 		editingRole = null;
 		roleForm = {
-			name: '',
+			title: '',
 			section_uuid: '',
-			parent_role_uuid: '',
-			level: '',
-			term_days: '',
+			reports_to_role_uuid: '',
 			description: '',
-			salary_monthly: '',
-			daily_rate: ''
+			compensation_franks: ''
 		};
 		showRoleForm = true;
 	}
@@ -80,14 +71,11 @@
 	function startEditRole(role: Role) {
 		editingRole = role;
 		roleForm = {
-			name: role.name,
+			title: role.title,
 			section_uuid: role.section_uuid ?? '',
-			parent_role_uuid: role.parent_role_uuid ?? '',
-			level: role.level?.toString() ?? '',
-			term_days: role.term_days?.toString() ?? '',
+			reports_to_role_uuid: role.reports_to_role_uuid ?? '',
 			description: role.description ?? '',
-			salary_monthly: role.salary_monthly?.toString() ?? '',
-			daily_rate: role.daily_rate?.toString() ?? ''
+			compensation_franks: role.compensation_franks.toString()
 		};
 		showRoleForm = true;
 	}
@@ -114,15 +102,15 @@
 		return map;
 	});
 
-	const rootRoles = $derived(roles.filter(r => !r.parent_role_uuid));
+	const rootRoles = $derived(roles.filter(r => !r.reports_to_role_uuid));
 	const childRolesMap = $derived.by(() => {
 		const map = new Map<string, Role[]>();
 		for (const role of roles) {
-			if (role.parent_role_uuid) {
-				if (!map.has(role.parent_role_uuid)) {
-					map.set(role.parent_role_uuid, []);
+			if (role.reports_to_role_uuid) {
+				if (!map.has(role.reports_to_role_uuid)) {
+					map.set(role.reports_to_role_uuid, []);
 				}
-				map.get(role.parent_role_uuid)!.push(role);
+				map.get(role.reports_to_role_uuid)!.push(role);
 			}
 		}
 		return map;
@@ -187,12 +175,11 @@
 					</div>
 
 					<div class="form-group">
-						<label for="section-mandate">Mandate</label>
-						<textarea 
-							id="section-mandate"
-							name="mandate" 
-							bind:value={sectionForm.mandate}
-							placeholder="Describe the purpose and responsibilities..."
+					<label for="section-description">Description</label>
+					<textarea 
+						id="section-description"
+						name="description" 
+						bind:value={sectionForm.description}
 							rows="3"
 						></textarea>
 					</div>
@@ -234,8 +221,8 @@
 							</form>
 						</div>
 					</div>
-					{#if section.mandate}
-						<p class="item-description">{section.mandate}</p>
+					{#if section.description}
+						<p class="item-description">{section.description}</p>
 					{/if}
 
 					{#if childSectionsMap.has(section.uuid)}
@@ -264,8 +251,8 @@
 											</form>
 										</div>
 									</div>
-									{#if child.mandate}
-										<p class="item-description">{child.mandate}</p>
+								{#if child.description}
+									<p class="item-description">{child.description}</p>
 									{/if}
 								</div>
 							{/each}
@@ -304,12 +291,12 @@
 
 					<div class="form-row">
 						<div class="form-group">
-							<label for="role-name">Name *</label>
+							<label for="role-title">Title *</label>
 							<input 
-								id="role-name"
-								name="name" 
+								id="role-title"
+								name="title" 
 								type="text" 
-								bind:value={roleForm.name}
+								bind:value={roleForm.title}
 								required 
 								placeholder="e.g., Chief Medical Officer"
 							/>
@@ -326,33 +313,19 @@
 						</div>
 					</div>
 
-					<div class="form-row">
-						<div class="form-group">
-							<label for="parent-role">Reports To (Parent Role)</label>
-							<select id="parent-role" name="parent_role_uuid" bind:value={roleForm.parent_role_uuid}>
-								<option value="">None</option>
-								{#each roles.filter(r => r.uuid !== editingRole?.uuid) as role}
-									<option value={role.uuid}>
-										{role.name}
-										{#if role.section_uuid && sectionNameMap.has(role.section_uuid)}
-											({sectionNameMap.get(role.section_uuid)})
-										{/if}
-									</option>
-								{/each}
-							</select>
-						</div>
-
-						<div class="form-group">
-							<label for="role-level">Org Level</label>
-							<input 
-								id="role-level"
-								name="level" 
-								type="number" 
-								bind:value={roleForm.level}
-								placeholder="0-10"
-								min="0"
-							/>
-						</div>
+					<div class="form-group">
+						<label for="reports-to-role">Reports To (Parent Role)</label>
+						<select id="reports-to-role" name="reports_to_role_uuid" bind:value={roleForm.reports_to_role_uuid}>
+							<option value="">None</option>
+							{#each roles.filter(r => r.uuid !== editingRole?.uuid) as role}
+								<option value={role.uuid}>
+									{role.title}
+									{#if role.section_uuid && sectionNameMap.has(role.section_uuid)}
+										({sectionNameMap.get(role.section_uuid)})
+									{/if}
+								</option>
+							{/each}
+						</select>
 					</div>
 
 					<div class="form-group">
@@ -366,44 +339,16 @@
 						></textarea>
 					</div>
 
-					<div class="form-row">
-						<div class="form-group">
-							<label for="role-term">Term (days)</label>
-							<input 
-								id="role-term"
-								name="term_days" 
-								type="number" 
-								bind:value={roleForm.term_days}
-								placeholder="e.g., 365"
-								min="1"
-							/>
-						</div>
-
-						<div class="form-group">
-							<label for="role-salary">Monthly Salary</label>
-							<input 
-								id="role-salary"
-								name="salary_monthly" 
-								type="number" 
-								bind:value={roleForm.salary_monthly}
-								placeholder="0.00"
-								step="0.01"
-								min="0"
-							/>
-						</div>
-
-						<div class="form-group">
-							<label for="role-daily">Daily Rate</label>
-							<input 
-								id="role-daily"
-								name="daily_rate" 
-								type="number" 
-								bind:value={roleForm.daily_rate}
-								placeholder="0.00"
-								step="0.01"
-								min="0"
-							/>
-						</div>
+					<div class="form-group">
+						<label for="role-compensation">Compensation (Franks)</label>
+						<input 
+							id="role-compensation"
+							name="compensation_franks" 
+							type="number" 
+							bind:value={roleForm.compensation_franks}
+							placeholder="0"
+							min="0"
+						/>
 					</div>
 
 					<div class="form-actions">
@@ -423,7 +368,7 @@
 				<div class="item-card">
 					<div class="item-header">
 						<div>
-							<strong>{role.name}</strong>
+							<strong>{role.title}</strong>
 							{#if role.section_uuid && sectionNameMap.has(role.section_uuid)}
 								<span class="badge">{sectionNameMap.get(role.section_uuid)}</span>
 							{/if}
@@ -438,7 +383,7 @@
 									type="submit" 
 									class="btn-sm btn-danger-ghost"
 									onclick={(e) => {
-										if (!confirm(`Delete "${role.name}"?`)) {
+										if (!confirm(`Delete "${role.title}"?`)) {
 											e.preventDefault();
 										}
 									}}
@@ -453,20 +398,9 @@
 						{#if role.description}
 							<p class="item-description">{role.description}</p>
 						{/if}
-						{#if role.level !== null || role.term_days !== null || role.salary_monthly !== null || role.daily_rate !== null}
+						{#if role.compensation_franks > 0}
 							<div class="role-meta">
-								{#if role.level !== null}
-									<span class="meta-item">Level {role.level}</span>
-								{/if}
-								{#if role.term_days !== null}
-									<span class="meta-item">Term: {role.term_days}d</span>
-								{/if}
-								{#if role.salary_monthly !== null}
-									<span class="meta-item">Salary: ${role.salary_monthly}/mo</span>
-								{/if}
-								{#if role.daily_rate !== null}
-									<span class="meta-item">Rate: ${role.daily_rate}/day</span>
-								{/if}
+								<span class="meta-item">Compensation: {role.compensation_franks.toLocaleString()}F</span>
 							</div>
 						{/if}
 					</div>
@@ -477,7 +411,7 @@
 								<div class="child-item">
 									<div class="item-header">
 										<div>
-											<span>↳ {child.name}</span>
+											<span>↳ {child.title}</span>
 											{#if child.section_uuid && sectionNameMap.has(child.section_uuid)}
 												<span class="badge badge-sm">{sectionNameMap.get(child.section_uuid)}</span>
 											{/if}
@@ -492,7 +426,7 @@
 													type="submit" 
 													class="btn-sm btn-danger-ghost"
 													onclick={(e) => {
-														if (!confirm(`Delete "${child.name}"?`)) {
+														if (!confirm(`Delete "${child.title}"?`)) {
 															e.preventDefault();
 														}
 													}}

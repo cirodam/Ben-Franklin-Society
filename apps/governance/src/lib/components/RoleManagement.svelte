@@ -3,7 +3,7 @@
 
 	type Role = {
 		uuid: string;
-		name: string;
+		title: string;
 		section_name: string | null;
 		holders: Array<{
 			uuid: string;
@@ -80,7 +80,7 @@
 					{#each rolesBySection.get(section) ?? [] as role}
 						<div class="role-card-detail">
 							<div class="role-header-detail">
-								<span class="role-name-detail">{role.name}</span>
+								<span class="role-name-detail">{role.title}</span>
 								{#if role.permissions.length > 0}
 									<span class="perms-count">{role.permissions.length} permission{role.permissions.length === 1 ? '' : 's'}</span>
 								{/if}

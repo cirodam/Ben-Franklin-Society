@@ -7,8 +7,15 @@ import {
 	getSectionsByAssociation,
 	createRole,
 	assignRole as assignRoleToMember,
-	removeRole,
+	unassignRole,
 	getPermissionsForRole,
+	getRoleTemplatesByAssociation,
+	createRoleTemplate,
+	deleteRoleTemplate,
+	getRoleTemplatePermissions,
+	setRoleTemplatePermissions,
+	getVacantRoles,
+	calculateBudget,
 } from '$lib/server/associations.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
 import { addEntry } from '$lib/server/record.js';
@@ -55,13 +62,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			db
 				.prepare(
 					`SELECT p.uuid, p.handle, p.given_name, p.family_name
-					 FROM person_role pr
-					 JOIN person p ON p.uuid = pr.person_uuid
-					 WHERE pr.role_uuid = ? AND pr.removed_at IS NULL`
+					 FROM role_assignment ra
+					 JOIN person p ON p.uuid = ra.person_uuid
+					 WHERE ra.role_uuid = ? AND ra.removed_at IS NULL`
 				)
 				.all(role.uuid) as { uuid: string; handle: string; given_name: string; family_name: string }[]
 		);
-		const permissions = getPermissionsForRole(role.uuid);
+		const rolePermissions = getPermissionsForRole(role.uuid);
+		const permissions = rolePermissions.map(p => ({ name: `${p.app}:${p.permission}` }));
 		const section = role.section_uuid ? sectionMap.get(role.section_uuid) : null;
 		return { ...role, holders, permissions, section_name: section?.name ?? null };
 	});
@@ -69,12 +77,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Build role hierarchy for org chart
 	interface RoleWithChildren {
 		uuid: string;
-		name: string;
-		level: number | null;
+		title: string;
 		section_name: string | null;
-		salary_monthly: number | null;
-		daily_rate: number | null;
-		term_days: number | null;
+		compensation_franks: number;
+		holders: Array<{ uuid: string; handle: string; given_name: string; family_name: string }>;
 		children: RoleWithChildren[];
 	}
 
@@ -85,12 +91,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	for (const role of enrichedRoles) {
 		roleMap.set(role.uuid, {
 			uuid: role.uuid,
-			name: role.name,
-			level: role.level,
+			title: role.title,
 			section_name: role.section_name,
-			salary_monthly: role.salary_monthly,
-			daily_rate: role.daily_rate,
-			term_days: role.term_days,
+			compensation_franks: role.compensation_franks,
+			holders: role.holders,
 			children: []
 		});
 	}
@@ -98,7 +102,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Second pass: build hierarchy
 	for (const role of enrichedRoles) {
 		const roleNode = roleMap.get(role.uuid)!;
-		const parentUuid = role.parent_role_uuid;
+		const parentUuid = role.reports_to_role_uuid;
 		
 		if (parentUuid && roleMap.has(parentUuid)) {
 			roleMap.get(parentUuid)!.children.push(roleNode);
@@ -107,12 +111,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
-	// Sort children by level and name
+	// Sort children by title
 	const sortRoles = (roles: RoleWithChildren[]) => {
-		roles.sort((a, b) => {
-			if (a.level !== b.level) return (a.level ?? 99) - (b.level ?? 99);
-			return a.name.localeCompare(b.name);
-		});
+		roles.sort((a, b) => a.title.localeCompare(b.title));
 		roles.forEach(r => sortRoles(r.children));
 	};
 	sortRoles(rootRoles);
@@ -131,6 +132,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.all(association.uuid) as { uuid: string; title: string; status: string; created_at: string }[];
 
 	const enactedMotions = canAssign ? listEnactedMotions() : [];
+	
+	const templates = getRoleTemplatesByAssociation(params.uuid);
+	const vacantRoles = getVacantRoles(params.uuid);
+	const budgetTotal = calculateBudget(params.uuid);
 
 	return {
 		association,
@@ -140,7 +145,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		sections,
 		motions,
 		canAssign,
-		enactedMotions
+		enactedMotions,
+		templates,
+		vacantRoles,
+		budgetTotal
 	};
 };
 
@@ -149,23 +157,27 @@ export const actions: Actions = {
 		if (!locals.session) return fail(401, { message: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;
 		const data = await request.formData();
-		const name = String(data.get('name') ?? '').trim();
+		const title = String(data.get('title') ?? '').trim();
 
-		if (!name) return fail(400, { message: 'Missing role name' });
+		if (!title) return fail(400, { message: 'Missing role title' });
 		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		const role = createRole(params.uuid, name);
+		const role = createRole({
+			association_uuid: params.uuid,
+			title,
+			compensation_franks: 0
+		});
 		addEntry(
 			params.uuid,
 			actingAs,
 			'role_created',
 			'role',
 			role.uuid,
-			`Role "${name}" created.`
+			`Role "${title}" created.`
 		);
-		audit(actingAs, 'role.create', 'role', role.uuid, `Role "${name}" created in association ${params.uuid}`);
+		audit(actingAs, 'role.create', 'role', role.uuid, `Role "${title}" created in association ${params.uuid}`);
 		return { success: true };
 	},
 
@@ -185,14 +197,14 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		assignRoleToMember(person_uuid, role_uuid, params.uuid);
+assignRoleToMember(role_uuid, person_uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')
 			.get(person_uuid) as { handle: string } | undefined;
 		const role = db
-			.prepare('SELECT name FROM role WHERE uuid = ?')
-			.get(role_uuid) as { name: string } | undefined;
+			.prepare('SELECT title FROM role WHERE uuid = ?')
+			.get(role_uuid) as { title: string } | undefined;
 
 		addEntry(
 			params.uuid,
@@ -200,10 +212,10 @@ export const actions: Actions = {
 			'role_assigned',
 			'role',
 			role_uuid,
-			`@${person?.handle ?? person_uuid} assigned role "${role?.name ?? role_uuid}".`
+			`@${person?.handle ?? person_uuid} assigned role "${role?.title ?? role_uuid}".`
 		);
 		audit(actingAs, 'role.assign', 'person', person_uuid,
-			`@${person?.handle ?? person_uuid} assigned role "${role?.name ?? role_uuid}"`, motion_uuid);
+			`@${person?.handle ?? person_uuid} assigned role "${role?.title ?? role_uuid}"`, motion_uuid);
 		return { success: true };
 	},
 
@@ -223,14 +235,14 @@ export const actions: Actions = {
 			return fail(403, { message: 'Forbidden' });
 		}
 
-		removeRole(person_uuid, role_uuid);
+unassignRole(role_uuid, person_uuid);
 
 		const person = db
 			.prepare('SELECT handle FROM person WHERE uuid = ?')
 			.get(person_uuid) as { handle: string } | undefined;
 		const role = db
-			.prepare('SELECT name FROM role WHERE uuid = ?')
-			.get(role_uuid) as { name: string } | undefined;
+			.prepare('SELECT title FROM role WHERE uuid = ?')
+			.get(role_uuid) as { title: string } | undefined;
 
 		addEntry(
 			params.uuid,
@@ -238,10 +250,147 @@ export const actions: Actions = {
 			'role_revoked',
 			'role',
 			role_uuid,
-			`@${person?.handle ?? person_uuid} removed from role "${role?.name ?? role_uuid}".`
+			`@${person?.handle ?? person_uuid} removed from role "${role?.title ?? role_uuid}".`
 		);
 		audit(actingAs, 'role.revoke', 'person', person_uuid,
-			`@${person?.handle ?? person_uuid} removed from role "${role?.name ?? role_uuid}"`, motion_uuid);
+			`@${person?.handle ?? person_uuid} removed from role "${role?.title ?? role_uuid}"`, motion_uuid);
+		return { success: true };
+	},
+
+	createTemplate: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+		const data = await request.formData();
+		
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		const template_key = String(data.get('template_key') ?? '').trim();
+		const title = String(data.get('title') ?? '').trim();
+		const description = String(data.get('description') ?? '').trim() || null;
+		const compensation_franks = parseInt(String(data.get('compensation_franks') ?? '0'));
+
+		if (!template_key || !title) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+
+		const template = createRoleTemplate({
+			association_uuid: params.uuid,
+			template_key,
+			title,
+			description,
+			compensation_franks
+		});
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'template_created',
+			'role_template',
+			template.uuid,
+			`Role template "${title}" (${template_key}) created.`
+		);
+		audit(actingAs, 'template.create', 'role_template', template.uuid, `Template "${title}" created`);
+		return { success: true };
+	},
+
+	updateTemplate: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+		const data = await request.formData();
+		
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		const uuid = String(data.get('uuid') ?? '').trim();
+		const title = String(data.get('title') ?? '').trim();
+		const description = String(data.get('description') ?? '').trim() || null;
+		const compensation_franks = parseInt(String(data.get('compensation_franks') ?? '0'));
+
+		if (!uuid || !title) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+
+		db.prepare(
+			'UPDATE role_template SET title = ?, description = ?, compensation_franks = ? WHERE uuid = ?'
+		).run(title, description, compensation_franks, uuid);
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'template_updated',
+			'role_template',
+			uuid,
+			`Role template "${title}" updated.`
+		);
+		audit(actingAs, 'template.update', 'role_template', uuid, `Template "${title}" updated`);
+		return { success: true };
+	},
+
+	deleteTemplate: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+		const data = await request.formData();
+		
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		const uuid = String(data.get('uuid') ?? '').trim();
+		if (!uuid) {
+			return fail(400, { message: 'Missing template UUID' });
+		}
+
+		deleteRoleTemplate(uuid);
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'template_deleted',
+			'role_template',
+			uuid,
+			'Role template deleted.'
+		);
+		audit(actingAs, 'template.delete', 'role_template', uuid, 'Template deleted');
+		return { success: true };
+	},
+
+	setTemplatePermissions: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+		const data = await request.formData();
+		
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
+			return fail(403, { message: 'Forbidden' });
+		}
+
+		const template_uuid = String(data.get('template_uuid') ?? '').trim();
+		const app = String(data.get('app') ?? '').trim();
+		const permission = String(data.get('permission') ?? '').trim();
+
+		if (!template_uuid || !app || !permission) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+
+		// Get existing permissions
+		const existingPermissions = getRoleTemplatePermissions(template_uuid);
+		
+		// Add the new permission
+		const updatedPermissions = [...existingPermissions, { app, permission }];
+		
+		setRoleTemplatePermissions(template_uuid, updatedPermissions);
+
+		addEntry(
+			params.uuid,
+			actingAs,
+			'template_permission_added',
+			'role_template',
+			template_uuid,
+			`Permission ${app}:${permission} added to template.`
+		);
+		audit(actingAs, 'template.permission.add', 'role_template', template_uuid, `Permission ${app}:${permission} added`);
 		return { success: true };
 	},
 };

@@ -117,6 +117,8 @@
 					<p class="empty-state__message">No motions currently in deliberation or voting</p>
 				</div>
 			{/if}
+		{:else if activeTab === 'pending'}
+			{#if pending.length > 0}
 				<section class="section">
 					<h2 class="section__title">📋 Pending Motions</h2>
 					<div class="list">

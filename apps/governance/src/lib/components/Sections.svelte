@@ -2,7 +2,7 @@
 	type Section = {
 		uuid: string;
 		name: string;
-		mandate: string | null;
+		description: string | null;
 		parent_section_uuid: string | null;
 	};
 
@@ -30,21 +30,27 @@
 		<div class="sections-list">
 			{#each rootSections as section}
 				<div class="section-group">
-					<div class="section">
-						<h3 class="section-name">{section.name}</h3>
-						{#if section.mandate}
-							<p class="section-mandate">{section.mandate}</p>
-						{/if}
-					</div>
+					<a href="/sections/{section.uuid}" class="section">
+						<div class="section-content">
+							<h3 class="section-name">{section.name}</h3>
+							{#if section.description}
+								<p class="section-description">{section.description}</p>
+							{/if}
+						</div>
+						<span class="section-arrow">→</span>
+					</a>
 					{#if childSections.has(section.uuid)}
 						<div class="subsections">
 							{#each childSections.get(section.uuid) ?? [] as child}
-								<div class="section subsection">
-									<h4 class="section-name">{child.name}</h4>
-									{#if child.mandate}
-										<p class="section-mandate">{child.mandate}</p>
-									{/if}
-								</div>
+								<a href="/sections/{child.uuid}" class="section subsection">
+									<div class="section-content">
+										<h4 class="section-name">{child.name}</h4>
+										{#if child.description}
+											<p class="section-description">{child.description}</p>
+										{/if}
+									</div>
+									<span class="section-arrow">→</span>
+								</a>
 							{/each}
 						</div>
 					{/if}
@@ -98,6 +104,34 @@
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius);
 		padding: var(--space-4);
+		text-decoration: none;
+		color: inherit;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		transition: all 0.2s ease;
+	}
+
+	.section:hover {
+		border-color: var(--color-primary, #0066cc);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		transform: translateY(-1px);
+	}
+
+	.section-content {
+		flex: 1;
+	}
+
+	.section-arrow {
+		font-size: var(--text-xl);
+		color: var(--color-text-muted);
+		transition: transform 0.2s ease, color 0.2s ease;
+	}
+
+	.section:hover .section-arrow {
+		color: var(--color-primary, #0066cc);
+		transform: translateX(4px);
 	}
 
 	.subsection {
@@ -123,14 +157,14 @@
 		font-size: var(--text-xs);
 	}
 
-	.section-mandate {
+	.section-description {
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 		line-height: 1.5;
 		margin: 0;
 	}
 
-	.subsection .section-mandate {
+	.subsection .section-description {
 		font-size: var(--text-xs);
 	}
 </style>

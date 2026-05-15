@@ -95,6 +95,9 @@ A Ben Franklin Society must maintain institutional protections for human dignity
 **10. Fair Dealing with Neighboring Societies**
 A Ben Franklin Society must deal fairly with other member societies. The economic sovereignty guaranteed to members within a society extends, in principle, to the relations between societies. A Ben Franklin Society may not use control of essential resources — water, land access, transport routes, food supply, or infrastructure — to coerce, extract from, or systematically disadvantage another society. Trade and mutual aid between societies must be conducted in good faith. A society that leverages necessity into exploitation has violated the same principle it claims to uphold for its own members. Complaints of inter-society exploitation are subject to Federation mediation and may constitute grounds for compliance review.
 
+**11. Annual Review of Founding Purpose**
+A Ben Franklin Society must convene an annual meeting dedicated to honest examination of whether the Society remains true to its founding purpose and principles. This is not a celebratory formality. It is a deliberate moment of institutional self-scrutiny. The meeting must engage these questions directly: Are we still serving the purpose we were founded to serve? Have our founding assumptions proven sound or do they require revision? Are our institutions achieving what they were designed to achieve? Where have we failed, and what must change? This annual review is not optional. It is the mechanism by which the Society maintains the honest inquiry required by Principle III and prevents institutional drift from charter obligations. The review findings must be made available to all members and must inform the General Assembly's legislative priorities for the following year.
+
 ---
 
 ## Part Three — The Nature of This Charter

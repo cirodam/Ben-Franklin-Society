@@ -14,21 +14,18 @@ export const load: PageServerLoad = async ({ params }) => {
 	const roles = db.prepare(`
 		SELECT 
 			r.uuid,
-			r.name,
-			r.level,
-			r.division,
-			r.salary_monthly,
-			r.daily_rate,
-			r.term_days,
+			r.title,
+			r.description,
+			r.compensation_franks,
 			a.uuid as association_uuid,
 			a.name as association_name,
 			a.type as association_type,
-			pr.assigned_at
-		FROM person_role pr
-		JOIN role r ON pr.role_uuid = r.uuid
+			ra.assigned_at
+		FROM role_assignment ra
+		JOIN role r ON ra.role_uuid = r.uuid
 		JOIN association a ON r.association_uuid = a.uuid
-		WHERE pr.person_uuid = ? AND pr.removed_at IS NULL
-		ORDER BY pr.assigned_at DESC
+		WHERE ra.person_uuid = ? AND ra.removed_at IS NULL
+		ORDER BY ra.assigned_at DESC
 	`).all(params.uuid);
 
 	// Get bulletin posts by this person

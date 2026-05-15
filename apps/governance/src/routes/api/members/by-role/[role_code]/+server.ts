@@ -17,10 +17,10 @@ export const GET: RequestHandler = async ({ params }) => {
 	const rows = db
 		.prepare(
 			`SELECT person_uuid
-       FROM person_role pr
-       JOIN role r ON r.uuid = pr.role_uuid
+       FROM role_assignment ra
+       JOIN role r ON r.uuid = ra.role_uuid
        WHERE r.role_code = ?
-         AND pr.revoked_at IS NULL`
+         AND ra.removed_at IS NULL`
 		)
 		.all(role_code) as Array<{ person_uuid: string }>;
 
