@@ -16,6 +16,7 @@
 		{ href: '/colleges', label: '🎓 Colleges' },
 		{ href: '/documents', label: '📄 Documents' },
 		{ href: '/record', label: '📝 The Record' },
+		{ href: '/federation/lineage', label: '🔗 Federation' },
 		{ href: '/settings/oidc-clients', label: '🔑 OIDC Clients' },
 		{ href: '/config', label: '⚙️ Settings' },
 	];

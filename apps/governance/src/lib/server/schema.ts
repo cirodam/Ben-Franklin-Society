@@ -468,4 +468,107 @@ CREATE TABLE IF NOT EXISTS bulletin_comment (
   deleted_at TEXT NULL
 );
 
+-- Society Identity: Our society's identity and lineage
+
+CREATE TABLE IF NOT EXISTS society_identity (
+  handle              TEXT PRIMARY KEY,
+  uuid                TEXT UNIQUE NOT NULL,
+  public_key          TEXT NOT NULL,
+  private_key_encrypted TEXT NOT NULL,  -- Encrypted with master key
+  parent_handle       TEXT NULL,
+  founding_record_json TEXT NULL,  -- Contains parent's signature
+  founded_at          INTEGER NULL,
+  created_at          INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS children_societies (
+  handle              TEXT PRIMARY KEY,
+  uuid                TEXT UNIQUE NOT NULL,
+  public_key          TEXT NOT NULL,
+  founding_record_json TEXT NOT NULL,  -- Contains our signature
+  founded_at          INTEGER NOT NULL,
+  created_at          INTEGER DEFAULT (unixepoch())
+);
+
+-- Known Societies: Cache of other societies we know about
+
+CREATE TABLE IF NOT EXISTS societies (
+  handle              TEXT PRIMARY KEY,
+  uuid                TEXT UNIQUE NOT NULL,
+  endpoint            TEXT NOT NULL,  -- https://columbus.bfs/
+  public_key          TEXT NOT NULL,
+  lineage_json        TEXT,  -- ["columbus", "detroit", "philadelphia"]
+  last_lineage_verified INTEGER,
+  latitude            REAL,
+  longitude           REAL,
+  last_interaction    INTEGER,
+  interaction_count   INTEGER DEFAULT 0,
+  discovered_at       INTEGER DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_societies_location ON societies(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_societies_interaction ON societies(last_interaction DESC);
+
+-- Peer Vouching: Trust relationships between societies
+
+-- Vouches we've issued to other societies
+CREATE TABLE IF NOT EXISTS vouches_issued (
+  vouch_id            TEXT PRIMARY KEY,  -- UUID
+  vouched_for_handle  TEXT NOT NULL,
+  vouch_type          TEXT NOT NULL,  -- general, banking, governance, technical
+  confidence          TEXT NOT NULL,  -- strong, moderate, weak
+  statement           TEXT,
+  issued_at           INTEGER NOT NULL,
+  currently_valid     INTEGER DEFAULT 1,
+  invalidated_at      INTEGER,
+  invalidation_reason TEXT,
+  signature           TEXT NOT NULL,  -- Our signature over credential
+  created_at          INTEGER DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_vouches_issued_for ON vouches_issued(vouched_for_handle);
+CREATE INDEX IF NOT EXISTS idx_vouches_issued_valid ON vouches_issued(currently_valid);
+
+-- Vouch credentials others have given us
+CREATE TABLE IF NOT EXISTS vouch_credentials (
+  credential_id       TEXT PRIMARY KEY,  -- UUID
+  voucher_handle      TEXT NOT NULL,
+  voucher_public_key  TEXT NOT NULL,
+  vouch_type          TEXT NOT NULL,
+  statement           TEXT,
+  issued_at           INTEGER NOT NULL,
+  signature           TEXT NOT NULL,  -- Voucher's signature
+  verified            INTEGER DEFAULT 0,
+  created_at          INTEGER DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_vouch_credentials_voucher ON vouch_credentials(voucher_handle);
+
+-- Cached verification responses
+CREATE TABLE IF NOT EXISTS vouch_verifications (
+  verification_id     TEXT PRIMARY KEY,
+  peer_handle         TEXT NOT NULL,  -- Society we're evaluating
+  voucher_handle      TEXT NOT NULL,  -- Who vouched for them
+  currently_valid     INTEGER NOT NULL,
+  confidence          TEXT,  -- strong, moderate, weak (if valid)
+  checked_at          INTEGER NOT NULL,
+  response_signature  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_vouch_verifications_peer ON vouch_verifications(peer_handle);
+CREATE INDEX IF NOT EXISTS idx_vouch_verifications_fresh ON vouch_verifications(peer_handle, checked_at);
+
+-- Track interactions with peers as basis for vouching decisions
+CREATE TABLE IF NOT EXISTS peer_interactions (
+  interaction_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  peer_handle         TEXT NOT NULL,
+  interaction_type    TEXT NOT NULL,  -- banking, mail, assembly, mutual_aid
+  interaction_date    INTEGER NOT NULL,
+  outcome             TEXT NOT NULL,  -- success, failure, neutral
+  details             TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_peer_interactions_peer ON peer_interactions(peer_handle);
+CREATE INDEX IF NOT EXISTS idx_peer_interactions_date ON peer_interactions(interaction_date);
+
 `;
