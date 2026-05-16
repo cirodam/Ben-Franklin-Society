@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
 
   governance:
-    image: ${DOCKER_USERNAME:-benfranklinsociety}/bfs-governance:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-cirodam}/ben-franklin-society-governance:${VERSION:-latest}
     environment:
       DATABASE_PATH: /app/data/governance.db
       DOCUMENTS_PATH: /app/data/documents
@@ -58,7 +58,7 @@ services:
       start_period: 40s
 
   community-bank:
-    image: ${DOCKER_USERNAME:-benfranklinsociety}/bfs-community-bank:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-cirodam}/ben-franklin-society-community-bank:${VERSION:-latest}
     environment:
       DATABASE_PATH: /app/data/bank.db
       GOVERNANCE_URL: ${GOVERNANCE_URL:-https://governance.bfs.example.com}
@@ -92,7 +92,7 @@ services:
       start_period: 40s
 
   mail:
-    image: ${DOCKER_USERNAME:-benfranklinsociety}/bfs-mail:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-cirodam}/ben-franklin-society-mail:${VERSION:-latest}
     environment:
       DATABASE_PATH: /app/data/mail.db
       GOVERNANCE_URL: ${GOVERNANCE_URL:-https://governance.bfs.example.com}
@@ -126,7 +126,7 @@ services:
       start_period: 40s
 
   marketplace:
-    image: ${DOCKER_USERNAME:-benfranklinsociety}/bfs-marketplace:${VERSION:-latest}
+    image: ${DOCKER_USERNAME:-cirodam}/ben-franklin-society-marketplace:${VERSION:-latest}
     environment:
       DATABASE_PATH: /app/data/marketplace.db
       GOVERNANCE_URL: ${GOVERNANCE_URL:-https://governance.bfs.example.com}

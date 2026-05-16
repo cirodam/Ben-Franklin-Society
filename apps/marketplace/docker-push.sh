@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-IMAGE_NAME="cirodam/ben-franklin-society-governance"
+IMAGE_NAME="cirodam/ben-franklin-society-marketplace"
 VERSION="${1:-latest}"
 
 echo "Building Docker image..."
