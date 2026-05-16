@@ -1,5 +1,6 @@
 import { db } from '../db.js';
 import { sign, verify } from 'crypto';
+import { cacheWhois } from './domains.js';
 
 export interface Society {
 	handle: string;
@@ -105,6 +106,9 @@ export function registerSociety(params: {
 
 	// Compute and cache lineage
 	computeLineage(foundingRecord.child.handle);
+
+	// Cache WHOIS data
+	cacheWhois(foundingRecord.child.handle);
 
 	return { success: true };
 }
@@ -252,3 +256,192 @@ export function getLineageFromCache(handle: string): string[] | null {
 
 	return null;
 }
+
+/**
+ * Export full society tree
+ * Returns all societies with their founding records and metadata
+ * Used by governance nodes to bootstrap their local cache
+ */
+export function exportFullTree() {
+	const stmt = db.prepare(/* sql */ `
+		SELECT 
+			handle,
+			uuid,
+			parent_handle,
+			public_key,
+			endpoint,
+			endpoint_type,
+			founding_record_json,
+			founded_at,
+			registered_at,
+			status,
+			last_updated,
+			update_count
+		FROM societies
+		ORDER BY registered_at ASC
+	`);
+
+	const societies = stmt.all() as any[];
+
+	return societies.map(s => ({
+		handle: s.handle,
+		uuid: s.uuid,
+		parent_handle: s.parent_handle,
+		public_key: s.public_key,
+		endpoint: s.endpoint,
+		endpoint_type: s.endpoint_type || 'hostname',
+		founding_record: JSON.parse(s.founding_record_json),
+		founded_at: s.founded_at,
+		registered_at: s.registered_at,
+		status: s.status,
+		last_updated: s.last_updated,
+		update_count: s.update_count || 0
+	}));
+}
+
+/**
+ * Export societies updated/registered since a given timestamp
+ * Used for incremental sync by governance nodes
+ */
+export function exportTreeSince(timestamp: number) {
+	const stmt = db.prepare(/* sql */ `
+		SELECT 
+			handle,
+			uuid,
+			parent_handle,
+			public_key,
+			endpoint,
+			endpoint_type,
+			founding_record_json,
+			founded_at,
+			registered_at,
+			status,
+			last_updated,
+			update_count
+		FROM societies
+		WHERE registered_at >= ? OR last_updated >= ?
+		ORDER BY COALESCE(last_updated, registered_at) ASC
+	`);
+
+	const societies = stmt.all(timestamp, timestamp) as any[];
+
+	return societies.map(s => ({
+		handle: s.handle,
+		uuid: s.uuid,
+		parent_handle: s.parent_handle,
+		public_key: s.public_key,
+		endpoint: s.endpoint,
+		endpoint_type: s.endpoint_type || 'hostname',
+		founding_record: JSON.parse(s.founding_record_json),
+		founded_at: s.founded_at,
+		registered_at: s.registered_at,
+		status: s.status,
+		last_updated: s.last_updated,
+		update_count: s.update_count || 0
+	}));
+}
+
+/**
+ * Get network statistics
+ * Returns counts and metrics about the BFS network
+ */
+export function getNetworkStats() {
+	// Total societies
+	const totalStmt = db.prepare('SELECT COUNT(*) as count FROM societies');
+	const total = (totalStmt.get() as { count: number }).count;
+
+	// By status
+	const statusStmt = db.prepare(/* sql */ `
+		SELECT status, COUNT(*) as count
+		FROM societies
+		GROUP BY status
+	`);
+	const byStatus = statusStmt.all() as Array<{ status: string; count: number }>;
+
+	// Root societies (no parent)
+	const rootStmt = db.prepare(/* sql */ `
+		SELECT COUNT(*) as count
+		FROM societies
+		WHERE parent_handle IS NULL
+	`);
+	const roots = (rootStmt.get() as { count: number }).count;
+
+	// Recent registrations (last 24 hours)
+	const oneDayAgo = Math.floor(Date.now() / 1000) - 86400;
+	const recentStmt = db.prepare(/* sql */ `
+		SELECT COUNT(*) as count
+		FROM societies
+		WHERE registered_at >= ?
+	`);
+	const recent24h = (recentStmt.get(oneDayAgo) as { count: number }).count;
+
+	// Recent updates (last 24 hours)
+	const updatesStmt = db.prepare(/* sql */ `
+		SELECT COUNT(*) as count
+		FROM societies
+		WHERE last_updated >= ?
+	`);
+	const updates24h = (updatesStmt.get(oneDayAgo) as { count: number }).count;
+
+	// Total DNS records
+	const dnsStmt = db.prepare('SELECT COUNT(*) as count FROM dns_records');
+	const totalDnsRecords = (dnsStmt.get() as { count: number }).count;
+
+	// Societies with DNS records
+	const dnsActiveSocietiesStmt = db.prepare(/* sql */ `
+		SELECT COUNT(DISTINCT society_handle) as count
+		FROM dns_records
+	`);
+	const societiesWithDns = (dnsActiveSocietiesStmt.get() as { count: number }).count;
+
+	// Oldest society
+	const oldestStmt = db.prepare(/* sql */ `
+		SELECT handle, founded_at
+		FROM societies
+		ORDER BY founded_at ASC
+		LIMIT 1
+	`);
+	const oldest = oldestStmt.get() as { handle: string; founded_at: number } | undefined;
+
+	// Newest society
+	const newestStmt = db.prepare(/* sql */ `
+		SELECT handle, registered_at
+		FROM societies
+		ORDER BY registered_at DESC
+		LIMIT 1
+	`);
+	const newest = newestStmt.get() as { handle: string; registered_at: number } | undefined;
+
+	// Most active society (by update count)
+	const mostActiveStmt = db.prepare(/* sql */ `
+		SELECT handle, update_count
+		FROM societies
+		ORDER BY update_count DESC
+		LIMIT 1
+	`);
+	const mostActive = mostActiveStmt.get() as { handle: string; update_count: number } | undefined;
+
+	return {
+		total_societies: total,
+		by_status: byStatus.reduce((acc, s) => ({ ...acc, [s.status]: s.count }), {}),
+		root_societies: roots,
+		recent_registrations_24h: recent24h,
+		recent_updates_24h: updates24h,
+		total_dns_records: totalDnsRecords,
+		societies_with_dns: societiesWithDns,
+		oldest_society: oldest ? {
+			handle: oldest.handle,
+			founded_at: new Date(oldest.founded_at * 1000).toISOString()
+		} : null,
+		newest_society: newest ? {
+			handle: newest.handle,
+			registered_at: new Date(newest.registered_at * 1000).toISOString()
+		} : null,
+		most_active_society: mostActive ? {
+			handle: mostActive.handle,
+			update_count: mostActive.update_count
+		} : null,
+		timestamp: new Date().toISOString()
+	};
+}
+

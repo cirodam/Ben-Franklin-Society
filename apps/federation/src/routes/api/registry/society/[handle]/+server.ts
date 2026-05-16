@@ -1,5 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { lookupSociety, getLineageFromCache } from '$lib/server/registry.js';
+import {
+	verifyUpdateRequest,
+	updateEndpoint,
+	checkRateLimit
+} from '$lib/server/domains.js';
 import type { RequestHandler } from './$types.js';
 
 /**
@@ -12,10 +17,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	const society = lookupSociety(handle);
 
 	if (!society) {
-		return json(
-			{ error: 'Society not found' },
-			{ status: 404 }
-		);
+		return json({ error: 'Society not found' }, { status: 404 });
 	}
 
 	const lineage = getLineageFromCache(handle);
@@ -23,5 +25,85 @@ export const GET: RequestHandler = async ({ params }) => {
 	return json({
 		...society,
 		lineage
+	});
+};
+
+/**
+ * PATCH /api/registry/society/:handle
+ * Update society endpoint (requires signature authentication)
+ * 
+ * Headers: Authorization: Signature <base64-signature>
+ * Body: {
+ *   endpoint: string,
+ *   endpoint_type?: 'hostname' | 'ip',
+ *   timestamp: number
+ * }
+ */
+export const PATCH: RequestHandler = async ({ params, request, getClientAddress }) => {
+	const { handle } = params;
+
+	// Extract signature from Authorization header
+	const authHeader = request.headers.get('Authorization');
+	if (!authHeader || !authHeader.startsWith('Signature ')) {
+		return json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
+	}
+
+	const signatureBase64 = authHeader.substring('Signature '.length);
+
+	// Get request body
+	const requestBody = await request.text();
+
+	// Verify signature
+	const verification = verifyUpdateRequest({
+		handle,
+		requestBody,
+		signatureBase64
+	});
+
+	if (!verification.valid) {
+		return json({ error: verification.error || 'Invalid signature' }, { status: 401 });
+	}
+
+	// Check rate limit
+	if (!checkRateLimit(handle, 'endpoint')) {
+		return json(
+			{ error: 'Rate limit exceeded (10 endpoint updates per day)' },
+			{ status: 429 }
+		);
+	}
+
+	// Parse body
+	let body: any;
+	try {
+		body = JSON.parse(requestBody);
+	} catch {
+		return json({ error: 'Invalid JSON' }, { status: 400 });
+	}
+
+	const { endpoint, endpoint_type } = body;
+
+	if (!endpoint) {
+		return json({ error: 'Missing endpoint' }, { status: 400 });
+	}
+
+	// Update endpoint
+	const result = updateEndpoint({
+		handle,
+		endpoint,
+		endpointType: endpoint_type,
+		signature: signatureBase64,
+		ipAddress: getClientAddress()
+	});
+
+	if (!result.success) {
+		return json({ error: result.error || 'Update failed' }, { status: 500 });
+	}
+
+	// Return updated society
+	const society = lookupSociety(handle);
+
+	return json({
+		success: true,
+		society
 	});
 };
