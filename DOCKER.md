@@ -153,14 +153,20 @@ To publish images to Docker Hub (maintainers only):
 # 1. Log in to Docker Hub
 docker login
 
-# 2. Build and push all images
-./scripts/publish-images.sh YOUR_DOCKERHUB_USERNAME 0.1.0
+# 2. Build and push all images at once
+./scripts/publish-images.sh cirodam 0.1.0
+
+# Or build and push individually
+./apps/governance/docker-push.sh 0.1.0
+./apps/community-bank/docker-push.sh 0.1.0
+./apps/mail/docker-push.sh 0.1.0
+./apps/marketplace/docker-push.sh 0.1.0
 
 # This will publish:
-# - YOUR_DOCKERHUB_USERNAME/bfs-governance:0.1.0
-# - YOUR_DOCKERHUB_USERNAME/bfs-community-bank:0.1.0
-# - YOUR_DOCKERHUB_USERNAME/bfs-mail:0.1.0
-# - YOUR_DOCKERHUB_USERNAME/bfs-marketplace:0.1.0
+# - cirodam/ben-franklin-society-governance:0.1.0
+# - cirodam/ben-franklin-society-community-bank:0.1.0
+# - cirodam/ben-franklin-society-mail:0.1.0
+# - cirodam/ben-franklin-society-marketplace:0.1.0
 # - (and :latest tags for each)
 ```
 
@@ -170,7 +176,7 @@ Instead of building from source, you can use published images:
 
 ```bash
 # Set environment variables for published images
-export DOCKER_USERNAME=benfranklinsociety
+export DOCKER_USERNAME=cirodam
 export VERSION=0.1.0
 
 # Use the published images compose file
@@ -180,7 +186,7 @@ docker-compose -f docker-compose.published.yml up -d
 Or create a `.env` file:
 
 ```bash
-DOCKER_USERNAME=benfranklinsociety
+DOCKER_USERNAME=cirodam
 VERSION=0.1.0
 ```
 

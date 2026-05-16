@@ -22,7 +22,10 @@ The core record of an incident where harm was alleged.
 | `injury_types` | TEXT | NOT NULL | CSV list of injury types: `physical`, `material`, `relational`, `systemic`, `communal` |
 | `incident_start` | TEXT | NOT NULL | When the injury/incident began (ISO 8601 datetime) |
 | `incident_end` | TEXT | NULL | When it ended (NULL if single moment or ongoing) |
+| `location` | TEXT | NULL | Where the incident occurred (free-form text) |
 | `filed_at` | TEXT | NOT NULL | When the injury record was filed |
+| `gravity` | TEXT | NULL | Assessment of harm severity: `minor`, `moderate`, `severe` |
+| `safety_risk` | TEXT | NULL | Assessment of future risk: `low`, `moderate`, `high` |
 | `created_at` | TEXT | NOT NULL | Record creation timestamp |
 
 ### Notes
@@ -36,6 +39,10 @@ The core record of an incident where harm was alleged.
   - `"physical,relational"` - assault that also damaged reputation
   
 - **Incident timeframe**: Use `incident_start` for single-moment events. Set `incident_end` for ongoing harm or patterns. Leave `incident_end` NULL if harm is still ongoing.
+
+- **Location**: Free-form text describing where the incident occurred. Can be specific ("Community Workshop, 123 Main St") or general ("Member's residence", "Online/social media", "Multiple locations"). Leave NULL if location is unknown or not applicable (e.g., systemic harm).
+
+- **Assessments**: `gravity` and `safety_risk` are judgment-based assessments made by College of Conciliation members. These may be NULL when initially filed and assigned during intake/review. See "Incident Assessment" section for guidance on how to assess these categories.
 
 ---
 
@@ -86,6 +93,127 @@ Narratives of what happened from different perspectives.
 
 ---
 
+## Incident Assessment
+
+Two complementary assessments help the College of Conciliation respond appropriately to each incident. These are judgment-based assessments - answer the questions for each category and select the one where you answer "yes" to a significant portion of the questions.
+
+### Gravity Assessment
+
+**Backward-looking**: How serious was the harm that occurred?
+
+#### **Minor Gravity**
+
+Consider this category if several of these are true:
+
+- Was the harm primarily to property or finances?
+- Could the damage be repaired or compensated relatively easily?
+- Was this an isolated incident between individuals?
+- Did the incident end and is unlikely to have lasting effects?
+- Is this about a misunderstanding or social friction rather than deliberate harm?
+- Would most people consider this a dispute rather than a serious injury?
+- Are both parties still able to function in the community without significant disruption?
+
+#### **Moderate Gravity**
+
+Consider this category if several of these are true:
+
+- Has someone suffered significant financial loss or property damage?
+- Has someone's reputation or relationships been seriously affected?
+- Did an institution or service fail in its responsibilities?
+- Are multiple members affected by what happened?
+- Was there physical harm, but without lasting injury?
+- Will it take substantial effort or time to repair the harm?
+- Has this disrupted community function or trust?
+- Is the victim experiencing ongoing distress even though the incident has ended?
+- Would most people agree this requires formal mediation?
+
+#### **Severe Gravity**
+
+Consider this category if several of these are true:
+
+- Did someone suffer lasting physical injury?
+- Is the harm still actively occurring with no end in sight?
+- Was a vulnerable person harmed (youth, elder, dependent)?
+- Are multiple types of harm combined (e.g., physical injury plus reputation damage plus financial loss)?
+- Has this affected the victim's ability to function in basic ways?
+- Did an institutional failure endanger people's safety or wellbeing?
+- Has this damaged fundamental community bonds or safety?
+- Would most people agree this requires immediate and serious intervention?
+- Is there trauma or harm that will take significant time and resources to heal?
+
+---
+
+### Safety Risk Assessment
+
+**Forward-looking**: What is the risk of future harm from this respondent?
+
+#### **Low Risk**
+
+Consider this category if several of these are true:
+
+- Is this the first time this person has been a respondent in an injury record?
+- Did the incident clearly end and is not ongoing?
+- Was there no violence or threat of violence involved?
+- Has the person acknowledged the harm they caused?
+- Does the person seem genuinely remorseful?
+- Is the person willing to engage in the accountability process?
+- Does the person have no special access to vulnerable populations?
+- Is there no pattern of similar behavior in the past?
+- Do community members generally feel safe around this person?
+- Would you be surprised if this person did something similar again?
+
+#### **Moderate Risk**
+
+Consider this category if several of these are true:
+
+- Has this person been a respondent in 2-3 previous injury records?
+- Is there a pattern of similar types of harm?
+- Did the behavior show recklessness or disregard for others' wellbeing?
+- Has the person shown some resistance to accountability in past incidents?
+- Were threats or intimidation involved (but not physical violence)?
+- Does the person tend to minimize or excuse their harmful behavior?
+- Has the person made partial but incomplete changes after previous incidents?
+- Are there circumstances that might lead to similar incidents in the future?
+- Would you be somewhat concerned about this person's future behavior?
+
+#### **High Risk**
+
+Consider this category if several of these are true:
+
+- Was physical violence involved in this or past incidents?
+- Is the harm currently ongoing with no end date?
+- Has this person been a respondent in 4 or more previous injury records?
+- Is there a clear pattern of escalation (each incident more serious than the last)?
+- Does this person have access to vulnerable populations through their role or position?
+- Has this person refused to acknowledge harm or engage in accountability previously?
+- Were there explicit threats about causing future harm?
+- Have multiple community members raised concerns about this person's behavior?
+- Is there a consistent pattern showing this person either cannot or will not change?
+- Does this person show signs of seeking out opportunities to cause harm?
+- Would you be worried about someone you care about being around this person?
+
+---
+
+### Combined Response Matrix
+
+Both assessments inform the College of Conciliation's response:
+
+| Gravity | Safety Risk | Response Approach |
+|---------|------------|-------------------|
+| **Severe** | **High** | **Emergency**: Immediate intervention, protective restrictions, possible temporary suspension |
+| **Severe** | **Moderate** | **Priority**: Full investigation and accountability process within 48 hours |
+| **Severe** | **Low** | **Urgent**: Thorough mediation, focus on repair and understanding |
+| **Moderate** | **High** | **Priority**: Focus on preventing escalation, monitoring, structured accountability |
+| **Moderate** | **Moderate** | **Standard**: Full mediation process, follow-up check-ins |
+| **Moderate** | **Low** | **Standard**: Mediation with focus on repair and prevention |
+| **Minor** | **High** | **Monitoring**: Pattern is concerning even if individual harm is minor; accountability plan required |
+| **Minor** | **Moderate** | **Standard**: Facilitated dialogue, note pattern for future reference |
+| **Minor** | **Low** | **Facilitated**: Dialogue and repair, may be handled informally |
+
+**Key Principle**: Safety risk can elevate response urgency even when gravity is low. A pattern of minor incidents may indicate someone who will eventually cause serious harm.
+
+---
+
 ## Example Scenarios
 
 ### Single Complainant, Single Respondent
@@ -98,6 +226,9 @@ injury_record:
   injury_types: "physical,relational"
   incident_start: "2026-03-15T14:30:00Z"
   incident_end: NULL
+  location: "Community Center, 456 Oak Street"
+  gravity: "severe"
+  safety_risk: "low"
 
 injury_party:
   (injury_1, alice_uuid, 'complainant')
@@ -119,6 +250,9 @@ injury_record:
   injury_types: "systemic"
   incident_start: "2026-01-01T00:00:00Z"
   incident_end: "2026-04-30T23:59:59Z"
+  location: "Housing Service offices and multiple member residences"
+  gravity: "moderate"
+  safety_risk: "moderate"
 
 injury_party:
   (injury_2, member_a_uuid, 'complainant')
@@ -143,6 +277,9 @@ injury_record:
   injury_types: "physical"
   incident_start: "2026-05-10T22:00:00Z"
   incident_end: NULL
+  location: "Victim's residence"
+  gravity: "severe"
+  safety_risk: "high"
 
 injury_party:
   (injury_3, society_uuid, 'complainant')
@@ -161,6 +298,8 @@ incident_account:
 
 The following are NOT included in this initial design but may be added later:
 
+- **Reference guide of common incidents**: Document listing typical scenarios with pre-assigned categories to help calibrate judgment (e.g., "property damage under $X", "first-time physical altercation with no injury", "3rd instance of gossip/rumor-spreading"). This would serve as anchors for consistent assessment across different conciliators.
+- **Pattern tracking table**: Store historical patterns (repeat respondents, similar injury types, escalation trends)
 - Status tracking (filed, under review, mediation, resolved)
 - Assignment to conciliators
 - Resolution/findings documentation
@@ -169,7 +308,7 @@ The following are NOT included in this initial design but may be added later:
 - Mediation session records
 - Audit trail of status changes
 
-This minimal design captures the essential: **what happened, when, and who was involved.**
+This minimal design captures the essential: **what happened, when, who was involved, and how serious it is.** The `gravity` and `safety_risk` assessments rely on human judgment guided by questions, with common-incident references to be added for consistency.
 
 ---
 
@@ -177,6 +316,8 @@ This minimal design captures the essential: **what happened, when, and who was i
 
 ### College of Conciliation
 - Receives notification when injury records are filed
+- Assigns `gravity` and `safety_risk` assessments during intake/review
+- Uses assessments to prioritize response and determine appropriate intervention level (see Combined Response Matrix)
 - Uses injury records as basis for mediation and accountability processes
 - Injury records inform patterns of harm analysis
 
@@ -201,3 +342,4 @@ This minimal design captures the essential: **what happened, when, and who was i
 3. How does an injury record relate to membership suspension/revocation?
 4. Should injury records be editable after filing, or append-only?
 5. What are the visibility/privacy rules for viewing injury records?
+6. Should severity weights be adjustable by the College of Conciliation based on local community context?
