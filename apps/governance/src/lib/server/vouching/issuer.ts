@@ -1,6 +1,6 @@
 import { db } from '../db.js';
 import { randomUUID } from 'crypto';
-import { getIdentity, signMessage } from './identity.js';
+import { getIdentity, signMessage } from '../lineage/identity.js';
 
 export type VouchType = 'general' | 'banking' | 'governance' | 'technical';
 export type Confidence = 'strong' | 'moderate' | 'weak';

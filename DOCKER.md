@@ -143,6 +143,49 @@ docker-compose restart governance
 docker-compose restart governance
 ```
 
+## Publishing Images to Docker Hub
+
+### Building and Publishing
+
+To publish images to Docker Hub (maintainers only):
+
+```bash
+# 1. Log in to Docker Hub
+docker login
+
+# 2. Build and push all images
+./scripts/publish-images.sh YOUR_DOCKERHUB_USERNAME 0.1.0
+
+# This will publish:
+# - YOUR_DOCKERHUB_USERNAME/bfs-governance:0.1.0
+# - YOUR_DOCKERHUB_USERNAME/bfs-community-bank:0.1.0
+# - YOUR_DOCKERHUB_USERNAME/bfs-mail:0.1.0
+# - YOUR_DOCKERHUB_USERNAME/bfs-marketplace:0.1.0
+# - (and :latest tags for each)
+```
+
+### Using Published Images
+
+Instead of building from source, you can use published images:
+
+```bash
+# Set environment variables for published images
+export DOCKER_USERNAME=benfranklinsociety
+export VERSION=0.1.0
+
+# Use the published images compose file
+docker-compose -f docker-compose.published.yml up -d
+```
+
+Or create a `.env` file:
+
+```bash
+DOCKER_USERNAME=benfranklinsociety
+VERSION=0.1.0
+```
+
+This pulls pre-built images instead of building locally, much faster for deployment.
+
 ## Full Documentation
 
 See [docs/architectural/deployment.md](docs/architectural/deployment.md) for complete deployment documentation.

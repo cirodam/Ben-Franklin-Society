@@ -154,7 +154,7 @@ export async function syncFromFederation(): Promise<number> {
 /**
  * Cache a society locally in our societies table
  */
-function cacheSociety(params: {
+export function cacheSociety(params: {
 	handle: string;
 	uuid: string;
 	endpoint: string;

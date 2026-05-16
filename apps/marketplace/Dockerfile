@@ -19,7 +19,7 @@ COPY packages/oidc-client/package.json ./packages/oidc-client/
 COPY apps/marketplace/package.json ./apps/marketplace/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts=false
 
 # Stage 2: Build the application
 FROM node:22-alpine AS builder

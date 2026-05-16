@@ -16,7 +16,8 @@
     "@bfs/events": "workspace:*",
     "@bfs/types": "workspace:*",
     "@bfs/ui": "workspace:*",
-    "argon2": "^0.44.0"
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^11.0.0"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.0.0",

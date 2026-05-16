@@ -18,7 +18,7 @@
     "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@11.0.9",
+  "packageManager": "pnpm@9.15.2",
   "pnpm": {
     "onlyBuiltDependencies": ["argon2", "better-sqlite3", "esbuild"]
   }
