@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PageHeader, Card, Button, Input } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -9,24 +10,23 @@
 </script>
 
 <div class="page">
-	<h1>Account Lookup</h1>
+	<PageHeader title="Account Lookup" />
 
 	<form method="GET" action="/teller" class="lookup-form">
-		<input
-			class="input"
+		<Input
 			name="q"
 			type="text"
 			placeholder="Handle (e.g. jane_smith or food-service)"
 			value={q}
-			autofocus
+			class="lookup-input"
 		/>
-		<button type="submit" class="btn btn--primary">Look Up</button>
+		<Button type="submit" variant="primary">Look Up</Button>
 	</form>
 
 	{#if q && !result}
-		<div class="card empty-card">
+		<Card class="empty-card">
 			<p>No account found for <code>@{q}</code>.</p>
-		</div>
+		</Card>
 	{/if}
 
 	{#if result}
@@ -44,7 +44,7 @@
 			</div>
 
 			{#if recentTxs.length > 0}
-				<div class="card table-card">
+				<Card class="table-card">
 					<div class="card__label">Recent Transactions (Primary Account)</div>
 					<table class="table">
 						<thead>
@@ -73,32 +73,17 @@
 							{/each}
 						</tbody>
 					</table>
-				</div>
+				</Card>
 			{/if}
 		</div>
 	{/if}
 </div>
 
 <style>
-	h1 { margin: 0 0 var(--space-6); font-size: var(--text-xl); font-weight: var(--weight-bold); }
-
 	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
-	.lookup-form { display: flex; gap: var(--space-3); max-width: 500px; }
-
-	.input {
-		flex: 1; font-family: var(--font-sans); font-size: var(--text-sm);
-		padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border);
-		border-radius: var(--radius); background: var(--color-bg); color: var(--color-text);
-	}
-	.input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
-
-	.btn { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; font-weight: var(--weight-medium); }
-	.btn--primary { background: var(--color-accent); color: #fff; }
-	.btn--primary:hover { opacity: 0.9; }
-
-	.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
-	.card__label { font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); }
+	.lookup-form { display: flex; gap: var(--space-3); max-width: 500px; align-items: flex-start; }
+	:global(.lookup-input) { flex: 1; }
 
 	.empty-card { padding: var(--space-5); max-width: 400px; }
 	.empty-card p { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
@@ -118,7 +103,8 @@
 	.account-balance.negative { color: var(--color-danger); }
 	.badge-frozen { font-size: var(--text-xs); padding: 1px var(--space-2); border-radius: var(--radius); background: var(--color-warn-subtle); color: var(--color-warn); }
 
-	.table-card { overflow-x: auto; }
+	:global(.table-card) { overflow-x: auto; }
+	.card__label { font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); }
 	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 	.table th { text-align: left; padding: var(--space-3) var(--space-4); font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
 	.table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); vertical-align: top; }

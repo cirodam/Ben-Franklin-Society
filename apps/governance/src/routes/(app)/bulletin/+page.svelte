@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, EmptyState, PageHeader, Card } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -10,19 +11,22 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Community Bulletin Board</h1>
-		<a href="/bulletin/new" class="btn-new">+ New Notice</a>
-	</div>
+	<PageHeader title="Community Bulletin Board">
+		{#snippet actions()}
+			<Button href="/bulletin/new">+ New Notice</Button>
+		{/snippet}
+	</PageHeader>
 
 	{#if data.posts.length === 0}
-		<div class="empty">
-			<p>No notices yet. Be the first to post!</p>
-		</div>
+		<EmptyState
+			icon="📌"
+			title="No notices yet"
+			description="Be the first to post!"
+		/>
 	{:else}
 		<div class="card-grid">
 			{#each data.posts as post}
-				<a href="/bulletin/{post.uuid}" class="card" style="background-color: {post.color}">
+				<Card href="/bulletin/{post.uuid}" hover style="background-color: {post.color}; min-height: 200px">
 					<div class="card-content">
 						<h2 class="card-title">{post.title}</h2>
 						<p class="card-body">{excerpt(post.body)}</p>
@@ -39,7 +43,7 @@
 							<span class="post-date">{post.created_at.slice(0, 10)}</span>
 						</div>
 					</div>
-				</a>
+				</Card>
 			{/each}
 		</div>
 	{/if}
@@ -52,61 +56,10 @@
 		gap: var(--space-6);
 	}
 
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-	}
-
-	.btn-new {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		color: var(--color-bg);
-		background: var(--color-accent);
-		border-radius: var(--radius);
-		text-decoration: none;
-	}
-
-	.btn-new:hover {
-		background: var(--color-accent-hover);
-	}
-
-	.empty {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-8);
-		text-align: center;
-		color: var(--color-text-muted);
-	}
-
 	.card-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: var(--space-4);
-	}
-
-	.card {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		min-height: 200px;
-		padding: var(--space-5);
-		border-radius: var(--radius-lg);
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		text-decoration: none;
-		color: inherit;
-		transition: transform 0.2s, box-shadow 0.2s;
-	}
-
-	.card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	}
 
 	.card-content {

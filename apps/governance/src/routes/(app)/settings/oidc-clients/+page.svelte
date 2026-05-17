@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import { Alert, Button, Card, FormField, PageHeader, EmptyState } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -9,13 +10,13 @@
 </script>
 
 <div class="page">
-	<header class="page-header">
-		<h1>OIDC Clients</h1>
-		<p class="subtitle">Manage OpenID Connect clients for satellite applications and third-party integrations.</p>
-	</header>
+	<PageHeader 
+		title="OIDC Clients" 
+		description="Manage OpenID Connect clients for satellite applications and third-party integrations." 
+	/>
 
 	{#if form?.success && form?.clientSecret}
-		<div class="alert alert--success">
+		<Alert variant="success">
 			<p><strong>✅ {form.message}</strong></p>
 			<div class="credentials">
 				<div class="credential-row">
@@ -28,98 +29,92 @@
 				</div>
 			</div>
 			<p class="warning-text">⚠️ Save these credentials now. The client secret cannot be retrieved later.</p>
-		</div>
+		</Alert>
 	{/if}
 
 	{#if form?.error}
-		<div class="alert alert--error">
+		<Alert variant="danger">
 			<p><strong>Error:</strong> {form.error}</p>
-		</div>
+		</Alert>
 	{/if}
 
-	<section class="card">
+	<Card>
 		<h2>Quick Setup</h2>
 		<p class="section-description">Create pre-configured clients for BFS satellite applications.</p>
 		
 		<div class="quick-setup-buttons">
 			<form method="POST" action="?/createCommunityBank" use:enhance>
-				<button 
+				<Button
 					type="submit" 
-					class="btn btn--primary"
 					disabled={data.hasCommunityBank}
 				>
 					{data.hasCommunityBank ? '✓ Community Bank' : '+ Community Bank Client'}
-				</button>
+				</Button>
 			</form>
 
 			<form method="POST" action="?/createMail" use:enhance>
-				<button 
+				<Button
 					type="submit" 
-					class="btn btn--primary"
 					disabled={data.hasMail}
 				>
 					{data.hasMail ? '✓ Mail' : '+ Mail Client'}
-				</button>
+				</Button>
 			</form>
 
 			<form method="POST" action="?/createMarketplace" use:enhance>
-				<button 
+				<Button
 					type="submit" 
-					class="btn btn--primary"
 					disabled={data.hasMarketplace}
 				>
 					{data.hasMarketplace ? '✓ Marketplace' : '+ Marketplace Client'}
-				</button>
+				</Button>
 			</form>
 
-			<button 
-				class="btn btn--secondary"
+			<Button
+				variant="secondary"
 				onclick={() => showCreateForm = !showCreateForm}
 			>
 				{showCreateForm ? 'Cancel' : '+ Other OIDC Client'}
-			</button>
+			</Button>
 		</div>
 
 		{#if showCreateForm}
 			<form method="POST" action="?/create" use:enhance class="create-form">
-				<div class="form-group">
-					<label for="name">Client Name</label>
+				<FormField label="Client Name" hint="A descriptive name for this application">
 					<input 
 						type="text" 
 						id="name"
 						name="name" 
 						placeholder="e.g., My Custom App" 
 						required 
-						class="input"
 					/>
-					<p class="form-help">A descriptive name for this application</p>
-				</div>
+				</FormField>
 
-				<div class="form-group">
-					<label for="redirect_uris">Redirect URIs</label>
+				<FormField label="Redirect URIs" hint="One URI per line. Users will be redirected here after authentication.">
 					<textarea 
 						id="redirect_uris"
 						name="redirect_uris" 
 						placeholder="http://localhost:3000/oauth/callback&#10;https://app.example.com/oauth/callback"
 						required 
 						rows="4"
-						class="input"
 					></textarea>
-					<p class="form-help">One URI per line. Users will be redirected here after authentication.</p>
-				</div>
+				</FormField>
 
-				<button type="submit" class="btn btn--primary">Create Client</button>
+				<Button type="submit">Create Client</Button>
 			</form>
 		{/if}
-	</section>
+	</Card>
 
-	<section class="card">
+	<Card>
 		<div class="section-header">
 			<h2>Registered Clients</h2>
 		</div>
 
 		{#if data.clients.length === 0}
-			<p class="empty">No OIDC clients registered yet.</p>
+			<EmptyState 
+				icon="🔑"
+				title="No OIDC clients registered yet"
+			/>
 		{:else}
 			<div class="clients-list">
 				{#each data.clients as client}
@@ -172,9 +167,9 @@
 				{/each}
 			</div>
 		{/if}
-	</section>
+	</Card>
 
-	<section class="card">
+	<Card>
 		<h2>About OIDC Clients</h2>
 		<div class="info-content">
 			<p>OpenID Connect (OIDC) clients allow satellite applications to authenticate users via this governance server.</p>
@@ -196,7 +191,7 @@
 			<h3>Discovery Endpoint</h3>
 			<p>OIDC providers publish their configuration at: <code>/.well-known/openid-configuration</code></p>
 		</div>
-	</section>
+	</Card>
 </div>
 
 <style>

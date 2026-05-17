@@ -1,171 +1,59 @@
 <script lang="ts">
+	import { Badge, Button, Card, EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 	const { services } = $derived(data);
+
+	const statusVariant = (status: string) => 
+		status === 'active' ? 'success' : 'muted';
 </script>
 
-<div class="page">
-	<header class="header">
-		<div class="header-row">
-			<div>
-				<h1>Services</h1>
-				<p class="header__subtitle">Public services and infrastructure</p>
-			</div>
-			<a href="/services/new" class="btn btn--primary">+ Create Service</a>
-		</div>
-	</header>
+<PageHeader 
+	title="Services"
+	description="Public services and infrastructure"
+>
+	{#snippet actions()}
+		<Button href="/services/new">+ Create Service</Button>
+	{/snippet}
+</PageHeader>
 
-	<div class="description">
-		<p>
-			Services are the organizations that deliver essential infrastructure and support to the community. 
-			Each service operates under the oversight of a specialized committee selected by sortition from the 
-			relevant professional college. Services handle everything from food distribution and housing to 
-			health care and education—funded by the society and accountable to its members through the 
-			committee structure.
-		</p>
+<Card>
+	<p style="margin: 0; line-height: 1.6;">
+		Services are the organizations that deliver essential infrastructure and support to the community. 
+		Each service operates under the oversight of a specialized committee selected by sortition from the 
+		relevant professional college. Services handle everything from food distribution and housing to 
+		health care and education—funded by the society and accountable to its members through the 
+		committee structure.
+	</p>
+</Card>
+
+{#if services.length > 0}
+	<div class="service-grid">
+		{#each services as service}
+			<Card href="/services/{service.uuid}" hover>
+				<h3 style="font-size: var(--text-lg); font-weight: var(--weight-semibold); margin: 0 0 var(--space-2) 0;">
+					{service.name}
+				</h3>
+				<span style="font-size: var(--text-sm); color: var(--color-text-muted); font-family: var(--font-mono); display: block; margin-bottom: var(--space-2);">
+					@{service.handle}
+				</span>
+				<Badge label={service.status} variant={statusVariant(service.status)} />
+			</Card>
+		{/each}
 	</div>
-
-	{#if services.length > 0}
-		<div class="list">
-			{#each services as service}
-				<a href="/services/{service.uuid}" class="card">
-					<h3 class="card__title">{service.name}</h3>
-					<span class="card__handle">@{service.handle}</span>
-					<span class="badge badge-{service.status}">{service.status}</span>
-				</a>
-			{/each}
-		</div>
-	{:else}
-		<p class="empty">No services yet.</p>
-	{/if}
-</div>
+{:else}
+	<EmptyState 
+		icon="🏢" 
+		title="No services yet"
+		description="Services will appear here once they're created."
+	/>
+{/if}
 
 <style>
-	.page {
-		max-width: 1200px;
-		margin: 0 auto;
-	}
-
-	.header {
-		margin-bottom: var(--space-6);
-	}
-
-	.header-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-4);
-	}
-
-	.header h1 {
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-bold);
-		margin: 0 0 var(--space-2) 0;
-	}
-
-	.header__subtitle {
-		font-size: var(--text-lg);
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		white-space: nowrap;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-
-	.btn:hover {
-		filter: brightness(0.92);
-	}
-
-	.description {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		margin-bottom: var(--space-6);
-	}
-
-	.description p {
-		margin: 0;
-		font-size: var(--text-base);
-		line-height: 1.6;
-		color: var(--color-text);
-	}
-
-	.list {
+	.service-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 		gap: var(--space-4);
-	}
-
-	.card {
-		display: block;
-		padding: var(--space-5);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		text-decoration: none;
-		color: inherit;
-		transition: all 0.2s;
-	}
-
-	.card:hover {
-		border-color: var(--color-accent);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		text-decoration: none;
-	}
-
-	.card__title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-semibold);
-		margin: 0 0 var(--space-2) 0;
-	}
-
-	.card__handle {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		font-family: var(--font-mono);
-		display: block;
-		margin-bottom: var(--space-2);
-	}
-
-	.badge {
-		display: inline-block;
-		padding: var(--space-1) var(--space-2);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-	}
-
-	.badge-active {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.badge-dissolved {
-		background: #f3f4f6;
-		color: #6b7280;
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		font-style: italic;
-		text-align: center;
-		padding: var(--space-8);
 	}
 </style>

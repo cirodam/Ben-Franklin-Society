@@ -1,26 +1,24 @@
 <script lang="ts">
+	import { Badge, Breadcrumb, EmptyState, PageHeader, formatDateTime } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 	const { marketplace, session, stalls } = $derived(data);
-
-	function fmtDatetime(iso: string): string {
-		return new Date(iso).toLocaleString([], { dateStyle: 'long', timeStyle: 'short' });
-	}
 </script>
 
 <div class="page">
-	<div class="breadcrumb">
-		<a href="/markets">Markets</a>
-		<span>›</span>
-		<a href="/markets/{marketplace.uuid}">{marketplace.name}</a>
-	</div>
+	<Breadcrumb items={[
+		{ label: 'Markets', href: '/markets' },
+		{ label: marketplace.name, href: `/markets/${marketplace.uuid}` },
+		{ label: 'Session' }
+	]} />
 
-	<div class="session-header">
-		<h1>{fmtDatetime(session.starts_at)}</h1>
-		<span class="status-badge status-{session.status}">{session.status}</span>
-	</div>
-	<div class="session-ends">Ends: {fmtDatetime(session.ends_at)}</div>
+	<PageHeader title={formatDateTime(session.starts_at)}>
+		{#snippet actions()}
+			<Badge variant={session.status === 'cancelled' ? 'danger' : 'success'}>{session.status}</Badge>
+		{/snippet}
+		<div class="session-ends">Ends: {formatDateTime(session.ends_at)}</div>
+	</PageHeader>
 
 	{#if session.notes}
 		<p class="session-notes">{session.notes}</p>
@@ -30,7 +28,7 @@
 		<h2>Stall Assignments</h2>
 
 		{#if stalls.length === 0}
-			<p class="empty">No stalls registered for this marketplace.</p>
+			<EmptyState title="No stalls registered for this marketplace." />
 		{:else}
 			<div class="stall-table">
 				<div class="stall-table-header">
@@ -60,24 +58,11 @@
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 640px; }
 
-	.breadcrumb { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
-	.breadcrumb a { color: var(--color-text-muted); text-decoration: none; }
-	.breadcrumb a:hover { text-decoration: underline; }
-	.breadcrumb span { color: var(--color-text-muted); }
-
-	.session-header { display: flex; align-items: center; gap: var(--space-3); }
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
-	h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
-
-	.status-badge { padding: 2px 10px; border-radius: 9999px; font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: capitalize; }
-	.status-scheduled { background: #d1fae5; color: #065f46; }
-	.status-cancelled { background: #fee2e2; color: #7f1d1d; }
-
 	.session-ends  { font-size: var(--text-sm); color: var(--color-text-muted); }
 	.session-notes { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); font-style: italic; }
 
+	h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
 	.stalls-section { display: flex; flex-direction: column; gap: var(--space-3); }
-	.empty { color: var(--color-text-muted); font-size: var(--text-sm); }
 
 	.stall-table { border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
 	.stall-table-header {

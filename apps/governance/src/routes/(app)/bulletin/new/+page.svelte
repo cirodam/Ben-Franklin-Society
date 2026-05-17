@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Button, Input, PageHeader, Textarea } from '@bfs/ui';
 	import type { ActionData } from './$types.js';
 
 	let { form }: { form: ActionData } = $props();
@@ -19,35 +20,32 @@
 </script>
 
 <div class="page">
-	<h1>New Notice</h1>
+	<PageHeader title="New Notice" />
 
 	<form method="POST" use:enhance class="form">
 		{#if form?.error}
-			<div class="error">{form.error}</div>
+			<Alert variant="danger">{form.error}</Alert>
 		{/if}
 
 		<div class="form-group">
 			<label for="title">Title</label>
-			<input
-				type="text"
+			<Input
 				id="title"
 				name="title"
 				required
 				placeholder="What's this about?"
-				class="input"
 			/>
 		</div>
 
 		<div class="form-group">
 			<label for="body">Message</label>
-			<textarea
+			<Textarea
 				id="body"
 				name="body"
 				required
-				rows="8"
+				rows={8}
 				placeholder="Write your notice here..."
-				class="textarea"
-			></textarea>
+			/>
 		</div>
 
 		<div class="form-group">
@@ -92,8 +90,8 @@
 		</div>
 
 		<div class="form-actions">
-			<a href="/bulletin" class="btn btn-secondary">Cancel</a>
-			<button type="submit" class="btn btn-primary">Post Notice</button>
+			<Button href="/bulletin" variant="secondary">Cancel</Button>
+			<Button type="submit">Post Notice</Button>
 		</div>
 	</form>
 </div>
@@ -108,14 +106,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-5);
-	}
-
-	.error {
-		padding: var(--space-3);
-		background: #fee2e2;
-		color: #991b1b;
-		border-radius: var(--radius);
-		font-size: var(--text-sm);
 	}
 
 	.form-group {
@@ -134,29 +124,6 @@
 		font-size: var(--text-sm);
 		font-weight: var(--weight-medium);
 		color: var(--color-text);
-	}
-
-	.input,
-	.textarea {
-		font-family: var(--font-sans);
-		font-size: var(--text-sm);
-		padding: var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-
-	.input:focus,
-	.textarea:focus {
-		outline: none;
-		border-color: var(--color-accent);
-		box-shadow: 0 0 0 3px var(--color-accent-subtle);
-	}
-
-	.textarea {
-		resize: vertical;
-		min-height: 150px;
 	}
 
 	.color-picker {
@@ -260,35 +227,5 @@
 		display: flex;
 		gap: var(--space-3);
 		justify-content: flex-end;
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-		text-decoration: none;
-		cursor: pointer;
-		border: none;
-		font-family: var(--font-sans);
-	}
-
-	.btn-secondary {
-		background: var(--color-surface);
-		color: var(--color-text);
-		border: 1px solid var(--color-border);
-	}
-
-	.btn-secondary:hover {
-		background: var(--color-surface-raised);
-	}
-
-	.btn-primary {
-		background: var(--color-accent);
-		color: var(--color-bg);
-	}
-
-	.btn-primary:hover {
-		background: var(--color-accent-hover);
 	}
 </style>

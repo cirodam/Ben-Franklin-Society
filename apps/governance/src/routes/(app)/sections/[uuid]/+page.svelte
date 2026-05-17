@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Breadcrumb, Button, Card, EmptyState } from '@bfs/ui';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import type { PageData } from './$types.js';
@@ -18,18 +19,16 @@
 
 <div class="page">
 	<div class="page-header">
-		<div class="breadcrumb">
-			<a href="/associations/{association.uuid}" class="breadcrumb-link">{association.name}</a>
-			<span class="breadcrumb-separator">→</span>
-			<span class="breadcrumb-current">Sections</span>
-			<span class="breadcrumb-separator">→</span>
-			<span class="breadcrumb-current">{section.name}</span>
-		</div>
+		<Breadcrumb items={[
+			{ label: association.name, href: `/associations/${association.uuid}` },
+			{ label: 'Sections' },
+			{ label: section.name }
+		]} />
 		
 		<div class="page-header__top">
 			<h1>{section.name}</h1>
 			{#if canManage}
-				<a href="/sections/{section.uuid}/edit" class="btn btn--secondary">✏️ Edit</a>
+				<Button variant="secondary" href="/sections/{section.uuid}/edit" size="sm">✏️ Edit</Button>
 			{/if}
 		</div>
 
@@ -37,32 +36,38 @@
 			<p class="section-description">{section.description}</p>
 		{/if}
 
-		<div class="section-stats">
-			<div class="stat">
-				<span class="stat-label">Roles</span>
-				<span class="stat-value">{roles.length}</span>
+		<Card padding="md">
+			<div class="section-stats">
+				<div class="stat">
+					<span class="stat-label">Roles</span>
+					<span class="stat-value">{roles.length}</span>
+				</div>
+				<div class="stat">
+					<span class="stat-label">Filled</span>
+					<span class="stat-value">{roles.length - vacantCount}</span>
+				</div>
+				<div class="stat">
+					<span class="stat-label">Vacant</span>
+					<span class="stat-value stat-value--warning">{vacantCount}</span>
+				</div>
+				<div class="stat">
+					<span class="stat-label">Total Compensation</span>
+					<span class="stat-value">ƒ{totalCompensation.toLocaleString()}</span>
+				</div>
 			</div>
-			<div class="stat">
-				<span class="stat-label">Filled</span>
-				<span class="stat-value">{roles.length - vacantCount}</span>
-			</div>
-			<div class="stat">
-				<span class="stat-label">Vacant</span>
-				<span class="stat-value stat-value--warning">{vacantCount}</span>
-			</div>
-			<div class="stat">
-				<span class="stat-label">Total Compensation</span>
-				<span class="stat-value">ƒ{totalCompensation.toLocaleString()}</span>
-			</div>
-		</div>
+		</Card>
 	</div>
 
 	{#if roleHierarchy.length > 0}
 		<OrgChart {roleHierarchy} associationUuid={association.uuid} canManage={canManage} />
 	{:else}
-		<section class="card">
-			<p class="empty">No roles defined in this section yet.</p>
-		</section>
+		<Card>
+			<EmptyState 
+				icon="📋"
+				title="No roles defined"
+				description="No roles have been defined in this section yet."
+			/>
+		</Card>
 	{/if}
 </div>
 
@@ -79,31 +84,6 @@
 		gap: var(--space-4);
 	}
 
-	.breadcrumb {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.breadcrumb-link {
-		color: var(--color-primary, #0066cc);
-		text-decoration: none;
-	}
-
-	.breadcrumb-link:hover {
-		text-decoration: underline;
-	}
-
-	.breadcrumb-separator {
-		color: var(--color-text-muted);
-	}
-
-	.breadcrumb-current {
-		color: var(--color-text);
-	}
-
 	.page-header__top {
 		display: flex;
 		align-items: center;
@@ -117,29 +97,6 @@
 		font-weight: var(--weight-bold);
 	}
 
-	.btn {
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		white-space: nowrap;
-	}
-
-	.btn--secondary {
-		background: transparent;
-		border: 1px solid var(--color-border);
-		color: var(--color-text);
-	}
-
-	.btn--secondary:hover {
-		background: var(--color-surface);
-	}
-
 	.section-description {
 		color: var(--color-text-muted);
 		font-size: var(--text-base);
@@ -150,10 +107,6 @@
 	.section-stats {
 		display: flex;
 		gap: var(--space-6);
-		padding: var(--space-4);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
 	}
 
 	.stat {
@@ -178,19 +131,5 @@
 
 	.stat-value--warning {
 		color: var(--color-warning, #ffc107);
-	}
-
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		text-align: center;
-		padding: var(--space-6);
-		margin: 0;
 	}
 </style>

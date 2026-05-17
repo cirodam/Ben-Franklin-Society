@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Badge, Button, Card, EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -6,17 +7,16 @@
 </script>
 
 <div class="page">
-	<header class="header">
-		<div class="header-row">
-			<div>
-				<h1>Colleges</h1>
-				<p class="header__subtitle">Professional communities and sortition pools</p>
-			</div>
-			<a href="/colleges/new" class="btn btn--primary">+ Create College</a>
-		</div>
-	</header>
+	<PageHeader 
+		title="Colleges" 
+		description="Professional communities and sortition pools"
+	>
+		{#snippet actions()}
+			<Button href="/colleges/new">+ Create College</Button>
+		{/snippet}
+	</PageHeader>
 
-	<div class="description">
+	<Card padding="lg" class="description">
 		<p>
 			Colleges are voluntary associations of people who share a professional interest or skill. 
 			Members join colleges to collaborate, learn from peers, and maintain professional standards. 
@@ -24,20 +24,26 @@
 			relevant college through sortition—ensuring that governance decisions are made by people with 
 			actual knowledge of the subject matter.
 		</p>
-	</div>
+	</Card>
 
 	{#if colleges.length > 0}
 		<div class="list">
 			{#each colleges as college}
-				<a href="/colleges/{college.uuid}" class="card">
+				<Card href="/colleges/{college.uuid}" hover>
 					<h3 class="card__title">{college.name}</h3>
 					<span class="card__handle">@{college.handle}</span>
-					<span class="badge badge-{college.status}">{college.status}</span>
-				</a>
+					<Badge 
+						label={college.status} 
+						variant={college.status === 'active' ? 'success' : 'neutral'} 
+					/>
+				</Card>
 			{/each}
 		</div>
 	{:else}
-		<p class="empty">No colleges yet.</p>
+		<EmptyState 
+			icon="🎓"
+			title="No colleges yet"
+		/>
 	{/if}
 </div>
 
@@ -47,60 +53,11 @@
 		margin: 0 auto;
 	}
 
-	.header {
+	:global(.description) {
 		margin-bottom: var(--space-6);
 	}
 
-	.header-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-4);
-	}
-
-	.header h1 {
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-bold);
-		margin: 0 0 var(--space-2) 0;
-	}
-
-	.header__subtitle {
-		font-size: var(--text-lg);
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		white-space: nowrap;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-
-	.btn:hover {
-		filter: brightness(0.92);
-	}
-
-	.description {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		margin-bottom: var(--space-6);
-	}
-
-	.description p {
+	:global(.description p) {
 		margin: 0;
 		font-size: var(--text-base);
 		line-height: 1.6;
@@ -111,23 +68,6 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 		gap: var(--space-4);
-	}
-
-	.card {
-		display: block;
-		padding: var(--space-5);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		text-decoration: none;
-		color: inherit;
-		transition: all 0.2s;
-	}
-
-	.card:hover {
-		border-color: var(--color-accent);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		text-decoration: none;
 	}
 
 	.card__title {
@@ -142,30 +82,5 @@
 		font-family: var(--font-mono);
 		display: block;
 		margin-bottom: var(--space-2);
-	}
-
-	.badge {
-		display: inline-block;
-		padding: var(--space-1) var(--space-2);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-	}
-
-	.badge-active {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.badge-dissolved {
-		background: #f3f4f6;
-		color: #6b7280;
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		font-style: italic;
-		text-align: center;
-		padding: var(--space-8);
 	}
 </style>

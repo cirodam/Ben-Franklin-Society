@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Card } from '@bfs/ui';
+
 	type RoleNode = {
 		uuid: string;
 		title: string;
@@ -97,7 +99,7 @@
 </script>
 
 {#if roleHierarchy.length > 0}
-	<section class="card">
+	<Card>
 		<div class="card-header">
 			<h2>Organization</h2>
 			{#if canManage && associationUuid}
@@ -116,7 +118,7 @@
 				{@render roleTree(role, 0)}
 			{/each}
 		</div>
-	</section>
+	</Card>
 {/if}
 
 {#if showImportModal}
@@ -183,13 +185,6 @@
 {/snippet}
 
 <style>
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
 	.card-header {
 		display: flex;
 		justify-content: space-between;
@@ -197,7 +192,7 @@
 		margin-bottom: var(--space-4);
 	}
 
-	.card h2 {
+	:global(.card h2) {
 		font-size: var(--text-base);
 		font-weight: var(--weight-semibold);
 		margin: 0;

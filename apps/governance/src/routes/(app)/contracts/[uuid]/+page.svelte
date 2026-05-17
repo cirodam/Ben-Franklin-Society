@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Badge, Button, Card, Textarea } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -10,12 +11,12 @@
 	let showDisputeForm = $state(false);
 	let showTerminateForm = $state(false);
 
-	const statusColors: Record<string, string> = {
-		draft: '#6b7280',
-		active: '#3b82f6',
-		completed: '#10b981',
-		disputed: '#f59e0b',
-		terminated: '#ef4444',
+	const statusColors: Record<string, 'neutral' | 'success' | 'warn' | 'danger'> = {
+		draft: 'neutral',
+		active: 'success',
+		completed: 'success',
+		disputed: 'warn',
+		terminated: 'danger',
 	};
 
 	const allPartiesAcknowledged = $derived(parties.every((p) => p.signed_at !== null));
@@ -26,31 +27,29 @@
 		<a href="/contracts" class="back">← Contracts</a>
 		<div class="header-row">
 			<h1>{contract.title}</h1>
-			<span class="status-badge" style="background: {statusColors[contract.status]}; color: white;">
-				{contract.status}
-			</span>
+			<Badge label={contract.status} variant={statusColors[contract.status]} />
 		</div>
 	</div>
 
 	<!-- Acknowledgment prompt -->
 	{#if contract.status === 'draft' && isParty && !hasAcknowledged}
-		<div class="alert alert--info">
+		<Alert variant="info">
 			<p><strong>Acknowledgment Required</strong></p>
 			<p>You are a party to this contract. Please review the agreement and acknowledge it below.</p>
 			<form method="POST" action="?/acknowledge" use:enhance>
-				<button type="submit" class="btn btn--primary">I Acknowledge This Contract</button>
+				<Button type="submit">I Acknowledge This Contract</Button>
 			</form>
-		</div>
+		</Alert>
 	{/if}
 
 	{#if contract.status === 'draft' && isParty && hasAcknowledged && !allPartiesAcknowledged}
-		<div class="alert alert--success">
+		<Alert variant="success">
 			<p>You have acknowledged this contract. Waiting for the other party to acknowledge.</p>
-		</div>
+		</Alert>
 	{/if}
 
 	<!-- Contract Body -->
-	<div class="card">
+	<Card>
 		<h2 class="card__title">Agreement</h2>
 		<div class="contract-body">
 			{contract.body}
@@ -80,10 +79,10 @@
 				</div>
 			{/if}
 		</div>
-	</div>
+	</Card>
 
 	<!-- Parties -->
-	<div class="card">
+	<Card>
 		<h2 class="card__title">Parties</h2>
 		<div class="parties-list">
 			{#each parties as party}
@@ -103,11 +102,11 @@
 				</div>
 			{/each}
 		</div>
-	</div>
+	</Card>
 
 	<!-- Milestones -->
 	{#if milestones.length > 0}
-		<div class="card">
+		<Card>
 			<h2 class="card__title">Milestones</h2>
 			<div class="milestones-list">
 				{#each milestones as milestone}
@@ -154,12 +153,12 @@
 					</div>
 				{/each}
 			</div>
-		</div>
+		</Card>
 	{/if}
 
 	<!-- Actions -->
 	{#if isParty && contract.status === 'active'}
-		<div class="card">
+		<Card>
 			<h2 class="card__title">Actions</h2>
 			<div class="actions-section">
 				{#if !showDisputeForm}
@@ -196,12 +195,12 @@
 					</form>
 				{/if}
 			</div>
-		</div>
+		</Card>
 	{/if}
 
 	<!-- Event Log -->
 	{#if events.length > 0}
-		<div class="card">
+		<Card>
 			<h2 class="card__title">History</h2>
 			<div class="events-list">
 				{#each events as event}
@@ -214,7 +213,7 @@
 					</div>
 				{/each}
 			</div>
-		</div>
+		</Card>
 	{/if}
 </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Button, Card, Textarea } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -32,62 +33,60 @@
 		</div>
 	{/if}
 
-	<div class="card message-card">
+	<Card class="message-card">
 		<div class="label">Reported message</div>
 		<div class="message-subject">{report.message_subject}</div>
 		<div class="message-from">from @{report.message_from_handle}</div>
 		<pre class="message-body">{report.message_body}</pre>
-	</div>
+	</Card>
 
-	<div class="card reason-card">
+	<Card class="reason-card">
 		<div class="label">Reporter's reason <span class="anon">(anonymised)</span></div>
 		<p class="reporter-reason">{report.reason}</p>
 		<div class="meta">Reported {fmtDate(report.created_at)}</div>
-	</div>
+	</Card>
 
 	{#if form?.error}
-		<div class="error-banner">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 
 	{#if report.status === 'pending'}
 		{#if openAction === null}
 			<div class="actions">
-				<button class="btn btn-secondary" onclick={() => open('dismiss')}>Dismiss</button>
-				<button class="btn btn-warning"   onclick={() => open('delete_message')}>Delete Message</button>
-				<button class="btn btn-danger"     onclick={() => open('suspend_mailbox')}>Suspend Mailbox</button>
+				<Button variant="secondary" onclick={() => open('dismiss')}>Dismiss</Button>
+				<Button variant="secondary" onclick={() => open('delete_message')}>Delete Message</Button>
+				<Button variant="danger" onclick={() => open('suspend_mailbox')}>Suspend Mailbox</Button>
 			</div>
 		{:else}
-			<form
-				method="post"
-				action="?/{openAction}"
-				class="confirm-form card"
-				use:enhance
-			>
-				<div class="confirm-form__title">
-					{#if openAction === 'dismiss'}Dismiss report
-					{:else if openAction === 'delete_message'}Delete the reported message
-					{:else}Suspend this mailbox
-					{/if}
-				</div>
-				<div class="field">
-					<label for="reason">Reason (required)</label>
-					<textarea
+			<Card class="confirm-form">
+				<form
+					method="post"
+					action="?/{openAction}"
+					use:enhance
+				>
+					<div class="confirm-form__title">
+						{#if openAction === 'dismiss'}Dismiss report
+						{:else if openAction === 'delete_message'}Delete the reported message
+						{:else}Suspend this mailbox
+						{/if}
+					</div>
+					<Textarea
 						id="reason"
 						name="reason"
-						class="textarea"
-						rows="3"
+						label="Reason (required)"
+						rows={3}
 						placeholder="Provide a reason for this action…"
 						required
 						bind:value={reason}
-					></textarea>
-				</div>
-				<div class="confirm-form__buttons">
-					<button type="button" class="btn btn-secondary" onclick={cancel}>Cancel</button>
-					<button type="submit" class="btn {openAction === 'dismiss' ? 'btn-secondary' : 'btn-danger'}">
-						Confirm
-					</button>
-				</div>
-			</form>
+					/>
+					<div class="confirm-form__buttons">
+						<Button type="button" variant="secondary" onclick={cancel}>Cancel</Button>
+						<Button type="submit" variant={openAction === 'dismiss' ? 'secondary' : 'danger'}>
+							Confirm
+						</Button>
+					</div>
+				</form>
+			</Card>
 		{/if}
 	{/if}
 </div>
@@ -105,16 +104,6 @@
 		border-radius: var(--radius-md);
 		font-size: var(--text-sm);
 		color: #664d03;
-	}
-
-	.card {
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		background: var(--color-surface);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
 	}
 
 	.label {
@@ -146,50 +135,17 @@
 	.reporter-reason { margin: 0; font-size: var(--text-sm); color: var(--color-text); }
 	.meta { font-size: var(--text-xs); color: var(--color-text-muted); }
 
-	.error-banner {
-		padding: var(--space-3) var(--space-4);
-		background: #fff0f0;
-		border: 1px solid #f5a5a5;
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		color: #891818;
-	}
-
 	.actions {
 		display: flex;
 		gap: var(--space-3);
 		flex-wrap: wrap;
 	}
 
-	.confirm-form { gap: var(--space-4); }
+	.confirm-form :global(form) {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
 	.confirm-form__title { font-weight: var(--weight-semibold); font-size: var(--text-base); }
 	.confirm-form__buttons { display: flex; gap: var(--space-3); }
-
-	.field { display: flex; flex-direction: column; gap: var(--space-2); }
-	label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
-
-	.textarea {
-		resize: vertical;
-		padding: var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-family: inherit;
-		font-size: var(--text-sm);
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-	.textarea:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-	}
-	.btn-secondary { background: var(--color-surface-alt, #f3f4f6); color: var(--color-text); border: 1px solid var(--color-border); }
-	.btn-warning   { background: #ffc107; color: #333; }
-	.btn-danger    { background: #dc2626; color: #fff; }
-	.btn:hover { filter: brightness(0.92); }
 </style>

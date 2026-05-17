@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button, Card, EmptyState, Input, PageHeader, Textarea } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -17,17 +18,18 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Calendar</h1>
-		{#if canWrite}
-			<button class="btn btn--sm btn--primary" onclick={() => showAddForm = !showAddForm}>
-				{showAddForm ? 'Cancel' : '+ Add Event'}
-			</button>
-		{/if}
-	</div>
+	<PageHeader title="Calendar">
+		{#snippet actions()}
+			{#if canWrite}
+				<Button size="sm" onclick={() => showAddForm = !showAddForm}>
+					{showAddForm ? 'Cancel' : '+ Add Event'}
+				</Button>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 	{#if showAddForm}
-		<div class="card">
+		<Card>
 			<div class="card__label">New Event</div>
 			<form method="POST" action="?/create" use:enhance={() => {
 				return ({ result, update }) => {
@@ -36,38 +38,28 @@
 				};
 			}}>
 				<div class="form-grid">
-					<label class="field field--wide">
-						<span>Title</span>
-						<input class="input" name="title" type="text" required />
-					</label>
-					<label class="field">
-						<span>Starts</span>
-						<input class="input" name="starts_at" type="datetime-local" required />
-					</label>
-					<label class="field">
-						<span>Ends <span class="opt">(optional)</span></span>
-						<input class="input" name="ends_at" type="datetime-local" />
-					</label>
-					<label class="field">
-						<span>Location <span class="opt">(optional)</span></span>
-						<input class="input" name="location" type="text" />
-					</label>
-					<label class="field field--wide">
-						<span>Description <span class="opt">(optional)</span></span>
-						<textarea class="textarea" name="description" rows="3"></textarea>
-					</label>
+					<div class="field--wide">
+						<Input name="title" type="text" label="Title" required />
+					</div>
+					<Input name="starts_at" type="datetime-local" label="Starts" required />
+					<Input name="ends_at" type="datetime-local" label="Ends (optional)" />
+					<Input name="location" type="text" label="Location (optional)" />
+					<div class="field--wide">
+						<Textarea name="description" rows={3} label="Description (optional)" />
+					</div>
 				</div>
 				<div class="form-actions">
-					<button type="submit" class="btn btn--primary btn--sm">Add Event</button>
+					<Button type="submit" size="sm">Add Event</Button>
 				</div>
 			</form>
-		</div>
+		</Card>
 	{/if}
 
 	{#if events.length === 0}
-		<div class="empty-card">
-			<p>No upcoming events.</p>
-		</div>
+		<EmptyState
+			icon="📅"
+			title="No upcoming events"
+		/>
 	{:else}
 		<div class="event-list">
 			{#each events as e}
@@ -84,7 +76,7 @@
 					{#if canWrite}
 						<form method="POST" action="?/cancel" use:enhance>
 							<input type="hidden" name="event_uuid" value={e.uuid} />
-							<button class="btn-inline btn-inline--danger" type="submit">Cancel</button>
+						<Button class="btn-inline btn-inline--danger" type="submit" size="sm" variant="danger">Cancel</Button>
 						</form>
 					{/if}
 				</div>
@@ -142,20 +134,7 @@
 		padding: var(--space-2) var(--space-3);
 		font-size: var(--text-sm);
 		font-family: inherit;
-		background: var(--color-bg);
-		color: var(--color-text);
-		width: 100%;
-		box-sizing: border-box;
-	}
-	.textarea { resize: vertical; }
-	.form-actions { display: flex; gap: var(--space-2); }
-
-	.empty-card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		color: var(--color-text-muted);
+		backg--wide { grid-column: 1 / -1; }-color-text-muted);
 		font-size: var(--text-sm);
 	}
 	.empty-card p { margin: 0; }

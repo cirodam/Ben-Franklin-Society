@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Badge, Card, PageHeader } from '@bfs/ui';
+	
 	const { data } = $props();
 
 	function excerpt(text: string, length = 120): string {
@@ -10,22 +12,27 @@
 		if (franks === 0) return 'Volunteer';
 		return `${franks.toLocaleString()}F`;
 	}
+
+	const statusVariant = (s: string): 'success' | 'warning' | 'danger' => {
+		if (s === 'active') return 'success';
+		if (s === 'suspended') return 'warning';
+		return 'danger';
+	};
 </script>
 
 <div class="page">
-	<header class="page-header">
-		<h1>{data.person.given_name} {data.person.family_name}</h1>
+	<PageHeader title="{data.person.given_name} {data.person.family_name}">
 		{#if data.person.handle}
 			<p class="handle">@{data.person.handle}</p>
 		{/if}
-	</header>
+	</PageHeader>
 
 	<div class="sections">
-		<section class="section">
+		<Card>
 			<h2>Profile</h2>
 			<dl class="profile-details">
 				<dt>Status</dt>
-				<dd class="status status--{data.person.status}">{data.person.status}</dd>
+				<dd><Badge label={data.person.status} variant={statusVariant(data.person.status)} /></dd>
 				
 				{#if data.person.date_of_birth}
 					<dt>Date of Birth</dt>
@@ -37,10 +44,10 @@
 					<dd>{data.person.notes}</dd>
 				{/if}
 			</dl>
-		</section>
+		</Card>
 
 		{#if data.roles.length > 0}
-			<section class="section">
+			<Card>
 				<h2>Roles ({data.roles.length})</h2>
 				<div class="roles-list">
 					{#each data.roles as role}
@@ -63,11 +70,11 @@
 						</div>
 					{/each}
 				</div>
-			</section>
+			</Card>
 		{/if}
 
 		{#if data.posts.length > 0}
-			<section class="section">
+			<Card>
 				<h2>Recent Bulletin Posts ({data.posts.length})</h2>
 				<div class="posts-list">
 					{#each data.posts as post}
@@ -81,7 +88,7 @@
 						</a>
 					{/each}
 				</div>
-			</section>
+			</Card>
 		{/if}
 	</div>
 </div>
@@ -90,18 +97,6 @@
 	.page {
 		max-width: 900px;
 		margin: 0 auto;
-		padding: var(--space-6);
-	}
-
-	.page-header {
-		margin-bottom: var(--space-6);
-	}
-
-	.page-header h1 {
-		margin: 0;
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-bold);
-		color: var(--color-text);
 	}
 
 	.handle {
@@ -116,7 +111,7 @@
 		gap: var(--space-6);
 	}
 
-	.section h2 {
+	.sections h2 {
 		font-size: var(--text-xl);
 		font-weight: var(--weight-semibold);
 		margin: 0 0 var(--space-4);
@@ -138,30 +133,6 @@
 	.profile-details dd {
 		margin: 0;
 		color: var(--color-text);
-	}
-
-	.status {
-		display: inline-block;
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: uppercase;
-	}
-
-	.status--active {
-		background: var(--color-success-subtle);
-		color: var(--color-success);
-	}
-
-	.status--suspended {
-		background: var(--color-warning-subtle);
-		color: var(--color-warning);
-	}
-
-	.status--revoked {
-		background: var(--color-danger-subtle);
-		color: var(--color-danger);
 	}
 
 	.roles-list {

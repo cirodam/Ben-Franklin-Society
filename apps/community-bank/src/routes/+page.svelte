@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Card, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -10,13 +11,11 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>My Account</h1>
-	</div>
+	<PageHeader title="My Account" />
 
 	<div class="account-grid">
 		{#each accounts as acct}
-			<div class="card account-card {acct.status === 'frozen' ? 'account-card--frozen' : ''}">
+			<Card class="account-card {acct.status === 'frozen' ? 'account-card--frozen' : ''}">
 				<div class="account-card__name">{acct.name}</div>
 				<div class="account-card__balance" class:negative={acct.balance < 0}>
 					{fmt(acct.balance)} ƒ
@@ -30,7 +29,7 @@
 						<a href="/send?from={acct.uuid}" class="btn-inline">Send</a>
 					{/if}
 				</div>
-			</div>
+			</Card>
 		{/each}
 	</div>
 </div>
@@ -42,24 +41,11 @@
 		gap: var(--space-6);
 	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: var(--text-xl);
-		font-weight: var(--weight-bold);
-	}
-
 	.account-grid {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
 		max-width: 480px;
-	}
-
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5) var(--space-6);
 	}
 
 	.account-card--frozen {

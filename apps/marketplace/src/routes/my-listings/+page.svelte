@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Badge, Button, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -6,10 +7,10 @@
 
 	let tab = $state<'classifieds' | 'services'>('classifieds');
 
-	const STATUS_BADGE: Record<string, string> = {
-		active:    'badge-active',
-		withdrawn: 'badge-withdrawn',
-		removed:   'badge-removed',
+	const STATUS_VARIANT: Record<string, 'success' | 'warn' | 'danger' | 'neutral'> = {
+		active:    'success',
+		withdrawn: 'warn',
+		removed:   'danger',
 	};
 
 	function fmtPrice(price: number, negotiable: number): string {
@@ -26,10 +27,11 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>My Listings</h1>
-		<a href="/sell" class="btn btn-primary">+ New Listing</a>
-	</div>
+	<PageHeader title="My Listings">
+		{#snippet actions()}
+			<Button href="/sell" variant="primary">+ New Listing</Button>
+		{/snippet}
+	</PageHeader>
 
 	<div class="tabs">
 		<button class="tab {tab === 'classifieds' ? 'tab--active' : ''}" onclick={() => (tab = 'classifieds')}>
@@ -54,7 +56,7 @@
 						<div class="listing-row__price">{fmtPrice(listing.price, listing.price_negotiable)}</div>
 						<div class="listing-row__date">{fmtDate(listing.created_at)}</div>
 						<div class="listing-row__status">
-							<span class="badge {STATUS_BADGE[listing.status] ?? ''}">{listing.status}</span>
+						<Badge variant={STATUS_VARIANT[listing.status] ?? 'neutral'}>{listing.status}</Badge>
 						</div>
 						<div class="listing-row__actions">
 							{#if listing.status !== 'removed'}
@@ -79,7 +81,7 @@
 						<div class="listing-row__price">{fmtRate(listing.rate, listing.rate_unit)}</div>
 						<div class="listing-row__date">{fmtDate(listing.created_at)}</div>
 						<div class="listing-row__status">
-							<span class="badge {STATUS_BADGE[listing.status] ?? ''}">{listing.status}</span>
+						<Badge variant={STATUS_VARIANT[listing.status] ?? 'neutral'}>{listing.status}</Badge>
 						</div>
 						<div class="listing-row__actions">
 							{#if listing.status !== 'removed'}
@@ -95,9 +97,6 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); }
-
-	.page-header { display: flex; align-items: center; justify-content: space-between; }
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 
 	.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-border); }
 
@@ -143,36 +142,10 @@
 	.listing-row__price { font-size: var(--text-sm); }
 	.listing-row__date  { font-size: var(--text-xs); color: var(--color-text-muted); }
 
-	.badge {
-		display: inline-block;
-		padding: 2px 8px;
-		border-radius: 9999px;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: capitalize;
-	}
-	.badge-active    { background: #d1fae5; color: #065f46; }
-	.badge-withdrawn { background: #fef3c7; color: #92400e; }
-	.badge-removed   { background: #fee2e2; color: #7f1d1d; }
-
 	.btn-link {
 		font-size: var(--text-xs);
 		color: var(--color-accent);
 		text-decoration: none;
 	}
 	.btn-link:hover { text-decoration: underline; }
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-	}
-	.btn-primary { background: var(--color-accent); color: #fff; }
-	.btn:hover { filter: brightness(0.92); }
 </style>

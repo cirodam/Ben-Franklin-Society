@@ -1,23 +1,24 @@
 <script lang="ts">
+	import { Card, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 	let { data }: { data: PageData } = $props();
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Central Bank</h1>
-		<p class="subtitle">Issues and manages the society's currency.</p>
-	</div>
+	<PageHeader 
+		title="Central Bank"
+		description="Issues and manages the society's currency."
+	/>
 
 	<div class="stats">
-		<div class="stat">
+		<Card>
 			<div class="stat__value">{data.members.length}</div>
 			<div class="stat__label">Members</div>
-		</div>
-		<div class="stat">
+		</Card>
+		<Card>
 			<div class="stat__value">{data.association.created_at.slice(0, 10)}</div>
 			<div class="stat__label">Established</div>
-		</div>
+		</Card>
 	</div>
 </div>
 
@@ -27,18 +28,9 @@
 		flex-direction: column;
 		gap: var(--space-8);
 	}
-	.page-header h1 { margin-bottom: var(--space-1); }
-	.subtitle { color: var(--color-text-muted); font-size: var(--text-sm); }
 	.stats {
 		display: flex;
 		gap: var(--space-6);
-	}
-	.stat {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5) var(--space-6);
-		min-width: 140px;
 	}
 	.stat__value {
 		font-size: var(--text-2xl);

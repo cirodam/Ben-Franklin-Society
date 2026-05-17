@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Badge, Breadcrumb, Button, Checkbox, FieldRow, Input, PageHeader, Select, Textarea } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -18,67 +19,47 @@
 </script>
 
 <div class="page">
-	<div class="breadcrumb">
-		<a href="/my-listings">← My Listings</a>
-	</div>
-	<div class="page-header">
-		<h1>Edit Classified</h1>
-		<span class="status-badge status-{listing.status}">{listing.status}</span>
-	</div>
+	<Breadcrumb items={[{ label: '← My Listings', href: '/my-listings' }]} />
+	<PageHeader title="Edit Classified">
+		{#snippet actions()}
+			<Badge variant={listing.status === 'active' ? 'success' : listing.status === 'withdrawn' ? 'warn' : 'danger'}>
+				{listing.status}
+			</Badge>
+		{/snippet}
+	</PageHeader>
 
 	{#if form?.error}
-		<div class="form-error">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 	{#if form?.success}
-		<div class="form-success">Listing updated.</div>
+		<Alert variant="success">Listing updated.</Alert>
 	{/if}
 
 	<form method="POST" action="?/update" use:enhance class="listing-form">
-		<div class="field">
-			<label for="title">Title</label>
-			<input id="title" name="title" type="text" maxlength="200" required value={title} />
-		</div>
+		<Input label="Title" name="title" type="text" maxlength={200} required value={title} />
 
-		<div class="field">
-			<label for="category">Category</label>
-			<select id="category" name="category" required>
-				{#each categories as cat}
-					<option value={cat} selected={category === cat}>{cat}</option>
-				{/each}
-			</select>
-		</div>
+		<Select label="Category" name="category" required value={category}>
+			{#each categories as cat}
+				<option value={cat}>{cat}</option>
+			{/each}
+		</Select>
 
-		<div class="field">
-			<label for="description">Description</label>
-			<textarea id="description" name="description" rows="7" required>{description}</textarea>
-		</div>
+		<Textarea label="Description" name="description" rows={7} required value={description} />
 
-		<div class="field-row">
-			<div class="field">
-				<label for="price">Price (Franks)</label>
-				<input id="price" name="price" type="number" min="0" step="1" value={price} />
-			</div>
+		<FieldRow>
+			<Input label="Price (Franks)" name="price" type="number" min={0} step={1} value={price} />
 			<div class="field field--check">
-				<label>
-					<input type="checkbox" name="price_negotiable" value="1" checked={negotiable} />
-					Price is negotiable
-				</label>
+				<Checkbox label="Price is negotiable" name="price_negotiable" value="1" checked={negotiable} />
 			</div>
-		</div>
+		</FieldRow>
 
-		<div class="field-row">
-			<div class="field">
-				<label for="scope">Visibility</label>
-				<select id="scope" name="scope">
-					<option value="local"     selected={scope === 'local'}>Local (within society)</option>
-					<option value="federated" selected={scope === 'federated'}>Federated (all societies)</option>
-				</select>
-			</div>
-			<div class="field">
-				<label for="expires_at">Expires (optional)</label>
-				<input id="expires_at" name="expires_at" type="date" value={expiresAt} />
-			</div>
-		</div>
+		<FieldRow>
+			<Select label="Visibility" name="scope" value={scope}>
+				<option value="local">Local (within society)</option>
+				<option value="federated">Federated (all societies)</option>
+			</Select>
+			<Input label="Expires (optional)" name="expires_at" type="date" value={expiresAt} />
+		</FieldRow>
 
 		<div class="form-actions">
 			<div class="form-actions__withdraw">
@@ -101,50 +82,11 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 680px; }
-	.breadcrumb a { color: var(--color-text-muted); font-size: var(--text-sm); text-decoration: none; }
-	.breadcrumb a:hover { text-decoration: underline; }
-
-	.page-header { display: flex; align-items: center; gap: var(--space-3); }
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
-
-	.status-badge {
-		padding: 2px 10px;
-		border-radius: 9999px;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: capitalize;
-	}
-	.status-active    { background: #d1fae5; color: #065f46; }
-	.status-withdrawn { background: #fef3c7; color: #92400e; }
-	.status-removed   { background: #fee2e2; color: #7f1d1d; }
-
-	.form-error, .form-success {
-		padding: var(--space-3) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-	}
-	.form-error   { background: #fee2e2; border: 1px solid #fca5a5; color: #7f1d1d; }
-	.form-success { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
 
 	.listing-form { display: flex; flex-direction: column; gap: var(--space-5); }
-	.field { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
-	.field label { font-size: var(--text-sm); font-weight: var(--weight-medium); }
-	.field input[type="text"],
-	.field input[type="number"],
-	.field input[type="date"],
-	.field select,
-	.field textarea {
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-	.field textarea { resize: vertical; font-family: inherit; }
+
+	.field { display: flex; flex-direction: column; flex: 1; }
 	.field--check { justify-content: flex-end; padding-bottom: var(--space-1); }
-	.field--check label { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-normal); cursor: pointer; }
-	.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
 
 	.form-actions {
 		display: flex;

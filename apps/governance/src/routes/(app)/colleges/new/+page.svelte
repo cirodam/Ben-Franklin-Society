@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Breadcrumb, Button, Input, Select } from '@bfs/ui';
 	import type { ActionData, PageData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -8,7 +9,7 @@
 <div class="page">
 	<div class="page-header">
 		<h1>Create New College</h1>
-		<a href="/colleges" class="breadcrumb">← Back to Colleges</a>
+		<Breadcrumb items={[{ label: '← Back to Colleges', href: '/colleges' }]} />
 	</div>
 
 	<div class="info-card">
@@ -21,92 +22,74 @@
 	</div>
 
 	{#if form?.error}
-		<div class="alert alert--error">
-			{form.error}
-		</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 
 	<form method="POST" action="?/create" use:enhance class="form">
 		<div class="form-section">
 			<h2>Basic Information</h2>
 			
-			<div class="field">
-				<label for="name">Name <span class="required">*</span></label>
-				<input
-					id="name"
-					name="name"
-					type="text"
-					required
-					placeholder="College of Fabricators"
-					value={form?.name ?? ''}
-				/>
-				<p class="field-hint">Full name of the college</p>
-			</div>
+			<Input
+				name="name"
+				type="text"
+				label="Name"
+				required
+				placeholder="College of Fabricators"
+				value={form?.name ?? ''}
+				hint="Full name of the college"
+			/>
 
-			<div class="field">
-				<label for="handle">Handle <span class="required">*</span></label>
-				<input
-					id="handle"
-					name="handle"
-					type="text"
-					required
-					pattern="[a-z0-9_-]{'{2,64}'}"
-					placeholder="fabricators"
-					value={form?.handle ?? ''}
-				/>
-				<p class="field-hint">2-64 lowercase letters, numbers, hyphens, or underscores. Used in URLs.</p>
-			</div>
+			<Input
+				name="handle"
+				type="text"
+				label="Handle"
+				required
+				pattern="[a-z0-9_-]{'{2,64}'}"
+				placeholder="fabricators"
+				value={form?.handle ?? ''}
+				hint="2-64 lowercase letters, numbers, hyphens, or underscores. Used in URLs."
+			/>
 
-			<div class="field">
-				<label for="abbreviation">Abbreviation</label>
-				<input
-					id="abbreviation"
-					name="abbreviation"
-					type="text"
-					maxlength="10"
-					placeholder="FAB"
-					value={form?.abbreviation ?? ''}
-				/>
-				<p class="field-hint">Optional. Short code for motion numbering (e.g., "FAB 123")</p>
-			</div>
+			<Input
+				name="abbreviation"
+				type="text"
+				label="Abbreviation"
+				maxlength="10"
+				placeholder="FAB"
+				value={form?.abbreviation ?? ''}
+				hint="Optional. Short code for motion numbering (e.g., \"FAB 123\")"
+			/>
 		</div>
 
 		<div class="form-section">
 			<h2>Founding Document</h2>
 			
-			<div class="field">
-				<label for="governing_document_slug">Document Slug</label>
-				<input
-					id="governing_document_slug"
-					name="governing_document_slug"
-					type="text"
-					placeholder="college-of-fabricators"
-					value={form?.governingDocumentSlug ?? ''}
-				/>
-				<p class="field-hint">Optional. Slug of the governing document in data/documents/. Leave blank if not yet created.</p>
-			</div>
+			<Input
+				name="governing_document_slug"
+				type="text"
+				label="Document Slug"
+				placeholder="college-of-fabricators"
+				value={form?.governingDocumentSlug ?? ''}
+				hint="Optional. Slug of the governing document in data/documents/. Leave blank if not yet created."
+			/>
 
-			<div class="field">
-				<label for="established_by_motion_uuid">Pursuant to Motion (optional)</label>
-				<select id="established_by_motion_uuid" name="established_by_motion_uuid">
-					<option value="">— No motion —</option>
-					{#each data.enactedMotions as motion}
-						<option value={motion.uuid}>
-							{#if motion.body_abbreviation}
-								{motion.body_abbreviation} {motion.motion_number} - {motion.title}
-							{:else}
-								Motion #{motion.motion_number} - {motion.title}
-							{/if}
-						</option>
-					{/each}
-				</select>
-				<p class="field-hint">Link this college to a motion that authorized its creation</p>
-			</div>
+			<Select name="established_by_motion_uuid" label="Pursuant to Motion (optional)" hint="Link this college to a motion that authorized its creation">
+				<option value="">— No motion —</option>
+				{#each data.enactedMotions as motion}
+					<option value={motion.uuid}>
+						{#if motion.body_abbreviation}
+							{motion.body_abbreviation} {motion.motion_number} - {motion.title}
+						{:else}
+							Motion #{motion.motion_number} - {motion.title}
+						{/if}
+					</option>
+				{/each}
+			</Select>
 		</div>
 
 		<div class="form-actions">
-			<a href="/colleges" class="btn btn--ghost">Cancel</a>
-			<button type="submit" class="btn btn--primary">Create College</button>
+			<Button href="/colleges" variant="ghost">Cancel</Button>
+			<Button type="submit" variant="primary">Create College</Button>
 		</div>
 	</form>
 </div>
@@ -130,16 +113,6 @@
 		margin: 0;
 		font-size: var(--text-2xl);
 		font-weight: var(--weight-bold);
-	}
-
-	.breadcrumb {
-		color: var(--color-text-muted);
-		text-decoration: none;
-		font-size: var(--text-sm);
-	}
-
-	.breadcrumb:hover {
-		text-decoration: underline;
 	}
 
 	.info-card {

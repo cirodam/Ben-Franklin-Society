@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 	import type { DocumentStatus } from '$lib/server/documents.js';
 
@@ -43,18 +44,18 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Documents</h1>
-		<p class="page-subtitle">Browse the society's governing corpus and other documents</p>
-	</div>
+	<PageHeader 
+		title="Documents"
+		description="Browse the society's governing corpus and other documents"
+	/>
 
 	{#if data.corpus.length > 0}
 		<section class="corpus-section">
 			<h2 class="section-title">📜 Corpus of Law</h2>
 			<p class="section-desc">All adopted documents that govern the society</p>
-			<div class="doc-list">
+			<List>
 				{#each data.corpus as doc}
-					<a class="doc-item doc-item--corpus" href="/documents/{doc.slug}">
+					<ListItem href="/documents/{doc.slug}" class="doc-item--corpus">
 						<div class="doc-item__main">
 							<span class="doc-item__title">{doc.title}</span>
 							<code class="doc-item__slug">{doc.slug}</code>
@@ -65,14 +66,9 @@
 								<span class="doc-item__date">Adopted {doc.adopted_at.slice(0, 10)}</span>
 							{/if}
 						</div>
-					</a>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	<section>
-		<h2 class="section-title">All Documents</h2>
+				</ListItem>
+			{/each}
+		</List>
 		
 		<div class="toolbar">
 			<input
@@ -100,11 +96,14 @@
 		</div>
 
 		{#if filtered.length === 0}
-			<p class="empty">No documents match your search.</p>
+			<EmptyState 
+				icon="🔍"
+				title="No documents match your search"
+			/>
 		{:else}
-			<div class="doc-list">
+			<List>
 				{#each filtered as d}
-					<a class="doc-item" href="/documents/{d.slug}">
+					<ListItem href="/documents/{d.slug}">
 						<div class="doc-item__main">
 							<span class="doc-item__title">{d.title}</span>
 							<code class="doc-item__slug">{d.slug}</code>
@@ -118,29 +117,13 @@
 							{/if}
 							<span class="status-badge {statusVariant[d.status] ?? ''}">{d.status}</span>
 						</div>
-					</a>
-				{/each}
-			</div>
-		{/if}
-	</section>
-</div>
-
-<style>
+				</ListItem>
+			{/each}
+		</List>
 	.page {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-8);
-	}
-
-	.page-header h1 { 
-		margin: 0;
-		font-size: var(--text-3xl);
-	}
-
-	.page-subtitle {
-		margin: var(--space-2) 0 0;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
 	}
 
 	.corpus-section {
@@ -213,33 +196,6 @@
 		font-size: var(--text-xs);
 	}
 
-	.empty {
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
-	}
-
-	.doc-list {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.doc-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-		padding: var(--space-4) var(--space-5);
-		border-bottom: 1px solid var(--color-border);
-		text-decoration: none;
-		color: inherit;
-		transition: background 0.1s;
-	}
-	.doc-item:last-child { border-bottom: none; }
-	.doc-item:hover { background: var(--color-surface); }
-
 	.doc-item__main {
 		display: flex;
 		flex-direction: column;
@@ -268,7 +224,7 @@
 		color: var(--color-text-muted);
 	}
 
-	.doc-item--corpus {
+	:global(.doc-item--corpus) {
 		background: linear-gradient(to right, #fefce8, var(--color-background));
 		border-left: 3px solid #fbbf24;
 	}

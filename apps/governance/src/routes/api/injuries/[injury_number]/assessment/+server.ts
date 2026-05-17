@@ -47,19 +47,19 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 
 	// Build update query dynamically based on what's provided
 	const updates: string[] = [];
-	const params: any[] = [];
+	const sqlParams: any[] = [];
 
 	if (body.gravity) {
 		updates.push('gravity = ?');
-		params.push(body.gravity);
+		sqlParams.push(body.gravity);
 	}
 
 	if (body.safety_risk) {
 		updates.push('safety_risk = ?');
-		params.push(body.safety_risk);
+		sqlParams.push(body.safety_risk);
 	}
 
-	params.push(injury_number);
+	sqlParams.push(injury_number);
 
 	const query = `
 		UPDATE injury_record
@@ -67,7 +67,7 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 		WHERE injury_number = ?
 	`;
 
-	db.prepare(query).run(...params);
+	db.prepare(query).run(...sqlParams);
 
 	// Return updated record
 	const updated = db

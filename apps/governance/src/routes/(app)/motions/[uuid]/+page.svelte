@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
+	import { Button, Card, Modal, Textarea, Select } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -107,15 +108,15 @@
 		<a href="/motions" class="back">← Back to Motions</a>
 		{#if canAdvance}
 			<div class="admin-controls">
-				<button type="button" class="btn btn--ghost btn--sm" onclick={openRulesModal}>
+				<Button variant="ghost" size="sm" onclick={openRulesModal}>
 					⚖️ {currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
-				</button>
-				<button type="button" class="btn btn--ghost btn--sm" onclick={openClerkModal}>
+				</Button>
+				<Button variant="ghost" size="sm" onclick={openClerkModal}>
 					{motion.clerk_notes ? '✏️ Edit' : '📝 Add'} Clerk's Notes
-				</button>
-				<button type="button" class="btn btn--ghost btn--sm" onclick={openParliamentarianModal}>
+				</Button>
+				<Button variant="ghost" size="sm" onclick={openParliamentarianModal}>
 					{motion.parliamentarian_notes ? '✏️ Edit' : '📝 Add'} Parliamentarian's Notes
-				</button>
+				</Button>
 			</div>
 		{/if}
 	</div>
@@ -336,7 +337,7 @@
 
 	<!-- Actions -->
 	{#if !['enacted','rejected','withdrawn'].includes(motion.status)}
-		<div class="card">
+		<Card>
 			<div class="card__label">Actions</div>
 			<div class="action-row">
 				{#if motion.status === 'draft' && canAdvance}
@@ -454,10 +455,7 @@
 					</form>
 				{/if}
 			</div>
-		</div>
-	{/if}
-
-	<!-- Discussion Thread -->
+		</Card>
 	<div class="discussion">
 		<div class="discussion__header">
 			<h2 class="discussion__title">Discussion</h2>
@@ -529,133 +527,95 @@
 	</div>
 
 	<!-- Clerk Notes Modal -->
-	{#if showClerkModal}
-		<div class="modal-backdrop" onclick={() => showClerkModal = false}>
-			<div class="modal" onclick={(e) => e.stopPropagation()}>
-				<div class="modal-header">
-					<h3 class="modal-title">Clerk's Notes</h3>
-					<button type="button" class="modal-close" onclick={() => showClerkModal = false}>×</button>
-				</div>
-				<form method="POST" action="?/setClerkNotes" use:enhance={() => {
-					return ({ update }) => {
-						update().then(() => {
-							showClerkModal = false;
-						});
-					};
-				}}>
-					<div class="modal-body">
-						<p class="modal-hint">Administrative reminders for actions needed if this motion passes...</p>
-						<textarea 
-							name="clerk_notes" 
-							bind:value={clerkNotesValue}
-							class="modal-textarea"
-							rows="8"
-							placeholder="Enter clerk's notes here..."
-							autofocus></textarea>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn--secondary" onclick={() => showClerkModal = false}>Cancel</button>
-						<button type="submit" class="btn btn--primary">Save Notes</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	{/if}
+	<Modal show={showClerkModal} title="Clerk's Notes">
+		<form method="POST" action="?/setClerkNotes" use:enhance={() => {
+			return ({ update }) => {
+				update().then(() => {
+					showClerkModal = false;
+				});
+			};
+		}}>
+			<p class="modal-hint">Administrative reminders for actions needed if this motion passes...</p>
+			<Textarea 
+				name="clerk_notes" 
+				bind:value={clerkNotesValue}
+				rows={8}
+				placeholder="Enter clerk's notes here..."
+				autofocus />
+			{#snippet actions()}
+				<Button variant="secondary" onclick={() => showClerkModal = false}>Cancel</Button>
+				<Button type="submit">Save Notes</Button>
+			{/snippet}
+		</form>
+	</Modal>
 
 	<!-- Parliamentarian Notes Modal -->
-	{#if showParliamentarianModal}
-		<div class="modal-backdrop" onclick={() => showParliamentarianModal = false}>
-			<div class="modal" onclick={(e) => e.stopPropagation()}>
-				<div class="modal-header">
-					<h3 class="modal-title">Parliamentarian's Notes</h3>
-					<button type="button" class="modal-close" onclick={() => showParliamentarianModal = false}>×</button>
-				</div>
-				<form method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
-					return ({ update }) => {
-						update().then(() => {
-							showParliamentarianModal = false;
-						});
-					};
-				}}>
-					<div class="modal-body">
-						<p class="modal-hint">Procedural notes, rule interpretations, precedent references...</p>
-						<textarea 
-							name="parliamentarian_notes" 
-							bind:value={parliamentarianNotesValue}
-							class="modal-textarea"
-							rows="8"
-							placeholder="Enter parliamentarian's notes here..."
-							autofocus></textarea>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn--secondary" onclick={() => showParliamentarianModal = false}>Cancel</button>
-						<button type="submit" class="btn btn--primary">Save Notes</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	{/if}
+	<Modal show={showParliamentarianModal} title="Parliamentarian's Notes">
+		<form method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
+			return ({ update }) => {
+				update().then(() => {
+					showParliamentarianModal = false;
+				});
+			};
+		}}>
+			<p class="modal-hint">Procedural notes, rule interpretations, precedent references...</p>
+			<Textarea 
+				name="parliamentarian_notes" 
+				bind:value={parliamentarianNotesValue}
+				rows={8}
+				placeholder="Enter parliamentarian's notes here..."
+				autofocus />
+			{#snippet actions()}
+				<Button variant="secondary" onclick={() => showParliamentarianModal = false}>Cancel</Button>
+				<Button type="submit">Save Notes</Button>
+			{/snippet}
+		</form>
+	</Modal>
 </div>
 
 	<!-- Rules Modal -->
-	{#if showRulesModal}
-		<div class="modal-backdrop" onclick={() => showRulesModal = false}>
-			<div class="modal" onclick={(e) => e.stopPropagation()}>
-				<form method="POST" action="?/setMotionRules" use:enhance={() => {
-					return async ({ update }) => {
-						await update();
-						showRulesModal = false;
-					};
-				}}>
-					<div class="modal-header">
-						<h3 class="modal-title">Set Motion Rules</h3>
-						<button type="button" class="modal-close" onclick={() => showRulesModal = false}>×</button>
-					</div>
-					<div class="modal-body">
-						<p class="modal-hint">These rules determine how this motion will be voted on and how long the deliberation period lasts.</p>
-						
-						<div class="form-group">
-							<label for="vote-rule">Voting Threshold:</label>
-							<select 
-								id="vote-rule" 
-								name="vote_rule_uuid" 
-								bind:value={selectedVotingRuleUuid}
-								class="form-select"
-							>
-								<option value="">Not set</option>
-								{#each voteRules as rule}
-									<option value={rule.uuid}>
-										{rule.name} ({rule.numerator}/{rule.denominator})
-									</option>
-								{/each}
-							</select>
-						</div>
-						
-						<div class="form-group">
-							<label for="deliberation-rule">Deliberation Period:</label>
-							<select 
-								id="deliberation-rule" 
-								name="deliberation_rule_uuid" 
-								bind:value={selectedDeliberationRuleUuid}
-								class="form-select"
-							>
-								<option value="">Not set</option>
-								{#each deliberationRules as rule}
-									<option value={rule.uuid}>
-										{rule.name} ({rule.minimum_days} days)
-									</option>
-								{/each}
-							</select>
-						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn--secondary" onclick={() => showRulesModal = false}>Cancel</button>
-						<button type="submit" class="btn btn--primary">Save Changes</button>
-					</div>
-				</form>
-			</div>
-		</div>
-	{/if}
+	<Modal show={showRulesModal} title="Set Motion Rules">
+		<form method="POST" action="?/setMotionRules" use:enhance={() => {
+			return async ({ update }) => {
+				await update();
+				showRulesModal = false;
+			};
+		}}>
+			<p class="modal-hint">These rules determine how this motion will be voted on and how long the deliberation period lasts.</p>
+			
+			<Select 
+				id="vote-rule" 
+				name="vote_rule_uuid" 
+				label="Voting Threshold:"
+				bind:value={selectedVotingRuleUuid}
+			>
+				<option value="">Not set</option>
+				{#each voteRules as rule}
+					<option value={rule.uuid}>
+						{rule.name} ({rule.numerator}/{rule.denominator})
+					</option>
+				{/each}
+			</Select>
+			
+			<Select 
+				id="deliberation-rule" 
+				name="deliberation_rule_uuid" 
+				label="Deliberation Period:"
+				bind:value={selectedDeliberationRuleUuid}
+			>
+				<option value="">Not set</option>
+				{#each deliberationRules as rule}
+					<option value={rule.uuid}>
+						{rule.name} ({rule.minimum_days} days)
+					</option>
+				{/each}
+			</Select>
+			{#snippet actions()}
+				<Button variant="secondary" onclick={() => showRulesModal = false}>Cancel</Button>
+				<Button type="submit">Save Changes</Button>
+			{/snippet}
+		</form>
+	</Modal>
 
 <style>
 	.page-wrapper {
@@ -967,51 +927,6 @@
 	}
 
 	.rule-detail {
-
-	.form-group {
-		margin-bottom: var(--space-4);
-	}
-
-	.form-group label {
-		display: block;
-		font-weight: 600;
-		margin-bottom: var(--space-2);
-		color: var(--color-text);
-		font-size: var(--text-sm);
-	}
-
-	.form-select {
-		width: 100%;
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid rgba(0, 0, 0, 0.2);
-		border-radius: var(--radius);
-		background: white;
-		font-size: var(--text-base);
-		color: var(--color-text);
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.form-select:hover {
-		border-color: rgba(0, 0, 0, 0.3);
-	}
-
-	.form-select:focus {
-		outline: none;
-
-	.modal-hint {
-		margin-bottom: var(--space-4);
-		padding: var(--space-3);
-		background: rgba(91, 140, 184, 0.08);
-		border-left: 3px solid #5b8cb8;
-		border-radius: 3px;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		line-height: 1.5;
-	}
-		border-color: #5b8cb8;
-		box-shadow: 0 0 0 3px rgba(91, 140, 184, 0.1);
-	}
 		color: var(--color-text-muted);
 		font-size: 0.9em;
 	}
@@ -1506,30 +1421,6 @@
 		color: var(--color-text-muted);
 	}
 
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border: none;
-		border-radius: var(--radius-sm);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		transition: opacity 0.2s;
-	}
-	.btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-	.btn--sm {
-		padding: var(--space-1) var(--space-3);
-		font-size: var(--text-xs);
-	}
-	.btn--primary   { background: var(--color-primary, #2563eb); color: #fff; }
-	.btn--secondary { background: var(--color-bg, #f3f4f6); color: var(--color-text); border: 1px solid var(--color-border); }
-	.btn--danger    { background: #fee2e2; color: #991b1b; }
-	.btn--aye       { background: #dcfce7; color: #166534; }
-	.btn--nay       { background: #fee2e2; color: #991b1b; }
-	.btn--abstain   { background: var(--color-bg, #f3f4f6); color: var(--color-text-muted); border: 1px solid var(--color-border); }
-
 	.btn-inline {
 		background: none;
 		border: none;
@@ -1890,74 +1781,12 @@
 	}
 
 	/* Button Styles */
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: 1px solid;
-		transition: all 0.2s;
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.btn--primary {
-		background: #5b8cb8;
-		border-color: #4a7ba7;
-		color: white;
-	}
-
-	.btn--primary:hover {
-		background: #4a7ba7;
-	}
-
-	.btn--secondary {
-		background: transparent;
-		border-color: var(--color-border);
-		color: var(--color-text);
-	}
-
-	.btn--secondary:hover {
-		background: var(--color-surface);
-	}
-
-	.btn--ghost {
-		background: rgba(255, 255, 255, 0.6);
-		border-color: rgba(0, 0, 0, 0.1);
-		color: var(--color-text-muted);
-	}
-
-	.btn--ghost:hover {
-		background: rgba(255, 255, 255, 0.9);
-		border-color: rgba(0, 0, 0, 0.2);
-		color: var(--color-text);
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.btn--sm {
-		padding: var(--space-1) var(--space-3);
-		font-size: var(--text-xs);
-	}
+	.btn--aye       { background: #dcfce7; color: #166534; }
+	.btn--nay       { background: #fee2e2; color: #991b1b; }
+	.btn--abstain   { background: var(--color-bg, #f3f4f6); color: var(--color-text-muted); border: 1px solid var(--color-border); }
+	.btn--danger    { background: #fee2e2; color: #991b1b; }
 
 	/* Modal Styles */
-	.modal-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(0, 0, 0, 0.5);
-		backdrop-filter: blur(4px);
-		z-index: 1000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--space-4);
-		animation: fadeIn 0.2s ease;
-	}
-
 	@keyframes fadeIn {
 		from {
 			opacity: 0;
@@ -1965,18 +1794,6 @@
 		to {
 			opacity: 1;
 		}
-	}
-
-	.modal {
-		background: white;
-		border-radius: var(--radius-lg);
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-		max-width: 600px;
-		width: 100%;
-		max-height: 90vh;
-		display: flex;
-		flex-direction: column;
-		animation: slideUp 0.2s ease;
 	}
 
 	@keyframes slideUp {
@@ -1990,80 +1807,11 @@
 		}
 	}
 
-	.modal-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--space-6);
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	.modal-title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-semibold);
-		color: var(--color-text);
-		margin: 0;
-	}
-
-	.modal-close {
-		background: none;
-		border: none;
-		font-size: 2rem;
-		line-height: 1;
-		color: var(--color-text-muted);
-		cursor: pointer;
-		padding: 0;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: var(--radius);
-		transition: all 0.2s;
-	}
-
-	.modal-close:hover {
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-
-	.modal-body {
-		padding: var(--space-6);
-		overflow-y: auto;
-	}
-
 	.modal-hint {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 		font-style: italic;
-	}
-
-	.modal-textarea {
-		width: 100%;
-		box-sizing: border-box;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		padding: var(--space-3);
-		font-family: 'Georgia', 'Times New Roman', serif;
-		font-size: var(--text-base);
-		line-height: 1.6;
-		resize: vertical;
-		min-height: 200px;
-	}
-
-	.modal-textarea:focus {
-		outline: none;
-		border-color: #5b8cb8;
-		box-shadow: 0 0 0 3px rgba(91, 140, 184, 0.1);
-	}
-
-	.modal-footer {
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-3);
-		padding: var(--space-6);
-		border-top: 1px solid var(--color-border);
 	}
 
 	@media print {

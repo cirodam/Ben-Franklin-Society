@@ -1,13 +1,14 @@
 <script lang="ts">
+	import { Button, Card, EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 </script>
 
 <div class="me-page">
-	<h1>My Profile</h1>
+	<PageHeader title="My Profile" />
 
-	<section class="profile-section">
+	<Card>
 		<h2>Personal Information</h2>
 		<dl class="profile-info">
 			<dt>Name</dt>
@@ -22,23 +23,25 @@
 			<dt>Member Since</dt>
 			<dd>{new Date(data.person.created_at).toLocaleDateString()}</dd>
 		</dl>
-	</section>
+	</Card>
 
-	<section class="household-section">
+	<Card>
 		<div class="section-header">
 			<h2>Household</h2>
 			<div class="household-actions">
-				<button class="btn-secondary" disabled>Create Household</button>
-				<button class="btn-secondary" disabled>Join Household</button>
+				<Button variant="secondary" disabled>Create Household</Button>
+				<Button variant="secondary" disabled>Join Household</Button>
 			</div>
 		</div>
 
 		{#if data.households.length === 0}
-			<p class="no-household">You are not currently a member of any household.</p>
-			<p class="help-text">
-				Households are optional organizational units that help with resource allocation for food, housing, and other services.
-				You can create a household for your family or join an existing one.
-			</p>
+			<div class="household-empty">
+				<p class="no-household">You are not currently a member of any household.</p>
+				<p class="help-text">
+					Households are optional organizational units that help with resource allocation for food, housing, and other services.
+					You can create a household for your family or join an existing one.
+				</p>
+			</div>
 		{:else}
 			{#each data.households as { household, members, dependents }}
 				<div class="household-card">
@@ -88,93 +91,90 @@
 				</div>
 			{/each}
 		{/if}
-	</section>
+	</Card>
 </div>
 
 <style>
 	.me-page {
 		max-width: 800px;
 		margin: 0 auto;
-		padding: 2rem 1rem;
-	}
-
-	h1 {
-		margin-bottom: 2rem;
-		font-size: 2rem;
-	}
-
-	section {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		padding: 1.5rem;
-		margin-bottom: 2rem;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
 	}
 
 	.section-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 1rem;
+		margin-bottom: var(--space-4);
 	}
 
 	h2 {
-		margin: 0 0 1rem 0;
-		font-size: 1.5rem;
-		color: #111827;
+		margin: 0;
+		font-size: var(--text-base);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text);
 	}
 
 	h3 {
 		margin: 0;
-		font-size: 1.25rem;
-		color: #111827;
+		font-size: var(--text-lg);
+		color: var(--color-text);
 	}
 
 	h4 {
-		margin: 0 0 0.75rem 0;
-		font-size: 1rem;
-		color: #374151;
-		font-weight: 600;
+		margin: 0 0 var(--space-3) 0;
+		font-size: var(--text-base);
+		color: var(--color-text);
+		font-weight: var(--weight-semibold);
 	}
 
 	.profile-info {
 		display: grid;
 		grid-template-columns: auto 1fr;
-		gap: 0.75rem 1.5rem;
+		gap: var(--space-3) var(--space-6);
 	}
 
 	dt {
-		font-weight: 600;
-		color: #6b7280;
+		font-weight: var(--weight-semibold);
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
 	}
 
 	dd {
 		margin: 0;
-		color: #111827;
+		color: var(--color-text);
+		font-size: var(--text-sm);
 	}
 
 	.household-actions {
 		display: flex;
-		gap: 0.75rem;
+		gap: var(--space-3);
+	}
+
+	.household-empty {
+		margin-top: var(--space-4);
 	}
 
 	.no-household {
-		color: #6b7280;
-		margin-bottom: 1rem;
+		color: var(--color-text-muted);
+		margin-bottom: var(--space-3);
+		font-size: var(--text-sm);
 	}
 
 	.help-text {
-		color: #9ca3af;
-		font-size: 0.875rem;
-		line-height: 1.5;
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+		line-height: 1.6;
 		margin: 0;
 	}
 
 	.household-card {
-		border: 1px solid #e5e7eb;
-		border-radius: 6px;
-		padding: 1.25rem;
-		margin-bottom: 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--space-5);
+		margin-bottom: var(--space-4);
 	}
 
 	.household-card:last-child {
@@ -185,19 +185,19 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 1.5rem;
-		padding-bottom: 1rem;
-		border-bottom: 1px solid #e5e7eb;
+		margin-bottom: var(--space-6);
+		padding-bottom: var(--space-4);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.household-created {
-		font-size: 0.875rem;
-		color: #6b7280;
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
 	}
 
 	.household-members,
 	.household-dependents {
-		margin-bottom: 1.5rem;
+		margin-bottom: var(--space-6);
 	}
 
 	.member-list,
@@ -212,8 +212,8 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.5rem 0;
-		border-bottom: 1px solid #f3f4f6;
+		padding: var(--space-2) 0;
+		border-bottom: 1px solid var(--color-border-faint);
 	}
 
 	.member-list li:last-child,
@@ -223,58 +223,36 @@
 
 	.member-name,
 	.dependent-name {
-		font-weight: 500;
-		color: #111827;
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
 	}
 
 	.member-date,
 	.dependent-info {
-		font-size: 0.875rem;
-		color: #6b7280;
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
 	}
 
 	.household-footer {
 		display: flex;
-		gap: 1rem;
-		padding-top: 1rem;
-		border-top: 1px solid #e5e7eb;
-	}
-
-	.btn-secondary {
-		padding: 0.5rem 1rem;
-		background: #f3f4f6;
-		border: 1px solid #d1d5db;
-		border-radius: 6px;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #374151;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.btn-secondary:hover:not(:disabled) {
-		background: #e5e7eb;
-		border-color: #9ca3af;
-	}
-
-	.btn-secondary:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+		gap: var(--space-4);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--color-border);
 	}
 
 	.btn-text {
-		padding: 0.5rem 0;
+		padding: 0;
 		background: none;
 		border: none;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #6366f1;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-accent);
 		cursor: pointer;
 		transition: color 0.2s;
 	}
 
 	.btn-text:hover:not(:disabled) {
-		color: #4f46e5;
+		color: var(--color-accent);
 		text-decoration: underline;
 	}
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Breadcrumb, Button, Checkbox, FormField, Input, Select } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -10,7 +11,7 @@
 <div class="page">
 	<div class="page-header">
 		<h1>Create New Committee</h1>
-		<a href="/committees" class="breadcrumb">← Back to Committees</a>
+		<Breadcrumb items={[{ label: '← Back to Committees', href: '/committees' }]} />
 	</div>
 
 	<div class="info-card">
@@ -23,148 +24,116 @@
 	</div>
 
 	{#if form?.error}
-		<div class="alert alert--error">
-			{form.error}
-		</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 
 	<form method="POST" action="?/create" use:enhance class="form">
 		<div class="form-section">
 			<h2>Basic Information</h2>
 			
-			<div class="field">
-				<label for="name">Name <span class="required">*</span></label>
-				<input
-					id="name"
-					name="name"
-					type="text"
-					required
-					placeholder="Agricultural Committee"
-					value={form?.name ?? ''}
-				/>
-				<p class="field-hint">Full name of the committee</p>
-			</div>
+			<Input
+				name="name"
+				type="text"
+				label="Name"
+				required
+				placeholder="Agricultural Committee"
+				value={form?.name ?? ''}
+				hint="Full name of the committee"
+			/>
 
-			<div class="field">
-				<label for="handle">Handle <span class="required">*</span></label>
-				<input
-					id="handle"
-					name="handle"
-					type="text"
-					required
-					pattern="[a-z0-9_-]{'{2,64}'}"
-					placeholder="agricultural-committee"
-					value={form?.handle ?? ''}
-				/>
-				<p class="field-hint">2-64 lowercase letters, numbers, hyphens, or underscores. Used in URLs.</p>
-			</div>
+			<Input
+				name="handle"
+				type="text"
+				label="Handle"
+				required
+				pattern="[a-z0-9_-]{'{2,64}'}"
+				placeholder="agricultural-committee"
+				value={form?.handle ?? ''}
+				hint="2-64 lowercase letters, numbers, hyphens, or underscores. Used in URLs."
+			/>
 
-			<div class="field">
-				<label for="abbreviation">Abbreviation</label>
-				<input
-					id="abbreviation"
-					name="abbreviation"
-					type="text"
-					maxlength="10"
-					placeholder="AGCOM"
-					value={form?.abbreviation ?? ''}
-				/>
-				<p class="field-hint">Optional. Short code for motion numbering (e.g., "AGCOM 123")</p>
-			</div>
+			<Input
+				name="abbreviation"
+				type="text"
+				label="Abbreviation"
+				maxlength="10"
+				placeholder="AGCOM"
+				value={form?.abbreviation ?? ''}
+				hint="Optional. Short code for motion numbering (e.g., 'AGCOM 123')"
+			/>
 
-			<div class="field">
-				<label for="governing_document_slug">Founding Document Slug</label>
-				<input
-					id="governing_document_slug"
-					name="governing_document_slug"
-					type="text"
-					placeholder="committee-rules"
-					value={form?.governingDocumentSlug ?? ''}
-				/>
-				<p class="field-hint">Optional. Slug of the governing document in data/documents/.</p>
-			</div>
+			<Input
+				name="governing_document_slug"
+				type="text"
+				label="Founding Document Slug"
+				placeholder="committee-rules"
+				value={form?.governingDocumentSlug ?? ''}
+				hint="Optional. Slug of the governing document in data/documents/."
+			/>
 
-			<div class="field">
-				<label for="established_by_motion_uuid">Pursuant to Motion (optional)</label>
-				<select id="established_by_motion_uuid" name="established_by_motion_uuid">
-					<option value="">— No motion —</option>
-					{#each data.enactedMotions as motion}
-						<option value={motion.uuid}>
-							{#if motion.body_abbreviation}
-								{motion.body_abbreviation} {motion.motion_number} - {motion.title}
-							{:else}
-								Motion #{motion.motion_number} - {motion.title}
-							{/if}
-						</option>
-					{/each}
-				</select>
-				<p class="field-hint">Link this committee to a motion that authorized its creation</p>
-			</div>
+			<Select name="established_by_motion_uuid" label="Pursuant to Motion (optional)" hint="Link this committee to a motion that authorized its creation">
+				<option value="">— No motion —</option>
+				{#each data.enactedMotions as motion}
+					<option value={motion.uuid}>
+						{#if motion.body_abbreviation}
+							{motion.body_abbreviation} {motion.motion_number} - {motion.title}
+						{:else}
+							Motion #{motion.motion_number} - {motion.title}
+						{/if}
+					</option>
+				{/each}
+			</Select>
 		</div>
 
 		<div class="form-section">
 			<h2>Sortition Configuration</h2>
 			
 			<div class="field-check">
-				<label>
-					<input 
-						type="checkbox" 
-						name="enable_sortition" 
-						checked={enableSortition}
-						onchange={(e) => enableSortition = e.currentTarget.checked}
-					/>
+				<Checkbox 
+					name="enable_sortition" 
+					bind:checked={enableSortition}
+				>
 					Enable sortition for this committee
-				</label>
+				</Checkbox>
 				<p class="field-hint">If disabled, members must be manually added</p>
 			</div>
 
 			{#if enableSortition}
-				<div class="field">
-					<label for="seat_count">Number of Seats <span class="required">*</span></label>
-					<input
-						id="seat_count"
-						name="seat_count"
-						type="number"
-						min="1"
-						required={enableSortition}
-						value={form?.seatCount ?? 5}
-					/>
-					<p class="field-hint">How many members serve simultaneously</p>
-				</div>
+				<Input
+					name="seat_count"
+					type="number"
+					label="Number of Seats"
+					min="1"
+					required={enableSortition}
+					value={form?.seatCount ?? 5}
+					hint="How many members serve simultaneously"
+				/>
 
-				<div class="field">
-					<label for="term_days">Term Length (days) <span class="required">*</span></label>
-					<input
-						id="term_days"
-						name="term_days"
-						type="number"
-						min="1"
-						required={enableSortition}
-						value={form?.termDays ?? 180}
-					/>
-					<p class="field-hint">180 days = ~6 months, 365 days = 1 year</p>
-				</div>
+				<Input
+					name="term_days"
+					type="number"
+					label="Term Length (days)"
+					min="1"
+					required={enableSortition}
+					value={form?.termDays ?? 180}
+					hint="180 days = ~6 months, 365 days = 1 year"
+				/>
 
-				<div class="field">
-					<label for="source_college_uuid">Source College (optional)</label>
-					<select id="source_college_uuid" name="source_college_uuid">
-						<option value="">General membership (no college)</option>
-						{#each data.colleges as college}
-							<option value={college.uuid} selected={form?.sourceCollegeUuid === college.uuid}>
-								{college.name}
-							</option>
-						{/each}
-					</select>
-					<p class="field-hint">Draw members from a specific college, or from general membership if none selected</p>
-				</div>
+				<Select name="source_college_uuid" label="Source College (optional)" hint="Draw members from a specific college, or from general membership if none selected">
+					<option value="">General membership (no college)</option>
+					{#each data.colleges as college}
+						<option value={college.uuid} selected={form?.sourceCollegeUuid === college.uuid}>
+							{college.name}
+						</option>
+					{/each}
+				</Select>
 			{/if}
 		</div>
 
 		<div class="form-section">
 			<h2>Governing Document</h2>
 			
-			<div class="field">
-				<label for="governing_document_slug">Document Slug</label>
+			<FormField label="Document Slug" hint="Optional. Slug of the governing document in data/documents/. Leave blank if not yet created.">
 				<input
 					id="governing_document_slug"
 					name="governing_document_slug"
@@ -172,13 +141,12 @@
 					placeholder="committee-rules"
 					value={form?.governingDocumentSlug ?? ''}
 				/>
-				<p class="field-hint">Optional. Slug of the governing document in data/documents/. Leave blank if not yet created.</p>
-			</div>
+			</FormField>
 		</div>
 
 		<div class="form-actions">
-			<a href="/committees" class="btn btn--ghost">Cancel</a>
-			<button type="submit" class="btn btn--primary">Create Committee</button>
+			<Button href="/committees" variant="ghost">Cancel</Button>
+			<Button type="submit">Create Committee</Button>
 		</div>
 	</form>
 </div>
@@ -204,16 +172,6 @@
 		font-weight: var(--weight-bold);
 	}
 
-	.breadcrumb {
-		color: var(--color-text-muted);
-		text-decoration: none;
-		font-size: var(--text-sm);
-	}
-
-	.breadcrumb:hover {
-		text-decoration: underline;
-	}
-
 	.info-card {
 		padding: var(--space-4);
 		background: #ede9fe;
@@ -229,18 +187,6 @@
 
 	.info-card strong {
 		color: #6b21a8;
-	}
-
-	.alert {
-		padding: var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-	}
-
-	.alert--error {
-		background: #fee2e2;
-		border: 1px solid #fca5a5;
-		color: #7f1d1d;
 	}
 
 	.form {
@@ -265,38 +211,6 @@
 		font-weight: var(--weight-semibold);
 	}
 
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.field label {
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-	}
-
-	.required {
-		color: #dc2626;
-	}
-
-	.field input,
-	.field select {
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-
-	.field input:focus,
-	.field select:focus {
-		outline: none;
-		border-color: var(--color-accent);
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-
 	.field-check {
 		display: flex;
 		flex-direction: column;
@@ -312,44 +226,11 @@
 		cursor: pointer;
 	}
 
-	.field-hint {
-		margin: 0;
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-	}
-
 	.form-actions {
 		display: flex;
 		gap: var(--space-3);
 		justify-content: flex-end;
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--color-border-faint);
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-5);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-
-	.btn--ghost {
-		background: transparent;
-		border: 1px solid var(--color-border);
-		color: var(--color-text);
-	}
-
-	.btn:hover {
-		filter: brightness(0.92);
 	}
 </style>

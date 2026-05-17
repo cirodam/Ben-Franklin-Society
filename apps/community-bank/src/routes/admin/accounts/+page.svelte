@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { AccountFinder } from '@bfs/ui';
+	import { AccountFinder, Alert, Button, Card, Input, PageHeader, Select } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -41,26 +41,27 @@
 <div class="page">
 	<div class="page-header">
 		<div>
-			<h1>Account Management</h1>
-			<p class="subtitle">
-				Search existing accounts or create new ones. Use Account Finder to check if an account exists before creating.
-			</p>
+			<PageHeader title="Account Management">
+				<p class="subtitle">
+					Search existing accounts or create new ones. Use Account Finder to check if an account exists before creating.
+				</p>
+			</PageHeader>
 		</div>
-		<button class="btn-primary" onclick={() => showCreateForm = !showCreateForm}>
+		<Button onclick={() => showCreateForm = !showCreateForm} variant="primary">
 			{showCreateForm ? 'Cancel' : '+ Create Account'}
-		</button>
+		</Button>
 	</div>
 
 	{#if form?.error}
-		<div class="error-banner">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 	{#if form?.success && !form?.created}
-		<div class="success-banner">Account updated successfully!</div>
+		<Alert variant="success">Account updated successfully!</Alert>
 	{/if}
 
 	<!-- Create Account Form -->
 	{#if showCreateForm}
-		<div class="card form-card">
+		<Card class="form-card">
 			<h2>Create New Account</h2>
 			<p class="form-description">
 				<strong>First, search for the account below</strong> to make sure it doesn't already exist.
@@ -80,73 +81,59 @@
 
 			<!-- Create Form -->
 			<form method="POST" action="?/create" use:enhance>
-				<div class="form-field">
-					<label for="principal_uuid">Principal UUID* (from governance)</label>
-					<input
-						type="text"
-						id="principal_uuid"
-						name="principal_uuid"
-						required
-						placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
-						pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-					/>
-					<p class="hint">Copy UUID from governance app (person or association)</p>
-				</div>
+				<Input
+					name="principal_uuid"
+					type="text"
+					label="Principal UUID (from governance)"
+					required
+					placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+					pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+					hint="Copy UUID from governance app (person or association)"
+				/>
 
-				<div class="form-field">
-					<label for="handle_cache">Handle* (e.g., @alice)</label>
-					<input
-						type="text"
-						id="handle_cache"
-						name="handle_cache"
-						required
-						placeholder="alice"
-					/>
-					<p class="hint">Without @ symbol</p>
-				</div>
+				<Input
+					name="handle_cache"
+					type="text"
+					label="Handle (e.g., @alice)"
+					required
+					placeholder="alice"
+					hint="Without @ symbol"
+				/>
 
-				<div class="form-field">
-					<label for="name">Account Name*</label>
-					<input
-						type="text"
-						id="name"
-						name="name"
-						required
-						placeholder="Primary"
-					/>
-					<p class="hint">Usually "Primary" for personal accounts</p>
-				</div>
+				<Input
+					name="name"
+					type="text"
+					label="Account Name"
+					required
+					placeholder="Primary"
+					hint="Usually \"Primary\" for personal accounts"
+				/>
 
-				<div class="form-field">
-					<label for="account_type">Account Type*</label>
-					<select id="account_type" name="account_type" required>
-						<option value="standard" selected>Standard (regular members)</option>
-						<option value="official">Official (Treasury, SIF, etc.)</option>
-						<option value="system">System (Central Bank only)</option>
-					</select>
-					<p class="hint">Auto-pull permissions are managed separately via account owner permissions</p>
-				</div>
+				<Select name="account_type" label="Account Type" hint="Auto-pull permissions are managed separately via account owner permissions" required>
+					<option value="standard" selected>Standard (regular members)</option>
+					<option value="official">Official (Treasury, SIF, etc.)</option>
+					<option value="system">System (Central Bank only)</option>
+				</Select>
 
 				<div class="form-actions">
-					<button type="submit" class="btn-primary">Create Account</button>
-					<button type="button" class="btn-secondary" onclick={() => showCreateForm = false}>Cancel</button>
+					<Button type="submit" variant="primary">Create Account</Button>
+					<Button type="button" variant="secondary" onclick={() => showCreateForm = false}>Cancel</Button>
 				</div>
 			</form>
-		</div>
+		</Card>
 	{/if}
 
 	<!-- Search Section -->
-	<div class="card">
+	<Card>
 		<h2>Search Accounts</h2>
 		<form onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
 			<div class="search-bar">
-				<input
+				<Input
 					type="text"
 					bind:value={searchQuery}
 					placeholder="Search by handle, name, or UUID..."
-					class="search-input"
 				/>
-				<button type="submit" class="btn-primary">Search</button>
+				<Button type="submit" variant="primary">Search</Button>
 			</div>
 		</form>
 
@@ -184,15 +171,10 @@
 		{:else}
 			<p class="empty">Enter a search query to find accounts</p>
 		{/if}
-	</div>
+	</Card>
 </div>
 
 <style>
-	h1 {
-		margin: 0;
-		font-size: var(--text-xl);
-		font-weight: var(--weight-bold);
-	}
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
@@ -223,30 +205,8 @@
 		color: var(--color-text-muted);
 	}
 
-	.error-banner {
-		background: var(--color-danger-subtle);
-		color: var(--color-danger);
-		border-radius: var(--radius);
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.success-banner {
-		background: var(--color-success-subtle);
-		color: var(--color-success);
-		border-radius: var(--radius);
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+	:global(.form-card) {
 		padding: var(--space-5);
-	}
-	
-	.form-card {
 		background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%);
 	}
 
@@ -488,38 +448,6 @@
 	.status--frozen {
 		background: var(--color-warning-subtle, #fef3c7);
 		color: var(--color-warning, #f59e0b);
-	}
-
-	/* Buttons */
-	.btn-primary,
-	.btn-secondary {
-		font-family: var(--font-sans);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-		border: 1px solid transparent;
-		cursor: pointer;
-		transition: background 120ms, color 120ms, border-color 120ms;
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.btn-primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-	
-	.btn-primary:hover {
-		background: var(--color-accent-hover);
-	}
-	
-	.btn-secondary {
-		background: var(--color-surface);
-		color: var(--color-text);
-		border-color: var(--color-border);
-	}
-	
-	.btn-secondary:hover {
-		background: var(--color-bg);
 	}
 
 	.empty {

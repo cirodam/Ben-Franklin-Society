@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import DataTable from '@bfs/ui/src/DataTable.svelte';
+	import { Input, PageHeader, Select } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -67,18 +68,17 @@
 </script>
 
 <div class="page">
-	<h1>Associations</h1>
+	<PageHeader title="Associations" />
 	
 	<div class="controls">
-		<input
+		<Input
 			type="search"
-			class="search-input"
 			placeholder="Search by name or handle..."
 			bind:value={searchQuery}
 		/>
 		
 		<div class="filters">
-			<select class="filter-select" bind:value={typeFilter}>
+			<Select bind:value={typeFilter}>
 				<option value="all">All Types</option>
 				<option value="general_assembly">General Assembly</option>
 				<option value="central_bank">Central Bank</option>
@@ -87,13 +87,13 @@
 				<option value="college">College</option>
 				<option value="service">Service</option>
 				<option value="committee">Committee</option>
-			</select>
+			</Select>
 
-			<select class="filter-select" bind:value={statusFilter}>
+			<Select bind:value={statusFilter}>
 				<option value="all">All Statuses</option>
 				<option value="active">Active</option>
 				<option value="inactive">Inactive</option>
-			</select>
+			</Select>
 		</div>
 	</div>
 

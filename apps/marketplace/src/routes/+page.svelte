@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Input, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -11,14 +12,13 @@
 </script>
 
 <div class="page">
-	<div class="hero">
-		<h1>BFS Marketplace</h1>
+	<PageHeader title="BFS Marketplace">
 		<p>Welcome, @{data.session.handle}.</p>
 		<form class="hero__search" method="get" action="/classifieds">
-			<input class="search-input" type="search" name="keyword" placeholder="Search classifieds…" />
-			<button class="btn btn-primary" type="submit">Search</button>
+			<Input type="search" name="keyword" placeholder="Search classifieds…" class="search-input" />
+			<Button type="submit" variant="primary">Search</Button>
 		</form>
-	</div>
+	</PageHeader>
 
 	<div class="browse-links">
 		<a href="/classifieds" class="browse-card">
@@ -79,32 +79,10 @@
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-8); max-width: 860px; }
 
-	.hero { display: flex; flex-direction: column; gap: var(--space-3); }
-	h1 { margin: 0; font-size: var(--text-2xl); font-weight: var(--weight-bold); }
 	p  { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
 
-	.hero__search { display: flex; gap: var(--space-2); max-width: 420px; }
-
-	.search-input {
-		flex: 1;
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-	}
-	.btn-primary { background: var(--color-accent); color: #fff; }
-	.btn:hover { filter: brightness(0.92); }
+	.hero__search { display: flex; gap: var(--space-2); max-width: 420px; margin-top: var(--space-3); }
+	:global(.search-input) { flex: 1; }
 
 	.browse-links {
 		display: grid;

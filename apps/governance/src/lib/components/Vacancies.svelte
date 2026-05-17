@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Card } from '@bfs/ui';
+
 	interface Role {
 		uuid: string;
 		title: string;
@@ -20,7 +22,7 @@
 </script>
 
 {#if vacantRoles.length > 0}
-	<section class="card vacancies">
+	<Card class="vacancies">
 		<div class="card-header">
 			<h2>
 				<span class="icon">📋</span>
@@ -54,7 +56,7 @@
 		<p class="vacancy-note">
 			💡 Use the Role Management section below to assign members to vacant positions.
 		</p>
-	</section>
+	</Card>
 {/if}
 
 <style>

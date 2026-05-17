@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import { Button, EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -38,15 +39,14 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<div class="page-header-row">
-			<div>
-				<h1>Directory</h1>
-				<p class="page-subtitle">Search for people and associations</p>
-			</div>
-			<a href="/directory/new" class="btn btn--primary">+ Add Person</a>
-		</div>
-	</div>
+	<PageHeader 
+		title="Directory" 
+		description="Search for people and associations"
+	>
+		{#snippet actions()}
+			<Button href="/directory/new">+ Add Person</Button>
+		{/snippet}
+	</PageHeader>
 
 	<div class="toolbar">
 		<input
@@ -88,9 +88,9 @@
 	{#if (filter === 'all' || filter === 'people') && filteredPeople.length > 0}
 		<section class="results-section">
 			<h2 class="section-title">👤 People</h2>
-			<div class="results-list">
+			<List>
 				{#each filteredPeople as p (p.uuid)}
-					<a href="/people/{p.uuid}" class="result-card">
+					<ListItem href="/people/{p.uuid}">
 						<div class="result-card__main">
 							<div class="result-card__title">{p.given_name} {p.family_name}</div>
 							<code class="result-card__handle">@{p.handle}</code>
@@ -99,18 +99,18 @@
 							<Badge label={p.status} variant={statusVariant(p.status)} />
 							<span class="result-card__date">Joined {p.joined_at.slice(0, 10)}</span>
 						</div>
-					</a>
+					</ListItem>
 				{/each}
-			</div>
+			</List>
 		</section>
 	{/if}
 
 	{#if (filter === 'all' || filter === 'associations') && filteredAssociations.length > 0}
 		<section class="results-section">
 			<h2 class="section-title">🏛️ Associations</h2>
-			<div class="results-list">
+			<List>
 				{#each filteredAssociations as a (a.uuid)}
-					<a href="/{a.type === 'committee' ? 'committees' : a.type === 'college' ? 'colleges' : a.type === 'service' ? 'services' : 'associations'}/{a.uuid}" class="result-card">
+					<ListItem href="/{a.type === 'committee' ? 'committees' : a.type === 'college' ? 'colleges' : a.type === 'service' ? 'services' : 'associations'}/{a.uuid}">
 						<div class="result-card__main">
 							<div class="result-card__title">{a.name}</div>
 							<code class="result-card__handle">@{a.handle}</code>
@@ -119,14 +119,17 @@
 							<span class="type-badge type-badge--{a.type}">{a.type}</span>
 							<Badge label={a.status} variant={statusVariant(a.status)} />
 						</div>
-					</a>
+					</ListItem>
 				{/each}
-			</div>
+			</List>
 		</section>
 	{/if}
 
 	{#if filteredPeople.length === 0 && filteredAssociations.length === 0}
-		<p class="empty">No results found.</p>
+		<EmptyState 
+			icon="🔍"
+			title="No results found"
+		/>
 	{/if}
 </div>
 
@@ -137,45 +140,7 @@
 		gap: var(--space-6);
 	}
 
-	.page-header-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-4);
-	}
 
-	.page-header h1 {
-		margin: 0;
-		font-size: var(--text-3xl);
-	}
-
-	.page-subtitle {
-		margin: var(--space-2) 0 0;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		white-space: nowrap;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-
-	.btn:hover {
-		filter: brightness(0.92);
-	}
 
 	.toolbar {
 		display: flex;
@@ -238,28 +203,6 @@
 		font-weight: var(--weight-semibold);
 		margin: 0;
 	}
-
-	.results-list {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.result-card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-		padding: var(--space-4) var(--space-5);
-		border-bottom: 1px solid var(--color-border);
-		text-decoration: none;
-		color: inherit;
-		transition: background 0.1s;
-	}
-	.result-card:last-child { border-bottom: none; }
-	.result-card:hover { background: var(--color-surface); }
 
 	.result-card__main {
 		display: flex;

@@ -6,6 +6,7 @@
 		size = 'md',
 		type = 'button',
 		disabled = false,
+		fullWidth = false,
 		children,
 		...rest
 	}: {
@@ -13,6 +14,7 @@
 		size?: 'sm' | 'md';
 		type?: 'button' | 'submit' | 'reset';
 		disabled?: boolean;
+		fullWidth?: boolean;
 		children: Snippet;
 		[key: string]: unknown;
 	} = $props();
@@ -22,6 +24,7 @@
 	{type}
 	{disabled}
 	class="btn btn--{variant} btn--{size}"
+	class:btn--full={fullWidth}
 	{...rest}
 >
 	{@render children()}
@@ -44,6 +47,11 @@
 	.btn:disabled {
 		opacity: 0.45;
 		cursor: not-allowed;
+	}
+
+	.btn--full {
+		width: 100%;
+		justify-content: center;
 	}
 
 	/* Sizes */

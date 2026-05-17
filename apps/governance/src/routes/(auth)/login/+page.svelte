@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Button, Input } from '@bfs/ui';
 	import type { ActionData, PageData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -9,18 +10,24 @@
 	<div class="login-card">
 		<h1 class="login-title">{data.societyName}</h1>
 		{#if form?.error}
-			<p class="login-error">{form.error}</p>
+			<Alert variant="danger">{form.error}</Alert>
 		{/if}
 		<form method="POST" use:enhance class="login-form">
-			<label class="field">
-				<span class="field__label">Handle</span>
-				<input name="handle" type="text" autocomplete="username" required />
-			</label>
-			<label class="field">
-				<span class="field__label">Password</span>
-				<input name="password" type="password" autocomplete="current-password" required />
-			</label>
-			<button type="submit" class="login-btn">Sign in</button>
+			<Input
+				name="handle"
+				type="text"
+				label="Handle"
+				autocomplete="username"
+				required
+			/>
+			<Input
+				name="password"
+				type="password"
+				label="Password"
+				autocomplete="current-password"
+				required
+			/>
+			<Button type="submit" fullWidth>Sign in</Button>
 		</form>
 	</div>
 </div>
@@ -50,65 +57,10 @@
 		text-align: center;
 	}
 
-	.login-error {
-		font-size: var(--text-sm);
-		color: var(--color-danger);
-		background: var(--color-danger-subtle);
-		border-radius: var(--radius);
-		padding: var(--space-2) var(--space-3);
-		margin-bottom: var(--space-4);
-	}
-
 	.login-form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
-	}
-
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.field__label {
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-	}
-
-	.field input {
-		width: 100%;
-		font-family: var(--font-sans);
-		font-size: var(--text-sm);
-		color: var(--color-text);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		padding: var(--space-2) var(--space-3);
-		outline: none;
-		transition: border-color 120ms, box-shadow 120ms;
-	}
-
-	.field input:focus {
-		border-color: var(--color-accent);
-		box-shadow: 0 0 0 3px var(--color-accent-subtle);
-	}
-
-	.login-btn {
-		width: 100%;
-		font-family: var(--font-sans);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		color: #fff;
-		background: var(--color-accent);
-		border: none;
-		border-radius: var(--radius);
-		padding: var(--space-3);
-		cursor: pointer;
-		transition: background 120ms;
-	}
-	.login-btn:hover {
-		background: var(--color-accent-hover);
 	}
 </style>
 

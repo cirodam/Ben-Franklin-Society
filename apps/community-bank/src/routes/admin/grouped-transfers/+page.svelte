@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { AccountFinder } from '@bfs/ui';
+	import { AccountFinder, Alert, Button, Card, Input, PageHeader, Select } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -35,29 +35,28 @@
 
 <div class="page">
 	<div class="page-header">
-		<div>
-			<h1>Grouped Transfers</h1>
+		<PageHeader title="Grouped Transfers">
 			<p class="subtitle">
 				Create recurring transfers with flexible targeting (single account, all accounts, percentage-based, etc.)
 			</p>
-		</div>
-		<button class="btn-primary" onclick={() => showCreateForm = !showCreateForm}>
+		</PageHeader>
+		<Button onclick={() => showCreateForm = !showCreateForm} variant="primary">
 			{showCreateForm ? 'Cancel' : '+ Create Transfer'}
-		</button>
+		</Button>
 	</div>
 
 	{#if form?.error}
-		<div class="error-banner">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 	{#if form?.success && !form?.created}
-		<div class="success-banner">Transfer updated.</div>
+		<Alert variant="success">Transfer updated.</Alert>
 	{/if}
 	{#if form?.success && form?.created}
-		<div class="success-banner">Grouped transfer created successfully!</div>
+		<Alert variant="success">Grouped transfer created successfully!</Alert>
 	{/if}
 
 	{#if showCreateForm}
-		<div class="card form-card">
+		<Card class="form-card">
 			<h2>Create Grouped Transfer</h2>
 			
 			<form method="POST" action="?/create" use:enhance>
@@ -220,44 +219,37 @@
 				</div>
 
 				<!-- Schedule -->
-				<div class="form-field">
-					<label for="schedule">Schedule*</label>
-					<select id="schedule" name="schedule" required>
-						<option value="monthly">Monthly</option>
-						<option value="weekly">Weekly</option>
-						<option value="daily">Daily</option>
-					</select>
-				</div>
+				<Select name="schedule" label="Schedule" required>
+					<option value="monthly">Monthly</option>
+					<option value="weekly">Weekly</option>
+					<option value="daily">Daily</option>
+				</Select>
 
 				<!-- Type -->
-				<div class="form-field">
-					<label for="type">Transaction Type</label>
-					<input
-						type="text"
-						id="type"
-						name="type"
-						value="transfer"
-						placeholder="transfer"
-					/>
-					<p class="hint">Optional: demurrage, collection, fee, etc.</p>
-				</div>
+				<Input
+					name="type"
+					type="text"
+					label="Transaction Type"
+					value="transfer"
+					placeholder="transfer"
+					hint="Optional: demurrage, collection, fee, etc."
+				/>
 
 				<div class="form-actions">
-					<button type="submit" class="btn-primary">Create Grouped Transfer</button>
-					<button type="button" class="btn-secondary" onclick={() => showCreateForm = false}>Cancel</button>
-				</div>
-			</form>
-		</div>
+<Button type="submit" variant="primary">Create Grouped Transfer</Button>
+				<Button type="button" variant="secondary" onclick={() => showCreateForm = false}>Cancel</Button>
+			</div>
+		</form>
+	</Card>
 	{/if}
 
 	<!-- Transfers List -->
 	{#if transfers.length === 0}
-		<div class="card">
+		<Card>
 			<p class="empty">No grouped transfers configured. Create one above to get started.</p>
-		</div>
+		</Card>
 	{:else}
-		<div class="card table-card">
-			<table class="table">
+		<Card class="table-card">\n\t\t\t<table class="table">
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -331,12 +323,11 @@
 					{/each}
 				</tbody>
 			</table>
-		</div>
+		</Card>
 	{/if}
 </div>
 
 <style>
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 	h2 { margin: 0 0 var(--space-4); font-size: var(--text-lg); font-weight: var(--weight-semibold); }
 	
 	.page {
@@ -358,34 +349,11 @@
 		color: var(--color-text-muted);
 	}
 
-	.error-banner {
-		background: var(--color-danger-subtle);
-		color: var(--color-danger);
-		border-radius: var(--radius);
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.success-banner {
-		background: var(--color-success-subtle);
-		color: var(--color-success);
-		border-radius: var(--radius);
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-	
-	.form-card {
+	:global(.form-card) {
 		padding: var(--space-5);
 	}
 	
-	.table-card {
+	:global(.table-card) {
 		overflow-x: auto;
 	}
 
@@ -507,8 +475,6 @@
 	}
 
 	/* Button styles */
-	.btn-primary,
-	.btn-secondary,
 	.btn-sm {
 		font-family: var(--font-sans);
 		font-weight: var(--weight-medium);
@@ -516,32 +482,6 @@
 		border: 1px solid transparent;
 		cursor: pointer;
 		transition: background 120ms, color 120ms, border-color 120ms;
-	}
-	
-	.btn-primary {
-		background: var(--color-accent);
-		color: #fff;
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.btn-primary:hover {
-		background: var(--color-accent-hover);
-	}
-	
-	.btn-secondary {
-		background: var(--color-surface);
-		color: var(--color-text);
-		border-color: var(--color-border);
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.btn-secondary:hover {
-		background: var(--color-bg);
-	}
-	
-	.btn-sm {
 		font-size: var(--text-xs);
 		padding: 3px var(--space-2);
 		background: var(--color-surface);

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Badge from '@bfs/ui/src/Badge.svelte';
+	import { PageHeader, EmptyState, List, ListItem } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -21,23 +22,21 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>My Documents</h1>
-		<p class="page-subtitle">Draft governing documents you've created</p>
-	</div>
+	<PageHeader 
+		title="My Documents" 
+		description="Draft governing documents you've created" 
+	/>
 
 	{#if data.documents.length === 0}
-		<div class="empty">
-			<p>You haven't created any documents yet.</p>
-			<p class="empty__hint">
-				Documents are formal governing texts that can be attached to motions and 
-				adopted by the society through the deliberative process.
-			</p>
-		</div>
+		<EmptyState
+			icon="📄"
+			title="You haven't created any documents yet"
+			description="Documents are formal governing texts that can be attached to motions and adopted by the society through the deliberative process."
+		/>
 	{:else}
-		<div class="documents-list">
+		<List>
 			{#each data.documents as doc (doc.slug)}
-				<a href="/documents/{doc.slug}" class="document-card">
+				<ListItem href="/documents/{doc.slug}">
 					<div class="document-card__main">
 						<div class="document-card__title">{doc.title}</div>
 						<code class="document-card__slug">{doc.slug}</code>
@@ -51,9 +50,9 @@
 							Created {doc.created_at.slice(0, 10)}
 						</span>
 					</div>
-				</a>
+				</ListItem>
 			{/each}
-		</div>
+		</List>
 	{/if}
 </div>
 
@@ -63,56 +62,6 @@
 		flex-direction: column;
 		gap: var(--space-6);
 	}
-
-	.page-header h1 {
-		margin: 0;
-		font-size: var(--text-3xl);
-	}
-
-	.page-subtitle {
-		margin: var(--space-2) 0 0;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.empty {
-		text-align: center;
-		padding: var(--space-12) var(--space-6);
-		color: var(--color-text-muted);
-	}
-
-	.empty p {
-		margin: 0 0 var(--space-4);
-		font-size: var(--text-base);
-	}
-
-	.empty__hint {
-		font-size: var(--text-sm);
-		max-width: 500px;
-		margin: 0 auto;
-	}
-
-	.documents-list {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.document-card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-		padding: var(--space-5) var(--space-6);
-		border-bottom: 1px solid var(--color-border);
-		text-decoration: none;
-		color: inherit;
-		transition: background 0.1s;
-	}
-	.document-card:last-child { border-bottom: none; }
-	.document-card:hover { background: var(--color-surface); }
 
 	.document-card__main {
 		display: flex;

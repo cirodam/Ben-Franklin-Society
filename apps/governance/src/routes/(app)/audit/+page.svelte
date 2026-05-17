@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -9,13 +10,17 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Audit Log</h1>
-		<p class="subtitle">Every write action recorded in the system.</p>
-	</div>
+	<PageHeader 
+		title="Audit Log"
+		description="Every write action recorded in the system."
+	/>
 
 	{#if entries.length === 0}
-		<p class="empty">No entries yet.</p>
+		<EmptyState 
+			icon="📋"
+			title="No entries yet"
+			description="Write actions will appear here."
+		/>
 	{:else}
 		<div class="log">
 			{#each entries as entry}
@@ -60,23 +65,6 @@
 		gap: var(--space-6);
 		max-width: 860px;
 		margin: 0 auto;
-	}
-
-	.page-header {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-	.page-header h1 { margin: 0; }
-	.subtitle {
-		margin: 0;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
 	}
 
 	.log {

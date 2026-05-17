@@ -1,15 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Breadcrumb, Button, Card, Textarea, formatDate } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { report, listing } = $derived(data);
 
 	let openAction = $state<'dismiss' | 'remove_listing' | 'suspend_seller' | null>(null);
-
-	function fmtDate(iso: string): string {
-		return new Date(iso).toLocaleDateString([], { dateStyle: 'long' });
-	}
 
 	const listingUrl = $derived(
 		report.listing_type === 'classified'
@@ -19,13 +16,13 @@
 </script>
 
 <div class="page">
-	<div class="breadcrumb"><a href="/administrator">← Reports</a></div>
+	<Breadcrumb items={[{ label: '← Reports', href: '/administrator' }]} />
 	<h1>Report Review</h1>
 
 	<div class="main-grid">
 		<div class="main-col">
 			<!-- Listing details -->
-			<section class="card">
+			<Card>
 				<div class="card-header">
 					<div class="label">Reported Listing</div>
 					<span class="type-badge">{report.listing_type}</span>
@@ -44,23 +41,23 @@
 				{:else}
 					<p class="muted">Listing has been deleted.</p>
 				{/if}
-			</section>
+			</Card>
 
 			<!-- Report details -->
-			<section class="card">
+			<Card>
 				<div class="card-header">
 					<div class="label">Report</div>
 					<span class="muted-sm">{fmtDate(report.created_at)}</span>
 				</div>
 				<p class="reporter-label">From: <em>A member</em></p>
 				<div class="report-reason">{report.reason}</div>
-			</section>
+			</Card>
 		</div>
 
 		<!-- Actions -->
 		<aside class="actions-col">
 			{#if form?.error}
-				<div class="form-error">{form.error}</div>
+				<Alert variant="danger">{form.error}</Alert>
 			{/if}
 
 			<!-- Dismiss -->
@@ -69,14 +66,14 @@
 				<div class="action-desc">No action needed. Mark as reviewed.</div>
 				{#if openAction === 'dismiss'}
 					<form method="POST" action="?/dismiss" use:enhance class="action-form">
-						<textarea name="reason" rows="3" placeholder="Note reason for dismissal…" required></textarea>
+						<Textarea name="reason" rows={3} placeholder="Note reason for dismissal…" required />
 						<div class="action-btns">
-							<button type="button" class="btn btn-ghost btn-sm" onclick={() => (openAction = null)}>Cancel</button>
-							<button type="submit" class="btn btn-primary btn-sm">Confirm Dismiss</button>
+							<Button type="button" variant="ghost" class="btn-sm" onclick={() => (openAction = null)}>Cancel</Button>
+							<Button type="submit" variant="primary" class="btn-sm">Confirm Dismiss</Button>
 						</div>
 					</form>
 				{:else}
-					<button class="btn btn-ghost btn-sm" onclick={() => (openAction = 'dismiss')}>Dismiss</button>
+					<Button variant="ghost" class="btn-sm" onclick={() => (openAction = 'dismiss')}>Dismiss</Button>
 				{/if}
 			</div>
 
@@ -87,14 +84,14 @@
 					<div class="action-desc">Set listing status to <em>removed</em>. The seller will see it in My Listings.</div>
 					{#if openAction === 'remove_listing'}
 						<form method="POST" action="?/remove_listing" use:enhance class="action-form">
-							<textarea name="reason" rows="3" placeholder="Reason for removal…" required></textarea>
+							<Textarea name="reason" rows={3} placeholder="Reason for removal…" required />
 							<div class="action-btns">
-								<button type="button" class="btn btn-ghost btn-sm" onclick={() => (openAction = null)}>Cancel</button>
-								<button type="submit" class="btn btn-danger btn-sm">Remove Listing</button>
+								<Button type="button" variant="ghost" class="btn-sm" onclick={() => (openAction = null)}>Cancel</Button>
+								<Button type="submit" variant="danger" class="btn-sm">Remove Listing</Button>
 							</div>
 						</form>
 					{:else}
-						<button class="btn btn-ghost btn-sm btn-ghost-danger" onclick={() => (openAction = 'remove_listing')}>Remove Listing</button>
+						<Button variant="ghost" class="btn-sm btn-ghost-danger" onclick={() => (openAction = 'remove_listing')}>Remove Listing</Button>
 					{/if}
 				</div>
 			{/if}
@@ -105,14 +102,14 @@
 				<div class="action-desc">Prevent <span class="handle">@{report.seller_handle}</span> from posting new listings.</div>
 				{#if openAction === 'suspend_seller'}
 					<form method="POST" action="?/suspend_seller" use:enhance class="action-form">
-						<textarea name="reason" rows="3" placeholder="Reason for suspension…" required></textarea>
+						<Textarea name="reason" rows={3} placeholder="Reason for suspension…" required />
 						<div class="action-btns">
-							<button type="button" class="btn btn-ghost btn-sm" onclick={() => (openAction = null)}>Cancel</button>
-							<button type="submit" class="btn btn-danger btn-sm">Suspend Seller</button>
+							<Button type="button" variant="ghost" class="btn-sm" onclick={() => (openAction = null)}>Cancel</Button>
+							<Button type="submit" variant="danger" class="btn-sm">Suspend Seller</Button>
 						</div>
 					</form>
 				{:else}
-					<button class="btn btn-ghost btn-sm btn-ghost-danger" onclick={() => (openAction = 'suspend_seller')}>Suspend Seller</button>
+					<Button variant="ghost" class="btn-sm btn-ghost-danger" onclick={() => (openAction = 'suspend_seller')}>Suspend Seller</Button>
 				{/if}
 			</div>
 		</aside>
@@ -121,21 +118,11 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 900px; }
-	.breadcrumb a { color: var(--color-text-muted); font-size: var(--text-sm); text-decoration: none; }
-	.breadcrumb a:hover { text-decoration: underline; }
 	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 
 	.main-grid { display: grid; grid-template-columns: 1fr 280px; gap: var(--space-6); align-items: start; }
 	.main-col  { display: flex; flex-direction: column; gap: var(--space-5); }
 
-	.card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-		padding: var(--space-5);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-	}
 	.card-header { display: flex; align-items: center; gap: var(--space-3); }
 	.label { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 	.type-badge { font-size: var(--text-xs); background: var(--color-surface-alt, #f1f5f9); color: var(--color-text-muted); padding: 2px 8px; border-radius: 9999px; text-transform: capitalize; }
@@ -193,34 +180,10 @@
 	.action-desc  { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.5; }
 
 	.action-form { display: flex; flex-direction: column; gap: var(--space-2); }
-	.action-form textarea {
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-family: inherit;
-		resize: vertical;
-	}
 	.action-btns { display: flex; gap: var(--space-2); justify-content: flex-end; }
 
 	.muted { color: var(--color-text-muted); font-size: var(--text-sm); }
 
-	.btn {
-		padding: var(--space-2) var(--space-5);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-	}
-	.btn-primary { background: var(--color-accent); color: #fff; }
-	.btn-danger  { background: #dc2626; color: #fff; }
-	.btn-ghost   { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
-	.btn-ghost-danger { border-color: #fca5a5; color: #dc2626; }
-	.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
-	.btn:hover { filter: brightness(0.92); }
+		:global(.btn-sm) { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+		:global(.btn-ghost-danger) { border-color: #fca5a5; color: #dc2626; }
 </style>

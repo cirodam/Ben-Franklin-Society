@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { Button, EmptyState } from '@bfs/ui';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import MotionCard from '$lib/components/MotionCard.svelte';
 	import MotionCreationModal from '$lib/components/MotionCreationModal.svelte';
@@ -55,7 +56,7 @@
 		<div class="header__top">
 			<div class="title-row">
 				<h1>{association.name}</h1>
-				<a href="/committees/{association.uuid}/edit" class="btn btn--secondary">✏️ Edit</a>
+				<Button variant="secondary" size="sm" href="/committees/{association.uuid}/edit">✏️ Edit</Button>
 			</div>
 			<div class="header__badges">
 				<Badge label={config?.is_permanent ? 'Permanent' : 'Ad Hoc'} variant="neutral" />
@@ -132,14 +133,16 @@
 					</div>
 				</section>
 			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No motions currently in deliberation or voting</p>
+				<EmptyState
+					icon="🗣️"
+					title="No motions currently in deliberation or voting"
+				>
 					{#if canCreateMotion}
-						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+						<Button onclick={openCreateModal}>
 							+ New Motion Before This Committee
-						</button>
+						</Button>
 					{/if}
-				</div>
+				</EmptyState>
 			{/if}
 		{:else if activeTab === 'pending'}
 			{#if pending.length > 0}
@@ -157,14 +160,16 @@
 					</div>
 				</section>
 			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No pending motions</p>
+				<EmptyState
+					icon="📋"
+					title="No pending motions"
+				>
 					{#if canCreateMotion}
-						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+						<Button onclick={openCreateModal}>
 							+ New Motion Before This Committee
-						</button>
+						</Button>
 					{/if}
-				</div>
+				</EmptyState>
 			{/if}
 		{:else if activeTab === 'decisions'}
 			{#if recentDecisions.length > 0}
@@ -182,9 +187,10 @@
 					</div>
 				</section>
 			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No decisions yet</p>
-				</div>
+				<EmptyState
+					icon="✅"
+					title="No decisions yet"
+				/>
 			{/if}
 		{:else if activeTab === 'members'}
 			<section class="section">
@@ -309,6 +315,13 @@
 		margin-bottom: var(--space-2);
 	}
 
+	.title-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex: 1;
+	}
+
 	.header__top h1 {
 		font-size: var(--text-3xl);
 		font-weight: var(--weight-bold);
@@ -354,25 +367,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
-	}
-
-	.btn {
-		padding: var(--space-3) var(--space-5);
-		font-size: var(--text-base);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-		border: none;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: white;
-	}
-
-	.btn--primary:hover {
-		background: var(--color-accent-hover);
 	}
 
 	/* Tab Navigation */
@@ -432,21 +426,6 @@
 
 	.tab-content {
 		min-height: 400px;
-	}
-
-	.empty-state {
-		padding: var(--space-12) var(--space-6);
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-4);
-	}
-
-	.empty-state__message {
-		font-size: var(--text-lg);
-		color: var(--color-text-muted);
-		margin: 0;
 	}
 
 	.subsection__title {

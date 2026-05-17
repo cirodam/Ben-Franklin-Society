@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Badge from '@bfs/ui/src/Badge.svelte';
+	import { Badge, EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -24,10 +24,10 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>My Motions</h1>
-		<p class="page-subtitle">Motions you've introduced</p>
-	</div>
+	<PageHeader 
+		title="My Motions"
+		description="Motions you've introduced"
+	/>
 
 	<div class="toolbar">
 		<div class="filters">
@@ -73,20 +73,22 @@
 	</div>
 
 	{#if filteredMotions.length === 0}
-		<div class="empty">
-			{#if filter === 'all'}
-				<p>You haven't introduced any motions yet.</p>
-				<p class="empty__hint">
-					Motions are formal proposals for action or changes to the society's governing documents.
-				</p>
-			{:else}
-				<p>No {filter} motions found.</p>
-			{/if}
-		</div>
+		{#if filter === 'all'}
+			<EmptyState 
+				icon="📋"
+				title="You haven't introduced any motions yet"
+				description="Motions are formal proposals for action or changes to the society's governing documents."
+			/>
+		{:else}
+			<EmptyState 
+				icon="🔍"
+				title="No {filter} motions found"
+			/>
+		{/if}
 	{:else}
-		<div class="motions-list">
+		<List>
 			{#each filteredMotions as motion (motion.uuid)}
-				<a href="/motions/{motion.uuid}" class="motion-card">
+				<ListItem href="/motions/{motion.uuid}">
 					<div class="motion-card__main">
 						<div class="motion-card__title">{motion.title}</div>
 						<div class="motion-card__body">{motion.body_name}</div>
@@ -103,9 +105,9 @@
 							{/if}
 						</span>
 					</div>
-				</a>
+				</ListItem>
 			{/each}
-		</div>
+		</List>
 	{/if}
 </div>
 
@@ -114,17 +116,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
-	}
-
-	.page-header h1 {
-		margin: 0;
-		font-size: var(--text-3xl);
-	}
-
-	.page-subtitle {
-		margin: var(--space-2) 0 0;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
 	}
 
 	.toolbar {
@@ -164,45 +155,6 @@
 		opacity: 0.7;
 		font-size: var(--text-xs);
 	}
-
-	.empty {
-		text-align: center;
-		padding: var(--space-12) var(--space-6);
-		color: var(--color-text-muted);
-	}
-
-	.empty p {
-		margin: 0 0 var(--space-4);
-		font-size: var(--text-base);
-	}
-
-	.empty__hint {
-		font-size: var(--text-sm);
-		max-width: 500px;
-		margin: 0 auto;
-	}
-
-	.motions-list {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.motion-card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-		padding: var(--space-5) var(--space-6);
-		border-bottom: 1px solid var(--color-border);
-		text-decoration: none;
-		color: inherit;
-		transition: background 0.1s;
-	}
-	.motion-card:last-child { border-bottom: none; }
-	.motion-card:hover { background: var(--color-surface); }
 
 	.motion-card__main {
 		display: flex;

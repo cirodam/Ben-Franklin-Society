@@ -1,43 +1,49 @@
 <script lang="ts">
+	import { Badge, Button, Card, EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 	const { committees } = $derived(data);
+
+	const statusVariant = (s: string): 'success' | 'neutral' => s === 'active' ? 'success' : 'neutral';
 </script>
 
 <div class="page">
-	<header class="header">
-		<div class="header-row">
-			<div>
-				<h1>Committees</h1>
-				<p class="header__subtitle">Specialized deliberative bodies</p>
-			</div>
-			<a href="/committees/new" class="btn btn--primary">+ Create Committee</a>
-		</div>
-	</header>
+	<PageHeader 
+		title="Committees"
+		description="Specialized deliberative bodies"
+	>
+		{#snippet actions()}
+			<Button href="/committees/new">+ Create Committee</Button>
+		{/snippet}
+	</PageHeader>
 
-	<div class="description">
-		<p>
+	<Card>
+		<p style="margin: 0; line-height: 1.6;">
 			Committees are specialized governing bodies responsible for specific domains like agriculture, 
 			health care, or energy. Members are typically selected by sortition—some from the general 
 			membership, others from relevant professional colleges when domain expertise is needed. 
 			Committees deliberate on policy, oversee their associated services, and propose changes to the 
 			General Assembly. Terms are limited to prevent entrenchment of power.
 		</p>
-	</div>
+	</Card>
 
 	{#if committees.length > 0}
 		<div class="list">
 			{#each committees as committee}
-				<a href="/committees/{committee.uuid}" class="card">
+				<a href="/committees/{committee.uuid}" class="committee-card">
 					<h3 class="card__title">{committee.name}</h3>
 					<span class="card__handle">@{committee.handle}</span>
-					<span class="badge badge-{committee.status}">{committee.status}</span>
+					<Badge label={committee.status} variant={statusVariant(committee.status)} />
 				</a>
 			{/each}
 		</div>
 	{:else}
-		<p class="empty">No committees yet.</p>
+		<EmptyState 
+			icon="📋"
+			title="No committees yet"
+			description="Committees are specialized governing bodies for specific domains."
+		/>
 	{/if}
 </div>
 
@@ -45,66 +51,9 @@
 	.page {
 		max-width: 1200px;
 		margin: 0 auto;
-	}
-
-	.header {
-		margin-bottom: var(--space-6);
-	}
-
-	.header-row {
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-4);
-	}
-
-	.header h1 {
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-bold);
-		margin: 0 0 var(--space-2) 0;
-	}
-
-	.header__subtitle {
-		font-size: var(--text-lg);
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		white-space: nowrap;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-
-	.btn:hover {
-		filter: brightness(0.92);
-	}
-
-	.description {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		margin-bottom: var(--space-6);
-	}
-
-	.description p {
-		margin: 0;
-		font-size: var(--text-base);
-		line-height: 1.6;
-		color: var(--color-text);
+		flex-direction: column;
+		gap: var(--space-6);
 	}
 
 	.list {
@@ -113,7 +62,7 @@
 		gap: var(--space-4);
 	}
 
-	.card {
+	.committee-card {
 		display: block;
 		padding: var(--space-5);
 		background: var(--color-surface);
@@ -124,9 +73,9 @@
 		transition: all 0.2s;
 	}
 
-	.card:hover {
+	.committee-card:hover {
 		border-color: var(--color-accent);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-md);
 		text-decoration: none;
 	}
 
@@ -142,30 +91,5 @@
 		font-family: var(--font-mono);
 		display: block;
 		margin-bottom: var(--space-2);
-	}
-
-	.badge {
-		display: inline-block;
-		padding: var(--space-1) var(--space-2);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-	}
-
-	.badge-active {
-		background: #d1fae5;
-		color: #065f46;
-	}
-
-	.badge-dissolved {
-		background: #f3f4f6;
-		color: #6b7280;
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		font-style: italic;
-		text-align: center;
-		padding: var(--space-8);
 	}
 </style>

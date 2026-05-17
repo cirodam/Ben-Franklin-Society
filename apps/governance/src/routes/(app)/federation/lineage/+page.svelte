@@ -1,6 +1,6 @@
 <script lang="ts">
+	import { Alert, Badge, Button, Card, EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
-	import Badge from '@bfs/ui/src/Badge.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -76,118 +76,124 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<div class="page-header-row">
-			<div>
-				<h1>Lineage</h1>
-				<p class="page-subtitle">Cryptographic founding chain</p>
-			</div>
-			{#if data.foundingRecord}
-				<button class="btn btn--secondary" onclick={verifyChain} disabled={verifying}>
+	<PageHeader 
+		title="Lineage" 
+		description="Cryptographic founding chain"
+	>
+		{#if data.foundingRecord}
+			{#snippet actions()}
+				<Button variant="secondary" onclick={verifyChain} disabled={verifying}>
 					{verifying ? 'Verifying...' : 'Verify Chain'}
-				</button>
-			{/if}
-		</div>
-
-		{#if verificationResult}
-			<div class="verification-banner" class:verification-banner--success={verificationResult.verified} class:verification-banner--error={!verificationResult.verified}>
-				{verificationResult.message}
-			</div>
+				</Button>
+			{/snippet}
 		{/if}
-	</div>
+	</PageHeader>
+
+	{#if verificationResult}
+		<Alert variant={verificationResult.verified ? 'success' : 'danger'}>
+			{verificationResult.message}
+		</Alert>
+	{/if}
 
 	{#if !data.initialized}
-		<div class="empty-state">
-			<div class="empty-state__icon">🏛️</div>
-			<h2 class="empty-state__title">Society Not Initialized</h2>
-			<p class="empty-state__message">
-				This society has not been initialized yet. Initialize as either a root society or with a founding record from a parent society.
-			</p>
-			<a href="/federation/initialize" class="btn btn--primary">Initialize Society</a>
-		</div>
+		<EmptyState
+			icon="🏛️"
+			title="Society Not Initialized"
+			description="This society has not been initialized yet. Initialize as either a root society or with a founding record from a parent society."
+		>
+			{#snippet actions()}
+				<Button href="/federation/initialize">Initialize Society</Button>
+			{/snippet}
+		</EmptyState>
 	{:else}
 		<div class="lineage-container">
 			<!-- Current Society (Top of chain) -->
-			<div class="lineage-node lineage-node--current">
-				<div class="lineage-node__badge">
-					<Badge variant="primary">You are here</Badge>
-				</div>
-				<div class="lineage-node__content">
-					<div class="lineage-node__header">
-						<h3 class="lineage-node__title">@{data.identity?.handle}</h3>
-						{#if data.identity?.is_root}
-							<Badge variant="success">Root Society</Badge>
+			<Card>
+				<div class="lineage-node lineage-node--current">
+					<div class="lineage-node__badge">
+						<Badge variant="primary" label="You are here" />
+					</div>
+					<div class="lineage-node__content">
+						<div class="lineage-node__header">
+							<h3 class="lineage-node__title">@{data.identity?.handle}</h3>
+							{#if data.identity?.is_root}
+								<Badge variant="success" label="Root Society" />
+							{/if}
+						</div>
+						<div class="lineage-node__details">
+							<div class="lineage-detail">
+								<span class="lineage-detail__label">UUID:</span>
+								<code class="lineage-detail__value">{truncateUuid(data.identity?.uuid || '')}</code>
+							</div>
+							<div class="lineage-detail">
+								<span class="lineage-detail__label">Founded:</span>
+								<span class="lineage-detail__value">{formatDate(data.identity?.founded_at || null)}</span>
+							</div>
+						</div>
+						{#if data.identity?.public_key}
+							<details class="lineage-node__key-details">
+								<summary class="lineage-node__key-summary">Public Key</summary>
+								<pre class="lineage-node__key"><code>{data.identity.public_key}</code></pre>
+							</details>
 						{/if}
 					</div>
-					<div class="lineage-node__details">
-						<div class="lineage-detail">
-							<span class="lineage-detail__label">UUID:</span>
-							<code class="lineage-detail__value">{truncateUuid(data.identity?.uuid || '')}</code>
-						</div>
-						<div class="lineage-detail">
-							<span class="lineage-detail__label">Founded:</span>
-							<span class="lineage-detail__value">{formatDate(data.identity?.founded_at || null)}</span>
-						</div>
-					</div>
-					{#if data.identity?.public_key}
-						<details class="lineage-node__key-details">
-							<summary class="lineage-node__key-summary">Public Key</summary>
-							<pre class="lineage-node__key"><code>{data.identity.public_key}</code></pre>
-						</details>
-					{/if}
 				</div>
-			</div>
+			</Card>
 
 			<!-- Founding Record (if exists) -->
 			{#if data.foundingRecord}
 				<div class="lineage-connector">
 					<div class="lineage-connector__line"></div>
 					<div class="lineage-connector__label">
-						<Badge variant="secondary">Founded {formatDate(Math.floor(new Date(data.foundingRecord.founded_at).getTime() / 1000))}</Badge>
+						<Badge variant="secondary" label="Founded {formatDate(Math.floor(new Date(data.foundingRecord.founded_at).getTime() / 1000))}" />
 					</div>
 					<div class="lineage-connector__line"></div>
 				</div>
 
-				<div class="founding-record">
-					<h4 class="founding-record__title">📜 Founding Record</h4>
-					<div class="founding-record__attestation">
-						"{data.foundingRecord.parent_attestation}"
+				<Card>
+					<div class="founding-record">
+						<h4 class="founding-record__title">📜 Founding Record</h4>
+						<div class="founding-record__attestation">
+							"{data.foundingRecord.parent_attestation}"
+						</div>
+						<details class="founding-record__signature">
+							<summary>Cryptographic Signature</summary>
+							<pre><code>{data.foundingRecord.signature}</code></pre>
+						</details>
 					</div>
-					<details class="founding-record__signature">
-						<summary>Cryptographic Signature</summary>
-						<pre><code>{data.foundingRecord.signature}</code></pre>
-					</details>
-				</div>
+				</Card>
 
 				<div class="lineage-connector">
 					<div class="lineage-connector__line"></div>
 					<div class="lineage-connector__label">
-						<Badge variant="secondary">by parent</Badge>
+						<Badge variant="secondary" label="by parent" />
 					</div>
 					<div class="lineage-connector__line"></div>
 				</div>
 
 				<!-- Parent Society -->
-				<div class="lineage-node">
-					<div class="lineage-node__content">
-						<div class="lineage-node__header">
-							<h3 class="lineage-node__title">@{data.foundingRecord.parent.handle}</h3>
-							<Badge variant="secondary">Parent</Badge>
-						</div>
-						<div class="lineage-node__details">
-							<div class="lineage-detail">
-								<span class="lineage-detail__label">UUID:</span>
-								<code class="lineage-detail__value">{truncateUuid(data.foundingRecord.parent.uuid)}</code>
+				<Card>
+					<div class="lineage-node">
+						<div class="lineage-node__content">
+							<div class="lineage-node__header">
+								<h3 class="lineage-node__title">@{data.foundingRecord.parent.handle}</h3>
+								<Badge variant="secondary" label="Parent" />
 							</div>
+							<div class="lineage-node__details">
+								<div class="lineage-detail">
+									<span class="lineage-detail__label">UUID:</span>
+									<code class="lineage-detail__value">{truncateUuid(data.foundingRecord.parent.uuid)}</code>
+								</div>
+							</div>
+							{#if data.foundingRecord.parent.public_key}
+								<details class="lineage-node__key-details">
+									<summary class="lineage-node__key-summary">Public Key</summary>
+									<pre class="lineage-node__key"><code>{data.foundingRecord.parent.public_key}</code></pre>
+								</details>
+							{/if}
 						</div>
-						{#if data.foundingRecord.parent.public_key}
-							<details class="lineage-node__key-details">
-								<summary class="lineage-node__key-summary">Public Key</summary>
-								<pre class="lineage-node__key"><code>{data.foundingRecord.parent.public_key}</code></pre>
-							</details>
-						{/if}
 					</div>
-				</div>
+				</Card>
 
 				<div class="lineage-note">
 					<strong>Note:</strong> To view the complete lineage chain to root, use the lineage walker to query your parent society's endpoint.
@@ -198,61 +204,16 @@
 </div>
 
 <style>
-	.verification-banner {
-		margin-top: var(--space-4);
-		padding: var(--space-3) var(--space-4);
-		border-radius: var(--radius);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-	}
-
-	.verification-banner--success {
-		background: var(--color-success-bg);
-		color: var(--color-success-text);
-		border: 1px solid var(--color-success);
-	}
-
-	.verification-banner--error {
-		background: var(--color-danger-bg);
-		color: var(--color-danger-text);
-		border: 1px solid var(--color-danger);
-	}
-
-	.empty-state {
-		text-align: center;
-		padding: var(--space-12) var(--space-6);
-	}
-
-	.empty-state__icon {
-		font-size: 4rem;
-		margin-bottom: var(--space-4);
-	}
-
-	.empty-state__title {
-		font-size: var(--text-2xl);
-		font-weight: var(--weight-bold);
-		margin-bottom: var(--space-3);
-	}
-
-	.empty-state__message {
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-6);
-		max-width: 500px;
-		margin-left: auto;
-		margin-right: auto;
-	}
-
 	.lineage-container {
 		max-width: 800px;
 		margin: 0 auto;
 		padding: var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: 0;
 	}
 
 	.lineage-node {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
 		position: relative;
 	}
 
@@ -348,14 +309,6 @@
 
 	.lineage-connector__label {
 		flex-shrink: 0;
-	}
-
-	.founding-record {
-		background: var(--color-accent-subtle);
-		border: 1px solid var(--color-accent);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		margin: var(--space-4) 0;
 	}
 
 	.founding-record__title {

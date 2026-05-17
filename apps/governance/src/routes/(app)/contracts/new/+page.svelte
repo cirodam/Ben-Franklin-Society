@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Input, Textarea, Select, Button } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -43,29 +44,33 @@
 		<div class="section">
 			<h2>Contract Details</h2>
 
-			<div class="field">
-				<label for="title">Title</label>
-				<input type="text" id="title" name="title" required />
-			</div>
+			<Input id="title" name="title" label="Title" required />
 
-			<div class="field">
-				<label for="body">Agreement Text</label>
-				<textarea id="body" name="body" rows="12" required></textarea>
-				<span class="help">The full text of the agreement between the parties.</span>
-			</div>
+			<Textarea
+				id="body"
+				name="body"
+				label="Agreement Text"
+				rows={12}
+				hint="The full text of the agreement between the parties."
+				required
+			/>
 
 			<div class="field-group">
-				<div class="field">
-					<label for="effective_date">Effective Date (optional)</label>
-					<input type="date" id="effective_date" name="effective_date" />
-					<span class="help">If blank, will be set when both parties acknowledge.</span>
-				</div>
+				<Input
+					id="effective_date"
+					name="effective_date"
+					type="date"
+					label="Effective Date (optional)"
+					hint="If blank, will be set when both parties acknowledge."
+				/>
 
-				<div class="field">
-					<label for="expiry_date">Expiry Date (optional)</label>
-					<input type="date" id="expiry_date" name="expiry_date" />
-					<span class="help">Leave blank for no expiration.</span>
-				</div>
+				<Input
+					id="expiry_date"
+					name="expiry_date"
+					type="date"
+					label="Expiry Date (optional)"
+					hint="Leave blank for no expiration."
+				/>
 			</div>
 		</div>
 
@@ -75,40 +80,40 @@
 			<div class="party-section">
 				<h3>Party A</h3>
 				<div class="field-group">
-					<div class="field">
-						<label for="party_a_uuid">Principal</label>
-						<select id="party_a_uuid" name="party_a_uuid" required>
-							<option value="">Select party...</option>
-							{#each principals as principal}
-								<option value={principal.uuid}>{principal.name} (@{principal.handle})</option>
-							{/each}
-						</select>
-					</div>
+					<Select id="party_a_uuid" name="party_a_uuid" label="Principal" required>
+						<option value="">Select party...</option>
+						{#each principals as principal}
+							<option value={principal.uuid}>{principal.name} (@{principal.handle})</option>
+						{/each}
+					</Select>
 
-					<div class="field">
-						<label for="party_a_role">Role in Contract</label>
-						<input type="text" id="party_a_role" name="party_a_role" placeholder="e.g., Provider, Buyer" required />
-					</div>
+					<Input
+						id="party_a_role"
+						name="party_a_role"
+						label="Role in Contract"
+						placeholder="e.g., Provider, Buyer"
+						required
+					/>
 				</div>
 			</div>
 
 			<div class="party-section">
 				<h3>Party B</h3>
 				<div class="field-group">
-					<div class="field">
-						<label for="party_b_uuid">Principal</label>
-						<select id="party_b_uuid" name="party_b_uuid" required>
-							<option value="">Select party...</option>
-							{#each principals as principal}
-								<option value={principal.uuid}>{principal.name} (@{principal.handle})</option>
-							{/each}
-						</select>
-					</div>
+					<Select id="party_b_uuid" name="party_b_uuid" label="Principal" required>
+						<option value="">Select party...</option>
+						{#each principals as principal}
+							<option value={principal.uuid}>{principal.name} (@{principal.handle})</option>
+						{/each}
+					</Select>
 
-					<div class="field">
-						<label for="party_b_role">Role in Contract</label>
-						<input type="text" id="party_b_role" name="party_b_role" placeholder="e.g., Recipient, Seller" required />
-					</div>
+					<Input
+						id="party_b_role"
+						name="party_b_role"
+						label="Role in Contract"
+						placeholder="e.g., Recipient, Seller"
+						required
+					/>
 				</div>
 			</div>
 		</div>
@@ -126,37 +131,29 @@
 					{#each milestones as milestone, i}
 						<div class="milestone-row">
 							<div class="milestone-fields">
-								<div class="field">
-									<label for="milestone_title_{i}">Milestone</label>
-									<input
-										type="text"
-										id="milestone_title_{i}"
-										name="milestone_title"
-										bind:value={milestone.title}
-										placeholder="Deliverable or obligation"
-									/>
-								</div>
+								<Input
+									id="milestone_title_{i}"
+									name="milestone_title"
+									label="Milestone"
+									placeholder="Deliverable or obligation"
+									bind:value={milestone.title}
+								/>
 
-								<div class="field">
-									<label for="milestone_description_{i}">Description (optional)</label>
-									<input
-										type="text"
-										id="milestone_description_{i}"
-										name="milestone_description"
-										bind:value={milestone.description}
-										placeholder="Additional details"
-									/>
-								</div>
+								<Input
+									id="milestone_description_{i}"
+									name="milestone_description"
+									label="Description (optional)"
+									placeholder="Additional details"
+									bind:value={milestone.description}
+								/>
 
-								<div class="field field--date">
-									<label for="milestone_due_date_{i}">Due Date</label>
-									<input
-										type="date"
-										id="milestone_due_date_{i}"
-										name="milestone_due_date"
-										bind:value={milestone.due_date}
-									/>
-								</div>
+								<Input
+									id="milestone_due_date_{i}"
+									name="milestone_due_date"
+									type="date"
+									label="Due Date"
+									bind:value={milestone.due_date}
+								/>
 							</div>
 
 							<button type="button" class="btn-icon btn-remove" onclick={() => removeMilestoneRow(i)}>×</button>

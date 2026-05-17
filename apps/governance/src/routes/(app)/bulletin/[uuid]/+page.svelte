@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button, Card, Textarea } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -40,21 +41,20 @@
 		</div>
 	</div>
 
-	<div class="comments-section">
+	<Card>
 		<h2 class="comments-title">
 			Comments
 			<span class="comment-count">({data.comments.length})</span>
 		</h2>
 
 		<form method="POST" action="?/comment" use:enhance class="comment-form">
-			<textarea
+			<Textarea
 				name="body"
 				placeholder="Add a comment..."
-				rows="3"
+				rows={3}
 				required
-				class="comment-input"
-			></textarea>
-			<button type="submit" class="btn-submit">Post Comment</button>
+			/>
+			<Button type="submit">Post Comment</Button>
 		</form>
 
 		{#if data.comments.length === 0}
@@ -88,7 +88,7 @@
 				{/each}
 			</div>
 		{/if}
-	</div>
+	</Card>
 </div>
 
 <style>
@@ -203,20 +203,10 @@
 		font-style: italic;
 	}
 
-	.comments-section {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-5);
-	}
-
 	.comments-title {
 		font-size: var(--text-lg);
 		font-weight: var(--weight-semibold);
-		margin: 0;
+		margin: 0 0 var(--space-5) 0;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
@@ -232,39 +222,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
-	}
-
-	.comment-input {
-		font-family: var(--font-sans);
-		font-size: var(--text-sm);
-		padding: var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		background: var(--color-bg);
-		color: var(--color-text);
-		resize: vertical;
-	}
-
-	.comment-input:focus {
-		outline: none;
-		border-color: var(--color-accent);
-		box-shadow: 0 0 0 3px var(--color-accent-subtle);
-	}
-
-	.btn-submit {
-		align-self: flex-end;
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		background: var(--color-accent);
-		color: var(--color-bg);
-		border: none;
-		border-radius: var(--radius);
-		cursor: pointer;
-	}
-
-	.btn-submit:hover {
-		background: var(--color-accent-hover);
+		align-items: flex-end;
+		margin-bottom: var(--space-5);
 	}
 
 	.no-comments {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { EmptyState, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -10,11 +11,12 @@
 </script>
 
 <div class="page">
-	<h1>Physical Marketplaces</h1>
-	<p class="subtitle">Browse in-person market sessions in your community.</p>
+	<PageHeader title="Physical Marketplaces">
+		<p class="subtitle">Browse in-person market sessions in your community.</p>
+	</PageHeader>
 
 	{#if marketplaces.length === 0}
-		<p class="empty">No active marketplaces at this time.</p>
+		<EmptyState title="No active marketplaces at this time." />
 	{:else}
 		<div class="market-grid">
 			{#each marketplaces as market}
@@ -37,9 +39,7 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); }
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 	.subtitle { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
-	.empty { color: var(--color-text-muted); font-size: var(--text-sm); }
 
 	.market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-5); }
 

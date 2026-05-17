@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Breadcrumb, Button, Textarea, formatDate } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -16,20 +17,15 @@
 		const label = unit === 'per_hour' ? '/hr' : '/job';
 		return `${rate} F${label}`;
 	}
-	function fmtDate(iso: string): string {
-		return new Date(iso).toLocaleDateString([], { dateStyle: 'medium' });
-	}
 </script>
 
 <div class="page">
-	<div class="breadcrumb">
-		<a href="/services">← Services</a>
-	</div>
+	<Breadcrumb items={[{ label: '← Services', href: '/services' }]} />
 
 	{#if listing.status !== 'active'}
-		<div class="status-banner">
+		<Alert variant="warn">
 			This listing is no longer active ({listing.status}).
-		</div>
+		</Alert>
 	{/if}
 
 	<div class="main-grid">
@@ -56,21 +52,21 @@
 				To arrange work, contact the provider directly. Payment is settled through the Community Bank.
 			</p>
 
-			<a href={mailUrl} class="btn btn-primary contact-btn">Contact provider via Mail</a>
+			<Button href={mailUrl} variant="primary" class="contact-btn">Contact provider via Mail</Button>
 
 			{#if !isOwn && listing.status === 'active'}
 				<div class="report-section">
 					{#if form?.reported}
-						<p class="report-sent">Your report has been submitted. Thank you.</p>
+						<Alert variant="success">Your report has been submitted. Thank you.</Alert>
 					{:else if showReportForm}
 						<form method="POST" action="?/report" use:enhance class="report-form" onsubmit={() => (showReportForm = false)}>
 							{#if form?.reportError}
-								<p class="report-error">{form.reportError}</p>
+								<Alert variant="danger">{form.reportError}</Alert>
 							{/if}
-							<textarea name="reason" rows="3" placeholder="Describe the issue…" required></textarea>
+							<Textarea name="reason" rows={3} placeholder="Describe the issue…" required value="" />
 							<div class="report-actions">
 								<button type="button" class="btn-link" onclick={() => (showReportForm = false)}>Cancel</button>
-								<button type="submit" class="btn btn-sm btn-danger">Submit Report</button>
+								<Button type="submit" variant="danger" class="btn-sm">Submit Report</Button>
 							</div>
 						</form>
 					{:else}
@@ -104,18 +100,6 @@
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 860px; }
 
-	.breadcrumb a { color: var(--color-text-muted); font-size: var(--text-sm); text-decoration: none; }
-	.breadcrumb a:hover { text-decoration: underline; }
-
-	.status-banner {
-		padding: var(--space-3) var(--space-4);
-		background: #fef9c3;
-		border: 1px solid #fbbf24;
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		color: #78350f;
-	}
-
 	.main-grid { display: grid; grid-template-columns: 1fr 220px; gap: var(--space-8); align-items: start; }
 
 	.listing-detail { display: flex; flex-direction: column; gap: var(--space-4); }
@@ -139,37 +123,13 @@
 
 	.no-purchase-note { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); font-style: italic; }
 
-	.contact-btn { align-self: flex-start; }
+	:global(.contact-btn) { align-self: flex-start; }
 
 	.report-section { margin-top: var(--space-2); }
 	.report-form { display: flex; flex-direction: column; gap: var(--space-2); }
-	.report-form textarea {
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-family: inherit;
-		resize: vertical;
-	}
 	.report-actions { display: flex; align-items: center; gap: var(--space-3); justify-content: flex-end; }
-	.report-sent  { font-size: var(--text-sm); color: #065f46; }
-	.report-error { font-size: var(--text-xs); color: #dc2626; margin: 0; }
 
-	.btn {
-		padding: var(--space-2) var(--space-5);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-	}
-	.btn-primary { background: var(--color-accent); color: #fff; }
-	.btn-sm { padding: var(--space-1) var(--space-3); }
-	.btn-danger { background: #dc2626; color: #fff; }
-	.btn:hover { filter: brightness(0.92); }
+	:global(.btn-sm) { padding: var(--space-1) var(--space-3); }
 	.btn-link { background: none; border: none; padding: 0; font-size: var(--text-sm); color: var(--color-accent); cursor: pointer; text-decoration: underline; }
 	.btn-link--muted { color: var(--color-text-muted); font-size: var(--text-xs); }
 

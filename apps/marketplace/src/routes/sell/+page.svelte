@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { PageHeader } from '@bfs/ui';
 </script>
 
 <div class="page">
-	<h1>Post a Listing</h1>
-	<p class="subtitle">What would you like to post?</p>
+	<PageHeader title="Post a Listing">
+		<p class="subtitle">What would you like to post?</p>
+	</PageHeader>
 
 	<div class="choices">
 		<a href="/sell/classified" class="choice-card">
@@ -25,7 +27,6 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 640px; }
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 	.subtitle { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
 
 	.choices { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-top: var(--space-2); }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Badge from '@bfs/ui/src/Badge.svelte';
+	import { Badge, Card, PageHeader } from '@bfs/ui';
 	import Sections from '$lib/components/Sections.svelte';
 	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
 	import type { PageData } from './$types.js';
@@ -25,20 +25,19 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<div class="page-header__top">
-			<h1>{association.name}</h1>
-			<div class="page-header__badges">
+	<PageHeader title={association.name}>
+		<div class="header-meta">
+			<div class="badges">
 				<Badge label={typeLabel[association.type] ?? association.type} variant="neutral" />
 				<Badge label={association.status} variant={statusVariant(association.status)} />
 			</div>
+			<p class="handle">@{association.handle}</p>
 		</div>
-		<p class="handle">@{association.handle}</p>
-	</div>
+	</PageHeader>
 
 	<div class="sections">
 		<!-- Members -->
-		<section class="card">
+		<Card>
 			<h2>Members <span class="count">{members.length}</span></h2>
 			{#if members.length === 0}
 				<p class="empty">No current members.</p>
@@ -59,7 +58,7 @@
 					{/each}
 				</ul>
 			{/if}
-		</section>
+		</Card>
 
 		<Sections {sections} />
 
@@ -68,7 +67,7 @@
 		{/if}
 
 		<!-- Recent motions -->
-		<section class="card">
+		<Card>
 			<h2>Recent Motions</h2>
 			{#if motions.length === 0}
 				<p class="empty">No motions yet.</p>
@@ -85,7 +84,7 @@
 					{/each}
 				</ul>
 			{/if}
-		</section>
+		</Card>
 	</div>
 </div>
 
@@ -96,13 +95,14 @@
 		gap: var(--space-8);
 	}
 
-	.page-header__top {
+	.header-meta {
 		display: flex;
-		align-items: center;
-		gap: var(--space-3);
+		flex-direction: column;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
 	}
 
-	.page-header__badges {
+	.badges {
 		display: flex;
 		gap: var(--space-2);
 	}
@@ -111,7 +111,7 @@
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
-		margin-top: var(--space-1);
+		margin: 0;
 	}
 
 	.sections {
@@ -120,17 +120,10 @@
 		gap: var(--space-6);
 	}
 
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
-	.card h2 {
+	.sections h2 {
 		font-size: var(--text-base);
 		font-weight: var(--weight-semibold);
-		margin-bottom: var(--space-4);
+		margin: 0 0 var(--space-4) 0;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);

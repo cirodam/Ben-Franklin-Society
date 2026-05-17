@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { AccountFinder } from '@bfs/ui';
+	import { AccountFinder, Alert, Button, Card, Input, PageHeader, Select } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -37,26 +37,23 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<div>
-			<h1>Central Bank Operations</h1>
-			<p class="subtitle">
-				Manual issuance and destruction of franks. Only authorized CB employees may access this page.
-			</p>
-		</div>
-	</div>
+	<PageHeader title="Central Bank Operations">
+		<p class="subtitle">
+			Manual issuance and destruction of franks. Only authorized CB employees may access this page.
+		</p>
+	</PageHeader>
 
 	{#if form?.error}
-		<div class="error-banner">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 	{#if form?.success}
-		<div class="success-banner">
+		<Alert variant="success">
 			{form?.action === 'issue' ? 'Franks issued successfully!' : 'Franks destroyed successfully!'}
-		</div>
+		</Alert>
 	{/if}
 
 	<!-- Money Supply Dashboard -->
-	<div class="card dashboard">
+	<Card class="dashboard">
 		<h2>Money Supply</h2>
 		<div class="stats-grid">
 			<div class="stat-card stat-card--primary">
@@ -78,12 +75,12 @@
 				<div class="stat-value">{formatFranks(stats.total_demurrage)}</div>
 			</div>
 		</div>
-	</div>
+	</Card>
 
 	<!-- Operations Forms -->
 	<div class="operations-grid">
 		<!-- Issuance Form -->
-		<div class="card form-card">
+		<Card class="form-card">
 			<h2>Issue Franks</h2>
 			<p class="form-description">Create new franks and send them to an account (typically Treasury).</p>
 			
@@ -104,49 +101,41 @@
 					{/if}
 				</div>
 
-				<div class="form-field">
-					<label for="issue-amount">Amount (ƒ)*</label>
-					<input
-						type="number"
-						id="issue-amount"
-						name="amount"
-						required
-						min="0.01"
-						step="0.01"
-						placeholder="1000.00"
-					/>
-				</div>
+				<Input
+					name="amount"
+					type="number"
+					label="Amount (ƒ)"
+					required
+					min="0.01"
+					step="0.01"
+					placeholder="1000.00"
+				/>
 
-				<div class="form-field">
-					<label for="issue-type">Transaction Type*</label>
-					<select id="issue-type" name="type" required>
-						<option value="issuance">Issuance (normal)</option>
-						<option value="correction">Correction (accounting fix)</option>
-						<option value="adjustment">Adjustment (special case)</option>
-					</select>
-				</div>
+				<Select name="type" label="Transaction Type" required>
+					<option value="issuance">Issuance (normal)</option>
+					<option value="correction">Correction (accounting fix)</option>
+					<option value="adjustment">Adjustment (special case)</option>
+				</Select>
 
-				<div class="form-field">
-					<label for="issue-memo">Memo</label>
-					<input
-						type="text"
-						id="issue-memo"
-						name="memo"
-						placeholder="e.g., Birthday issuance - Alice Smith"
-					/>
-				</div>
+				<Input
+					name="memo"
+					type="text"
+					label="Memo"
+					placeholder="e.g., Birthday issuance - Alice Smith"
+				/>
 
-				<button type="submit" class="btn-primary btn-full">Issue Franks</button>
+				<Button type="submit" variant="primary" class="btn-full">Issue Franks</Button>
 			</form>
 
-			<button
+			<Button
 				type="button"
-				class="btn-ghost btn-full"
+				variant="ghost"
+				class="btn-full"
 				style="margin-top: var(--space-3);"
 				onclick={() => showIssuanceHistory = !showIssuanceHistory}
 			>
 				{showIssuanceHistory ? 'Hide' : 'Show'} Recent Issuances (30 days)
-			</button>
+			</Button>
 
 			{#if showIssuanceHistory && recentIssuances.length > 0}
 				<div class="history-list">
@@ -163,10 +152,10 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
+		</Card>
 
 		<!-- Destruction Form -->
-		<div class="card form-card">
+		<Card class="form-card">
 			<h2>Destroy Franks</h2>
 			<p class="form-description">Remove franks from circulation by sending them to the Central Bank.</p>
 			
@@ -187,40 +176,35 @@
 					{/if}
 				</div>
 
-				<div class="form-field">
-					<label for="destroy-amount">Amount (ƒ)*</label>
-					<input
-						type="number"
-						id="destroy-amount"
-						name="amount"
-						required
-						min="0.01"
-						step="0.01"
-						placeholder="1000.00"
-					/>
-				</div>
+				<Input
+					name="amount"
+					type="number"
+					label="Amount (ƒ)"
+					required
+					min="0.01"
+					step="0.01"
+					placeholder="1000.00"
+				/>
 
-				<div class="form-field">
-					<label for="destroy-memo">Memo</label>
-					<input
-						type="text"
-						id="destroy-memo"
-						name="memo"
-						placeholder="e.g., Demurrage collection for May 2026"
-					/>
-				</div>
+				<Input
+					name="memo"
+					type="text"
+					label="Memo"
+					placeholder="e.g., Demurrage collection for May 2026"
+				/>
 
-				<button type="submit" class="btn-danger btn-full">Destroy Franks</button>
+				<Button type="submit" variant="danger" class="btn-full">Destroy Franks</Button>
 			</form>
 
-			<button
+			<Button
 				type="button"
-				class="btn-ghost btn-full"
+				variant="ghost"
+				class="btn-full"
 				style="margin-top: var(--space-3);"
 				onclick={() => showDestructionHistory = !showDestructionHistory}
 			>
 				{showDestructionHistory ? 'Hide' : 'Show'} Recent Destructions (30 days)
-			</button>
+			</Button>
 
 			{#if showDestructionHistory && recentDestructions.length > 0}
 				<div class="history-list">
@@ -237,11 +221,11 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
+		</Card>
 	</div>
 
 	<!-- Quick Links -->
-	<div class="card quick-links">
+	<Card class="quick-links">
 		<h2>Quick Links</h2>
 		<p class="form-description">Common operations and related admin pages.</p>
 		<div class="links-grid">
@@ -258,15 +242,10 @@
 				<div class="link-desc">View full ledger and account statements</div>
 			</a>
 		</div>
-	</div>
+	</Card>
 </div>
 
 <style>
-	h1 {
-		margin: 0;
-		font-size: var(--text-xl);
-		font-weight: var(--weight-bold);
-	}
 	h2 {
 		margin: 0 0 var(--space-3);
 		font-size: var(--text-lg);
@@ -281,43 +260,14 @@
 		margin: 0 auto;
 	}
 	
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: start;
-		gap: var(--space-4);
-	}
-	
 	.subtitle {
 		margin: var(--space-1) 0 0;
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 	}
 
-	.error-banner {
-		background: var(--color-danger-subtle);
-		color: var(--color-danger);
-		border-radius: var(--radius);
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.success-banner {
-		background: var(--color-success-subtle);
-		color: var(--color-success);
-		border-radius: var(--radius);
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+	:global(.dashboard) {
 		padding: var(--space-5);
-	}
-	
-	.dashboard {
 		background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%);
 	}
 
@@ -433,64 +383,8 @@
 		border-radius: var(--radius);
 	}
 
-	/* Buttons */
-	.btn-primary,
-	.btn-danger,
-	.btn-ghost,
-	.btn-sm {
-		font-family: var(--font-sans);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-		border: 1px solid transparent;
-		cursor: pointer;
-		transition: background 120ms, color 120ms, border-color 120ms;
-		text-align: center;
-	}
-	
-	.btn-primary {
-		background: var(--color-accent);
-		color: #fff;
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.btn-primary:hover {
-		background: var(--color-accent-hover);
-	}
-	
-	.btn-danger {
-		background: var(--color-danger);
-		color: #fff;
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-sm);
-	}
-	
-	.btn-danger:hover {
-		opacity: 0.85;
-	}
-	
-	.btn-ghost {
-		background: transparent;
-		color: var(--color-text-muted);
-		border-color: var(--color-border);
-		padding: var(--space-2) var(--space-3);
-		font-size: var(--text-sm);
-	}
-	
-	.btn-ghost:hover {
-		background: var(--color-surface);
-		color: var(--color-text);
-	}
-	
-	.btn-sm {
-		font-size: var(--text-xs);
-		padding: 3px var(--space-2);
-		background: var(--color-surface);
-		border-color: var(--color-border);
-		color: var(--color-text);
-	}
-	
-	.btn-full {
+	/* Button modifiers */
+	:global(.btn-full) {
 		width: 100%;
 	}
 

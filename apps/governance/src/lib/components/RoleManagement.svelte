@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Card } from '@bfs/ui';
 
 	type Role = {
 		uuid: string;
@@ -68,7 +69,7 @@
 	});
 </script>
 
-<section class="card">
+<Card>
 	<h2>Roles <span class="count">{roles.length}</span></h2>
 	{#if roles.length === 0}
 		<p class="empty">No roles defined.</p>
@@ -152,16 +153,9 @@
 			</form>
 		</details>
 	{/if}
-</section>
+</Card>
 
 <style>
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
 	.card h2 {
 		font-size: var(--text-base);
 		font-weight: var(--weight-semibold);

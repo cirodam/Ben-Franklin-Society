@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Button, Card, EmptyState, Input, Select } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -20,10 +21,10 @@
 	</div>
 
 	{#if form?.error}
-		<div class="error-banner">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 	{#if form?.success}
-		<div class="success-banner">Action completed successfully.</div>
+		<Alert variant="success">Action completed successfully.</Alert>
 	{/if}
 
 	<!-- Balance + freeze toggle -->
@@ -39,46 +40,56 @@
 		<div class="freeze-actions">
 			{#if account.status === 'active'}
 				<form method="POST" action="?/freeze" use:enhance>
-					<button type="submit" class="btn btn--danger">Freeze Account</button>
+					<Button type="submit" variant="danger">Freeze Account</Button>
 				</form>
 			{:else}
 				<form method="POST" action="?/unfreeze" use:enhance>
-					<button type="submit" class="btn btn--primary">Unfreeze Account</button>
+					<Button type="submit" variant="primary">Unfreeze Account</Button>
 				</form>
 			{/if}
 		</div>
 	</div>
 
 	<!-- Manual correction -->
-	<div class="card form-card">
+	<Card class="form-card">
 		<div class="card__label">Manual Correction</div>
 		<form method="POST" action="?/correct" use:enhance class="correction-form">
 			<div class="form-row">
-				<label class="field">
-					<span>Direction</span>
-					<select class="input" name="direction" required>
-						<option value="">Select…</option>
-						<option value="credit">Credit (add funds)</option>
-						<option value="debit">Debit (remove funds)</option>
-					</select>
-				</label>
+				<Select
+					name="direction"
+					label="Direction"
+					required
+				>
+					<option value="">Select…</option>
+					<option value="credit">Credit (add funds)</option>
+					<option value="debit">Debit (remove funds)</option>
+				</Select>
 
-				<label class="field">
-					<span>Amount (ƒ)</span>
-					<input class="input" name="amount" type="number" min="1" step="1" required />
-				</label>
+				<Input
+					name="amount"
+					type="number"
+					label="Amount (ƒ)"
+					min="1"
+					step="1"
+					required
+				/>
 
-				<label class="field field--wide">
-					<span>Memo (required, min 10 chars — describe why)</span>
-					<input class="input" name="memo" type="text" minlength="10" maxlength="500" required />
-				</label>
+				<Input
+					name="memo"
+					type="text"
+					label="Memo (required, min 10 chars — describe why)"
+					minlength="10"
+					maxlength="500"
+					required
+					class="field-wide"
+				/>
 			</div>
-			<button type="submit" class="btn btn--warn">Post Correction</button>
+			<button type="submit" class="btn btn-warn">Post Correction</button>
 		</form>
-	</div>
+	</Card>
 
 	<!-- Transaction history -->
-	<div class="card table-card">
+	<Card class="table-card">
 		<div class="card__label">
 			Transaction History — page {page + 1}
 			{#if page > 0}
@@ -89,7 +100,7 @@
 			{/if}
 		</div>
 		{#if transactions.length === 0}
-			<p class="empty">No transactions yet.</p>
+			<EmptyState title="No transactions yet." />
 		{:else}
 			<table class="table">
 				<thead>
@@ -122,11 +133,11 @@
 				</tbody>
 			</table>
 		{/if}
-	</div>
+	</Card>
 
 	<!-- Audit log -->
 	{#if auditLog.length > 0}
-		<div class="card table-card">
+		<Card class="table-card">
 			<div class="card__label">Admin Audit Log</div>
 			<table class="table">
 				<thead>
@@ -146,7 +157,7 @@
 					{/each}
 				</tbody>
 			</table>
-		</div>
+		</Card>
 	{/if}
 </div>
 
@@ -161,9 +172,6 @@
 	.back-link:hover { color: var(--color-accent); }
 	.principal { font-size: var(--text-sm); color: var(--color-text-muted); }
 
-	.error-banner { background: var(--color-danger-subtle); color: var(--color-danger); border-radius: var(--radius); padding: var(--space-3) var(--space-4); font-size: var(--text-sm); }
-	.success-banner { background: var(--color-success-subtle); color: var(--color-success); border-radius: var(--radius); padding: var(--space-3) var(--space-4); font-size: var(--text-sm); }
-
 	.info-row { display: flex; gap: var(--space-4); align-items: flex-end; flex-wrap: wrap; }
 	.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); min-width: 140px; }
 	.stat-card__label { font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: var(--space-1); }
@@ -171,27 +179,17 @@
 	.stat-card__value.negative { color: var(--color-danger); }
 	.freeze-actions { margin-left: auto; }
 
-	.btn { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; font-weight: var(--weight-medium); text-decoration: none; }
-	.btn--primary { background: var(--color-accent); color: #fff; }
-	.btn--primary:hover { opacity: 0.9; }
-	.btn--danger { background: var(--color-danger); color: #fff; }
-	.btn--danger:hover { opacity: 0.9; }
-	.btn--warn { background: #b45309; color: #fff; }
-	.btn--warn:hover { opacity: 0.9; }
-
-	.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+	:global(.form-card) { padding: var(--space-5); }
 	.card__label { font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); display: flex; gap: var(--space-4); align-items: center; }
-
-	.form-card { padding: var(--space-5); }
 	.correction-form { display: flex; flex-direction: column; gap: var(--space-4); }
 	.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
-	.field { display: flex; flex-direction: column; gap: var(--space-1); }
-	.field--wide { grid-column: 1 / -1; }
-	.field span { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-muted); }
-	.input { font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); width: 100%; box-sizing: border-box; }
-	.input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+	:global(.field-wide) { grid-column: 1 / -1; }
 
-	.table-card { overflow-x: auto; }
+	.btn { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; font-weight: var(--weight-medium); text-decoration: none; }
+	.btn-warn { background: #b45309; color: #fff; }
+	.btn-warn:hover { opacity: 0.9; }
+
+	:global(.table-card) { overflow-x: auto; }
 	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 	.table th { text-align: left; padding: var(--space-3) var(--space-4); font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
 	.table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); vertical-align: top; }
@@ -203,6 +201,4 @@
 
 	.page-link { font-size: var(--text-xs); color: var(--color-accent); text-decoration: none; }
 	.page-link:hover { text-decoration: underline; }
-
-	.empty { padding: var(--space-6); text-align: center; color: var(--color-text-muted); margin: 0; }
 </style>

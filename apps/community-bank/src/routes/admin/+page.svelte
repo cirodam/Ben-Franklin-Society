@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PageHeader, Card, Button, Input, EmptyState } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -8,28 +9,27 @@
 </script>
 
 <div class="page">
-	<h1>Accounts</h1>
+	<PageHeader title="Accounts" />
 
 	<form method="GET" action="/admin" class="search-form">
-		<input
-			class="input"
+		<Input
 			name="q"
 			type="text"
 			placeholder="Search by handle or account name…"
 			value={q}
-			autofocus
+			class="search-input"
 		/>
-		<button type="submit" class="btn btn--primary">Search</button>
-		{#if q}<a href="/admin" class="btn btn--ghost">Clear</a>{/if}
+		<Button type="submit" variant="primary">Search</Button>
+		{#if q}<Button href="/admin" variant="ghost">Clear</Button>{/if}
 	</form>
 
-	<div class="card table-card">
+	<Card class="table-card">
 		<div class="card__label">
 			{#if q}Results for "{q}"{:else}All Accounts{/if}
 			— {accounts.length} shown
 		</div>
 		{#if accounts.length === 0}
-			<p class="empty">No accounts found.</p>
+			<EmptyState title="No accounts found." />
 		{:else}
 			<table class="table">
 				<thead>
@@ -62,26 +62,14 @@
 				</tbody>
 			</table>
 		{/if}
-	</div>
+	</Card>
 </div>
 
 <style>
-	h1 { margin: 0 0 var(--space-6); font-size: var(--text-xl); font-weight: var(--weight-bold); }
-
 	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
-	.search-form { display: flex; gap: var(--space-3); max-width: 520px; }
-	.input { flex: 1; font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-bg); color: var(--color-text); }
-	.input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
-
-	.btn { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; font-weight: var(--weight-medium); text-decoration: none; }
-	.btn--primary { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
-	.btn--primary:hover { opacity: 0.9; }
-	.btn--ghost { background: transparent; color: var(--color-text-muted); border-color: var(--color-border); }
-	.btn--ghost:hover { background: var(--color-surface); }
-
-	.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
-	.card__label { font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); }
+	.search-form { display: flex; gap: var(--space-3); max-width: 520px; align-items: flex-start; }
+	:global(.search-input) { flex: 1; }
 
 	.table-card { overflow-x: auto; }
 	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
@@ -100,6 +88,4 @@
 
 	.link { font-size: var(--text-sm); color: var(--color-accent); text-decoration: none; }
 	.link:hover { text-decoration: underline; }
-
-	.empty { padding: var(--space-6); text-align: center; color: var(--color-text-muted); margin: 0; }
 </style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Card } from '@bfs/ui';
+
 	interface Props {
 		budgetTotal: number;
 		roleCount: number;
@@ -15,7 +17,7 @@
 	const fillRate = $derived(roleCount > 0 ? (filledRoles / roleCount) * 100 : 0);
 </script>
 
-<section class="card budget">
+<Card class="budget">
 	<div class="card-header">
 		<h2>
 			<span class="icon">💰</span>
@@ -58,7 +60,7 @@
 			</div>
 		{/if}
 	</div>
-</section>
+</Card>
 
 <style>
 	.budget {

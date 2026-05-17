@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Card } from '@bfs/ui';
 
 	interface RoleTemplate {
 		uuid: string;
@@ -59,7 +60,7 @@
 	}
 </script>
 
-<section class="card template-management">
+<Card class="template-management">
 	<div class="card-header">
 		<h2>Role Templates</h2>
 		<button class="btn btn-sm" onclick={toggleCreateForm}>
@@ -212,7 +213,7 @@
 			</div>
 		</div>
 	{/if}
-</section>
+</Card>
 
 <style>
 	.template-management {

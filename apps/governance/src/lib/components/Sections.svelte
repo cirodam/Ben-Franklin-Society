@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Card } from '@bfs/ui';
+
 	type Section = {
 		uuid: string;
 		name: string;
@@ -25,7 +27,7 @@
 </script>
 
 {#if sections.length > 0}
-	<section class="card">
+	<Card>
 		<h2>Sections <span class="count">{sections.length}</span></h2>
 		<div class="sections-list">
 			{#each rootSections as section}
@@ -57,15 +59,7 @@
 				</div>
 			{/each}
 		</div>
-	</section>
-{/if}
-
-<style>
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
+	</Card>
 	}
 
 	.card h2 {

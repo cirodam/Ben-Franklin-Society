@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PageHeader, Card, EmptyState, Button } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -26,9 +27,7 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Transaction History</h1>
-	</div>
+	<PageHeader title="Transaction History" />
 
 	<!-- Account picker -->
 	{#if accounts.length > 1}
@@ -59,11 +58,11 @@
 	</div>
 
 	{#if !account}
-		<div class="card"><p class="empty">No accounts found.</p></div>
+		<Card><EmptyState title="No accounts found." /></Card>
 	{:else if transactions.length === 0}
-		<div class="card"><p class="empty">No transactions yet.</p></div>
+		<Card><EmptyState title="No transactions yet." /></Card>
 	{:else}
-		<div class="card table-wrap">
+		<Card class="table-wrap">
 			<table class="table">
 				<thead>
 					<tr>
@@ -90,14 +89,14 @@
 					{/each}
 				</tbody>
 			</table>
-		</div>
+		</Card>
 
 		<div class="pagination">
 			{#if offset > 0}
-				<a href={pageUrl(Math.max(0, offset - PAGE_SIZE))} class="btn btn--sm">← Newer</a>
+				<Button href={pageUrl(Math.max(0, offset - PAGE_SIZE))} variant="secondary" size="sm">← Newer</Button>
 			{/if}
 			{#if hasMore}
-				<a href={pageUrl(offset + PAGE_SIZE)} class="btn btn--sm">Older →</a>
+				<Button href={pageUrl(offset + PAGE_SIZE)} variant="secondary" size="sm">Older →</Button>
 			{/if}
 		</div>
 	{/if}
@@ -105,7 +104,6 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-6); }
-	.page-header h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 
 	.filters { display: flex; flex-direction: column; gap: var(--space-3); }
 	.filter-group { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
@@ -122,8 +120,7 @@
 	}
 	.filter-chip--active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
-	.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
-	.table-wrap { overflow-x: auto; }
+	:global(.table-wrap) { overflow-x: auto; }
 
 	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 	.table th { text-align: left; padding: var(--space-3) var(--space-4); font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
@@ -143,16 +140,5 @@
 		color: var(--color-text-muted);
 	}
 
-	.empty { color: var(--color-text-muted); padding: var(--space-6); text-align: center; margin: 0; }
-
 	.pagination { display: flex; gap: var(--space-3); }
-
-	.btn {
-		display: inline-flex; align-items: center;
-		font-size: var(--text-sm); padding: var(--space-2) var(--space-4);
-		border: 1px solid var(--color-border); border-radius: var(--radius);
-		background: var(--color-surface); text-decoration: none; color: var(--color-text);
-	}
-	.btn:hover { background: var(--color-bg-subtle); }
-	.btn--sm { font-size: var(--text-xs); padding: var(--space-1) var(--space-3); }
 </style>

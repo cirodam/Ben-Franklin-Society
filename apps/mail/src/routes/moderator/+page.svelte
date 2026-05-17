@@ -1,80 +1,43 @@
 <script lang="ts">
+	import { EmptyState, List, ListItem, PageHeader, formatDateTime } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 	const { reports } = $derived(data);
-
-	function fmtDate(iso: string): string {
-		return new Date(iso).toLocaleString([], {
-			month: 'short', day: 'numeric',
-			hour: '2-digit', minute: '2-digit',
-		});
-	}
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Pending Reports</h1>
-		<span class="count">{reports.length} pending</span>
-	</div>
+	<PageHeader title="Pending Reports" description="{reports.length} pending" />
 
 	{#if reports.length === 0}
-		<p class="empty">No pending reports. All clear.</p>
+		<EmptyState title="No pending reports. All clear." />
 	{:else}
-		<div class="report-list">
+		<List>
 			{#each reports as report}
-				<a href="/moderator/reports/{report.uuid}" class="report-row">
+				<ListItem href="/moderator/reports/{report.uuid}">
+					<div class="report-row-content">
 					<div class="report-row__subject">{report.message_subject}</div>
 					<div class="report-row__from">from @{report.message_from_handle}</div>
 					<div class="report-row__meta">
-						<span class="report-row__reporter">A member</span>
-						<span class="report-row__date">{fmtDate(report.created_at)}</span>
+							<span class="report-row__reporter">A member</span>
+							<span class="report-row__date">{formatDateTime(report.created_at)}</span>
+						</div>
 					</div>
-				</a>
+				</ListItem>
 			{/each}
-		</div>
+		</List>
 	{/if}
 </div>
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-6); }
 
-	.page-header {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-4);
-	}
-	.page-header h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
-
-	.count {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.empty { color: var(--color-text-muted); font-size: var(--text-sm); }
-
-	.report-list {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-	}
-
-	.report-row {
+	.report-row-content {
 		display: grid;
 		grid-template-columns: 1fr auto auto;
 		align-items: center;
 		gap: var(--space-6);
-		padding: var(--space-4) var(--space-5);
-		border-bottom: 1px solid var(--color-border-faint);
-		text-decoration: none;
-		color: var(--color-text);
-		background: var(--color-surface);
-		font-size: var(--text-sm);
 	}
-	.report-row:last-child { border-bottom: none; }
-	.report-row:hover { background: #f0f9f0; }
 
 	.report-row__subject {
 		font-weight: var(--weight-medium);

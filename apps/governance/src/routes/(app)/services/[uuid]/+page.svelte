@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Card, EmptyState } from '@bfs/ui';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import Sections from '$lib/components/Sections.svelte';
 	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
@@ -24,7 +25,7 @@
 		<div class="page-header__top">
 			<div class="title-row">
 				<h1>{association.name}</h1>
-				<a href="/services/{association.uuid}/edit" class="btn btn--secondary">✏️ Edit</a>
+				<Button variant="secondary" size="sm" href="/services/{association.uuid}/edit">✏️ Edit</Button>
 			</div>
 			<div class="page-header__badges">
 				<Badge label="Service" variant="neutral" />
@@ -77,10 +78,13 @@
 
 	<div class="tab-content">
 		{#if activeTab === 'members'}
-			<section class="card">
+			<Card>
 				<h2>👥 Members</h2>
 				{#if members.length === 0}
-					<p class="empty">No current members.</p>
+					<EmptyState
+						icon="👥"
+						title="No current members"
+					/>
 				{:else}
 					<ul class="member-list">
 						{#each members as m}
@@ -98,7 +102,7 @@
 						{/each}
 					</ul>
 				{/if}
-			</section>
+			</Card>
 		{:else if activeTab === 'roles'}
 			<div class="roles-org-container">
 				{#if canAssign}
@@ -108,10 +112,13 @@
 				<Sections {sections} />
 			</div>
 		{:else if activeTab === 'activity'}
-			<section class="card">
+			<Card>
 				<h2>Recent Activity</h2>
 				{#if motions.length === 0}
-					<p class="empty">No motions yet.</p>
+					<EmptyState
+						icon="📋"
+						title="No motions yet"
+					/>
 				{:else}
 					<ul class="motion-list">
 						{#each motions as m}
@@ -125,7 +132,7 @@
 						{/each}
 					</ul>
 				{/if}
-			</section>
+			</Card>
 		{/if}
 	</div>
 </div>
@@ -153,29 +160,6 @@
 
 	.title-row h1 {
 		margin: 0;
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		white-space: nowrap;
-	}
-
-	.btn--secondary {
-		background: transparent;
-		border: 1px solid var(--color-border);
-		color: var(--color-text);
-	}
-
-	.btn:hover {
-		filter: brightness(0.92);
 	}
 
 	.page-header__badges {
@@ -265,44 +249,10 @@
 		gap: var(--space-6);
 	}
 
-	.section-block {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
-
-	.section-block h2 {
-		font-size: var(--text-xl);
-		font-weight: var(--weight-semibold);
-		margin: 0;
-	}
-
-	.section-description {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		margin: 0;
-		line-height: 1.5;
-	}
-
-	.card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
-	.card h2 {
+	h2 {
 		font-size: var(--text-xl);
 		font-weight: var(--weight-semibold);
 		margin: 0 0 var(--space-5) 0;
-	}
-
-	.empty {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		font-style: italic;
-		text-align: center;
-		padding: var(--space-8);
 	}
 
 	.member-list {

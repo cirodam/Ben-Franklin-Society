@@ -2,6 +2,7 @@
 	import type { PageData } from './$types.js';
 	import { goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
+	import { Button, EmptyState, Modal, Input, Textarea, Select } from '@bfs/ui';
 
 	let { data, form }: { data: PageData; form: any } = $props();
 
@@ -141,13 +142,16 @@
 					</div>
 				</section>
 			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No questions currently in deliberation or voting</p>
+				<EmptyState
+					icon="📊"
+					title="No questions currently in deliberation or voting"
+				>
 					{#if canCreateMotion}
-						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+						<Button onclick={openCreateModal}>
 							+ Put a Question to the Community
-						</button>
+						</Button>
 					{/if}
+				</EmptyState>
 				</div>
 			{/if}
 		{:else if activeTab === 'pending'}
@@ -167,14 +171,16 @@
 					</div>
 				</section>
 			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No pending questions</p>
+				<EmptyState
+					icon="📋"
+					title="No pending questions"
+				>
 					{#if canCreateMotion}
-						<button type="button" class="btn btn--primary" onclick={openCreateModal}>
+						<Button onclick={openCreateModal}>
 							+ Put a Question to the Community
-						</button>
+						</Button>
 					{/if}
-				</div>
+				</EmptyState>
 			{/if}
 		{:else if activeTab === 'decisions'}
 			{#if recentDecisions.length > 0}
@@ -196,56 +202,57 @@
 					<p class="archive-link"><a href="/motions?body={association.uuid}">View full archive →</a></p>
 				</section>
 			{:else}
-				<div class="empty-state">
-					<p class="empty-state__message">No decisions yet</p>
-				</div>
+				<EmptyState
+					icon="✅"
+					title="No decisions yet"
+				/>
 			{/if}
 		{/if}
 	</div>
 </div>
 
-{#if showModal}
-	<div class="modal-overlay" onclick={closeModal}>
-		<div class="modal" onclick={(e) => e.stopPropagation()}>
-			<div class="modal__header">
-				<h2>Put a Question to the Community</h2>
-				<button type="button" class="modal__close" onclick={closeModal}>×</button>
-			</div>
-			<form method="POST" action="?/create" use:enhance>
-				<div class="form-group">
-					<label for="title">Question Title</label>
-					<input type="text" id="title" name="title" required />
-				</div>
-				<div class="form-group">
-					<label for="body">Motion Text</label>
-					<textarea id="body" name="body" rows="8" required></textarea>
-					<small>What should the community decide?</small>
-				</div>
-				<div class="form-group">
-					<label for="reasoning">Reasoning (optional)</label>
-					<textarea id="reasoning" name="reasoning" rows="4"></textarea>
-					<small>Why should this be considered?</small>
-				</div>
-				{#if deliberationRules.length > 0}
-					<div class="form-group">
-						<label for="deliberation_rule_uuid">Deliberation Period (optional)</label>
-						<select id="deliberation_rule_uuid" name="deliberation_rule_uuid">
-							<option value="">— no deliberation period —</option>
-							{#each deliberationRules as rule}
-								<option value={rule.uuid}>{rule.name}</option>
-							{/each}
-						</select>
-						<small>Minimum time for discussion before voting can begin</small>
-					</div>
-				{/if}
-				<div class="modal__actions">
-					<button type="button" class="btn btn--secondary" onclick={closeModal}>Cancel</button>
-					<button type="submit" class="btn btn--primary">Submit Question</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
+<Modal show={showModal} title="Put a Question to the Community">
+	<form method="POST" action="?/create" use:enhance>
+		<Input
+			id="title"
+			name="title"
+			label="Question Title"
+			required
+		/>
+		<Textarea
+			id="body"
+			name="body"
+			label="Motion Text"
+			rows={8}
+			hint="What should the community decide?"
+			required
+		/>
+		<Textarea
+			id="reasoning"
+			name="reasoning"
+			label="Reasoning (optional)"
+			rows={4}
+			hint="Why should this be considered?"
+		/>
+		{#if deliberationRules.length > 0}
+			<Select
+				id="deliberation_rule_uuid"
+				name="deliberation_rule_uuid"
+				label="Deliberation Period (optional)"
+				hint="Minimum time for discussion before voting can begin"
+			>
+				<option value="">— no deliberation period —</option>
+				{#each deliberationRules as rule}
+					<option value={rule.uuid}>{rule.name}</option>
+				{/each}
+			</Select>
+		{/if}
+		{#snippet actions()}
+			<Button variant="secondary" onclick={closeModal}>Cancel</Button>
+			<Button type="submit">Submit Question</Button>
+		{/snippet}
+	</form>
+</Modal>
 
 <style>
 	.page {
@@ -451,21 +458,6 @@
 		min-height: 400px;
 	}
 
-	.empty-state {
-		padding: var(--space-12) var(--space-6);
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-4);
-	}
-
-	.empty-state__message {
-		font-size: var(--text-lg);
-		color: var(--color-text-muted);
-		margin: 0;
-	}
-
 	.archive-link {
 		margin-top: var(--space-4);
 		text-align: center;
@@ -518,126 +510,6 @@
 	.list-item__meta {
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
-	}
-
-	.btn {
-		padding: var(--space-3) var(--space-5);
-		font-size: var(--text-base);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-		border: none;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: white;
-	}
-
-	.btn--primary:hover {
-		background: var(--color-accent-hover);
-	}
-
-	.btn--secondary {
-		background: var(--color-surface);
-		color: var(--color-text);
-		border: 1px solid var(--color-border);
-	}
-
-	.btn--secondary:hover {
-		background: var(--color-accent-subtle);
-	}
-
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-		padding: var(--space-4);
-	}
-
-	.modal {
-		background: var(--color-background);
-		border-radius: var(--radius-lg);
-		max-width: 600px;
-		width: 100%;
-		max-height: 90vh;
-		overflow-y: auto;
-		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-	}
-
-	.modal__header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--space-5);
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	.modal__header h2 {
-		margin: 0;
-		font-size: var(--text-xl);
-	}
-
-	.modal__close {
-		background: none;
-		border: none;
-		font-size: var(--text-2xl);
-		cursor: pointer;
-		color: var(--color-text-muted);
-		padding: 0;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.modal__close:hover {
-		color: var(--color-text);
-	}
-
-	form {
-		padding: var(--space-5);
-	}
-
-	.form-group {
-		margin-bottom: var(--space-4);
-	}
-
-	.form-group label {
-		display: block;
-		font-weight: var(--weight-medium);
-		margin-bottom: var(--space-2);
-	}
-
-	.form-group input,
-	.form-group textarea,
-	.form-group select {
-		width: 100%;
-		padding: var(--space-2);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		font-family: inherit;
-		font-size: var(--text-base);
-	}
-
-	.form-group small {
-		display: block;
-		margin-top: var(--space-1);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.modal__actions {
-		display: flex;
-		gap: var(--space-3);
-		justify-content: flex-end;
-		margin-top: var(--space-5);
 	}
 
 	/* Responsive design */

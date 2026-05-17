@@ -1,43 +1,46 @@
 <script lang="ts">
+	import { Badge, Button, EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
 	const { contracts, actingAs } = $derived(data);
 
-	const statusColors: Record<string, string> = {
-		draft: 'var(--color-text-muted)',
-		active: 'var(--color-primary)',
-		completed: 'var(--color-success)',
-		disputed: 'var(--color-warning)',
-		terminated: 'var(--color-danger)',
-	};
+	const statusVariant = (s: string): 'success' | 'danger' | 'warn' | 'neutral' =>
+		s === 'completed' ? 'success'
+		: s === 'active' ? 'neutral'
+		: s === 'terminated' || s === 'disputed' ? 'danger'
+		: 'neutral';
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<h1>Contracts</h1>
+	<PageHeader title="Contracts">
 		{#if actingAs}
-			<a href="/contracts/new" class="btn btn--primary">New Contract</a>
+			{#snippet actions()}
+				<Button href="/contracts/new">New Contract</Button>
+			{/snippet}
 		{/if}
-	</div>
+	</PageHeader>
 
 	{#if contracts.length === 0}
-		<div class="empty-state">
-			<p>No contracts yet.</p>
+		<EmptyState 
+			icon="📝"
+			title="No contracts yet"
+			description={actingAs ? "Create the first contract to get started." : "No contracts available."}
+		>
 			{#if actingAs}
-				<p><a href="/contracts/new">Create the first contract</a></p>
+				{#snippet actions()}
+					<Button href="/contracts/new">Create Contract</Button>
+				{/snippet}
 			{/if}
-		</div>
+		</EmptyState>
 	{:else}
-		<div class="contracts-list">
+		<List>
 			{#each contracts as contract}
-				<a href="/contracts/{contract.uuid}" class="contract-card">
+				<ListItem href="/contracts/{contract.uuid}">
 					<div class="contract-header">
 						<h3 class="contract-title">{contract.title}</h3>
-						<span class="status-badge" style="color: {statusColors[contract.status] ?? 'var(--color-text)'}">
-							{contract.status}
-						</span>
+						<Badge label={contract.status} variant={statusVariant(contract.status)} />
 					</div>
 					<div class="contract-meta">
 						<div class="parties">
@@ -54,9 +57,9 @@
 							{/if}
 						</div>
 					</div>
-				</a>
+				</ListItem>
 			{/each}
-		</div>
+		</List>
 	{/if}
 </div>
 
@@ -64,69 +67,9 @@
 	.page {
 		max-width: 1000px;
 		margin: 0 auto;
-		padding: var(--space-6);
-	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--space-6);
-	}
-
-	.page-header h1 {
-		margin: 0;
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border: none;
-		border-radius: var(--radius);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		text-decoration: none;
-		display: inline-block;
-	}
-
-	.btn--primary {
-		background: var(--color-primary);
-		color: white;
-	}
-
-	.btn--primary:hover {
-		background: var(--color-primary-dark);
-	}
-
-	.empty-state {
-		text-align: center;
-		padding: var(--space-8);
-		color: var(--color-text-muted);
-	}
-
-	.empty-state p {
-		margin: var(--space-2) 0;
-	}
-
-	.contracts-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
-	}
-
-	.contract-card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		text-decoration: none;
-		color: inherit;
-		transition: all 0.2s;
-	}
-
-	.contract-card:hover {
-		border-color: var(--color-primary);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		gap: var(--space-6);
 	}
 
 	.contract-header {
@@ -141,17 +84,6 @@
 		margin: 0;
 		font-size: var(--text-lg);
 		font-weight: var(--weight-semibold);
-	}
-
-	.status-badge {
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		padding: var(--space-1) var(--space-2);
-		background: var(--color-surface-raised);
-		border-radius: var(--radius-sm);
-		white-space: nowrap;
 	}
 
 	.contract-meta {

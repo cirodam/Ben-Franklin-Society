@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import DataTable from '@bfs/ui/src/DataTable.svelte';
+	import { Button, Input, PageHeader, Select } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -44,52 +45,46 @@
 </script>
 
 <div class="page">
-	<div class="page-header">
-		<div>
-			<h1>Motion Archive</h1>
-			<p class="page-subtitle">Search and browse all motions across all deliberative bodies</p>
-		</div>
-	</div>
+	<PageHeader 
+		title="Motion Archive" 
+		description="Search and browse all motions across all deliberative bodies"
+	/>
 
 	<section class="filters-card">
 		<div class="filters">
 			<div class="filter-field">
-				<label for="search">Search</label>
-				<input
-					id="search"
+				<Input
+					label="Search"
 					type="text"
 					bind:value={searchInput}
 					placeholder="Search titles and text..."
-					class="input"
 					onkeydown={(e) => e.key === 'Enter' && applyFilters()}
 				/>
 			</div>
 
 			<div class="filter-field">
-				<label for="status">Status</label>
-				<select id="status" bind:value={statusFilter} class="select" onchange={applyFilters}>
+				<Select label="Status" bind:value={statusFilter} onchange={applyFilters}>
 					<option value="">All statuses</option>
 					{#each statuses as status}
 						<option value={status}>{status}</option>
 					{/each}
-				</select>
+				</Select>
 			</div>
 
 			<div class="filter-field">
-				<label for="body">Body</label>
-				<select id="body" bind:value={bodyFilter} class="select" onchange={applyFilters}>
+				<Select label="Body" bind:value={bodyFilter} onchange={applyFilters}>
 					<option value="">All bodies</option>
 					{#each data.associations as assoc}
 						<option value={assoc.uuid}>{assoc.name}</option>
 					{/each}
-				</select>
+				</Select>
 			</div>
 		</div>
 
 		<div class="filter-actions">
-			<button type="button" class="btn btn--primary" onclick={applyFilters}>Apply Filters</button>
+			<Button onclick={applyFilters}>Apply Filters</Button>
 			{#if searchInput || statusFilter || bodyFilter}
-				<button type="button" class="btn btn--secondary" onclick={clearFilters}>Clear Filters</button>
+				<Button variant="secondary" onclick={clearFilters}>Clear Filters</Button>
 			{/if}
 		</div>
 
@@ -123,21 +118,7 @@
 		gap: var(--space-6);
 	}
 
-	.page-header {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
 
-	.page-header h1 {
-		margin: 0;
-	}
-
-	.page-subtitle {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		margin: 0;
-	}
 
 	:global(.title-cell) {
 		max-width: 400px;

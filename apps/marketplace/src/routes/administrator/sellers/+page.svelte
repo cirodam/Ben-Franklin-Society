@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Alert, Badge, Button, EmptyState, Input, PageHeader, Textarea } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -19,22 +20,22 @@
 </script>
 
 <div class="page">
-	<h1>Sellers</h1>
+	<PageHeader title="Sellers" />
 
 	<form method="GET" class="search-form">
-		<input type="text" name="q" value={q} placeholder="Search by handle…" class="search-input" />
-		<button type="submit" class="btn btn-ghost btn-sm">Search</button>
+		<Input type="text" name="q" value={q} placeholder="Search by handle…" class="search-input" />
+		<Button type="submit" variant="ghost" class="btn-sm">Search</Button>
 		{#if q}
 			<a href="/administrator/sellers" class="btn-link">Clear</a>
 		{/if}
 	</form>
 
 	{#if form?.error}
-		<div class="form-error">{form.error}</div>
+		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 
 	{#if sellers.length === 0}
-		<p class="empty">No sellers found.</p>
+		<EmptyState title="No sellers found." />
 	{:else}
 		<div class="seller-list">
 			{#each sellers as seller}
@@ -42,11 +43,9 @@
 					<div class="seller-handle">@{seller.handle}</div>
 					<div class="seller-count">{seller.listing_count} listing{seller.listing_count !== 1 ? 's' : ''}</div>
 					<div class="seller-status">
-						{#if seller.suspended}
-							<span class="badge badge-suspended">Suspended</span>
-						{:else}
-							<span class="badge badge-active">Active</span>
-						{/if}
+						<Badge variant={seller.suspended ? 'danger' : 'success'}>
+							{seller.suspended ? 'Suspended' : 'Active'}
+						</Badge>
 					</div>
 					<div class="seller-actions">
 						{#if openSeller === seller.principal_uuid}
@@ -88,27 +87,9 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 760px; }
-	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 
 	.search-form { display: flex; align-items: center; gap: var(--space-3); }
-	.search-input {
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		width: 240px;
-	}
-
-	.form-error {
-		padding: var(--space-3) var(--space-4);
-		background: #fee2e2;
-		border: 1px solid #fca5a5;
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		color: #7f1d1d;
-	}
-
-	.empty { color: var(--color-text-muted); font-size: var(--text-sm); }
+	:global(.search-input) { width: 240px; }
 
 	.seller-list {
 		display: flex;
@@ -131,16 +112,6 @@
 
 	.seller-handle { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 	.seller-count  { color: var(--color-text-muted); font-size: var(--text-xs); padding-top: 3px; }
-
-	.badge {
-		display: inline-block;
-		padding: 2px 8px;
-		border-radius: 9999px;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-	}
-	.badge-active    { background: #d1fae5; color: #065f46; }
-	.badge-suspended { background: #fee2e2; color: #7f1d1d; }
 
 	.inline-form { display: flex; flex-direction: column; gap: var(--space-2); }
 	.inline-reason {
