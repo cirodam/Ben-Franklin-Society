@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
 import { getVoteRuleByUuid, evaluateTally } from './vote_rules.js';
+import * as library from './library.js';
 
 // --- Types ---
 
@@ -76,29 +77,21 @@ const ALLOWED_TRANSITIONS: Partial<Record<MotionStatus, MotionStatus[]>> = {
 // --- Motion queries ---
 
 export function getMotionByUuid(uuid: string): Motion | null {
-	return (
-		(db.prepare('SELECT * FROM motion WHERE uuid = ?').get(uuid) as Motion | undefined) ?? null
-	);
+	return library.getMotionByUuid(uuid);
 }
 
 export function getMotionBySlug(slug: string): Motion | null {
-	return (
-		(db.prepare('SELECT * FROM motion WHERE slug = ?').get(slug) as Motion | undefined) ?? null
-	);
+	return library.getMotionBySlug(slug);
 }
 
 export function listMotions(opts: {
 	bodyUuid?: string;
 	status?: MotionStatus;
 } = {}): Motion[] {
-	let query = 'SELECT * FROM motion WHERE 1=1';
-	const params: string[] = [];
-	if (opts.bodyUuid !== undefined) {
-		query += ' AND body_uuid = ?'; params.push(opts.bodyUuid);
-	}
-	if (opts.status) { query += ' AND status = ?'; params.push(opts.status); }
-	query += ' ORDER BY created_at DESC';
-	return db.prepare(query).all(...params) as Motion[];
+	return library.listMotions({
+		owner_uuid: opts.bodyUuid,
+		status: opts.status,
+	});
 }
 
 export function listEnactedMotions(): (Motion & { body_name: string; body_abbreviation: string | null })[] {
@@ -127,22 +120,37 @@ export function createMotion(input: {
 	const uuid = randomUUID();
 	
 	// Get next motion number for this body
-	const result = db.prepare(
-		'SELECT COALESCE(MAX(motion_number), 0) + 1 AS next_number FROM motion WHERE body_uuid = ?'
-	).get(input.body_uuid) as { next_number: number };
-	const motionNumber = result.next_number;
+	// Check both database (old) and library (new) for highest number
+	const dbResult = db.prepare(
+		'SELECT COALESCE(MAX(motion_number), 0) AS max_number FROM motion WHERE body_uuid = ?'
+	).get(input.body_uuid) as { max_number: number };
+	
+	const libraryMotions = library.listMotions({ owner_uuid: input.body_uuid });
+	const libraryMaxNumber = libraryMotions.reduce((max, m) => Math.max(max, m.motion_number), 0);
+	
+	const motionNumber = Math.max(dbResult.max_number, libraryMaxNumber) + 1;
 	
 	// Generate slug if not provided
 	const slug = input.slug ?? `motion-${uuid.substring(0, 8)}`;
-	const type = input.type ?? 'motion';
-	const seniority = input.seniority ?? null;
-	const owner_uuid = input.body_uuid; // owner is the body/association
+	const year = new Date().getFullYear();
+	const paddedNumber = motionNumber.toString().padStart(3, '0');
+	const motionNumberStr = `M-${year}-${paddedNumber}`;
 	
-	db.prepare(
-		`INSERT INTO motion (uuid, slug, motion_number, title, type, seniority, owner_uuid, body, reasoning, introduced_by_uuid, body_uuid, deliberation_rule_uuid, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'introduced', ?)`
-	).run(uuid, slug, motionNumber, input.title, type, seniority, owner_uuid, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, input.deliberation_rule_uuid ?? null, now());
-	return getMotionByUuid(uuid)!;
+	const motion = library.createMotion({
+		slug,
+		title: input.title,
+		body: input.body,
+		reasoning: input.reasoning ?? undefined,
+		introducer_uuid: input.introduced_by_uuid,
+		owner_uuid: input.body_uuid,
+		motion_number: motionNumberStr,
+		deliberation_rule_uuid: input.deliberation_rule_uuid ?? undefined,
+	});
+	
+	// Set status to introduced (library creates as draft)
+	return library.updateMotionStatus(slug, 'introduced', {
+		introduced_at: now(),
+	});
 }
 
 export function advanceMotion(uuid: string, to: MotionStatus): Motion {
@@ -165,33 +173,31 @@ export function advanceMotion(uuid: string, to: MotionStatus): Motion {
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
 	const deliberationOpenedAt = (to === 'deliberation' && !motion.deliberation_opened_at) ? now() : null;
 	
-	db.transaction(() => {
-		db.prepare(
-			'UPDATE motion SET status = ?, resolved_at = COALESCE(?, resolved_at), deliberation_opened_at = COALESCE(?, deliberation_opened_at) WHERE uuid = ?'
-		).run(to, resolvedAt, deliberationOpenedAt, uuid);
-
-		// When advancing to deliberation, open voting immediately
-		if (to === 'deliberation') {
-			// Check if vote rule is set
-			if (!motion.vote_rule_uuid) {
-				throw new Error('A vote rule must be assigned before deliberation can begin');
-			}
-
-			// Get eligible voter count
-			const row = db.prepare(
-				`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
-			).get(motion.body_uuid) as { c: number };
-			const count = row.c;
-
-			// Create vote tally
-			db.prepare(
-				`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
-				 VALUES (?, ?, 0, 0, 0, ?)`
-			).run(uuid, count, deliberationOpenedAt);
+	// When advancing to deliberation, open voting immediately
+	if (to === 'deliberation') {
+		// Check if vote rule is set
+		if (!motion.vote_rule_uuid) {
+			throw new Error('A vote rule must be assigned before deliberation can begin');
 		}
-	})();
+
+		// Get eligible voter count
+		const row = db.prepare(
+			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
+		).get(motion.body_uuid) as { c: number };
+		const count = row.c;
+
+		// Create vote tally
+		db.prepare(
+			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
+			 VALUES (?, ?, 0, 0, 0, ?)`
+		).run(uuid, count, deliberationOpenedAt);
+	}
 	
-	return getMotionByUuid(uuid)!;
+	// Update motion status in library
+	return library.updateMotionStatus(motion.slug, to, {
+		introduced_at: deliberationOpenedAt || undefined,
+		vote_closed_at: resolvedAt || undefined,
+	});
 }
 
 export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): Motion {
@@ -200,8 +206,7 @@ export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | nul
 	if (motion.status === 'deliberation' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
 		throw new Error(`Cannot change vote rule on a motion in status '${motion.status}'`);
 	}
-	db.prepare('UPDATE motion SET vote_rule_uuid = ? WHERE uuid = ?').run(voteRuleUuid, motionUuid);
-	return getMotionByUuid(motionUuid)!;
+	return library.updateMotion(motion.slug, { vote_rule_uuid: voteRuleUuid ?? undefined });
 }
 
 export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUuid: string | null): Motion {
@@ -210,22 +215,19 @@ export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUu
 	if (motion.status === 'deliberation' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
 		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.status}'`);
 	}
-	db.prepare('UPDATE motion SET deliberation_rule_uuid = ? WHERE uuid = ?').run(deliberationRuleUuid, motionUuid);
-	return getMotionByUuid(motionUuid)!;
+	return library.updateMotion(motion.slug, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
 }
 
 export function setMotionClerkNotes(motionUuid: string, clerkNotes: string | null): Motion {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	db.prepare('UPDATE motion SET clerk_notes = ? WHERE uuid = ?').run(clerkNotes || null, motionUuid);
-	return getMotionByUuid(motionUuid)!;
+	return library.updateMotion(motion.slug, { clerk_notes: clerkNotes ?? undefined });
 }
 
 export function setMotionParliamentarianNotes(motionUuid: string, parliamentarianNotes: string | null): Motion {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	db.prepare('UPDATE motion SET parliamentarian_notes = ? WHERE uuid = ?').run(parliamentarianNotes || null, motionUuid);
-	return getMotionByUuid(motionUuid)!;
+	return library.updateMotion(motion.slug, { parliamentarian_notes: parliamentarianNotes ?? undefined });
 }
 
 // --- Vote ---
@@ -292,18 +294,19 @@ export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
 	}
 	const resolvedAt = now();
 
-	db.transaction(() => {
-		db.prepare('UPDATE motion_vote_tally SET closed_at = ? WHERE motion_uuid = ?').run(resolvedAt, motionUuid);
-		db.prepare(
-			`UPDATE motion SET status = ?, resolved_at = ?, enacted_at = ?, adopted_at = ? WHERE uuid = ?`
-		).run(
-			outcome,
-			resolvedAt,
-			outcome === 'enacted' ? resolvedAt : null,
-			outcome === 'enacted' ? resolvedAt : null,
-			motionUuid
-		);
-	})();
+	// Update vote tally
+	db.prepare('UPDATE motion_vote_tally SET closed_at = ? WHERE motion_uuid = ?').run(resolvedAt, motionUuid);
+	
+	// Update motion status and timestamps
+	library.updateMotionStatus(motion.slug, outcome, {
+		vote_closed_at: resolvedAt,
+		enacted_at: outcome === 'enacted' ? resolvedAt : undefined,
+	});
+
+	// Update adopted_at if enacted (library doesn't track this in content currently)
+	if (outcome === 'enacted') {
+		library.updateMotion(motion.slug, { adopted_at: resolvedAt });
+	}
 
 	return outcome;
 }

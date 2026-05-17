@@ -1,0 +1,140 @@
+{
+  "uuid": "bcca86ae-834d-4bf7-b813-07dfcc316a6d",
+  "type": "governing",
+  "slug": "constitution",
+  "title": "Community Constitution",
+  "owner_uuid": "SOCIETY",
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "content": {
+    "status": "adopted",
+    "seniority": 2,
+    "articles": [
+      {
+        "number": "I",
+        "title": "Founding Principles",
+        "sections": [
+          {
+            "title": "Why We Are Here",
+            "body": "Most of us grew up believing that if we worked hard and played by the rules, our basic needs would be met. For a great many people, that has not proven true. Work no longer guarantees security. Housing costs more than families can afford. Healthcare goes without because the price is too high. Neighbors who need help find that the systems meant to provide it are distant, difficult, and insufficient. These are not personal failures — they are shared experiences, felt across communities of every background. We are not the first to notice, and we are not naive about the difficulty of change. But we believe that people who choose to meet their needs together, in full view of one another, can do better than institutions that have forgotten who they were built to serve. This community is that attempt.",
+            "rationale": "This section names the problem the community exists to address. It is here so that future members know the founding motivation, and so that any proposal that would move the community away from that purpose is recognizable as a departure from its reason for being."
+          },
+          {
+            "title": "Human Dignity",
+            "body": "Every person has worth that is not contingent on their productivity, their health, their age, or any other measure of economic usefulness. A person who cannot work has the same claim on a dignified life as anyone else. A community that withholds basic necessities from people who fail to contribute economically has not balanced its books — it has betrayed its purpose. This community holds human dignity as prior to economic participation. No member's standing within it is earned. It is given.",
+            "rationale": "Most institutional failures come down to treating people as inputs rather than ends. This section makes explicit that the community rejects that framing — belonging is not conditional on productivity."
+          },
+          {
+            "title": "Economy in Service of People",
+            "body": "An economy is a tool for coordinating how people meet their needs. An economy that denies cancer treatment to keep a claims ratio low, that leaves veterans on the street, that will not feed children despite producing enough food to waste half of it — that economy has not merely developed flaws. It has failed at its only legitimate purpose. The economy of this community exists to meet the needs of its members. That is the measure by which every economic decision here will be judged.",
+            "rationale": "This section provides the evaluative criterion for economic decisions: does it meet members' needs?"
+          },
+          {
+            "title": "Scope",
+            "body": "This constitution governs the internal affairs of this community. It does not claim authority over any person who has not chosen membership, and it does not override any rights a member holds as a person beyond this community. It is not a complete theory of society — it is an agreement among people who have chosen to meet their needs together.",
+            "rationale": "A community constitution can only bind those who have consented to it."
+          }
+        ]
+      },
+      {
+        "number": "II",
+        "title": "Governance",
+        "sections": [
+          {
+            "title": "The Source of Authority",
+            "body": "The community is the prime authority of this society. All governing power originates with the membership as a whole. Committees, assemblies, and councils exist because the community created them and entrusted them with specific powers. No delegation is permanent — it continues only as long as the community chooses to maintain it. No person and no body holds authority of its own; all authority is borrowed from the membership.",
+            "rationale": "Establishing the community as prime authority — not the assembly, not the founders, not any committee — means every delegated body can be recalled, restructured, or dissolved by the membership. This is not a theoretical backstop; it is the operating principle."
+          },
+          {
+            "title": "The Assembly",
+            "body": "The community has delegated its standing governing power to the assembly. The assembly is composed of members drawn by sortition from the full membership for a fixed term. Any member may be drawn. The assembly sets policy, ratifies significant decisions, and holds other delegated bodies accountable on the community's behalf. When its term ends, a new assembly is drawn and the delegation renews. The assembly exists by the community's choice and may be restructured by the community's direct decision.",
+            "rationale": "Framing the assembly as a body the community has delegated to — rather than as the highest authority — preserves the membership's sovereign position. A randomly drawn assembly represents the community as it actually is, not as those motivated to seek power would have it appear."
+          },
+          {
+            "title": "Sortition",
+            "body": "Leadership roles are filled by random draw from the relevant pool. The person selected serves for a fixed term, then returns to ordinary membership. A cooling-off period follows before they may serve in the same role again. This ensures that authority circulates through the community rather than accumulating in the hands of those who seek it most.",
+            "rationale": "Sortition has a long history — Athenian democracy used it for most offices, on the theory that any competent citizen can serve and that elections are an aristocratic method."
+          },
+          {
+            "title": "Delegated Assembly Powers",
+            "body": "The community has delegated the following governing powers to the assembly: admitting new members by petition reaching the required signature threshold; suspending a member pending investigation or review by simple majority; setting the budget envelope for each operational domain by simple majority; and reorganising or splitting a domain council when necessary by supermajority. These powers are delegated, not inherent — they may be recalled or amended by the community acting directly.",
+            "rationale": "Grouping the assembly's delegated powers in one section ensures members can see at a glance what the assembly may and may not decide, and makes it straightforward to amend specific delegations independently."
+          },
+          {
+            "title": "The Community Acting Directly",
+            "body": "The community is the final authority on any matter of governance. When it acts directly — through a referendum open to all active members — that decision supersedes any action of the assembly or any other delegated body. The community does not require the assembly's permission to act; any active member may initiate a referendum. The result binds every member and every body of the community.",
+            "rationale": "A referendum is not an exceptional override mechanism — it is the community exercising its ordinary sovereign power without delegation. The assembly is how the community normally governs; the referendum is how the community governs when it chooses to act as a whole."
+          },
+          {
+            "title": "Reserved Powers",
+            "body": "The community has reserved the following powers for direct exercise and has not delegated them to any body: permanently excluding a member from the community; changing the community dues rate or the bank demurrage rate or floor; amending any constitutional parameter; and joining or leaving a federation.",
+            "rationale": "Reserved powers are those whose consequences are too fundamental to entrust to a delegated body. They alter membership rights, economic structures, or the community's external relationships. Keeping them with the whole membership ensures no assembly or committee can make these changes without a full community mandate."
+          },
+          {
+            "title": "Voting Thresholds",
+            "body": "Votes are evaluated against defined thresholds. A simple majority requires more than half of votes cast. A supermajority requires two-thirds of votes cast. An absolute majority requires more than half of all eligible members. An absolute supermajority requires two-thirds of all eligible members. A petition requires a fixed count of signatures set at motion creation.",
+            "rationale": "Naming the thresholds in constitutional prose ensures the software enforces exactly what the document says."
+          }
+        ]
+      },
+      {
+        "number": "III",
+        "title": "Economics",
+        "sections": [
+          {
+            "title": "The Kin",
+            "body": "The unit of account for this community is the kin. It is grounded in the most basic thing all members share: the years of their lives. One kin represents one ten-thousandth of a person-year — 10,000 kin to a year. Most currencies are backed by government decree, by gold, or by debt. The kin is backed by something more direct: the community itself and the lives of the people in it.",
+            "rationale": "Anchoring the currency to person-years means the money supply grows with the community itself and values all members equally regardless of what they produce."
+          },
+          {
+            "title": "Issuance",
+            "body": "Kin are issued by the Central Bank at a rate of 10,000 per member per year, distributed in equal daily increments. Issuance is automatic — it requires no action by the member and cannot be withheld as a disciplinary measure. Every active member receives their full allocation.",
+            "rationale": "Automatic, equal issuance means the currency is not a reward for behavior. It is a recognition of membership."
+          },
+          {
+            "title": "Demurrage",
+            "body": "Kin holdings are subject to a demurrage charge — a small periodic reduction in the value of held kin. Demurrage discourages hoarding and keeps the currency circulating through the community's economic life. The demurrage rate is a reserved power of the community.",
+            "rationale": "Demurrage is the mechanism by which the currency's purpose — meeting members' needs through circulation — is enforced. Currency that sits still is not doing its work."
+          },
+          {
+            "title": "Community Dues",
+            "body": "Members contribute to the community's common life through dues, paid in kin. The dues rate is a reserved power of the community. Dues fund the community's services, its institutions, and its obligations to members.",
+            "rationale": "Dues are the material expression of mutual obligation — each member's contribution to the community that provides for them."
+          },
+          {
+            "title": "Economic Institutions",
+            "body": "The community maintains the following economic institutions: the Central Bank, responsible for kin issuance and the membership roll; the Community Bank, maintaining the ledger of kin holdings and transactions; the Treasury, receiving dues and disbursing funds per assembly appropriation; and the Social Insurance Fund, providing regular support to elderly and disabled members.",
+            "rationale": "These institutions are the infrastructure of economic self-governance. Together they constitute the Frank economy the Charter requires."
+          }
+        ]
+      },
+      {
+        "number": "IV",
+        "title": "Membership",
+        "sections": [
+          {
+            "title": "Joining",
+            "body": "Any person may apply for membership. Admission requires a petition supported by the required number of active members, reviewed and ratified by the assembly. Membership is not granted on the basis of origin, background, belief, or any characteristic other than willingness to accept the community's mutual obligations.",
+            "rationale": "Open membership is required by Principle I. The petition requirement ensures that new members are vouched for by existing ones — it is a social bond, not a gatekeeping mechanism."
+          },
+          {
+            "title": "Rights of Membership",
+            "body": "Every active member has the right to participate in referenda; to be considered for sortition draws; to access the community's services on equal terms; to receive their kin allocation; and to due process before any institutional action affecting their standing.",
+            "rationale": "Rights of membership are enumerated so they can be defended. A right that is not stated is a right that can be quietly removed."
+          },
+          {
+            "title": "Obligations of Membership",
+            "body": "Every active member accepts the obligation to pay community dues; to serve when drawn by sortition, absent genuine incapacity; to deal honestly with other members and with community institutions; and to uphold the community's principles in their conduct within it.",
+            "rationale": "Mutual obligation runs in both directions. Members have rights against the community and obligations to it."
+          },
+          {
+            "title": "Suspension and Removal",
+            "body": "A member may be suspended pending investigation by assembly majority. Permanent removal from membership is a reserved power of the community, exercisable only by direct vote. No member may be removed without a fair hearing and an opportunity to respond to the basis for removal.",
+            "rationale": "The asymmetry between suspension (assembly power) and permanent removal (community power) reflects the severity of the consequences. Suspension is temporary and reversible; removal is not."
+          }
+        ]
+      }
+    ],
+    "adopted_at": "2026-01-01T00:00:00Z"
+  }
+}

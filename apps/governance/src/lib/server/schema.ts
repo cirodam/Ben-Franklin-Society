@@ -275,6 +275,23 @@ CREATE TABLE IF NOT EXISTS motion_readiness (
   UNIQUE (motion_uuid, member_uuid)
 );
 
+-- Library System: unified document storage index
+-- Documents are stored as JSON files, this table provides fast querying
+CREATE TABLE IF NOT EXISTS library_item (
+  uuid          TEXT PRIMARY KEY,
+  type          TEXT NOT NULL,
+  slug          TEXT NOT NULL UNIQUE,
+  title         TEXT NOT NULL,
+  owner_uuid    TEXT NOT NULL,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  file_path     TEXT NOT NULL,
+  metadata_json TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_library_item_type ON library_item(type);
+CREATE INDEX IF NOT EXISTS idx_library_item_owner ON library_item(owner_uuid);
+CREATE INDEX IF NOT EXISTS idx_library_item_slug ON library_item(slug);
+
 CREATE TABLE IF NOT EXISTS calendar_event (
   uuid                   TEXT PRIMARY KEY,
   title                  TEXT NOT NULL,
