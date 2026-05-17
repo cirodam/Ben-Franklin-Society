@@ -1,5 +1,7 @@
 # Ben Franklin Society
 
+The Work Shall Not Be Lost
+
 Software for deliberative democratic governance and community services.
 
 ## What is This?

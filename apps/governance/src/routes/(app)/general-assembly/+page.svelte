@@ -60,7 +60,7 @@
 			<span>{config?.term_days ?? '—'} day terms</span>
 			{#if assemblyRules}
 				<span>·</span>
-				<a href="/documents/assembly-rules" class="rules-link">📜 Rules of the Assembly</a>
+				<a href="/library/assembly-rules" class="rules-link">📜 Rules of the Assembly</a>
 			{/if}
 		</div>
 	</header>

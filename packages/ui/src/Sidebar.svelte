@@ -46,7 +46,7 @@
 	}
 
 	.sidebar__brand {
-		font-weight: var(--weight-bold);
+		font-weight: var(--weight-semibold);
 		font-size: var(--text-sm);
 		letter-spacing: 0.03em;
 		text-transform: uppercase;

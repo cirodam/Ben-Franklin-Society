@@ -16,8 +16,12 @@ export type VoteChoice = 'aye' | 'nay' | 'abstain';
 
 export interface Motion {
 	uuid: string;
+	slug: string;
 	motion_number: number;
 	title: string;
+	type: string; // e.g., 'motion', 'governing_document', etc.
+	seniority: number | null; // null for regular motions, 1-6 for governing documents
+	owner_uuid: string; // the association that owns this (typically same as body_uuid)
 	body: string;
 	reasoning: string | null;
 	introduced_by_uuid: string;
@@ -28,6 +32,10 @@ export interface Motion {
 	clerk_notes: string | null;
 	parliamentarian_notes: string | null;
 	created_at: string;
+	adopted_at: string | null; // when enacted
+	adopted_by_motion_uuid: string | null; // self-reference for amendments
+	repealed_at: string | null;
+	repealed_by_motion_uuid: string | null;
 	deliberation_opened_at: string | null;
 	enacted_at: string | null;
 	resolved_at: string | null;
@@ -73,6 +81,12 @@ export function getMotionByUuid(uuid: string): Motion | null {
 	);
 }
 
+export function getMotionBySlug(slug: string): Motion | null {
+	return (
+		(db.prepare('SELECT * FROM motion WHERE slug = ?').get(slug) as Motion | undefined) ?? null
+	);
+}
+
 export function listMotions(opts: {
 	bodyUuid?: string;
 	status?: MotionStatus;
@@ -106,6 +120,9 @@ export function createMotion(input: {
 	introduced_by_uuid: string;
 	body_uuid: string;
 	deliberation_rule_uuid?: string | null;
+	type?: string;
+	seniority?: number | null;
+	slug?: string;
 }): Motion {
 	const uuid = randomUUID();
 	
@@ -115,10 +132,16 @@ export function createMotion(input: {
 	).get(input.body_uuid) as { next_number: number };
 	const motionNumber = result.next_number;
 	
+	// Generate slug if not provided
+	const slug = input.slug ?? `motion-${uuid.substring(0, 8)}`;
+	const type = input.type ?? 'motion';
+	const seniority = input.seniority ?? null;
+	const owner_uuid = input.body_uuid; // owner is the body/association
+	
 	db.prepare(
-		`INSERT INTO motion (uuid, motion_number, title, body, reasoning, introduced_by_uuid, body_uuid, deliberation_rule_uuid, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'introduced', ?)`
-	).run(uuid, motionNumber, input.title, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, input.deliberation_rule_uuid ?? null, now());
+		`INSERT INTO motion (uuid, slug, motion_number, title, type, seniority, owner_uuid, body, reasoning, introduced_by_uuid, body_uuid, deliberation_rule_uuid, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'introduced', ?)`
+	).run(uuid, slug, motionNumber, input.title, type, seniority, owner_uuid, input.body, input.reasoning ?? null, input.introduced_by_uuid, input.body_uuid, input.deliberation_rule_uuid ?? null, now());
 	return getMotionByUuid(uuid)!;
 }
 
@@ -272,10 +295,11 @@ export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
 	db.transaction(() => {
 		db.prepare('UPDATE motion_vote_tally SET closed_at = ? WHERE motion_uuid = ?').run(resolvedAt, motionUuid);
 		db.prepare(
-			`UPDATE motion SET status = ?, resolved_at = ?, enacted_at = ?  WHERE uuid = ?`
+			`UPDATE motion SET status = ?, resolved_at = ?, enacted_at = ?, adopted_at = ? WHERE uuid = ?`
 		).run(
 			outcome,
 			resolvedAt,
+			outcome === 'enacted' ? resolvedAt : null,
 			outcome === 'enacted' ? resolvedAt : null,
 			motionUuid
 		);
@@ -374,3 +398,72 @@ export function getReadinessSigners(motionUuid: string): Array<{
 		marked_at: string;
 	}>;
 }
+
+// --- Motion as Document ---
+
+/**
+ * Export a motion in a document-compatible structure.
+ * This allows enacted motions to be viewed and treated like governing documents.
+ */
+export interface MotionAsDocument {
+	slug: string;
+	title: string;
+	type: string;
+	seniority: number | null;
+	owner_uuid: string;
+	status: 'draft' | 'adopted' | 'repealed';
+	created_at: string;
+	adopted_at: string | null;
+	adopted_by_motion_uuid: string | null;
+	repealed_at: string | null;
+	repealed_by_motion_uuid: string | null;
+	articles: Array<{
+		number: string;
+		title: string;
+		sections: Array<{
+			title: string;
+			body: string;
+			rationale?: string;
+		}>;
+	}>;
+}
+
+export function motionAsDocument(motion: Motion): MotionAsDocument {
+	// Map motion status to document status
+	let docStatus: 'draft' | 'adopted' | 'repealed';
+	if (motion.status === 'enacted') {
+		docStatus = motion.repealed_at ? 'repealed' : 'adopted';
+	} else if (motion.status === 'draft' || motion.status === 'introduced' || motion.status === 'deliberation') {
+		docStatus = 'draft';
+	} else {
+		docStatus = 'draft'; // withdrawn/rejected treated as draft
+	}
+
+	return {
+		slug: motion.slug,
+		title: motion.title,
+		type: motion.type,
+		seniority: motion.seniority,
+		owner_uuid: motion.owner_uuid,
+		status: docStatus,
+		created_at: motion.created_at,
+		adopted_at: motion.adopted_at,
+		adopted_by_motion_uuid: motion.adopted_by_motion_uuid,
+		repealed_at: motion.repealed_at,
+		repealed_by_motion_uuid: motion.repealed_by_motion_uuid,
+		articles: [
+			{
+				number: 'I',
+				title: 'Motion Text',
+				sections: [
+					{
+						title: 'Body',
+						body: motion.body,
+						rationale: motion.reasoning ?? undefined
+					}
+				]
+			}
+		]
+	};
+}
+

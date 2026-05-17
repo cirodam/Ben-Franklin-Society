@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types.js';
-import { listDocuments } from '$lib/server/documents.js';
+import { listDocuments } from '$lib/server/library.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.person) {

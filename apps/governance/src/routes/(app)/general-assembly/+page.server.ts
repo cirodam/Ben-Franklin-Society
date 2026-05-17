@@ -23,7 +23,7 @@ import { addEntry, getBodyRecord } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/motions.js';
 import { listDeliberationRules } from '$lib/server/deliberation_rules.js';
-import { getDocumentBySlug } from '$lib/server/documents.js';
+import { getDocumentBySlug } from '$lib/server/library.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -131,9 +131,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		})
 		.slice(0, 10);
 
-	const canCreateMotion = actingAs
-		? hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)
-		: false;
+	const canCreateMotion = !!actingAs; // Anyone logged in can create motions
 
 	const canVacate = locals.session
 		? hasPermission(locals.session.acting_as_uuid, PERMISSIONS.SEAT_TERMS_VACATE, association.uuid)
@@ -180,11 +178,6 @@ export const actions: Actions = {
 
 		const association = getAssociationByHandle('general-assembly');
 		if (!association) return fail(404, { message: 'General Assembly not found' });
-
-		// Check permissions
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)) {
-			return fail(403, { message: 'Not authorized to create motions' });
-		}
 
 		const data = await request.formData();
 		const title = String(data.get('title') ?? '').trim();

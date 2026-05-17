@@ -1,11 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
 	import { enhance } from '$app/forms';
-	import { Parchment } from '@bfs/ui';
+	import { Parchment, Button } from '@bfs/ui';
+	import EditSectionModal from './EditSectionModal.svelte';
+	import AddSectionModal from './AddSectionModal.svelte';
+	import EditArticleModal from './EditArticleModal.svelte';
+	import AddArticleModal from './AddArticleModal.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	const { document: doc } = $derived(data);
+	const { document: doc, canEdit } = $derived(data);
 
 	const statusVariant: Record<string, string> = {
 		draft:    'status--draft',
@@ -39,11 +43,33 @@
 			setTimeout(() => copiedId = null, 2000);
 		});
 	}
+
+	// Modal states
+	let editSectionModal = $state({ open: false, articleIdx: 0, sectionIdx: 0, section: { title: '', body: '', rationale: '' } });
+	let addSectionModal = $state({ open: false, articleIdx: 0 });
+	let editArticleModal = $state({ open: false, articleIdx: 0, article: { number: '', title: '' } });
+	let addArticleModal = $state({ open: false });
+
+	function openEditSection(articleIdx: number, sectionIdx: number, section: any) {
+		editSectionModal = { open: true, articleIdx, sectionIdx, section };
+	}
+
+	function openAddSection(articleIdx: number) {
+		addSectionModal = { open: true, articleIdx };
+	}
+
+	function openEditArticle(articleIdx: number, article: any) {
+		editArticleModal = { open: true, articleIdx, article };
+	}
+
+	function openAddArticle() {
+		addArticleModal = { open: true };
+	}
 </script>
 
 <div class="page-wrapper">
 	<div class="document-controls">
-		<a href="/documents" class="back">← Back to Documents</a>
+		<a href="/library" class="back">← Back to Library</a>
 	</div>
 
 	<Parchment>
@@ -78,28 +104,95 @@
 		<div class="document-body">
 			{#each doc.articles as article, articleIdx}
 				<div class="article">
-					<h2 class="article-heading">
-						<span class="article-number">Article {article.number}</span>
-						<span class="article-title">{article.title}</span>
-					</h2>
+					<div class="article-heading-container">
+						<h2 class="article-heading">
+							<span class="article-number">Article {article.number}</span>
+							<span class="article-title">{article.title}</span>
+						</h2>
+						{#if canEdit}
+							<div class="article-actions">
+								<button
+									class="edit-btn"
+									onclick={() => openEditArticle(articleIdx, article)}
+									title="Edit article"
+									aria-label="Edit article"
+								>
+									✏️
+								</button>
+								<button
+									class="edit-btn"
+									onclick={() => openAddSection(articleIdx)}
+									title="Add section"
+									aria-label="Add section"
+								>
+									➕
+								</button>
+								<form method="POST" action="?/deleteArticle" use:enhance style="display: inline;">
+									<input type="hidden" name="articleIdx" value={articleIdx} />
+									<button
+										class="delete-btn"
+										type="submit"
+										title="Delete article"
+										aria-label="Delete article"
+										onclick={(e) => {
+											if (!confirm('Are you sure you want to delete this article?')) {
+												e.preventDefault();
+											}
+										}}
+									>
+										🗑️
+									</button>
+								</form>
+							</div>
+						{/if}
+					</div>
 					
 					{#each article.sections as section, sectionIdx}
 						<div class="section" id="article-{article.number}-section-{sectionIdx}">
 							<div class="section-header">
 								<span class="section-number">§ {sectionIdx + 1}.</span>
 								<span class="section-title">{section.title}</span>
-								<button 
-									class="copy-link-btn" 
-									onclick={() => copyLink(article.number, sectionIdx)}
-									title="Copy link to this section"
-									aria-label="Copy link to this section"
-								>
-									{#if copiedId === `article-${article.number}-section-${sectionIdx}`}
-										✓
-									{:else}
-										🔗
+								<div class="section-actions">
+									<button 
+										class="copy-link-btn" 
+										onclick={() => copyLink(article.number, sectionIdx)}
+										title="Copy link to this section"
+										aria-label="Copy link to this section"
+									>
+										{#if copiedId === `article-${article.number}-section-${sectionIdx}`}
+											✓
+										{:else}
+											🔗
+										{/if}
+									</button>
+									{#if canEdit}
+										<button
+											class="edit-btn"
+											onclick={() => openEditSection(articleIdx, sectionIdx, section)}
+											title="Edit section"
+											aria-label="Edit section"
+										>
+											✏️
+										</button>
+										<form method="POST" action="?/deleteSection" use:enhance style="display: inline;">
+											<input type="hidden" name="articleIdx" value={articleIdx} />
+											<input type="hidden" name="sectionIdx" value={sectionIdx} />
+											<button
+												class="delete-btn"
+												type="submit"
+												title="Delete section"
+												aria-label="Delete section"
+												onclick={(e) => {
+													if (!confirm('Are you sure you want to delete this section?')) {
+														e.preventDefault();
+													}
+												}}
+											>
+												🗑️
+											</button>
+										</form>
 									{/if}
-								</button>
+								</div>
 							</div>
 							<div class="section-body">
 								{section.body}
@@ -114,9 +207,24 @@
 					{/each}
 				</div>
 			{/each}
+
+			{#if canEdit}
+				<div class="add-article-container">
+					<Button variant="secondary" onclick={openAddArticle}>
+						➕ Add Article
+					</Button>
+				</div>
+			{/if}
 		</div>
 	</Parchment>
 </div>
+
+{#if canEdit}
+	<EditSectionModal bind:open={editSectionModal.open} {...editSectionModal} />
+	<AddSectionModal bind:open={addSectionModal.open} {...addSectionModal} />
+	<EditArticleModal bind:open={editArticleModal.open} {...editArticleModal} />
+	<AddArticleModal bind:open={addArticleModal.open} />
+{/if}
 
 
 <style>
@@ -471,5 +579,63 @@
 	.btn--sm {
 		padding: var(--space-1) var(--space-3);
 		font-size: var(--text-xs);
+	}
+
+	/* Edit Controls */
+	.article-heading-container {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		margin-bottom: var(--space-8);
+		padding-bottom: var(--space-4);
+		border-bottom: 1px solid rgba(139, 115, 85, 0.2);
+	}
+
+	.article-heading {
+		text-align: center;
+		margin: 0;
+		padding: 0;
+		border: none;
+		flex: 1;
+	}
+
+	.article-actions, .section-actions {
+		display: flex;
+		gap: var(--space-1);
+		align-items: center;
+	}
+
+	.edit-btn, .delete-btn {
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid rgba(139, 115, 85, 0.2);
+		border-radius: 2px;
+		background: rgba(255, 255, 255, 0.5);
+		cursor: pointer;
+		font-size: var(--text-sm);
+		transition: all 0.15s;
+		opacity: 0.6;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.edit-btn:hover {
+		opacity: 1;
+		background: rgba(91, 140, 184, 0.15);
+		border-color: #5b8cb8;
+	}
+
+	.delete-btn:hover {
+		opacity: 1;
+		background: rgba(184, 108, 108, 0.15);
+		border-color: #b86c6c;
+	}
+
+	.add-article-container {
+		margin-top: var(--space-12);
+		padding-top: var(--space-8);
+		border-top: 2px solid rgba(139, 115, 85, 0.2);
+		text-align: center;
 	}
 </style>

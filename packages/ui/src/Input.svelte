@@ -3,6 +3,7 @@
 		type = 'text',
 		name = undefined,
 		value = $bindable(''),
+		label = undefined,
 		placeholder = '',
 		disabled = false,
 		required = false,
@@ -10,9 +11,10 @@
 		hint = undefined,
 		...rest
 	}: {
-		type?: 'text' | 'email' | 'password' | 'url' | 'tel' | 'number' | 'search';
+		type?: 'text' | 'email' | 'password' | 'url' | 'tel' | 'number' | 'search' | 'date';
 		name?: string;
 		value?: string | number;
+		label?: string;
 		placeholder?: string;
 		disabled?: boolean;
 		required?: boolean;
@@ -24,31 +26,60 @@
 	const hasError = $derived(!!error);
 </script>
 
-<input
-	{type}
-	{name}
-	bind:value
-	{placeholder}
-	{disabled}
-	{required}
-	class="input"
-	class:input--error={hasError}
-	aria-invalid={hasError}
-	aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
-	{...rest}
-/>
+<div class="input-wrapper">
+	{#if label}
+		<label class="input-label" for={name}>
+			{label}
+			{#if required}
+				<span class="input-required" aria-label="required">*</span>
+			{/if}
+		</label>
+	{/if}
 
-{#if error}
-	<div class="input-error" id="{name}-error" role="alert">
-		{error}
-	</div>
-{:else if hint}
-	<div class="input-hint" id="{name}-hint">
-		{hint}
-	</div>
-{/if}
+	<input
+		id={name}
+		{type}
+		{name}
+		bind:value
+		{placeholder}
+		{disabled}
+		{required}
+		class="input"
+		class:input--error={hasError}
+		aria-invalid={hasError}
+		aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
+		{...rest}
+	/>
+
+	{#if error}
+		<div class="input-error" id="{name}-error" role="alert">
+			{error}
+		</div>
+	{:else if hint}
+		<div class="input-hint" id="{name}-hint">
+			{hint}
+		</div>
+	{/if}
+</div>
 
 <style>
+	.input-wrapper {
+		display: flex;
+		flex-direction: column;
+	}
+	.input-label {
+		display: block;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
+		margin-bottom: var(--space-2);
+	}
+
+	.input-required {
+		color: var(--color-danger);
+		margin-left: var(--space-1);
+	}
+
 	.input {
 		width: 100%;
 		font-family: var(--font-sans);

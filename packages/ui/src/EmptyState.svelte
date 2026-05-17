@@ -45,15 +45,15 @@
 	}
 
 	.empty-state-icon {
-		font-size: var(--text-4xl);
+		font-size: var(--text-3xl);
 		margin-bottom: var(--space-4);
-		opacity: 0.5;
+		opacity: 0.4;
 	}
 
 	.empty-state-title {
 		margin: 0 0 var(--space-2);
 		font-size: var(--text-lg);
-		font-weight: var(--weight-medium);
+		font-weight: var(--weight-semibold);
 		color: var(--color-text);
 	}
 

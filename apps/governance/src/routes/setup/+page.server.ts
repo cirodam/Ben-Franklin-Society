@@ -137,7 +137,7 @@ export const actions: Actions = {
 			createDeliberationRule({ association_uuid: ga.uuid, ...r });
 		}
 
-		// Documents are now file-based in data/documents/*.json and loaded directly
+		// Documents are now file-based in data/library/*.json and loaded directly
 		// No need to import them into the database
 
 		// Create a Founder role in the Society with all permissions; assign in every association

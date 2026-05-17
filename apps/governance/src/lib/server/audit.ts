@@ -15,8 +15,8 @@ export interface AuditEntry {
  * Record a write action in the audit log.
  *
  * @param actorUuid    - The person who performed the action (acting_as_uuid)
- * @param action       - Dot-namespaced action string, e.g. 'document.update', 'member.add'
- * @param targetType   - The type of the thing changed, e.g. 'document', 'person', 'association'
+ * @param action       - Dot-namespaced action string, e.g. 'library.update', 'member.add'
+ * @param targetType   - The type of the thing changed, e.g. 'library', 'person', 'association'
  * @param targetUuid   - UUID of the thing changed
  * @param detail       - Human-readable description of what changed
  * @param motionUuid   - Optional: the motion that authorized this action

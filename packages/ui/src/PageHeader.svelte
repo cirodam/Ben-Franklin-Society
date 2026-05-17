@@ -44,7 +44,7 @@
 	.page-header h1 {
 		margin: 0;
 		font-size: var(--text-2xl);
-		font-weight: var(--weight-bold);
+		font-weight: var(--weight-semibold);
 		color: var(--color-text);
 	}
 

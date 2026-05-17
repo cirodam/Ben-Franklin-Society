@@ -16,7 +16,7 @@ import { addEntry, getBodyRecord } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/motions.js';
 import { listDeliberationRules } from '$lib/server/deliberation_rules.js';
-import { getDocumentBySlug } from '$lib/server/documents.js';
+import { getDocumentBySlug } from '$lib/server/library.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

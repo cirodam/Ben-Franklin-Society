@@ -213,8 +213,12 @@ CREATE TABLE IF NOT EXISTS vote_rule (
 
 CREATE TABLE IF NOT EXISTS motion (
   uuid                   TEXT PRIMARY KEY,
+  slug                   TEXT NOT NULL UNIQUE,
   motion_number          INTEGER NOT NULL,
   title                  TEXT NOT NULL,
+  type                   TEXT NOT NULL DEFAULT 'motion',
+  seniority              INTEGER NULL,
+  owner_uuid             TEXT NOT NULL REFERENCES association(uuid),
   body                   TEXT NOT NULL,
   reasoning              TEXT NULL,
   introduced_by_uuid     TEXT NOT NULL REFERENCES person(uuid),
@@ -225,6 +229,10 @@ CREATE TABLE IF NOT EXISTS motion (
   clerk_notes            TEXT NULL,
   parliamentarian_notes  TEXT NULL,
   created_at             TEXT NOT NULL,
+  adopted_at             TEXT NULL,
+  adopted_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
+  repealed_at            TEXT NULL,
+  repealed_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
   deliberation_opened_at TEXT NULL,
   enacted_at             TEXT NULL,
   resolved_at            TEXT NULL,
@@ -437,8 +445,8 @@ CREATE TABLE IF NOT EXISTS record_entry (
 CREATE TABLE IF NOT EXISTS audit_log (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   actor_uuid       TEXT NOT NULL REFERENCES person(uuid),
-  action           TEXT NOT NULL,   -- e.g. 'document.update', 'member.add', 'vote_rule.set'
-  target_type      TEXT NOT NULL,   -- e.g. 'document', 'person', 'association'
+  action           TEXT NOT NULL,   -- e.g. 'library.update', 'member.add', 'vote_rule.set'
+  target_type      TEXT NOT NULL,   -- e.g. 'library', 'person', 'association'
   target_uuid      TEXT NOT NULL,
   detail           TEXT NULL,       -- human-readable description
   motion_uuid      TEXT NULL REFERENCES motion(uuid), -- authorizing motion, if any

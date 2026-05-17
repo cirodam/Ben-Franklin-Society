@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { db } from './db.js';
 
@@ -35,7 +35,7 @@ export interface Document {
 
 // --- File system helpers ---
 
-const DOCUMENTS_DIR = join(process.cwd(), 'data', 'documents');
+const LIBRARY_DIR = join(process.cwd(), 'data', 'library');
 
 /**
  * Get the society association UUID (the top-level association that owns the Corpus of Law)
@@ -47,7 +47,7 @@ function getSocietyUuid(): string | null {
 
 function loadDocumentFile(slug: string): Document | null {
 	try {
-		const filePath = join(DOCUMENTS_DIR, `${slug}.json`);
+		const filePath = join(LIBRARY_DIR, `${slug}.json`);
 		const content = readFileSync(filePath, 'utf-8');
 		const doc = JSON.parse(content) as Document;
 		
@@ -67,7 +67,7 @@ function loadDocumentFile(slug: string): Document | null {
 
 function listDocumentFiles(): Document[] {
 	try {
-		const files = readdirSync(DOCUMENTS_DIR);
+		const files = readdirSync(LIBRARY_DIR);
 		const documents: Document[] = [];
 		
 		for (const file of files) {
@@ -157,6 +157,133 @@ export function getSeniorityName(seniority: number): string {
 		6: 'Policy'
 	};
 	return names[seniority] ?? 'Document';
+}
+
+// --- Write Operations ---
+
+/**
+ * Save a document back to its JSON file
+ */
+function saveDocumentFile(doc: Document): void {
+	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
+	
+	// Create a clean copy without the runtime-transformed owner_uuid
+	const toSave = { ...doc };
+	const societyUuid = getSocietyUuid();
+	if (societyUuid && toSave.owner_uuid === societyUuid) {
+		toSave.owner_uuid = 'SOCIETY';
+	}
+	
+	writeFileSync(filePath, JSON.stringify(toSave, null, 2), 'utf-8');
+}
+
+/**
+ * Update a section within a document
+ */
+export function updateSection(
+	slug: string,
+	articleIdx: number,
+	sectionIdx: number,
+	updates: { title?: string; body?: string; rationale?: string }
+): Document {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) throw new Error(`Document not found: ${slug}`);
+	if (!doc.articles[articleIdx]) throw new Error(`Article ${articleIdx} not found`);
+	if (!doc.articles[articleIdx].sections[sectionIdx]) throw new Error(`Section ${sectionIdx} not found`);
+	
+	const section = doc.articles[articleIdx].sections[sectionIdx];
+	if (updates.title !== undefined) section.title = updates.title;
+	if (updates.body !== undefined) section.body = updates.body;
+	if (updates.rationale !== undefined) section.rationale = updates.rationale || undefined;
+	
+	saveDocumentFile(doc);
+	return doc;
+}
+
+/**
+ * Add a new section to an article
+ */
+export function addSection(
+	slug: string,
+	articleIdx: number,
+	section: Section
+): Document {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) throw new Error(`Document not found: ${slug}`);
+	if (!doc.articles[articleIdx]) throw new Error(`Article ${articleIdx} not found`);
+	
+	doc.articles[articleIdx].sections.push(section);
+	saveDocumentFile(doc);
+	return doc;
+}
+
+/**
+ * Delete a section from an article
+ */
+export function deleteSection(
+	slug: string,
+	articleIdx: number,
+	sectionIdx: number
+): Document {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) throw new Error(`Document not found: ${slug}`);
+	if (!doc.articles[articleIdx]) throw new Error(`Article ${articleIdx} not found`);
+	if (!doc.articles[articleIdx].sections[sectionIdx]) throw new Error(`Section ${sectionIdx} not found`);
+	
+	doc.articles[articleIdx].sections.splice(sectionIdx, 1);
+	saveDocumentFile(doc);
+	return doc;
+}
+
+/**
+ * Update an article's title
+ */
+export function updateArticle(
+	slug: string,
+	articleIdx: number,
+	updates: { title?: string; number?: string }
+): Document {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) throw new Error(`Document not found: ${slug}`);
+	if (!doc.articles[articleIdx]) throw new Error(`Article ${articleIdx} not found`);
+	
+	const article = doc.articles[articleIdx];
+	if (updates.title !== undefined) article.title = updates.title;
+	if (updates.number !== undefined) article.number = updates.number;
+	
+	saveDocumentFile(doc);
+	return doc;
+}
+
+/**
+ * Add a new article to a document
+ */
+export function addArticle(
+	slug: string,
+	article: Article
+): Document {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) throw new Error(`Document not found: ${slug}`);
+	
+	doc.articles.push(article);
+	saveDocumentFile(doc);
+	return doc;
+}
+
+/**
+ * Delete an article from a document
+ */
+export function deleteArticle(
+	slug: string,
+	articleIdx: number
+): Document {
+	const doc = getDocumentBySlug(slug);
+	if (!doc) throw new Error(`Document not found: ${slug}`);
+	if (!doc.articles[articleIdx]) throw new Error(`Article ${articleIdx} not found`);
+	
+	doc.articles.splice(articleIdx, 1);
+	saveDocumentFile(doc);
+	return doc;
 }
 
 /**

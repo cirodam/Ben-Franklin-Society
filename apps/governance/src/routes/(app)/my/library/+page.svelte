@@ -23,7 +23,7 @@
 
 <div class="page">
 	<PageHeader 
-		title="My Documents" 
+		title="My Library" 
 		description="Draft governing documents you've created" 
 	/>
 
@@ -36,7 +36,7 @@
 	{:else}
 		<List>
 			{#each data.documents as doc (doc.slug)}
-				<ListItem href="/documents/{doc.slug}">
+				<ListItem href="/library/{doc.slug}">
 					<div class="document-card__main">
 						<div class="document-card__title">{doc.title}</div>
 						<code class="document-card__slug">{doc.slug}</code>

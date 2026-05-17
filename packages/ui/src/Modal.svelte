@@ -105,6 +105,9 @@
 		box-shadow: var(--shadow-xl);
 		max-height: 90vh;
 		overflow: auto;
+		margin: auto;
+		position: fixed;
+		inset: 0;
 	}
 
 	.modal::backdrop {

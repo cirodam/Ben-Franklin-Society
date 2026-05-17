@@ -28,7 +28,7 @@ import { addEntry } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid } from '$lib/server/motions.js';
 import { db } from '$lib/server/db.js';
-import { getDocumentBySlug } from '$lib/server/documents.js';
+import { getDocumentBySlug } from '$lib/server/library.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const association = getAssociationByUuid(params.uuid);

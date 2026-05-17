@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types.js';
-import { listDocuments, getCorpus } from '$lib/server/documents.js';
+import { listDocuments, getCorpus } from '$lib/server/library.js';
 
 export const load: PageServerLoad = async () => {
 	const documents = listDocuments();

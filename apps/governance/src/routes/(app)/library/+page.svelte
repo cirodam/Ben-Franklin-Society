@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
-	import type { DocumentStatus } from '$lib/server/documents.js';
+	import type { DocumentStatus } from '$lib/server/library.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -45,7 +45,7 @@
 
 <div class="page">
 	<PageHeader 
-		title="Documents"
+		title="Library"
 		description="Browse the society's governing corpus and other documents"
 	/>
 
@@ -55,7 +55,7 @@
 			<p class="section-desc">All adopted documents that govern the society</p>
 			<List>
 				{#each data.corpus as doc}
-					<ListItem href="/documents/{doc.slug}" class="doc-item--corpus">
+					<ListItem href="/library/{doc.slug}" class="doc-item--corpus">
 						<div class="doc-item__main">
 							<span class="doc-item__title">{doc.title}</span>
 							<code class="doc-item__slug">{doc.slug}</code>
@@ -103,7 +103,7 @@
 		{:else}
 			<List>
 				{#each filtered as d}
-					<ListItem href="/documents/{d.slug}">
+					<ListItem href="/library/{d.slug}">
 						<div class="doc-item__main">
 							<span class="doc-item__title">{d.title}</span>
 							<code class="doc-item__slug">{d.slug}</code>

@@ -2,6 +2,7 @@
 	let {
 		name = undefined,
 		value = $bindable(''),
+		label = undefined,
 		placeholder = '',
 		disabled = false,
 		required = false,
@@ -12,6 +13,7 @@
 	}: {
 		name?: string;
 		value?: string;
+		label?: string;
 		placeholder?: string;
 		disabled?: boolean;
 		required?: boolean;
@@ -24,31 +26,60 @@
 	const hasError = $derived(!!error);
 </script>
 
-<textarea
-	{name}
-	bind:value
-	{placeholder}
-	{disabled}
-	{required}
-	{rows}
-	class="textarea"
-	class:textarea--error={hasError}
-	aria-invalid={hasError}
-	aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
-	{...rest}
-></textarea>
+<div class="textarea-wrapper">
+	{#if label}
+		<label class="textarea-label" for={name}>
+			{label}
+			{#if required}
+				<span class="textarea-required" aria-label="required">*</span>
+			{/if}
+		</label>
+	{/if}
 
-{#if error}
-	<div class="textarea-error" id="{name}-error" role="alert">
-		{error}
-	</div>
-{:else if hint}
-	<div class="textarea-hint" id="{name}-hint">
-		{hint}
-	</div>
-{/if}
+	<textarea
+		id={name}
+		{name}
+		bind:value
+		{placeholder}
+		{disabled}
+		{required}
+		{rows}
+		class="textarea"
+		class:textarea--error={hasError}
+		aria-invalid={hasError}
+		aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
+		{...rest}
+	></textarea>
+
+	{#if error}
+		<div class="textarea-error" id="{name}-error" role="alert">
+			{error}
+		</div>
+	{:else if hint}
+		<div class="textarea-hint" id="{name}-hint">
+			{hint}
+		</div>
+	{/if}
+</div>
 
 <style>
+	.textarea-wrapper {
+		display: flex;
+		flex-direction: column;
+	}
+	.textarea-label {
+		display: block;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
+		margin-bottom: var(--space-2);
+	}
+
+	.textarea-required {
+		color: var(--color-danger);
+		margin-left: var(--space-1);
+	}
+
 	.textarea {
 		width: 100%;
 		font-family: var(--font-sans);

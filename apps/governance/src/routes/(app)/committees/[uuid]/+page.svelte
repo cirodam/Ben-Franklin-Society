@@ -74,7 +74,7 @@
 			<span>Pool: {sourceCollege ? sourceCollege.name : 'Community'}</span>
 			{#if governingDocument}
 				<span>·</span>
-				<a href="/documents/{governingDocument.slug}" class="rules-link">📜 {governingDocument.title}</a>
+				<a href="/library/{governingDocument.slug}" class="rules-link">📜 {governingDocument.title}</a>
 			{/if}
 		</div>
 	</header>

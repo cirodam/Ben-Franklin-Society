@@ -6,7 +6,7 @@ import {
 	getRolesByAssociation,
 } from '$lib/server/associations.js';
 import { db } from '$lib/server/db.js';
-import { getDocumentBySlug } from '$lib/server/documents.js';
+import { getDocumentBySlug } from '$lib/server/library.js';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const association = getAssociationByUuid(params.uuid);

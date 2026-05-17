@@ -36,7 +36,7 @@
 			<span class="handle">@{association.handle}</span>
 			{#if governingDocument}
 				<span>·</span>
-				<a href="/documents/{governingDocument.slug}" class="founding-doc-link">
+				<a href="/library/{governingDocument.slug}" class="founding-doc-link">
 					📜 Founding Document
 				</a>
 			{/if}
