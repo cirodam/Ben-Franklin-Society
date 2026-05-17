@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import { Button, Card, Modal, Textarea, Select } from '@bfs/ui';
+	import { Button, Card, Modal, Parchment, Textarea, Select } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -179,7 +179,7 @@
 	</div>
 
 	<!-- Paper Document -->
-	<div class="motion-paper">
+	<Parchment>
 		<div class="motion-header">
 			<div class="motion-letterhead">
 				<div class="letterhead-body">
@@ -289,7 +289,7 @@
 				</div>
 			{/if}
 		</div>
-	</div>
+	</Parchment>
 
 	<div class="interactive-section">
 	<!-- Vote Tally (if voting) -->
@@ -625,7 +625,7 @@
 	}
 
 	.document-controls {
-		max-width: 900px;
+		max-width: 1000px;
 		margin: 0 auto var(--space-6);
 		padding: 0 var(--space-4);
 		display: flex;
@@ -660,7 +660,7 @@
 
 	/* Lifecycle Indicator */
 	.lifecycle-indicator {
-		max-width: 900px;
+		max-width: 1000px;
 		margin: 0 auto var(--space-6);
 		padding: 0 var(--space-4);
 		display: flex;
@@ -742,40 +742,7 @@
 		background: #28704a;
 	}
 
-	/* Motion Paper Document */
-	.motion-paper {
-		max-width: 900px;
-		margin: 0 auto var(--space-8);
-		background: linear-gradient(to bottom, #fdfdf8 0%, #f9f9f4 100%);
-		box-shadow: 
-			0 1px 3px rgba(0, 0, 0, 0.12),
-			0 4px 12px rgba(0, 0, 0, 0.08),
-			0 8px 24px rgba(0, 0, 0, 0.06);
-		border: 1px solid rgba(139, 115, 85, 0.15);
-		border-radius: 2px;
-		position: relative;
-		padding: var(--space-12) var(--space-10);
-		box-sizing: border-box;
-	}
-
-	.motion-paper::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: 
-			repeating-linear-gradient(
-				0deg,
-				transparent,
-				transparent 1.5rem,
-				rgba(139, 115, 85, 0.03) 1.5rem,
-				rgba(139, 115, 85, 0.03) calc(1.5rem + 1px)
-			);
-		pointer-events: none;
-		border-radius: 2px;
-	}
+	/* Motion Paper Document - content styling handled by Parchment component */
 
 	.motion-header {
 		position: relative;
@@ -1730,17 +1697,6 @@
 			padding: var(--space-4) 0;
 		}
 
-		.motion-paper {
-			border-left: none;
-			border-right: none;
-			border-radius: 0;
-			padding: var(--space-8) var(--space-6);
-		}
-
-		.motion-paper::before {
-			border-radius: 0;
-		}
-
 		.motion-letterhead {
 			flex-direction: column;
 			gap: var(--space-2);
@@ -1825,16 +1781,6 @@
 		}
 
 		.interactive-section {
-			display: none;
-		}
-
-		.motion-paper {
-			box-shadow: none;
-			border: none;
-			padding: var(--space-8);
-		}
-
-		.motion-paper::before {
 			display: none;
 		}
 	}

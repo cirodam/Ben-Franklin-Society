@@ -16,6 +16,7 @@ export { default as List } from './List.svelte';
 export { default as ListItem } from './ListItem.svelte';
 export { default as Modal } from './Modal.svelte';
 export { default as PageHeader } from './PageHeader.svelte';
+export { default as Parchment } from './Parchment.svelte';
 export { default as Radio } from './Radio.svelte';
 export { default as RadioGroup } from './RadioGroup.svelte';
 export { default as Select } from './Select.svelte';

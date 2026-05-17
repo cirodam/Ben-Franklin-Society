@@ -152,7 +152,6 @@
 						</Button>
 					{/if}
 				</EmptyState>
-				</div>
 			{/if}
 		{:else if activeTab === 'pending'}
 			{#if pending.length > 0}

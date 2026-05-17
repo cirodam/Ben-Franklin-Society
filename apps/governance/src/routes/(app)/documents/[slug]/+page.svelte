@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
 	import { enhance } from '$app/forms';
+	import { Parchment } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -45,7 +46,7 @@
 		<a href="/documents" class="back">← Back to Documents</a>
 	</div>
 
-	<div class="document-paper">
+	<Parchment>
 		<div class="document-header">
 			<div class="document-title-block">
 				<h1 class="document-title">{doc.title}</h1>
@@ -114,7 +115,7 @@
 				</div>
 			{/each}
 		</div>
-	</div>
+	</Parchment>
 </div>
 
 
@@ -130,7 +131,7 @@
 	}
 
 	.document-controls {
-		max-width: 900px;
+		max-width: 1000px;
 		margin: 0 auto var(--space-6);
 	}
 
@@ -153,38 +154,7 @@
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
-	/* Paper Document */
-	.document-paper {
-		max-width: 900px;
-		margin: 0 auto;
-		background: linear-gradient(to bottom, #fdfdf8 0%, #f9f9f4 100%);
-		box-shadow: 
-			0 1px 3px rgba(0, 0, 0, 0.12),
-			0 4px 12px rgba(0, 0, 0, 0.08),
-			0 8px 24px rgba(0, 0, 0, 0.06);
-		border: 1px solid rgba(139, 115, 85, 0.15);
-		border-radius: 2px;
-		position: relative;
-	}
-
-	.document-paper::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: 
-			repeating-linear-gradient(
-				0deg,
-				transparent,
-				transparent 1.5rem,
-				rgba(139, 115, 85, 0.03) 1.5rem,
-				rgba(139, 115, 85, 0.03) calc(1.5rem + 1px)
-			);
-		pointer-events: none;
-		border-radius: 2px;
-	}
+	/* Paper Document - content styling handled by Parchment component */
 
 	/* Document Header */
 	.document-header {
@@ -420,12 +390,6 @@
 	@media (max-width: 768px) {
 		.page-wrapper {
 			padding: var(--space-4) var(--space-2);
-		}
-
-		.document-paper {
-			border-left: none;
-			border-right: none;
-			border-radius: 0;
 		}
 
 		.document-header {

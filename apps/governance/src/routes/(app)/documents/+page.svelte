@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { EmptyState, PageHeader } from '@bfs/ui';
+	import { EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 	import type { DocumentStatus } from '$lib/server/documents.js';
 
@@ -120,6 +120,12 @@
 				</ListItem>
 			{/each}
 		</List>
+		{/if}
+	</section>
+	{/if}
+</div>
+
+<style>
 	.page {
 		display: flex;
 		flex-direction: column;

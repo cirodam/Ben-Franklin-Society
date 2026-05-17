@@ -60,9 +60,10 @@
 			{/each}
 		</div>
 	</Card>
-	}
+{/if}
 
-	.card h2 {
+<style>
+	:global(.card h2) {
 		font-size: var(--text-base);
 		font-weight: var(--weight-semibold);
 		margin-bottom: var(--space-4);
