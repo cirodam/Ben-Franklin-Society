@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { foundChildSociety, isHandleAvailable } from '$lib/server/lineage/founding.js';
+import { foundChildSociety, isHandleAvailable } from '$lib/server/federation/lineage/founding.js';
 import type { RequestHandler } from './$types.js';
 
 /**

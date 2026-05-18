@@ -3,62 +3,17 @@ import { db } from '../db.js';
 import { getVoteRuleByUuid, evaluateTally } from './vote-rules.js';
 import * as library from '../documents/library.js';
 import * as discussions from '../communications/discussions.js';
+import type { MotionDocument, MotionContent, MotionStatus } from '../documents/library-types.js';
 
 // --- Types ---
 
-export type MotionStatus =
-	| 'draft'
-	| 'introduced'
-	| 'deliberation' // Combined deliberation and voting phase
-	| 'enacted'
-	| 'rejected'
-	| 'withdrawn';
+// Re-export types from library
+export type { MotionDocument, MotionContent, MotionStatus };
 
 export type VoteChoice = 'aye' | 'nay' | 'abstain';
 
-export interface Motion {
-	uuid: string;
-	slug: string;
-	motion_number: number;
-	title: string;
-	owner_uuid: string; // the association that owns this (typically same as body_uuid)
-	body: string;
-	reasoning: string | null;
-	introduced_by_uuid: string;
-	body_uuid: string; // every motion belongs to a body; use the community association for society-wide motions
-	deliberation_rule_uuid: string | null;
-	vote_rule_uuid: string | null;
-	status: MotionStatus;
-	clerk_notes: string | null;
-	parliamentarian_notes: string | null;
-	thread_uuid: string | null;
-	created_at: string;
-	introduced_at: string | null;
-	enacted_at: string | null;
-	resolved_at: string | null;
-	adopted_by_motion_uuid: string | null; // reference to motion that adopted/amended this
-	repealed_by_motion_uuid: string | null;
-}
-
-export interface VoteTally {
-	motion_uuid: string;
-	eligible_count: number;
-	aye_count: number;
-	nay_count: number;
-	abstain_count: number;
-	opened_at: string;
-	closed_at: string | null;
-}
-
-export interface MotionComment {
-	uuid: string;
-	motion_uuid: string;
-	author_uuid: string;
-	body: string;
-	created_at: string;
-	edited_at: string | null;
-	deleted_at: string | null;
-}
+// Motion comments are now in discussions system
+// Vote tallies are now in vote_sessions system
 
 // --- Helpers ---
 
@@ -74,32 +29,26 @@ const ALLOWED_TRANSITIONS: Partial<Record<MotionStatus, MotionStatus[]>> = {
 
 // --- Motion queries ---
 
-export function getMotionByUuid(uuid: string): Motion | null {
+export function getMotionByUuid(uuid: string): MotionDocument | null {
 	return library.getMotionByUuid(uuid);
 }
 
-export function getMotionBySlug(slug: string): Motion | null {
+export function getMotionBySlug(slug: string): MotionDocument | null {
 	return library.getMotionBySlug(slug);
 }
 
 export function listMotions(opts: {
 	bodyUuid?: string;
 	status?: MotionStatus;
-} = {}): Motion[] {
+} = {}): MotionDocument[] {
 	return library.listMotions({
 		owner_uuid: opts.bodyUuid,
 		status: opts.status,
 	});
 }
 
-export function listEnactedMotions(): (Motion & { body_name: string; body_abbreviation: string | null })[] {
-	return db.prepare(
-		`SELECT m.*, a.name AS body_name, a.abbreviation AS body_abbreviation
-		 FROM motion m
-		 JOIN association a ON a.uuid = m.body_uuid
-		 WHERE m.status = 'enacted'
-		 ORDER BY m.enacted_at DESC`
-	).all() as (Motion & { body_name: string; body_abbreviation: string | null })[];
+export function listEnactedMotions(): MotionDocument[] {
+	return library.listMotions({ status: 'enacted' });
 }
 
 // --- Motion writes ---
@@ -114,19 +63,19 @@ export function createMotion(input: {
 	type?: string;
 	seniority?: number | null;
 	slug?: string;
-}): Motion {
+}): MotionDocument {
 	const uuid = randomUUID();
 	
-	// Get next motion number for this body
-	// Check both database (old) and library (new) for highest number
-	const dbResult = db.prepare(
-		'SELECT COALESCE(MAX(motion_number), 0) AS max_number FROM motion WHERE body_uuid = ?'
-	).get(input.body_uuid) as { max_number: number };
-	
+	// Get next motion number for this body from library
 	const libraryMotions = library.listMotions({ owner_uuid: input.body_uuid });
-	const libraryMaxNumber = libraryMotions.reduce((max, m) => Math.max(max, m.motion_number), 0);
+	const maxNumber = libraryMotions.reduce((max, m) => {
+		// Extract number from format "M-2026-001"
+		const match = m.content.motion_number?.match(/-(\d+)$/);
+		const num = match ? parseInt(match[1], 10) : 0;
+		return Math.max(max, num);
+	}, 0);
 	
-	const motionNumber = Math.max(dbResult.max_number, libraryMaxNumber) + 1;
+	const motionNumber = maxNumber + 1;
 	
 	// Generate slug if not provided
 	const slug = input.slug ?? `motion-${uuid.substring(0, 8)}`;
@@ -155,22 +104,22 @@ export function createMotion(input: {
 	});
 }
 
-export function advanceMotion(uuid: string, to: MotionStatus): Motion {
+export function advanceMotion(uuid: string, to: MotionStatus): MotionDocument {
 	const motion = getMotionByUuid(uuid);
 	if (!motion) throw new Error(`Motion not found: ${uuid}`);
 
-	const allowed = ALLOWED_TRANSITIONS[motion.status] ?? [];
+	const allowed = ALLOWED_TRANSITIONS[motion.content.status] ?? [];
 	if (!allowed.includes(to)) {
-		throw new Error(`Cannot transition motion from '${motion.status}' to '${to}'`);
+		throw new Error(`Cannot transition motion from '${motion.content.status}' to '${to}'`);
 	}
 
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
-	const introducedAt = (to === 'introduced' && !motion.introduced_at) ? now() : null;
+	const introducedAt = (to === 'introduced' && !motion.content.introduced_at) ? now() : null;
 	
 	// Note: Voting now happens during meetings, not automatically when advancing to deliberation
 	if (to === 'deliberation') {
 		// Check if vote rule is set
-		if (!motion.vote_rule_uuid) {
+		if (!motion.content.vote_rule_uuid) {
 			throw new Error('A vote rule must be assigned before deliberation can begin');
 		}
 	}
@@ -182,95 +131,39 @@ export function advanceMotion(uuid: string, to: MotionStatus): Motion {
 	});
 }
 
-export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): Motion {
+export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status === 'deliberation' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
-		throw new Error(`Cannot change vote rule on a motion in status '${motion.status}'`);
+	if (motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
+		throw new Error(`Cannot change vote rule on a motion in status '${motion.content.status}'`);
 	}
 	return library.updateMotion(motion.slug, { vote_rule_uuid: voteRuleUuid ?? undefined });
 }
 
-export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUuid: string | null): Motion {
+export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUuid: string | null): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status === 'deliberation' || motion.status === 'enacted' || motion.status === 'rejected' || motion.status === 'withdrawn') {
-		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.status}'`);
+	if (motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
+		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.content.status}'`);
 	}
 	return library.updateMotion(motion.slug, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
 }
 
-export function setMotionClerkNotes(motionUuid: string, clerkNotes: string | null): Motion {
+export function setMotionClerkNotes(motionUuid: string, clerkNotes: string | null): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	return library.updateMotion(motion.slug, { clerk_notes: clerkNotes ?? undefined });
 }
 
-export function setMotionParliamentarianNotes(motionUuid: string, parliamentarianNotes: string | null): Motion {
+export function setMotionParliamentarianNotes(motionUuid: string, parliamentarianNotes: string | null): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	return library.updateMotion(motion.slug, { parliamentarian_notes: parliamentarianNotes ?? undefined });
 }
 
 // --- Vote Tallies ---
-// Note: Voting is now handled by the vote_sessions system (see vote_sessions.ts).
-// This function remains for backward compatibility and simple tally queries.
-
-export function getVoteTally(motionUuid: string): VoteTally | null {
-	return (
-		(db
-			.prepare('SELECT * FROM motion_vote_tally WHERE motion_uuid = ?')
-			.get(motionUuid) as VoteTally | undefined) ?? null
-	);
-}
-
-/**
- * Check if a person has voted on a motion (legacy API for backward compatibility)
- */
-export function hasVoted(motionUuid: string, voterUuid: string): boolean {
-	return !!db
-		.prepare('SELECT 1 FROM motion_vote_receipt WHERE motion_uuid = ? AND voter_uuid = ?')
-		.get(motionUuid, voterUuid);
-}
-
-/**
- * Cast a vote on a motion (legacy API - kept for backward compatibility)
- * Note: New code should use vote_sessions.castVote instead
- */
-export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoice): void {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	
-	if (hasVoted(motionUuid, voterUuid)) throw new Error('Already voted');
-
-	// Get or create vote tally
-	let tally = getVoteTally(motionUuid);
-	if (!tally) {
-		// Create tally on first vote
-		const row = db.prepare(
-			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
-		).get(motion.body_uuid) as { c: number };
-		const eligibleCount = row.c;
-		
-		db.prepare(
-			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
-			 VALUES (?, ?, 0, 0, 0, ?)`
-		).run(motionUuid, eligibleCount, now());
-		
-		tally = getVoteTally(motionUuid);
-		if (!tally) throw new Error('Failed to create vote tally');
-	}
-
-	const col = choice === 'aye' ? 'aye_count' : choice === 'nay' ? 'nay_count' : 'abstain_count';
-
-	db.transaction(() => {
-		db.prepare(
-			'INSERT INTO motion_vote_receipt (uuid, motion_uuid, voter_uuid, voted_at) VALUES (?, ?, ?, ?)'
-		).run(randomUUID(), motionUuid, voterUuid, now());
-		// col is derived from a controlled enum, not user input — safe to interpolate
-		db.prepare(`UPDATE motion_vote_tally SET ${col} = ${col} + 1 WHERE motion_uuid = ?`).run(motionUuid);
-	})();
-}
+// Voting is handled by the vote_sessions system (see vote-sessions.ts).
+// Old motion_vote_tally table is deprecated.
 
 // --- Motion Enactment ---
 // These functions are called by the vote_sessions system when a vote is finalized.
@@ -279,11 +172,11 @@ export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoi
  * Enact a motion based on a passed vote session
  * Called by vote_sessions system when outcome is 'passed'
  */
-export function enactMotion(motionUuid: string, voteSessionUuid: string): Motion {
+export function enactMotion(motionUuid: string, voteSessionUuid: string): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	
-	if (motion.status === 'enacted') {
+	if (motion.content.status === 'enacted') {
 		// Already enacted, no-op
 		return motion;
 	}
@@ -300,11 +193,11 @@ export function enactMotion(motionUuid: string, voteSessionUuid: string): Motion
  * Reject a motion based on a failed vote session
  * Called by vote_sessions system when outcome is 'failed'
  */
-export function rejectMotion(motionUuid: string, voteSessionUuid: string): Motion {
+export function rejectMotion(motionUuid: string, voteSessionUuid: string): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	
-	if (motion.status === 'rejected') {
+	if (motion.content.status === 'rejected') {
 		// Already rejected, no-op
 		return motion;
 	}
@@ -330,10 +223,10 @@ export function addMotionComment(
 ) {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error('Motion not found');
-	if (!motion.thread_uuid) throw new Error('Motion has no discussion thread');
+	if (!motion.content.thread_uuid) throw new Error('Motion has no discussion thread');
 	
 	return discussions.addComment({
-		thread_uuid: motion.thread_uuid,
+		thread_uuid: motion.content.thread_uuid,
 		author_uuid: authorUuid,
 		body,
 		parent_comment_uuid: parentCommentUuid
@@ -359,9 +252,9 @@ export function deleteMotionComment(commentUuid: string): void {
  */
 export function getMotionComments(motionUuid: string) {
 	const motion = getMotionByUuid(motionUuid);
-	if (!motion?.thread_uuid) return [];
+	if (!motion?.content.thread_uuid) return [];
 	
-	return discussions.getCommentsWithAuthors(motion.thread_uuid);
+	return discussions.getCommentsWithAuthors(motion.content.thread_uuid);
 }
 
 /**

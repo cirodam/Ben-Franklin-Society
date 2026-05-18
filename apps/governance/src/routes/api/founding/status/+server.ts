@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getInitializationStatus, initializeAsChild, initializeAsRoot } from '$lib/server/lineage/initialization.js';
+import { getInitializationStatus, initializeAsChild, initializeAsRoot } from '$lib/server/federation/lineage/initialization.js';
 import type { RequestHandler } from './$types.js';
 
 /**

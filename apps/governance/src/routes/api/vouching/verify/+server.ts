@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { respondToVerificationRequest } from '$lib/server/vouching/verifier.js';
+import { respondToVerificationRequest } from '$lib/server/federation/vouching/verifier.js';
 import type { RequestHandler } from './$types.js';
 
 /**

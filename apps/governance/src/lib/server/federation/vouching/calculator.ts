@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { getLineage } from '../lineage/walker.js';
 import { verifyVouch } from './verifier.js';
 import { getCredentials } from './receiver.js';

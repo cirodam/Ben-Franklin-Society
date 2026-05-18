@@ -2,9 +2,9 @@ import { error, fail } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types.js';
 import {
-	getMotionByUuid, getVoteTally,
-	advanceMotion, castVote, hasVoted, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes, setMotionParliamentarianNotes,
-	type MotionStatus, type VoteChoice,
+	getMotionByUuid,
+	advanceMotion, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes, setMotionParliamentarianNotes,
+	type MotionStatus,
 } from '$lib/server/governance/motions.js';
 import { getActiveMeetingForMotion } from '$lib/server/governance/meetings.js';
 import { listVoteRules, getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
@@ -20,16 +20,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const introducer = db
 		.prepare('SELECT given_name, family_name, handle FROM person WHERE uuid = ?')
-		.get(motion.introduced_by_uuid) as { given_name: string; family_name: string; handle: string } | null;
+		.get(motion.content.introducer_uuid) as { given_name: string; family_name: string; handle: string } | null;
 
-	const body = db.prepare('SELECT name, handle, abbreviation FROM association WHERE uuid = ?').get(motion.body_uuid) as { name: string; handle: string; abbreviation: string | null } | null;
+	const body = db.prepare('SELECT name, handle, abbreviation FROM association WHERE uuid = ?').get(motion.owner_uuid) as { name: string; handle: string; abbreviation: string | null } | null;
 
-	const tally = getVoteTally(motion.uuid);
-	const voteRules = listVoteRules(motion.body_uuid);
-	const currentRule = motion.vote_rule_uuid ? getVoteRuleByUuid(motion.vote_rule_uuid) : null;
+	// TODO: Query vote_session table for active vote tally
+	const tally = null;
+	const voteRules = listVoteRules(motion.owner_uuid);
+	const currentRule = motion.content.vote_rule_uuid ? getVoteRuleByUuid(motion.content.vote_rule_uuid) : null;
 	
-	const deliberationRules = listDeliberationRules(motion.body_uuid);
-	const currentDeliberationRule = motion.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.deliberation_rule_uuid) : null;
+	const deliberationRules = listDeliberationRules(motion.owner_uuid);
+	const currentDeliberationRule = motion.content.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.content.deliberation_rule_uuid) : null;
 
 	const comments = db.prepare(`
 		SELECT mc.uuid, mc.body, mc.created_at, mc.edited_at, mc.author_uuid,
@@ -50,7 +51,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}>;
 
 	let canAdvance = false;
-	let alreadyVoted = false;
 	let actingAs: string | null = null;
 
 	// Check if motion is on agenda of an active meeting
@@ -58,12 +58,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (locals.session) {
 		actingAs = locals.session.acting_as_uuid;
-		const scope = motion.body_uuid;
+		const scope = motion.owner_uuid;
 		canAdvance = hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, scope);
-		// Voting is allowed if motion is on active meeting agenda
-		if (activeMeetingUuid) {
-			alreadyVoted = hasVoted(motion.uuid, actingAs);
-		}
 	}
 
 	return { 
@@ -78,7 +74,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		comments, 
 		canAdvance, 
 		activeMeetingUuid,
-		alreadyVoted,
 		actingAs 
 	};
 };
@@ -107,35 +102,15 @@ export const actions: Actions = {
 		const label = to === 'introduced' ? 'introduced'
 			: to === 'deliberation' ? 'moved to deliberation and voting'
 			: 'withdrawn';
-		addEntry(motion.body_uuid, actingAs, `motion_${to}`, 'motion', motion.uuid,
+		addEntry(motion.owner_uuid, actingAs, `motion_${to}`, 'motion', motion.uuid,
 			`Motion "${motion.title}" ${label}`);
 		audit(actingAs, `motion.${to}`, 'motion', motion.uuid, `Motion "${motion.title}" ${label}`);
 
 		return { success: true };
 	},
 
-	castVote: async ({ params, locals, request }) => {
-		if (!locals.session) error(401, 'Not authenticated');
-		const actingAs = locals.session.acting_as_uuid;
-
-		const motion = getMotionByUuid(params.uuid);
-		if (!motion) error(404, 'Motion not found');
-
-		const data = await request.formData();
-		const choice = data.get('choice') as string;
-		const validChoices: VoteChoice[] = ['aye', 'nay', 'abstain'];
-		if (!validChoices.includes(choice as VoteChoice)) {
-			return fail(400, { error: 'Invalid vote choice' });
-		}
-
-		try {
-			castVote(motion.uuid, actingAs, choice as VoteChoice);
-		} catch (err) {
-			return fail(400, { error: err instanceof Error ? err.message : 'Vote failed' });
-		}
-
-		return { success: true };
-	},
+	// TODO: Restore voting via vote_sessions system
+	// castVote action removed - voting now happens through vote_sessions
 
 	setVoteRule: async ({ params, locals, request }) => {
 		if (!locals.session) error(401, 'Not authenticated');
@@ -144,7 +119,7 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
 		}
 
@@ -159,7 +134,7 @@ export const actions: Actions = {
 
 		if (vote_rule_uuid) {
 			const rule = db.prepare('SELECT name FROM vote_rule WHERE uuid = ?').get(vote_rule_uuid) as { name: string } | undefined;
-			addEntry(motion.body_uuid, actingAs, 'vote_rule_set', 'motion', motion.uuid,
+			addEntry(motion.owner_uuid, actingAs, 'vote_rule_set', 'motion', motion.uuid,
 				`Vote rule "${rule?.name ?? vote_rule_uuid}" assigned to motion "${motion.title}"`);
 			audit(actingAs, 'motion.set_vote_rule', 'motion', motion.uuid,
 				`Vote rule "${rule?.name ?? vote_rule_uuid}" set on motion "${motion.title}"`);
@@ -175,7 +150,7 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
 		}
 
@@ -190,7 +165,7 @@ export const actions: Actions = {
 
 		if (deliberation_rule_uuid) {
 			const rule = db.prepare('SELECT name FROM deliberation_rule WHERE uuid = ?').get(deliberation_rule_uuid) as { name: string } | undefined;
-			addEntry(motion.body_uuid, actingAs, 'deliberation_rule_set', 'motion', motion.uuid,
+			addEntry(motion.owner_uuid, actingAs, 'deliberation_rule_set', 'motion', motion.uuid,
 				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" assigned to motion "${motion.title}"`);
 			audit(actingAs, 'motion.set_deliberation_rule', 'motion', motion.uuid,
 				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" set on motion "${motion.title}"`);
@@ -206,7 +181,7 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
 		}
 
@@ -224,7 +199,7 @@ export const actions: Actions = {
 		// Log changes
 		if (vote_rule_uuid) {
 			const rule = db.prepare('SELECT name FROM vote_rule WHERE uuid = ?').get(vote_rule_uuid) as { name: string } | undefined;
-			addEntry(motion.body_uuid, actingAs, 'vote_rule_set', 'motion', motion.uuid,
+			addEntry(motion.owner_uuid, actingAs, 'vote_rule_set', 'motion', motion.uuid,
 				`Vote rule "${rule?.name ?? vote_rule_uuid}" assigned to motion "${motion.title}"`);
 			audit(actingAs, 'motion.set_vote_rule', 'motion', motion.uuid,
 				`Vote rule "${rule?.name ?? vote_rule_uuid}" set on motion "${motion.title}"`);
@@ -247,7 +222,7 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
 		}
 
@@ -270,7 +245,7 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
 		}
 

@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { randomUUID } from 'crypto';
 import { getIdentity, signMessage, verifySignature } from '../lineage/identity.js';
 import { getVouchById } from './issuer.js';

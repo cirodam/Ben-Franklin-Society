@@ -1,7 +1,7 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { randomUUID } from 'crypto';
 import { getIdentity, signMessage, type FoundingRecord } from './identity.js';
-import { registerWithFederation } from '../federation/client.js';
+import { registerWithFederation } from '../client.js';
 
 export interface ChildSocietyProposal {
 	handle: string;

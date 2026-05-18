@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { storeCredential, getCredentials } from '$lib/server/vouching/receiver.js';
+import { storeCredential, getCredentials } from '$lib/server/federation/vouching/receiver.js';
 import type { RequestHandler } from './$types.js';
 
 /**

@@ -4,7 +4,7 @@ import {
 	getAssociationByHandle,
 	getCurrentMembers,
 } from '$lib/server/organization/associations.js';
-import { listMotions, createMotion, getVoteTally, getComments } from '$lib/server/governance/motions.js';
+import { listMotions, createMotion, getComments } from '$lib/server/governance/motions.js';
 import { listDeliberationRules } from '$lib/server/governance/deliberation-rules.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import {
@@ -32,9 +32,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Group motions by status for deliberation-centric display
 	const activeDeliberations = allMotions
-		.filter((m) => m.status === 'deliberation')
+		.filter((m) => m.content.status === 'deliberation')
 		.map((m) => {
-			const voteTally = getVoteTally(m.uuid);
+			// TODO: Query vote_session table for active vote tally
+			const voteTally = null;
 			const tally = voteTally ? {
 				eligible: voteTally.eligible_count,
 				voted: voteTally.aye_count + voteTally.nay_count + voteTally.abstain_count,
@@ -47,7 +48,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		});
 
 	const pending = allMotions
-		.filter((m) => m.status === 'introduced' || m.status === 'draft')
+		.filter((m) => m.content.status === 'introduced' || m.content.status === 'draft')
 		.map((m) => {
 			const comments = getComments(m.uuid);
 			return { ...m, comments };

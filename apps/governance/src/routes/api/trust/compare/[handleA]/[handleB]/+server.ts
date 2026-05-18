@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { compareTrust } from '$lib/server/vouching/calculator.js';
+import { compareTrust } from '$lib/server/federation/vouching/calculator.js';
 import type { RequestHandler } from './$types.js';
 
 /**

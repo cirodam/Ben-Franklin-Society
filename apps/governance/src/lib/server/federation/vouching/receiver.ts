@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { verifySignature } from '../lineage/identity.js';
 import type { VouchCredential, VouchType } from './issuer.js';
 

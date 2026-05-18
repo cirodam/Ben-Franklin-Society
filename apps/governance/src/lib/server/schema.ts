@@ -212,58 +212,6 @@ CREATE TABLE IF NOT EXISTS vote_rule (
   UNIQUE (association_uuid, name)
 );
 
-CREATE TABLE IF NOT EXISTS motion (
-  uuid                    TEXT PRIMARY KEY,
-  slug                    TEXT NOT NULL UNIQUE,
-  motion_number           INTEGER NOT NULL,
-  title                   TEXT NOT NULL,
-  owner_uuid              TEXT NOT NULL REFERENCES association(uuid),
-  body                    TEXT NOT NULL,
-  reasoning               TEXT NULL,
-  introduced_by_uuid      TEXT NOT NULL REFERENCES person(uuid),
-  body_uuid               TEXT NOT NULL REFERENCES association(uuid),
-  deliberation_rule_uuid  TEXT NULL REFERENCES deliberation_rule(uuid),
-  vote_rule_uuid          TEXT NULL REFERENCES vote_rule(uuid),
-  status                  TEXT NOT NULL DEFAULT 'draft',
-  clerk_notes             TEXT NULL,
-  parliamentarian_notes   TEXT NULL,
-  created_at              TEXT NOT NULL,
-  introduced_at           TEXT NULL,
-  enacted_at              TEXT NULL,
-  resolved_at             TEXT NULL,
-  adopted_by_motion_uuid  TEXT NULL REFERENCES motion(uuid),
-  repealed_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
-  UNIQUE(body_uuid, motion_number)
-);
-
-CREATE TABLE IF NOT EXISTS motion_vote_tally (
-  motion_uuid    TEXT PRIMARY KEY REFERENCES motion(uuid),
-  eligible_count INTEGER NOT NULL,
-  aye_count      INTEGER NOT NULL DEFAULT 0,
-  nay_count      INTEGER NOT NULL DEFAULT 0,
-  abstain_count  INTEGER NOT NULL DEFAULT 0,
-  opened_at      TEXT NOT NULL,
-  closed_at      TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS motion_vote_receipt (
-  uuid        TEXT PRIMARY KEY,
-  motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
-  voter_uuid  TEXT NOT NULL REFERENCES person(uuid),
-  voted_at    TEXT NOT NULL,
-  UNIQUE (motion_uuid, voter_uuid)
-);
-
-CREATE TABLE IF NOT EXISTS motion_comment (
-  uuid        TEXT PRIMARY KEY,
-  motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
-  author_uuid TEXT NOT NULL REFERENCES person(uuid),
-  body        TEXT NOT NULL,
-  created_at  TEXT NOT NULL,
-  edited_at   TEXT NULL,
-  deleted_at  TEXT NULL
-);
-
 -- Meetings: Scheduled assembly gatherings where votes are taken
 CREATE TABLE IF NOT EXISTS meeting (
   uuid            TEXT PRIMARY KEY,
@@ -286,7 +234,7 @@ CREATE INDEX IF NOT EXISTS idx_meeting_status ON meeting(status);
 CREATE TABLE IF NOT EXISTS meeting_agenda_item (
   uuid          TEXT PRIMARY KEY,
   meeting_uuid  TEXT NOT NULL REFERENCES meeting(uuid),
-  motion_uuid   TEXT NOT NULL REFERENCES motion(uuid),
+  motion_uuid   TEXT NOT NULL,
   display_order INTEGER NOT NULL,
   notes         TEXT NULL,
   added_at      TEXT NOT NULL,
@@ -299,7 +247,7 @@ CREATE INDEX IF NOT EXISTS idx_agenda_item_motion ON meeting_agenda_item(motion_
 CREATE TABLE IF NOT EXISTS meeting_outcome (
   uuid          TEXT PRIMARY KEY,
   meeting_uuid  TEXT NOT NULL REFERENCES meeting(uuid),
-  motion_uuid   TEXT NOT NULL REFERENCES motion(uuid),
+  motion_uuid   TEXT NOT NULL,
   action_taken  TEXT NOT NULL,
   vote_aye      INTEGER NULL,
   vote_nay      INTEGER NULL,
@@ -322,7 +270,7 @@ CREATE TABLE IF NOT EXISTS petition (
   responded_at        TEXT NULL,
   responded_by_uuid   TEXT NULL REFERENCES person(uuid),
   response_body       TEXT NULL,
-  related_motion_uuid TEXT NULL REFERENCES motion(uuid)
+  related_motion_uuid TEXT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_petition_status ON petition(status);
 CREATE INDEX IF NOT EXISTS idx_petition_created ON petition(created_at);
@@ -406,7 +354,7 @@ CREATE TABLE IF NOT EXISTS calendar_event (
   starts_at              TEXT NOT NULL,
   ends_at                TEXT NULL,
   location               TEXT NULL,
-  created_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
+  created_by_motion_uuid TEXT NULL,
   created_at             TEXT NOT NULL,
   cancelled_at           TEXT NULL
 );
@@ -415,7 +363,7 @@ CREATE TABLE IF NOT EXISTS community_config (
   key                    TEXT PRIMARY KEY,
   value                  TEXT NOT NULL,
   description            TEXT NOT NULL,
-  updated_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
+  updated_by_motion_uuid TEXT NULL,
   updated_at             TEXT NOT NULL
 );
 
@@ -423,7 +371,7 @@ CREATE TABLE IF NOT EXISTS community_config_history (
   uuid                   TEXT PRIMARY KEY,
   key                    TEXT NOT NULL,
   value                  TEXT NOT NULL,
-  updated_by_motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
+  updated_by_motion_uuid TEXT NOT NULL,
   superseded_at          TEXT NOT NULL
 );
 
@@ -440,7 +388,7 @@ CREATE TABLE IF NOT EXISTS sortition_body_config (
 CREATE TABLE IF NOT EXISTS sortition (
   uuid             TEXT PRIMARY KEY,
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
-  motion_uuid      TEXT NOT NULL REFERENCES motion(uuid),
+  motion_uuid      TEXT NOT NULL,
   conducted_at     TEXT NOT NULL,
   pool_size        INTEGER NOT NULL,
   notes            TEXT NULL
@@ -450,7 +398,7 @@ CREATE TABLE IF NOT EXISTS seat_term (
   uuid             TEXT PRIMARY KEY,
   association_uuid TEXT NOT NULL REFERENCES association(uuid),
   person_uuid      TEXT NOT NULL REFERENCES person(uuid),
-  motion_uuid      TEXT NOT NULL REFERENCES motion(uuid),
+  motion_uuid      TEXT NOT NULL,
   started_at       TEXT NOT NULL,
   ends_at          TEXT NOT NULL,
   vacated_at       TEXT NULL
@@ -458,7 +406,7 @@ CREATE TABLE IF NOT EXISTS seat_term (
 
 CREATE TABLE IF NOT EXISTS list (
   uuid         TEXT PRIMARY KEY,
-  motion_uuid  TEXT NOT NULL REFERENCES motion(uuid),
+  motion_uuid  TEXT NOT NULL,
   name         TEXT NOT NULL,
   created_at   TEXT NOT NULL
 );
@@ -514,7 +462,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
   target_type      TEXT NOT NULL,   -- e.g. 'library', 'person', 'association'
   target_uuid      TEXT NOT NULL,
   detail           TEXT NULL,       -- human-readable description
-  motion_uuid      TEXT NULL REFERENCES motion(uuid), -- authorizing motion, if any
+  motion_uuid      TEXT NULL,       -- authorizing motion UUID (references library document), if any
   created_at       TEXT NOT NULL
 );
 

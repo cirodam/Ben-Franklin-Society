@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { randomUUID } from 'crypto';
 import { getIdentity, signMessage } from '../lineage/identity.js';
 

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { verifyFoundingRecord } from '$lib/server/lineage/verification.js';
+import { verifyFoundingRecord } from '$lib/server/federation/lineage/verification.js';
 import type { RequestHandler } from './$types.js';
-import type { FoundingRecord } from '$lib/server/lineage/identity.js';
+import type { FoundingRecord } from '$lib/server/federation/lineage/identity.js';
 
 /**
  * POST /api/lineage/verify

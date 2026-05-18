@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getIdentity, getOurLineage } from '$lib/server/lineage/identity.js';
+import { getIdentity, getOurLineage } from '$lib/server/federation/lineage/identity.js';
 import type { RequestHandler } from './$types.js';
 
 /**

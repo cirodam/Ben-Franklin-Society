@@ -1,7 +1,7 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { verifyFoundingRecord } from './verification.js';
 import { type FoundingRecord } from './identity.js';
-import { registerWithFederation, cacheSociety } from '../federation/client.js';
+import { registerWithFederation, cacheSociety } from '../client.js';
 
 /**
  * Initialize this society as a child with a founding record from parent

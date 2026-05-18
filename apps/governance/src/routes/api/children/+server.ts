@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getFoundedChildren } from '$lib/server/lineage/founding.js';
+import { getFoundedChildren } from '$lib/server/federation/lineage/founding.js';
 import type { RequestHandler } from './$types.js';
 
 /**

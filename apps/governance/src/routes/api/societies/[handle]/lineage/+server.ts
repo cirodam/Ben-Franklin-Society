@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getLineage } from '$lib/server/lineage/walker.js';
+import { getLineage } from '$lib/server/federation/lineage/walker.js';
 import type { RequestHandler } from './$types.js';
 
 /**

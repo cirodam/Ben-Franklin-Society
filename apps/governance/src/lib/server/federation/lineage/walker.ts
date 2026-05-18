@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { verifyFoundingRecord } from './verification.js';
 import type { FoundingRecord } from './identity.js';
 
@@ -119,7 +119,7 @@ async function getEndpointForSociety(handle: string): Promise<string | null> {
 
 	// Try Federation lookup
 	try {
-		const { lookupInFederation } = await import('../federation/client.js');
+		const { lookupInFederation } = await import('../client.js');
 		const society = await lookupInFederation(handle);
 		return society?.endpoint || null;
 	} catch {

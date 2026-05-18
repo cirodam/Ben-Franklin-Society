@@ -1,5 +1,5 @@
 import { generateKeyPairSync, sign, verify } from 'crypto';
-import { db } from '../db.js';
+import { db } from '../../db.js';
 import { randomUUID } from 'crypto';
 
 export interface SocietyIdentity {

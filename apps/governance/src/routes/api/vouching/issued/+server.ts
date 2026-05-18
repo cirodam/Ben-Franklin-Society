@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getIssuedVouches } from '$lib/server/vouching/issuer.js';
+import { getIssuedVouches } from '$lib/server/federation/vouching/issuer.js';
 import type { RequestHandler } from './$types.js';
 
 /**

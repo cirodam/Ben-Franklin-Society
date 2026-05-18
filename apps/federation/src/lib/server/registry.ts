@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { db } from './db.js';
 import { sign, verify } from 'crypto';
 import { cacheWhois } from './domains.js';
 

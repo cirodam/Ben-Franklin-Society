@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types.js';
-import { getIdentity } from '$lib/server/lineage/identity.js';
-import { isInitialized } from '$lib/server/lineage/initialization.js';
+import { getIdentity } from '$lib/server/federation/lineage/identity.js';
+import { isInitialized } from '$lib/server/federation/lineage/initialization.js';
 
 export const load: PageServerLoad = async () => {
 	const initialized = isInitialized();

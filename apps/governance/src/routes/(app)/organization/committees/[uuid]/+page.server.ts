@@ -15,7 +15,7 @@ import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/serv
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry, getBodyRecord } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
-import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/governance/motions.js';
+import { listEnactedMotions, getMotionByUuid, listMotions, getComments, createMotion } from '$lib/server/governance/motions.js';
 import { listDeliberationRules } from '$lib/server/governance/deliberation-rules.js';
 import { getDocumentBySlug, listOrgChartDocuments } from '$lib/server/documents/library.js';
 import { db } from '$lib/server/db.js';
@@ -103,9 +103,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
 	const activeDeliberations = allMotions
-		.filter((m) => m.status === 'deliberation')
+		.filter((m) => m.content.status === 'deliberation')
 		.map((m) => {
-			const voteTally = getVoteTally(m.uuid);
+			// TODO: Query vote_session table for active vote tally
+			const voteTally = null;
 			const tally = voteTally ? {
 				eligible: voteTally.eligible_count,
 				voted: voteTally.aye_count + voteTally.nay_count + voteTally.abstain_count,

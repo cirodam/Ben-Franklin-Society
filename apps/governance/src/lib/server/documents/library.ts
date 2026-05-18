@@ -719,64 +719,6 @@ export function getDocumentByUuid(uuid: string): LibraryDocument | LegacyMotion 
 // Motion Functions
 // ============================================================================
 
-// Legacy Motion interface for backward compatibility
-export interface LegacyMotion {
-	uuid: string;
-	slug: string;
-	motion_number: number;
-	title: string;
-	owner_uuid: string;
-	body: string;
-	reasoning: string | null;
-	introduced_by_uuid: string;
-	body_uuid: string;
-	deliberation_rule_uuid: string | null;
-	vote_rule_uuid: string | null;
-	status: MotionStatus;
-	clerk_notes: string | null;
-	parliamentarian_notes: string | null;
-	thread_uuid: string | null;
-	created_at: string;
-	introduced_at: string | null;
-	enacted_at: string | null;
-	resolved_at: string | null;
-	adopted_by_motion_uuid: string | null;
-	repealed_by_motion_uuid: string | null;
-}
-
-/**
- * Convert new format to legacy format
- */
-function motionToLegacy(doc: MotionDocument): LegacyMotion {
-	// Extract motion number (strip M- prefix and parse)
-	const motionNumberStr = doc.content.motion_number || '0';
-	const motion_number = parseInt(motionNumberStr.split('-').pop() || '0', 10);
-
-	return {
-		uuid: doc.uuid,
-		slug: doc.slug,
-		motion_number,
-		title: doc.title,
-		owner_uuid: doc.owner_uuid,
-		body: doc.content.body,
-		reasoning: doc.content.reasoning ?? null,
-		introduced_by_uuid: doc.content.introducer_uuid,
-		body_uuid: doc.content.body_uuid || doc.owner_uuid,
-		deliberation_rule_uuid: doc.content.deliberation_rule_uuid ?? null,
-		vote_rule_uuid: doc.content.vote_rule_uuid ?? null,
-		status: doc.content.status,
-		clerk_notes: doc.content.clerk_notes ?? null,
-		parliamentarian_notes: doc.content.parliamentarian_notes ?? null,
-		thread_uuid: doc.content.thread_uuid ?? null,
-		created_at: doc.created_at,
-		introduced_at: doc.content.introduced_at ?? null,
-		enacted_at: doc.content.enacted_at ?? null,
-		resolved_at: doc.content.vote_closed_at ?? null,
-		adopted_by_motion_uuid: doc.content.adopted_by_motion_uuid ?? null,
-		repealed_by_motion_uuid: doc.content.repealed_by_motion_uuid ?? null,
-	};
-}
-
 /**
  * Load a motion from file
  */
@@ -980,23 +922,21 @@ export function deleteDocument(uuid: string): boolean {
 /**
  * Get motion by slug
  */
-export function getMotionBySlug(slug: string): LegacyMotion | null {
-	const doc = loadMotion(slug);
-	return doc ? motionToLegacy(doc) : null;
+export function getMotionBySlug(slug: string): MotionDocument | null {
+	return loadMotion(slug);
 }
 
 /**
  * Get motion by UUID
  */
-export function getMotionByUuid(uuid: string): LegacyMotion | null {
+export function getMotionByUuid(uuid: string): MotionDocument | null {
 	// Query library_item to find slug
 	const row = db.prepare(
 		'SELECT slug FROM library_item WHERE uuid = ? AND type = ?'
 	).get(uuid, 'motion') as { slug: string } | undefined;
 	
 	if (!row) return null;
-	const doc = loadMotion(row.slug);
-	return doc ? motionToLegacy(doc) : null;
+	return loadMotion(row.slug);
 }
 
 /**
@@ -1005,8 +945,8 @@ export function getMotionByUuid(uuid: string): LegacyMotion | null {
 export function listMotions(opts: {
 	status?: string;
 	owner_uuid?: string;
-} = {}): LegacyMotion[] {
-	const motions: LegacyMotion[] = [];
+} = {}): MotionDocument[] {
+	const motions: MotionDocument[] = [];
 
 	if (!existsSync(MOTIONS_DIR)) return motions;
 
@@ -1020,7 +960,7 @@ export function listMotions(opts: {
 					// Apply filters
 					if (opts.status && motion.content.status !== opts.status) continue;
 					if (opts.owner_uuid && motion.owner_uuid !== opts.owner_uuid) continue;
-					motions.push(motionToLegacy(motion));
+					motions.push(motion);
 				}
 			}
 		}
@@ -1045,7 +985,7 @@ export function createMotion(input: {
 	vote_rule_uuid?: string;
 	reasoning?: string;
 	thread_uuid?: string;
-}): LegacyMotion {
+}): MotionDocument {
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
 
@@ -1071,13 +1011,13 @@ export function createMotion(input: {
 	};
 
 	saveMotion(doc);
-	return motionToLegacy(doc);
+	return doc;
 }
 
 /**
  * Update motion content
  */
-export function updateMotion(slug: string, updates: Partial<MotionContent>): LegacyMotion {
+export function updateMotion(slug: string, updates: Partial<MotionContent>): MotionDocument {
 	const doc = loadMotion(slug);
 	if (!doc) throw new Error(`Motion not found: ${slug}`);
 
@@ -1085,7 +1025,7 @@ export function updateMotion(slug: string, updates: Partial<MotionContent>): Leg
 	Object.assign(doc.content, updates);
 
 	saveMotion(doc);
-	return motionToLegacy(doc);
+	return doc;
 }
 
 /**
@@ -1100,7 +1040,7 @@ export function updateMotionStatus(
 		vote_closed_at?: string;
 		enacted_at?: string;
 	}
-): LegacyMotion {
+): MotionDocument {
 	const doc = loadMotion(slug);
 	if (!doc) throw new Error(`Motion not found: ${slug}`);
 
@@ -1110,5 +1050,5 @@ export function updateMotionStatus(
 	}
 
 	saveMotion(doc);
-	return motionToLegacy(doc);
+	return doc;
 }

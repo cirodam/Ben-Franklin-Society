@@ -1,5 +1,5 @@
 import { db } from '../db.js';
-import type { FoundingRecord } from '../lineage/identity.js';
+import type { FoundingRecord } from './lineage/identity.js';
 
 export interface Society {
 	handle: string;
