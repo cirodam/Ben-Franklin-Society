@@ -24,11 +24,6 @@ export const motionDocType: DocumentTypeConfig<MotionDocument['content']> = {
 
 	detailRoute: (doc) => `/motions/${doc.uuid}`,
 
-	loadBySlug: async (slug) => {
-		const { loadMotion } = await import('$lib/server/library.js');
-		return loadMotion(slug);
-	},
-
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)
 		let motionNumber: string | undefined;

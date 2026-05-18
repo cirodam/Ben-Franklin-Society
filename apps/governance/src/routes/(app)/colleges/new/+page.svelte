@@ -57,7 +57,7 @@
 				maxlength="10"
 				placeholder="FAB"
 				value={form?.abbreviation ?? ''}
-				hint="Optional. Short code for motion numbering (e.g., \"FAB 123\")"
+				hint="Optional. Short code for motion numbering (e.g., 'FAB 123')"
 			/>
 		</div>
 

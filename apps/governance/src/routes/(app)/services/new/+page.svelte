@@ -61,7 +61,7 @@
 					maxlength={10}
 					placeholder="MFG"
 					value={form?.abbreviation ?? ''}
-					hint="Optional. Short code for motion numbering (e.g., \"MFG 123\")"
+					hint="Optional. Short code for motion numbering (e.g., 'MFG 123')"
 				/>
 			</FormField>
 		</Card>

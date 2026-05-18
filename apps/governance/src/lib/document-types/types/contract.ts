@@ -16,11 +16,6 @@ export const contractDocType: DocumentTypeConfig<ContractDocument['content']> = 
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
 
-	loadBySlug: async (slug) => {
-		const { loadContract } = await import('$lib/server/library.js');
-		return loadContract(slug);
-	},
-
 	getSubtitle: (doc) => {
 		// Show the two parties
 		let partyA: string | undefined;

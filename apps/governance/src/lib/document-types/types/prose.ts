@@ -16,11 +16,6 @@ export const proseDocType: DocumentTypeConfig<ProseDocument['content']> = {
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
 
-	loadBySlug: async (slug) => {
-		const { loadProseDocument } = await import('$lib/server/library.js');
-		return loadProseDocument(slug);
-	},
-
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)
 		let paragraphCount = 0;

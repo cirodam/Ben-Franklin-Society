@@ -41,11 +41,6 @@ export const governingDocType: DocumentTypeConfig<GoverningDocument['content']> 
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
 
-	loadBySlug: async (slug) => {
-		const { loadGoverningDocument } = await import('$lib/server/library.js');
-		return loadGoverningDocument(slug);
-	},
-
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)
 		if ('metadata' in doc && doc.metadata?.seniority) {
