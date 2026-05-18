@@ -336,6 +336,7 @@ CREATE TABLE IF NOT EXISTS referendum_question (
   question_type   TEXT NOT NULL,
   description     TEXT NULL,
   display_order   INTEGER NOT NULL,
+  thread_uuid     TEXT NULL REFERENCES comment_thread(uuid),
   created_at      TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_referendum_question_ref ON referendum_question(referendum_uuid);
@@ -518,6 +519,27 @@ CREATE TABLE IF NOT EXISTS bulletin_comment (
   updated_at TEXT NULL,
   deleted_at TEXT NULL
 );
+
+-- General-purpose discussion threads and comments
+
+CREATE TABLE IF NOT EXISTS comment_thread (
+  uuid       TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS comment (
+  uuid                TEXT PRIMARY KEY,
+  thread_uuid         TEXT NOT NULL REFERENCES comment_thread(uuid),
+  author_uuid         TEXT NOT NULL REFERENCES person(uuid),
+  parent_comment_uuid TEXT NULL REFERENCES comment(uuid),
+  body                TEXT NOT NULL,
+  created_at          TEXT NOT NULL,
+  edited_at           TEXT NULL,
+  deleted_at          TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_comment_thread ON comment(thread_uuid);
+CREATE INDEX IF NOT EXISTS idx_comment_author ON comment(author_uuid);
+CREATE INDEX IF NOT EXISTS idx_comment_parent ON comment(parent_comment_uuid);
 
 -- Society Identity: Our society's identity and lineage
 

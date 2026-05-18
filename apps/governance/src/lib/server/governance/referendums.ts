@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { db } from '../db.js';
+import { createThread } from '../communications/discussions.js';
 
 export type ReferendumStatus = 'draft' | 'open' | 'closed';
 export type QuestionType = 'yes_no' | 'multiple_choice' | 'ranking';
@@ -23,6 +24,7 @@ export interface ReferendumQuestion {
 	question_type: QuestionType;
 	description: string | null;
 	display_order: number;
+	thread_uuid: string | null;
 	created_at: string;
 }
 
@@ -184,9 +186,12 @@ export function createQuestion(input: {
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
 
+	// Create a comment thread for this question
+	const thread = createThread();
+
 	const stmt = db.prepare(`
-		INSERT INTO referendum_question (uuid, referendum_uuid, question_text, question_type, description, display_order, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO referendum_question (uuid, referendum_uuid, question_text, question_type, description, display_order, thread_uuid, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`);
 
 	stmt.run(
@@ -196,6 +201,7 @@ export function createQuestion(input: {
 		input.question_type,
 		input.description ?? null,
 		input.display_order,
+		thread.uuid,
 		now
 	);
 

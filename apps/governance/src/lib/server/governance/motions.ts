@@ -264,23 +264,5 @@ export function isMotionCommentAuthor(commentUuid: string, personUuid: string): 
 	return discussions.isCommentAuthor(commentUuid, personUuid);
 }
 
-// --- Legacy comment functions (deprecated, for backward compatibility) ---
-
-export function addComment(motionUuid: string, authorUuid: string, body: string) {
-	return addMotionComment(motionUuid, authorUuid, body);
-}
-
-export function editComment(commentUuid: string, body: string): void {
-	editMotionComment(commentUuid, body);
-}
-
-export function deleteComment(commentUuid: string): void {
-	deleteMotionComment(commentUuid);
-}
-
-export function getComments(motionUuid: string) {
-	return getMotionComments(motionUuid);
-}
-
 // --- Motion as Document ---
 

@@ -29,7 +29,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const respondedPetitions = listPetitions({ status: 'responded', personUuid: actingAs ?? undefined });
 
 	// Get referendums
-	const draftReferendums = listReferendums({ status: 'draft' });
 	const openReferendums = listReferendums({ status: 'open' });
 	const closedReferendums = listReferendums({ status: 'closed' });
 
@@ -55,7 +54,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		members,
 		openPetitions,
 		respondedPetitions,
-		draftReferendums,
 		openReferendums: enrichedOpenReferendums,
 		closedReferendums,
 	};

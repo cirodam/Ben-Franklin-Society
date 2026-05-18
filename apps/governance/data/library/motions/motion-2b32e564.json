@@ -1,0 +1,20 @@
+{
+  "uuid": "befdeb9f-2656-4081-af79-80f748c89a00",
+  "type": "motion",
+  "slug": "motion-2b32e564",
+  "title": "test",
+  "owner_uuid": "8fe59dd7-bf38-4cb9-82ac-25fe462479e6",
+  "created_at": "2026-05-18T20:47:57.354Z",
+  "updated_at": "2026-05-18T20:47:57.355Z",
+  "content": {
+    "status": "introduced",
+    "body": "test",
+    "introducer_uuid": "e593f384-3594-4454-a77a-4369f018aeed",
+    "motion_number": "M-2026-001",
+    "deliberation_rule_uuid": "f449c398-1615-493e-bd3f-a4ee9efdb15d",
+    "reasoning": "test",
+    "body_uuid": "8fe59dd7-bf38-4cb9-82ac-25fe462479e6",
+    "thread_uuid": "4c7912ac-57cf-4310-97de-4a4694362827",
+    "introduced_at": "2026-05-18T20:47:57.354Z"
+  }
+}

@@ -3,7 +3,16 @@ import { randomUUID } from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types.js';
 import {
 	getMotionByUuid,
-	advanceMotion, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes, setMotionParliamentarianNotes,
+	advanceMotion,
+	setMotionVoteRule,
+	setMotionDeliberationRule,
+	setMotionClerkNotes,
+	setMotionParliamentarianNotes,
+	getMotionComments,
+	addMotionComment,
+	editMotionComment,
+	deleteMotionComment,
+	isMotionCommentAuthor,
 	type MotionStatus,
 } from '$lib/server/governance/motions.js';
 import { getActiveMeetingForMotion } from '$lib/server/governance/meetings.js';
@@ -32,23 +41,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const deliberationRules = listDeliberationRules(motion.owner_uuid);
 	const currentDeliberationRule = motion.content.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.content.deliberation_rule_uuid) : null;
 
-	const comments = db.prepare(`
-		SELECT mc.uuid, mc.body, mc.created_at, mc.edited_at, mc.author_uuid,
-		       p.given_name, p.family_name, p.handle
-		FROM motion_comment mc
-		JOIN person p ON p.uuid = mc.author_uuid
-		WHERE mc.motion_uuid = ? AND mc.deleted_at IS NULL
-		ORDER BY mc.created_at ASC
-	`).all(motion.uuid) as Array<{
-		uuid: string;
-		body: string;
-		created_at: string;
-		edited_at: string | null;
-		author_uuid: string;
-		given_name: string;
-		family_name: string;
-		handle: string;
-	}>;
+	const comments = getMotionComments(motion.uuid);
 
 	let canAdvance = false;
 	let actingAs: string | null = null;
@@ -86,7 +79,7 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.body_uuid)) {
+		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
 			return fail(403, { error: 'Insufficient permissions' });
 		}
 
@@ -206,7 +199,7 @@ export const actions: Actions = {
 		}
 		if (deliberation_rule_uuid) {
 			const rule = db.prepare('SELECT name FROM deliberation_rule WHERE uuid = ?').get(deliberation_rule_uuid) as { name: string } | undefined;
-			addEntry(motion.body_uuid, actingAs, 'deliberation_rule_set', 'motion', motion.uuid,
+			addEntry(motion.owner_uuid, actingAs, 'deliberation_rule_set', 'motion', motion.uuid,
 				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" assigned to motion "${motion.title}"`);
 			audit(actingAs, 'motion.set_deliberation_rule', 'motion', motion.uuid,
 				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" set on motion "${motion.title}"`);
@@ -272,10 +265,11 @@ export const actions: Actions = {
 		const body = String(data.get('body') ?? '').trim();
 		if (!body) return fail(400, { error: 'Comment cannot be empty' });
 
-		db.prepare(
-			`INSERT INTO motion_comment (uuid, motion_uuid, author_uuid, body, created_at)
-			 VALUES (?, ?, ?, ?, ?)`
-		).run(randomUUID(), motion.uuid, actingAs, body, new Date().toISOString());
+		try {
+			addMotionComment(motion.uuid, actingAs, body);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to add comment' });
+		}
 
 		return { success: true };
 	},
@@ -289,12 +283,15 @@ export const actions: Actions = {
 		const body = String(data.get('body') ?? '').trim();
 		if (!commentUuid || !body) return fail(400, { error: 'Missing fields' });
 
-		const comment = db.prepare('SELECT * FROM motion_comment WHERE uuid = ? AND deleted_at IS NULL').get(commentUuid) as { author_uuid: string } | undefined;
-		if (!comment) return fail(404, { error: 'Comment not found' });
-		if (comment.author_uuid !== actingAs) return fail(403, { error: 'Not your comment' });
+		if (!isMotionCommentAuthor(commentUuid, actingAs)) {
+			return fail(403, { error: 'Not your comment' });
+		}
 
-		db.prepare('UPDATE motion_comment SET body = ?, edited_at = ? WHERE uuid = ?')
-			.run(body, new Date().toISOString(), commentUuid);
+		try {
+			editMotionComment(commentUuid, body);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to edit comment' });
+		}
 
 		return { success: true };
 	},
@@ -307,12 +304,15 @@ export const actions: Actions = {
 		const commentUuid = String(data.get('comment_uuid') ?? '').trim();
 		if (!commentUuid) return fail(400, { error: 'Missing comment_uuid' });
 
-		const comment = db.prepare('SELECT * FROM motion_comment WHERE uuid = ? AND deleted_at IS NULL').get(commentUuid) as { author_uuid: string } | undefined;
-		if (!comment) return fail(404, { error: 'Comment not found' });
-		if (comment.author_uuid !== actingAs) return fail(403, { error: 'Not your comment' });
+		if (!isMotionCommentAuthor(commentUuid, actingAs)) {
+			return fail(403, { error: 'Not your comment' });
+		}
 
-		db.prepare('UPDATE motion_comment SET deleted_at = ? WHERE uuid = ?')
-			.run(new Date().toISOString(), commentUuid);
+		try {
+			deleteMotionComment(commentUuid);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to delete comment' });
+		}
 
 		return { success: true };
 	},

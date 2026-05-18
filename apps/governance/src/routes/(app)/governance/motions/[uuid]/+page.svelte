@@ -10,9 +10,9 @@
 	let editingCommentUuid = $state<string | null>(null);
 	let editingCommentBody = $state('');
 	let showClerkModal = $state(false);
-	let clerkNotesValue = $state(motion.clerk_notes || '');
+	let clerkNotesValue = $state('');
 	let showParliamentarianModal = $state(false);
-	let parliamentarianNotesValue = $state(motion.parliamentarian_notes || '');
+	let parliamentarianNotesValue = $state('');
 	let showRulesModal = $state(false);
 	let selectedVotingRuleUuid = $state<string | null>(null);
 	let selectedDeliberationRuleUuid = $state<string | null>(null);
