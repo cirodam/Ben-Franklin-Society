@@ -1,7 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { resolveSession } from '$lib/server/auth.js';
-import { getPersonByUuid } from '$lib/server/people.js';
+import { resolveSession } from '$lib/server/infrastructure/auth.js';
+import { getPersonByUuid } from '$lib/server/organization/people.js';
 import { db } from '$lib/server/db.js';
 
 function isSetupComplete(): boolean {

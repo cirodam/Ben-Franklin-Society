@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { exchangeAuthCode, exchangeRefreshToken, getClient, verifyClientSecret } from '$lib/server/oidc.js';
+import { exchangeAuthCode, exchangeRefreshToken, getClient, verifyClientSecret } from '$lib/server/infrastructure/oidc.js';
 
 export const POST: RequestHandler = async ({ request }) => {
 	const data = await request.formData();

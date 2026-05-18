@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { revokeSession } from '$lib/server/auth.js';
+import { revokeSession } from '$lib/server/infrastructure/auth.js';
 
 export const POST: RequestHandler = async ({ cookies, locals }) => {
 	if (locals.session) {

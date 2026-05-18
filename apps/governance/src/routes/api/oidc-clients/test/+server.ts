@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { createClient, listClients, getClient, deleteClient, verifyClientSecret } from '$lib/server/oidc.js';
+import { createClient, listClients, getClient, deleteClient, verifyClientSecret } from '$lib/server/infrastructure/oidc.js';
 
 /**
  * Test endpoint for OIDC client CRUD operations

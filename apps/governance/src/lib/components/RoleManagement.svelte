@@ -91,7 +91,7 @@
 								<ul class="holders-list">
 									{#each role.holders as holder}
 										<li class="holder-item">
-											<a href="/people/{holder.uuid}" class="holder-link">
+											<a href="/organization/people/{holder.uuid}" class="holder-link">
 												@{holder.handle}
 												{#if holder.given_name || holder.family_name}
 													<span class="holder-name">({holder.given_name} {holder.family_name})</span>

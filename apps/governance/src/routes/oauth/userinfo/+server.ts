@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { verifyAccessToken } from '$lib/server/oidc.js';
-import { getPersonByUuid } from '$lib/server/people.js';
+import { verifyAccessToken } from '$lib/server/infrastructure/oidc.js';
+import { getPersonByUuid } from '$lib/server/organization/people.js';
 
 export const GET: RequestHandler = async ({ request }) => {
 	const auth = request.headers.get('authorization');

@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract } from '$lib/server/library.js';
-import { hasPermission } from '$lib/server/permissions.js';
+import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract } from '$lib/server/documents/library.js';
+import { hasPermission } from '$lib/server/infrastructure/permissions.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

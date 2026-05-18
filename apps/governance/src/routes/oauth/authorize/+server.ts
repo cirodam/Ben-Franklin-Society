@@ -1,6 +1,6 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { getClient, validateRedirectUri, createAuthCode } from '$lib/server/oidc.js';
+import { getClient, validateRedirectUri, createAuthCode } from '$lib/server/infrastructure/oidc.js';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const responseType = url.searchParams.get('response_type');

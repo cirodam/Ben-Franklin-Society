@@ -92,7 +92,7 @@
 	});
 </script>
 
-<a href="/motions/{motion.uuid}" class={cardClass()}>
+<a href="/governance/motions/{motion.uuid}" class={cardClass()}>
 	<div class="card__header">
 		<div class="card__title-row">
 			<span class="motion-id">{motionId()}</span>

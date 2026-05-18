@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getPersonByUuid } from '$lib/server/people.js';
-import { getHouseholdsByPerson, getHouseholdMembers, getDependentsByHousehold } from '$lib/server/households.js';
+import { getPersonByUuid } from '$lib/server/organization/people.js';
+import { getHouseholdsByPerson, getHouseholdMembers, getDependentsByHousehold } from '$lib/server/organization/households.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = locals.session;

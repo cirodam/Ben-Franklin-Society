@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { documentTypes } from '$lib/document-types';
-	import type { Person } from '$lib/server/library-types.js';
+	import { documentTypes } from '$lib/documents';
+	import type { Person } from '$lib/server/documents/library-types.js';
 
 	interface Props {
 		open: boolean;

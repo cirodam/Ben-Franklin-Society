@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { documentTypes } from '$lib/document-types';
+	import { documentTypes } from '$lib/documents';
 
 	interface Props {
 		stats: Record<string, { total: number; [key: string]: any }>;

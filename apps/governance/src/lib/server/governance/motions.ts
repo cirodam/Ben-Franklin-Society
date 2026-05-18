@@ -224,6 +224,54 @@ export function getVoteTally(motionUuid: string): VoteTally | null {
 	);
 }
 
+/**
+ * Check if a person has voted on a motion (legacy API for backward compatibility)
+ */
+export function hasVoted(motionUuid: string, voterUuid: string): boolean {
+	return !!db
+		.prepare('SELECT 1 FROM motion_vote_receipt WHERE motion_uuid = ? AND voter_uuid = ?')
+		.get(motionUuid, voterUuid);
+}
+
+/**
+ * Cast a vote on a motion (legacy API - kept for backward compatibility)
+ * Note: New code should use vote_sessions.castVote instead
+ */
+export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoice): void {
+	const motion = getMotionByUuid(motionUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+	
+	if (hasVoted(motionUuid, voterUuid)) throw new Error('Already voted');
+
+	// Get or create vote tally
+	let tally = getVoteTally(motionUuid);
+	if (!tally) {
+		// Create tally on first vote
+		const row = db.prepare(
+			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
+		).get(motion.body_uuid) as { c: number };
+		const eligibleCount = row.c;
+		
+		db.prepare(
+			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
+			 VALUES (?, ?, 0, 0, 0, ?)`
+		).run(motionUuid, eligibleCount, now());
+		
+		tally = getVoteTally(motionUuid);
+		if (!tally) throw new Error('Failed to create vote tally');
+	}
+
+	const col = choice === 'aye' ? 'aye_count' : choice === 'nay' ? 'nay_count' : 'abstain_count';
+
+	db.transaction(() => {
+		db.prepare(
+			'INSERT INTO motion_vote_receipt (uuid, motion_uuid, voter_uuid, voted_at) VALUES (?, ?, ?, ?)'
+		).run(randomUUID(), motionUuid, voterUuid, now());
+		// col is derived from a controlled enum, not user input — safe to interpolate
+		db.prepare(`UPDATE motion_vote_tally SET ${col} = ${col} + 1 WHERE motion_uuid = ?`).run(motionUuid);
+	})();
+}
+
 // --- Motion Enactment ---
 // These functions are called by the vote_sessions system when a vote is finalized.
 

@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db.js';
 import type { RequestHandler } from './$types.js';
-import type { InjuryRecord, InjuryRecordWithDetails } from '$lib/server/injury-types.js';
+import type { InjuryRecord, InjuryRecordWithDetails } from '$lib/server/injuries/injury-types.js';
 
 /**
  * Get injury record by injury number with full details

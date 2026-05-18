@@ -6,7 +6,7 @@ import {
 	createRoleTemplate,
 	setRoleTemplatePermissions,
 	createRole,
-} from '$lib/server/associations.js';
+} from '$lib/server/organization/associations.js';
 
 export const POST: RequestHandler = async ({ params, request }) => {
 	const association = getAssociationByUuid(params.uuid);

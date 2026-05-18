@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db.js';
 import type { RequestHandler } from './$types.js';
-import type { CreateIncidentAccountRequest, IncidentAccount } from '$lib/server/injury-types.js';
+import type { CreateIncidentAccountRequest, IncidentAccount } from '$lib/server/injuries/injury-types.js';
 import { randomUUID } from 'crypto';
 
 /**

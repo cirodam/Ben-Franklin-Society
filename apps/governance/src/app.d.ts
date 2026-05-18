@@ -1,5 +1,5 @@
-import type { Session } from '$lib/server/auth.js';
-import type { Person } from '$lib/server/people.js';
+import type { Session } from '$lib/server/infrastructure/auth.js';
+import type { Person } from '$lib/server/organization/people.js';
 
 declare global {
 	namespace App {

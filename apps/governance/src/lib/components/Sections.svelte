@@ -32,7 +32,7 @@
 		<div class="sections-list">
 			{#each rootSections as section}
 				<div class="section-group">
-					<a href="/sections/{section.uuid}" class="section">
+					<a href="/organization/sections/{section.uuid}" class="section">
 						<div class="section-content">
 							<h3 class="section-name">{section.name}</h3>
 							{#if section.description}
@@ -44,7 +44,7 @@
 					{#if childSections.has(section.uuid)}
 						<div class="subsections">
 							{#each childSections.get(section.uuid) ?? [] as child}
-								<a href="/sections/{child.uuid}" class="section subsection">
+								<a href="/organization/sections/{child.uuid}" class="section subsection">
 									<div class="section-content">
 										<h4 class="section-name">{child.name}</h4>
 										{#if child.description}

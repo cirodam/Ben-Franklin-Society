@@ -2,7 +2,7 @@
 	import { EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
-	import { documentTypes } from '$lib/document-types';
+	import { documentTypes } from '$lib/documents';
 	import LibraryStats from './LibraryStats.svelte';
 	import LibraryFilters from './LibraryFilters.svelte';
 	import CreateDocumentDialog from './CreateDocumentDialog.svelte';

@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db.js';
 import type { RequestHandler } from './$types.js';
-import type { UpdateInjuryAssessmentRequest, InjuryRecord } from '$lib/server/injury-types.js';
+import type { UpdateInjuryAssessmentRequest, InjuryRecord } from '$lib/server/injuries/injury-types.js';
 
 /**
  * Update gravity and/or safety_risk assessment for an injury record

@@ -7,7 +7,7 @@ import {
 	getRoleTemplatesByAssociation,
 	getRoleTemplatePermissions,
 	getPermissionsForRole,
-} from '$lib/server/associations.js';
+} from '$lib/server/organization/associations.js';
 import { db } from '$lib/server/db.js';
 
 export const GET: RequestHandler = async ({ params }) => {

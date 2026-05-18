@@ -16,19 +16,19 @@
 			{#snippet nav()}
 				<SidebarLink href="/">🏛️ Home</SidebarLink>
 				<SidebarLink href="/library">📚 Library</SidebarLink>
-				<SidebarLink href="/referenda">📢 Community Referenda</SidebarLink>
-				<SidebarLink href="/general-assembly">🏛️ General Assembly</SidebarLink>
-				<SidebarLink href="/committees">📋 Committees</SidebarLink>
-				<SidebarLink href="/directory">📇 Directory</SidebarLink>
-				<SidebarLink href="/services">🏢 Services</SidebarLink>
-				<SidebarLink href="/colleges">🎓 Colleges</SidebarLink>
-				<SidebarLink href="/record">📝 The Record</SidebarLink>
+				<SidebarLink href="/governance/referenda">📢 Community Referenda</SidebarLink>
+				<SidebarLink href="/governance/general-assembly">🏛️ General Assembly</SidebarLink>
+				<SidebarLink href="/organization/committees">📋 Committees</SidebarLink>
+				<SidebarLink href="/organization/directory">📇 Directory</SidebarLink>
+				<SidebarLink href="/organization/services">🏢 Services</SidebarLink>
+				<SidebarLink href="/organization/colleges">🎓 Colleges</SidebarLink>
+				<SidebarLink href="/communications/record">📝 The Record</SidebarLink>
 				<SidebarLink href="/federation/lineage">🔗 Federation</SidebarLink>
 
 				<SidebarDivider />
 
-				<SidebarLink href="/settings/oidc-clients">🔑 OIDC Clients</SidebarLink>
-				<SidebarLink href="/config">⚙️ Settings</SidebarLink>
+				<SidebarLink href="/admin/settings/oidc-clients">🔑 OIDC Clients</SidebarLink>
+				<SidebarLink href="/admin/config">⚙️ Settings</SidebarLink>
 			{/snippet}
 
 			{#snippet footer()}

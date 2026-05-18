@@ -1,8 +1,8 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument } from '$lib/server/library.js';
+import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument } from '$lib/server/documents/library.js';
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';
-import type { ProseDocument, ContractDocument } from '$lib/server/library-types.js';
+import type { ProseDocument, ContractDocument } from '$lib/server/documents/library-types.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	// Get filter parameters from URL

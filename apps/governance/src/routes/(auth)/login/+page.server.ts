@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
-import { authenticatePerson } from '$lib/server/auth.js';
-import { getCommunityConfig } from '$lib/server/config.js';
+import { authenticatePerson } from '$lib/server/infrastructure/auth.js';
+import { getCommunityConfig } from '$lib/server/infrastructure/config.js';
 
 /**
  * Validate and return a safe redirect URL.

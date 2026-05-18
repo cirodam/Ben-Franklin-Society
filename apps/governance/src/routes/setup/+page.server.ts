@@ -1,12 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import type { Actions, PageServerLoad } from './$types.js';
-import { createPerson, getPersonByHandle } from '$lib/server/people.js';
-import { createAssociation, addMember, getAssociationByHandle, setSortitionConfig, assignRole } from '$lib/server/associations.js';
-import { createVoteRule } from '$lib/server/vote_rules.js';
-import { createDeliberationRule } from '$lib/server/deliberation_rules.js';
-import { ALL_PERMISSIONS } from '$lib/server/permissions.js';
-import { setInitialCommunityConfig } from '$lib/server/config.js';
+import { createPerson, getPersonByHandle } from '$lib/server/organization/people.js';
+import { createAssociation, addMember, getAssociationByHandle, setSortitionConfig, assignRole } from '$lib/server/organization/associations.js';
+import { createVoteRule } from '$lib/server/governance/vote-rules.js';
+import { createDeliberationRule } from '$lib/server/governance/deliberation-rules.js';
+import { ALL_PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
+import { setInitialCommunityConfig } from '$lib/server/infrastructure/config.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async () => {

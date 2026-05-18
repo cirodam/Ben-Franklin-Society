@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { documentTypes } from '$lib/document-types';
-	import type { LibraryItemSummary } from '$lib/server/library-types.js';
+	import { documentTypes } from '$lib/documents';
+	import type { LibraryItemSummary } from '$lib/server/documents/library-types.js';
 
 	interface Props {
 		query: string;

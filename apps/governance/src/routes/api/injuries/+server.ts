@@ -5,7 +5,7 @@ import type {
 	CreateInjuryRequest,
 	InjuryRecord,
 	InjuryRecordWithDetails
-} from '$lib/server/injury-types.js';
+} from '$lib/server/injuries/injury-types.js';
 import { randomUUID } from 'crypto';
 
 /**
