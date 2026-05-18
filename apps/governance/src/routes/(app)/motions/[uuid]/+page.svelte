@@ -5,7 +5,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const { motion, introducer, body, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, deliberationComplete, daysRemainingInDeliberation, comments, canAdvance, canCloseVote, alreadyVoted, hasMarkedMotionReady, readinessCount, readinessSigners, actingAs } = $derived(data);
+	const { motion, introducer, body, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, comments, canAdvance, activeMeetingUuid, alreadyVoted, actingAs } = $derived(data);
 
 	let editingCommentUuid = $state<string | null>(null);
 	let editingCommentBody = $state('');
@@ -66,41 +66,6 @@
 			? Math.round((tally.nay_count / tally.eligible_count) * 100)
 			: 0
 	);
-
-	// Live countdown timer for deliberation
-	let timeRemaining = $state<{ days: number; hours: number; minutes: number; seconds: number; expired: boolean } | null>(null);
-
-	$effect(() => {
-		if (motion.status !== 'deliberation' || !motion.deliberation_opened_at || !currentDeliberationRule) {
-			timeRemaining = null;
-			return;
-		}
-
-		function updateTimer() {
-			if (!motion.deliberation_opened_at || !currentDeliberationRule) return;
-			
-			const openedAt = new Date(motion.deliberation_opened_at);
-			const durationMs = currentDeliberationRule.minimum_days * 24 * 60 * 60 * 1000;
-			const endTime = new Date(openedAt.getTime() + durationMs);
-			const now = new Date();
-			const diff = endTime.getTime() - now.getTime();
-
-			if (diff <= 0) {
-				timeRemaining = { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-			} else {
-				const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-				const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-				const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-				const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-				timeRemaining = { days, hours, minutes, seconds, expired: false };
-			}
-		}
-
-		updateTimer();
-		const interval = setInterval(updateTimer, 1000);
-
-		return () => clearInterval(interval);
-	});
 </script>
 
 <div class="page-wrapper">
@@ -131,25 +96,11 @@
 		<div class="lifecycle-step {motion.status === 'introduced' ? 'active' : ['deliberation', 'enacted', 'rejected'].includes(motion.status) ? 'completed' : ''}">
 			<div class="lifecycle-step__icon">📋</div>
 			<div class="lifecycle-step__label">Introduced</div>
-			{#if motion.status === 'introduced' && readinessCount > 0}
-				<div class="lifecycle-step__detail">{readinessCount}/15 ready</div>
-			{/if}
 		</div>
 		<div class="lifecycle-connector {['deliberation', 'enacted', 'rejected'].includes(motion.status) ? 'active' : ''}"></div>
 		<div class="lifecycle-step {motion.status === 'deliberation' ? 'active' : ['enacted', 'rejected'].includes(motion.status) ? 'completed' : ''}">
 			<div class="lifecycle-step__icon">🗳️</div>
 			<div class="lifecycle-step__label">Deliberation</div>
-			{#if motion.status === 'deliberation' && timeRemaining}
-				<div class="lifecycle-step__detail">
-					{#if timeRemaining.expired}
-						Ready to close
-					{:else if timeRemaining.days > 0}
-						{timeRemaining.days}d remaining
-					{:else}
-						{timeRemaining.hours}h {timeRemaining.minutes}m
-					{/if}
-				</div>
-			{/if}
 		</div>
 		<div class="lifecycle-connector {['enacted', 'rejected'].includes(motion.status) ? 'active' : ''}"></div>
 		<div class="lifecycle-step {['enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
@@ -219,21 +170,6 @@
 					<span class="meta-label">Status:</span>
 					<span class="motion-status {statusVariant[motion.status] ?? ''}">{statusLabel[motion.status] ?? motion.status}</span>
 				</div>
-				{#if timeRemaining}
-					<div class="meta-row">
-						<span class="meta-label">Time Remaining:</span>
-						<span class="timer-display {timeRemaining.expired ? 'timer-display--expired' : ''}">
-							{#if timeRemaining.expired}
-								<span class="timer-ready">✓ Ready to Close</span>
-							{:else}
-								<span class="timer-segment">{timeRemaining.days}<span class="timer-unit">d</span></span>
-								<span class="timer-segment">{timeRemaining.hours.toString().padStart(2, '0')}<span class="timer-unit">h</span></span>
-									<span class="timer-segment">{timeRemaining.minutes.toString().padStart(2, '0')}<span class="timer-unit">m</span></span>
-								<span class="timer-segment timer-segment--seconds">{timeRemaining.seconds.toString().padStart(2, '0')}<span class="timer-unit">s</span></span>
-							{/if}
-						</span>
-					</div>
-				{/if}
 			</div>
 
 		<!-- Rules Display -->
@@ -352,62 +288,6 @@
 				{/if}
 				
 				{#if motion.status === 'introduced'}
-					<!-- Readiness Section -->
-					<div class="readiness-section">
-						<div class="readiness-header">
-							<span class="readiness-label">Motion Readiness</span>
-							<span class="readiness-badge">{readinessCount} of 15</span>
-						</div>
-						<div class="readiness-progress">
-							<div class="readiness-progress__bar">
-								<div class="readiness-progress__fill" style="width: {Math.min((readinessCount / 15) * 100, 100)}%"></div>
-							</div>
-							<p class="readiness-progress__text">
-								{#if readinessCount >= 15}
-									✓ Ready to advance to deliberation
-								{:else}
-									{15 - readinessCount} more {15 - readinessCount === 1 ? 'member' : 'members'} needed
-								{/if}
-							</p>
-						</div>
-
-						{#if actingAs}
-							{#if hasMarkedMotionReady}
-								<form method="POST" action="?/unmarkReady" use:enhance>
-									<button type="submit" class="btn btn--secondary btn--sm">
-										✓ Marked Ready
-									</button>
-								</form>
-							{:else}
-								<form method="POST" action="?/markReady" use:enhance>
-									<button type="submit" class="btn btn--primary btn--sm">
-										Mark Ready to Advance
-									</button>
-								</form>
-							{/if}
-						{/if}
-
-						{#if readinessSigners.length > 0}
-							<details class="readiness-signers">
-								<summary class="readiness-signers__summary">
-									{readinessSigners.length} {readinessSigners.length === 1 ? 'member' : 'members'} marked ready
-								</summary>
-								<div class="readiness-signers__list">
-									{#each readinessSigners as signer}
-										<div class="signer-badge">
-											<span class="signer-badge__avatar">
-												{signer.given_name[0]}{signer.family_name[0]}
-											</span>
-											<span class="signer-badge__name">
-												{signer.given_name} {signer.family_name}
-											</span>
-										</div>
-									{/each}
-								</div>
-							</details>
-						{/if}
-					</div>
-
 					{#if canAdvance}
 						<form method="POST" action="?/advance">
 							<input type="hidden" name="to" value="deliberation" />
@@ -422,34 +302,40 @@
 					{#if currentDeliberationRule}
 						<div class="deliberation-info">
 							<span class="rule-label">Rule: <strong>{currentDeliberationRule.name}</strong></span>
-							{#if !deliberationComplete}
-								<span class="deliberation-waiting">
-									{daysRemainingInDeliberation} day(s) remaining
-								</span>
-							{:else}
-								<span class="deliberation-ready">Ready to close</span>
-							{/if}
 						</div>
 					{/if}
-					{#if !alreadyVoted}
-						<form method="POST" action="?/castVote" class="vote-form">
-							<button class="btn btn--aye" name="choice" value="aye">Aye</button>
-							<button class="btn btn--nay" name="choice" value="nay">Nay</button>
-							<button class="btn btn--abstain" name="choice" value="abstain">Abstain</button>
-						</form>
+					
+					{#if activeMeetingUuid}
+						<!-- Voting is open during active meeting -->
+						{#if !alreadyVoted}
+							<form method="POST" action="?/castVote" class="vote-form">
+								<button class="btn btn--aye" name="choice" value="aye">Aye</button>
+								<button class="btn btn--nay" name="choice" value="nay">Nay</button>
+								<button class="btn btn--abstain" name="choice" value="abstain">Abstain</button>
+							</form>
+						{:else}
+							<span class="vote-recorded">Your vote is recorded.</span>
+						{/if}
+						<div class="meeting-notice">
+							<a href="/general-assembly/meetings/{activeMeetingUuid}" class="meeting-link">
+								🗳️ Voting is open - Meeting in progress
+							</a>
+						</div>
 					{:else}
-						<span class="vote-recorded">Your vote is recorded.</span>
-					{/if}
-					{#if canCloseVote}
-						<form method="POST" action="?/closeVote">
-							<button class="btn btn--secondary" disabled={!deliberationComplete}>
-								{#if deliberationComplete}
-									Close Vote & Finalize
-								{:else}
-									Close Vote ({daysRemainingInDeliberation} days remaining)
-								{/if}
-							</button>
-						</form>
+						<!-- No active meeting -->
+						<div class="meeting-notice meeting-notice--waiting">
+							<span>Voting will open when this motion is on the agenda of an active meeting</span>
+						</div>
+						{#if tally}
+							<div class="vote-tally-preview">
+								<h4>Current Vote Count</h4>
+								<div class="tally-counts">
+									<span class="tally-aye">Aye: {tally.aye_count}</span>
+									<span class="tally-nay">Nay: {tally.nay_count}</span>
+									<span class="tally-abstain">Abstain: {tally.abstain_count}</span>
+								</div>
+							</div>
+						{/if}
 					{/if}
 				{/if}
 				{#if canAdvance}
@@ -1296,6 +1182,78 @@
 	.vote-recorded {
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
+	}
+
+	.meeting-notice {
+		margin-top: var(--space-3);
+		padding: var(--space-3);
+		background: rgba(91, 140, 184, 0.1);
+		border: 1px solid rgba(91, 140, 184, 0.3);
+		border-radius: var(--radius);
+		text-align: center;
+	}
+
+	.meeting-notice--waiting {
+		background: rgba(255, 193, 7, 0.1);
+		border-color: rgba(255, 193, 7, 0.3);
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+	}
+
+	.meeting-link {
+		color: #5b8cb8;
+		text-decoration: none;
+		font-weight: var(--weight-medium);
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.meeting-link:hover {
+		text-decoration: underline;
+	}
+
+	.vote-tally-preview {
+		margin-top: var(--space-4);
+		padding: var(--space-4);
+		background: rgba(255, 255, 255, 0.6);
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		border-radius: var(--radius);
+	}
+
+	.vote-tally-preview h4 {
+		margin: 0 0 var(--space-3) 0;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text-muted);
+	}
+
+	.tally-counts {
+		display: flex;
+		gap: var(--space-4);
+		justify-content: center;
+	}
+
+	.tally-counts span {
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
+
+	.tally-aye {
+		background: #e8f5e9;
+		color: #2e7d32;
+	}
+
+	.tally-nay {
+		background: #ffebee;
+		color: #c62828;
+	}
+
+	.tally-abstain {
+		background: #f5f5f5;
+		color: #616161;
 	}
 
 	/* ========================================

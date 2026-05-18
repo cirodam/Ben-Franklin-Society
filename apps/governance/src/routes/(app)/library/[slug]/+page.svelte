@@ -70,36 +70,140 @@
 <div class="page-wrapper">
 	<div class="document-controls">
 		<a href="/library" class="back">← Back to Library</a>
+		{#if canEdit && (data.documentType === 'prose' || data.documentType === 'contract')}
+			<a href="/library/{doc.slug}/edit" class="edit-link">✏️ Edit</a>
+		{/if}
 	</div>
 
 	<Parchment>
-		<div class="document-header">
-			<div class="document-title-block">
-				<h1 class="document-title">{doc.title}</h1>
-				<div class="document-meta">
-					<span class="seniority-badge {getSeniorityVariant(doc.seniority)}">
-						{getSeniorityName(doc.seniority)}
-					</span>
-					<span class="status-badge {statusVariant[doc.status] ?? ''}">
-						{doc.status}
-					</span>
+		{#if data.documentType === 'prose'}
+			<!-- Prose Document View -->
+			<div class="document-header">
+				<div class="document-title-block">
+					<h1 class="document-title">{doc.title}</h1>
+					<div class="document-meta">
+						<span class="type-badge">📄 Document</span>
+						<span class="status-badge status--{doc.content.status}">
+							{doc.content.status}
+						</span>
+					</div>
+				</div>
+				{#if doc.content.summary}
+					<p class="document-summary">{doc.content.summary}</p>
+				{/if}
+				{#if doc.content.published_at}
+					<div class="document-dates">
+						<div class="date-line">
+							<span class="date-label">Published:</span>
+							<span class="date-value">{doc.content.published_at.slice(0, 10)}</span>
+						</div>
+					</div>
+				{/if}
+				{#if doc.content.tags && doc.content.tags.length > 0}
+					<div class="document-tags">
+						{#each doc.content.tags as tag}
+							<span class="tag">{tag}</span>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<div class="document-body prose-body">
+				{#each doc.content.paragraphs as paragraph, idx}
+					<p class="prose-paragraph">{paragraph}</p>
+				{/each}
+			</div>
+		{:else if data.documentType === 'contract'}
+			<!-- Contract View -->
+			<div class="document-header">
+				<div class="document-title-block">
+					<h1 class="document-title">{doc.title}</h1>
+					<div class="document-meta">
+						<span class="type-badge">🤝 Contract</span>
+						<span class="status-badge status--{doc.content.status}">
+							{doc.content.status}
+						</span>
+					</div>
+				</div>
+				
+				<div class="contract-parties">
+					<div class="party">
+						<div class="party-header">Party A</div>
+						<div class="party-name">{doc.content.party_a.principal_name || 'Not specified'}</div>
+						<div class="party-role">{doc.content.party_a.role || 'Role not specified'}</div>
+					</div>
+					<div class="party-divider">↔</div>
+					<div class="party">
+						<div class="party-header">Party B</div>
+						<div class="party-name">{doc.content.party_b.principal_name || 'Not specified'}</div>
+						<div class="party-role">{doc.content.party_b.role || 'Role not specified'}</div>
+					</div>
+				</div>
+
+				{#if doc.content.effective_date || doc.content.expiry_date || doc.content.acknowledged_at}
+					<div class="document-dates">
+						{#if doc.content.effective_date}
+							<div class="date-line">
+								<span class="date-label">Effective:</span>
+								<span class="date-value">{doc.content.effective_date.slice(0, 10)}</span>
+							</div>
+						{/if}
+						{#if doc.content.expiry_date}
+							<div class="date-line">
+								<span class="date-label">Expires:</span>
+								<span class="date-value">{doc.content.expiry_date.slice(0, 10)}</span>
+							</div>
+						{/if}
+						{#if doc.content.acknowledged_at}
+							<div class="date-line">
+								<span class="date-label">Acknowledged:</span>
+								<span class="date-value">{doc.content.acknowledged_at.slice(0, 10)}</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			<div class="document-body contract-body">
+				<div class="contract-text">
+					{#if doc.content.body}
+						{#each doc.content.body.split('\n\n') as paragraph}
+							<p>{paragraph}</p>
+						{/each}
+					{:else}
+						<p class="empty-state">Contract text not yet written</p>
+					{/if}
 				</div>
 			</div>
-			<div class="document-dates">
-				{#if doc.adopted_at}
-					<div class="date-line">
-						<span class="date-label">Adopted:</span>
-						<span class="date-value">{doc.adopted_at.slice(0, 10)}</span>
+		{:else}
+			<!-- Governing Document View -->
+			<div class="document-header">
+				<div class="document-title-block">
+					<h1 class="document-title">{doc.title}</h1>
+					<div class="document-meta">
+						<span class="seniority-badge {getSeniorityVariant(doc.seniority)}">
+							{getSeniorityName(doc.seniority)}
+						</span>
+						<span class="status-badge {statusVariant[doc.status] ?? ''}">
+							{doc.status}
+						</span>
 					</div>
-				{/if}
-				{#if doc.repealed_at}
-					<div class="date-line date-line--warn">
-						<span class="date-label">Repealed:</span>
-						<span class="date-value">{doc.repealed_at.slice(0, 10)}</span>
-					</div>
-				{/if}
+				</div>
+				<div class="document-dates">
+					{#if doc.adopted_at}
+						<div class="date-line">
+							<span class="date-label">Adopted:</span>
+							<span class="date-value">{doc.adopted_at.slice(0, 10)}</span>
+						</div>
+					{/if}
+					{#if doc.repealed_at}
+						<div class="date-line date-line--warn">
+							<span class="date-label">Repealed:</span>
+							<span class="date-value">{doc.repealed_at.slice(0, 10)}</span>
+						</div>
+					{/if}
+				</div>
 			</div>
-		</div>
 
 		<div class="document-body">
 			{#each doc.articles as article, articleIdx}
@@ -216,10 +320,11 @@
 				</div>
 			{/if}
 		</div>
+		{/if}
 	</Parchment>
 </div>
 
-{#if canEdit}
+{#if canEdit && data.documentType === 'governing'}
 	<EditSectionModal bind:open={editSectionModal.open} {...editSectionModal} />
 	<AddSectionModal bind:open={addSectionModal.open} {...addSectionModal} />
 	<EditArticleModal bind:open={editArticleModal.open} {...editArticleModal} />
@@ -241,6 +346,9 @@
 	.document-controls {
 		max-width: 1000px;
 		margin: 0 auto var(--space-6);
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
 	}
 
 	.back {
@@ -637,5 +745,176 @@
 		padding-top: var(--space-8);
 		border-top: 2px solid rgba(139, 115, 85, 0.2);
 		text-align: center;
+	}
+
+	/* Prose Document Styles */
+	.prose-body {
+		max-width: 65ch;
+		margin: 0 auto;
+	}
+
+	.prose-paragraph {
+		font-size: var(--text-base);
+		line-height: 1.8;
+		margin-bottom: var(--space-6);
+		color: #2c2416;
+		text-align: justify;
+		hyphens: auto;
+	}
+
+	.prose-paragraph:first-child {
+		margin-top: 0;
+	}
+
+	.prose-paragraph:last-child {
+		margin-bottom: 0;
+	}
+
+	.document-summary {
+		font-size: var(--text-base);
+		font-style: italic;
+		color: #5a4a2a;
+		margin: var(--space-4) 0;
+		padding: var(--space-4);
+		background: rgba(212, 162, 74, 0.1);
+		border-left: 3px solid #d4a24a;
+		border-radius: 2px;
+	}
+
+	.document-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
+	}
+
+	.tag {
+		display: inline-block;
+		padding: var(--space-1) var(--space-3);
+		background: rgba(212, 162, 74, 0.2);
+		border: 1px solid rgba(139, 115, 85, 0.3);
+		border-radius: 12px;
+		font-size: var(--text-xs);
+		color: #5a4a2a;
+		font-weight: 500;
+	}
+
+	.type-badge {
+		display: inline-block;
+		padding: var(--space-1) var(--space-3);
+		background: rgba(91, 140, 184, 0.15);
+		border: 1px solid rgba(91, 140, 184, 0.3);
+		border-radius: 4px;
+		font-size: var(--text-xs);
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+	}
+
+	.edit-link {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-4);
+		background: var(--color-background);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text);
+		text-decoration: none;
+		font-size: var(--text-sm);
+		transition: all 0.15s;
+	}
+
+	.edit-link:hover {
+		background: var(--color-background-hover);
+		border-color: var(--color-border-hover);
+	}
+
+	.status--draft {
+		background: rgba(100, 100, 100, 0.1);
+		color: #555;
+	}
+
+	.status--published {
+		background: rgba(76, 175, 80, 0.15);
+		color: #2e7d32;
+	}
+
+	.status--archived {
+		background: rgba(158, 158, 158, 0.15);
+		color: #616161;
+	}
+
+	/* Contract styles */
+	.contract-parties {
+		display: flex;
+		align-items: center;
+		gap: var(--space-6);
+		margin: var(--space-6) 0;
+		padding: var(--space-5);
+		background: rgba(91, 140, 184, 0.05);
+		border: 1px solid rgba(91, 140, 184, 0.2);
+		border-radius: var(--radius-md);
+	}
+
+	.party {
+		flex: 1;
+		text-align: center;
+	}
+
+	.party-header {
+		font-size: var(--text-xs);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-text-muted);
+		margin-bottom: var(--space-2);
+	}
+
+	.party-name {
+		font-size: var(--text-lg);
+		font-weight: 600;
+		margin-bottom: var(--space-1);
+	}
+
+	.party-role {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		font-style: italic;
+	}
+
+	.party-divider {
+		font-size: var(--text-2xl);
+		color: var(--color-text-muted);
+	}
+
+	.contract-body {
+		line-height: 1.8;
+	}
+
+	.contract-text p {
+		margin-bottom: var(--space-4);
+	}
+
+	.empty-state {
+		color: var(--color-text-muted);
+		font-style: italic;
+		text-align: center;
+		padding: var(--space-8);
+	}
+
+	.status--active {
+		background: rgba(33, 150, 243, 0.15);
+		color: #1565c0;
+	}
+
+	.status--completed {
+		background: rgba(76, 175, 80, 0.15);
+		color: #2e7d32;
+	}
+
+	.status--terminated {
+		background: rgba(244, 67, 54, 0.15);
+		color: #c62828;
 	}
 </style>

@@ -1,9 +1,13 @@
 #!/usr/bin/env tsx
 
 /**
- * Migration: Export motions from database to library system
+ * HISTORICAL MIGRATION SCRIPT - Phase 2
  * 
- * This script:
+ * This script was used to migrate from the old database schema to the library system.
+ * It references old fields (deliberation_opened_at, motion_readiness) that no longer exist.
+ * Kept for reference only - do not run on current schema.
+ * 
+ * Original purpose:
  * 1. Reads motions from the motion table
  * 2. Converts them to LibraryDocument<MotionContent> format
  * 3. Saves them to data/library/motions/{slug}.json

@@ -3,12 +3,12 @@ import { randomUUID } from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types.js';
 import {
 	getMotionByUuid, getVoteTally,
-	advanceMotion, closeVote, castVote, hasVoted, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes, setMotionParliamentarianNotes,
-	getReadinessCount, hasMarkedReady, getReadinessSigners, markReady, unmarkReady,
+	advanceMotion, castVote, hasVoted, setMotionVoteRule, setMotionDeliberationRule, setMotionClerkNotes, setMotionParliamentarianNotes,
 	type MotionStatus, type VoteChoice,
 } from '$lib/server/motions.js';
+import { getActiveMeetingForMotion } from '$lib/server/meetings.js';
 import { listVoteRules, getVoteRuleByUuid } from '$lib/server/vote_rules.js';
-import { listDeliberationRules, getDeliberationRuleByUuid, isDeliberationPeriodComplete, getDaysRemainingInDeliberation } from '$lib/server/deliberation_rules.js';
+import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/deliberation_rules.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
 import { addEntry } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
@@ -30,8 +30,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	
 	const deliberationRules = listDeliberationRules(motion.body_uuid);
 	const currentDeliberationRule = motion.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.deliberation_rule_uuid) : null;
-	const deliberationComplete = isDeliberationPeriodComplete(motion.deliberation_opened_at, currentDeliberationRule);
-	const daysRemainingInDeliberation = getDaysRemainingInDeliberation(motion.deliberation_opened_at, currentDeliberationRule);
 
 	const comments = db.prepare(`
 		SELECT mc.uuid, mc.body, mc.created_at, mc.edited_at, mc.author_uuid,
@@ -52,26 +50,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}>;
 
 	let canAdvance = false;
-	let canCloseVote = false;
 	let alreadyVoted = false;
-	let hasMarkedMotionReady = false;
 	let actingAs: string | null = null;
+
+	// Check if motion is on agenda of an active meeting
+	const activeMeetingUuid = getActiveMeetingForMotion(motion.uuid);
 
 	if (locals.session) {
 		actingAs = locals.session.acting_as_uuid;
 		const scope = motion.body_uuid;
-		canAdvance   = hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, scope);
-		canCloseVote = hasPermission(actingAs, PERMISSIONS.VOTES_CLOSE,     scope);
-		if (motion.status === 'deliberation') {
+		canAdvance = hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, scope);
+		// Voting is allowed if motion is on active meeting agenda
+		if (activeMeetingUuid) {
 			alreadyVoted = hasVoted(motion.uuid, actingAs);
 		}
-		if (motion.status === 'introduced') {
-			hasMarkedMotionReady = hasMarkedReady(motion.uuid, actingAs);
-		}
 	}
-
-	const readinessCount = motion.status === 'introduced' ? getReadinessCount(motion.uuid) : 0;
-	const readinessSigners = motion.status === 'introduced' ? getReadinessSigners(motion.uuid) : [];
 
 	return { 
 		motion, 
@@ -82,15 +75,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		currentRule, 
 		deliberationRules,
 		currentDeliberationRule,
-		deliberationComplete,
-		daysRemainingInDeliberation,
 		comments, 
 		canAdvance, 
-		canCloseVote, 
+		activeMeetingUuid,
 		alreadyVoted,
-		hasMarkedMotionReady,
-		readinessCount,
-		readinessSigners,
 		actingAs 
 	};
 };
@@ -124,34 +112,6 @@ export const actions: Actions = {
 		audit(actingAs, `motion.${to}`, 'motion', motion.uuid, `Motion "${motion.title}" ${label}`);
 
 		return { success: true };
-	},
-
-	closeVote: async ({ params, locals }) => {
-		if (!locals.session) error(401, 'Not authenticated');
-		const actingAs = locals.session.acting_as_uuid;
-
-		const motion = getMotionByUuid(params.uuid);
-		if (!motion) error(404, 'Motion not found');
-
-		if (!hasPermission(actingAs, PERMISSIONS.VOTES_CLOSE, motion.body_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
-
-		// Check if deliberation period is complete
-		const delibRule = motion.deliberation_rule_uuid ? getDeliberationRuleByUuid(motion.deliberation_rule_uuid) : null;
-		if (motion.deliberation_opened_at && !isDeliberationPeriodComplete(motion.deliberation_opened_at, delibRule)) {
-			const daysRemaining = getDaysRemainingInDeliberation(motion.deliberation_opened_at, delibRule);
-			return fail(400, { error: `Cannot close vote yet. Deliberation period requires ${daysRemaining} more day(s).` });
-		}
-
-		const outcome = closeVote(motion.uuid);
-
-		addEntry(motion.body_uuid, actingAs, `motion_${outcome}`, 'motion', motion.uuid,
-			`Motion "${motion.title}" ${outcome} by vote`);
-		audit(actingAs, `vote.close.${outcome}`, 'motion', motion.uuid,
-			`Motion "${motion.title}" ${outcome} by vote`);
-
-		return { outcome };
 	},
 
 	castVote: async ({ params, locals, request }) => {
@@ -378,51 +338,6 @@ export const actions: Actions = {
 
 		db.prepare('UPDATE motion_comment SET deleted_at = ? WHERE uuid = ?')
 			.run(new Date().toISOString(), commentUuid);
-
-		return { success: true };
-	},
-
-	markReady: async ({ params, locals }) => {
-		if (!locals.session) error(401, 'Not authenticated');
-		const actingAs = locals.session.acting_as_uuid;
-
-		const motion = getMotionByUuid(params.uuid);
-		if (!motion) error(404, 'Motion not found');
-
-		if (motion.status !== 'introduced') {
-			return fail(400, { error: 'Motion must be in introduced status to mark ready' });
-		}
-
-		// Check if user is a member of the association
-		const membership = db.prepare(
-			'SELECT 1 FROM association_member WHERE association_uuid = ? AND person_uuid = ? AND removed_at IS NULL'
-		).get(motion.body_uuid, actingAs);
-
-		if (!membership) {
-			return fail(403, { error: 'Only association members can mark motions ready' });
-		}
-
-		try {
-			markReady(motion.uuid, actingAs);
-		} catch (err) {
-			return fail(400, { error: err instanceof Error ? err.message : 'Failed to mark ready' });
-		}
-
-		return { success: true };
-	},
-
-	unmarkReady: async ({ params, locals }) => {
-		if (!locals.session) error(401, 'Not authenticated');
-		const actingAs = locals.session.acting_as_uuid;
-
-		const motion = getMotionByUuid(params.uuid);
-		if (!motion) error(404, 'Motion not found');
-
-		try {
-			unmarkReady(motion.uuid, actingAs);
-		} catch (err) {
-			return fail(400, { error: err instanceof Error ? err.message : 'Failed to unmark ready' });
-		}
 
 		return { success: true };
 	},

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Button, EmptyState } from '@bfs/ui';
+	import { Button, EmptyState, Modal } from '@bfs/ui';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 	import MotionCard from '$lib/components/MotionCard.svelte';
 	import MotionCreationModal from '$lib/components/MotionCreationModal.svelte';
@@ -30,10 +30,13 @@
 		canVacate,
 		record,
 		deliberationRules,
-		governingDocument
+		governingDocument,
+		orgChartTemplates
 	} = $derived(data);
 
 	let showModal = $state(false);
+	let showTemplateModal = $state(false);
+	let selectedTemplate = $state('');
 	let activeTab = $state<'deliberations' | 'pending' | 'decisions' | 'members' | 'organization' | 'record'>('deliberations');
 
 	$effect(() => {
@@ -56,7 +59,10 @@
 		<div class="header__top">
 			<div class="title-row">
 				<h1>{association.name}</h1>
-				<Button variant="secondary" size="sm" href="/committees/{association.uuid}/edit">✏️ Edit</Button>
+				<div class="button-group">
+					<Button variant="secondary" size="sm" href="/committees/{association.uuid}/meetings">📅 Meetings</Button>
+					<Button variant="secondary" size="sm" href="/committees/{association.uuid}/edit">✏️ Edit</Button>
+				</div>
 			</div>
 			<div class="header__badges">
 				<Badge label={config?.is_permanent ? 'Permanent' : 'Ad Hoc'} variant="neutral" />
@@ -260,8 +266,21 @@
 			</section>
 		{:else if activeTab === 'organization'}
 			<section class="section">
-				<h2 class="section__title">🏢 Organization</h2>
+				<div class="section-header">
+					<h2 class="section__title">🏢 Organization</h2>
+					{#if canAssign}
+						<Button variant="primary" size="sm" onclick={() => showTemplateModal = true}>
+							📋 Apply Org Chart Template
+						</Button>
+					{/if}
+				</div>
 				
+				{#if association.org_chart_slug}
+					<div class="template-info">
+						<span class="template-badge">📋 Using template: {association.org_chart_slug}</span>
+					</div>
+				{/if}
+
 				<h3 class="subsection__title">📂 Sections</h3>
 				<Sections {sections} />
 
@@ -297,6 +316,28 @@
 
 <MotionCreationModal bind:show={showModal} bodyUuid={association.uuid} bodyName={association.name} deliberationRules={deliberationRules} />
 
+<Modal bind:show={showTemplateModal} title="Apply Org Chart Template">
+	<form method="POST" action="?/applyTemplate">
+		<div class="form-field">
+			<label for="template_slug">Select Template</label>
+			<select name="template_slug" id="template_slug" bind:value={selectedTemplate} required>
+				<option value="">-- Choose a template --</option>
+				{#each orgChartTemplates as template}
+					<option value={template.slug}>{template.title}</option>
+				{/each}
+			</select>
+			<p class="help-text">
+				This will create sections, role templates, and roles based on the selected template.
+			</p>
+		</div>
+
+		<div class="modal-actions">
+			<Button type="button" variant="ghost" onclick={() => showTemplateModal = false}>Cancel</Button>
+			<Button type="submit" variant="primary">Apply Template</Button>
+		</div>
+	</form>
+</Modal>
+
 <style>
 	.page {
 		max-width: 1200px;
@@ -320,6 +361,11 @@
 		align-items: center;
 		gap: var(--space-3);
 		flex: 1;
+	}
+
+	.button-group {
+		display: flex;
+		gap: var(--space-2);
 	}
 
 	.header__top h1 {
@@ -591,6 +637,59 @@
 
 	.record-link a:hover {
 		text-decoration: underline;
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-4);
+	}
+
+	.template-info {
+		background: var(--color-surface-secondary);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--space-3);
+		margin-bottom: var(--space-4);
+	}
+
+	.template-badge {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.form-field {
+		margin-bottom: var(--space-4);
+	}
+
+	.form-field label {
+		display: block;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		margin-bottom: var(--space-2);
+	}
+
+	.form-field select {
+		width: 100%;
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background: var(--color-surface);
+		font-size: var(--text-sm);
+	}
+
+	.help-text {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		margin-top: var(--space-1);
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: flex-end;
+		margin-top: var(--space-4);
 	}
 
 	/* Responsive design */

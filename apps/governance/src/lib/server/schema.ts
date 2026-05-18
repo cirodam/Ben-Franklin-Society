@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS association (
   type                       TEXT NOT NULL,
   status                     TEXT NOT NULL DEFAULT 'active',
   governing_document_slug    TEXT NULL,
+  org_chart_slug             TEXT NULL,
   established_by_motion_uuid TEXT NULL,
   created_at                 TEXT NOT NULL,
   dissolved_at               TEXT NULL
@@ -212,30 +213,26 @@ CREATE TABLE IF NOT EXISTS vote_rule (
 );
 
 CREATE TABLE IF NOT EXISTS motion (
-  uuid                   TEXT PRIMARY KEY,
-  slug                   TEXT NOT NULL UNIQUE,
-  motion_number          INTEGER NOT NULL,
-  title                  TEXT NOT NULL,
-  type                   TEXT NOT NULL DEFAULT 'motion',
-  seniority              INTEGER NULL,
-  owner_uuid             TEXT NOT NULL REFERENCES association(uuid),
-  body                   TEXT NOT NULL,
-  reasoning              TEXT NULL,
-  introduced_by_uuid     TEXT NOT NULL REFERENCES person(uuid),
-  body_uuid              TEXT NOT NULL REFERENCES association(uuid),
-  deliberation_rule_uuid TEXT NULL REFERENCES deliberation_rule(uuid),
-  vote_rule_uuid         TEXT NULL REFERENCES vote_rule(uuid),
-  status                 TEXT NOT NULL DEFAULT 'draft',
-  clerk_notes            TEXT NULL,
-  parliamentarian_notes  TEXT NULL,
-  created_at             TEXT NOT NULL,
-  adopted_at             TEXT NULL,
-  adopted_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
-  repealed_at            TEXT NULL,
+  uuid                    TEXT PRIMARY KEY,
+  slug                    TEXT NOT NULL UNIQUE,
+  motion_number           INTEGER NOT NULL,
+  title                   TEXT NOT NULL,
+  owner_uuid              TEXT NOT NULL REFERENCES association(uuid),
+  body                    TEXT NOT NULL,
+  reasoning               TEXT NULL,
+  introduced_by_uuid      TEXT NOT NULL REFERENCES person(uuid),
+  body_uuid               TEXT NOT NULL REFERENCES association(uuid),
+  deliberation_rule_uuid  TEXT NULL REFERENCES deliberation_rule(uuid),
+  vote_rule_uuid          TEXT NULL REFERENCES vote_rule(uuid),
+  status                  TEXT NOT NULL DEFAULT 'draft',
+  clerk_notes             TEXT NULL,
+  parliamentarian_notes   TEXT NULL,
+  created_at              TEXT NOT NULL,
+  introduced_at           TEXT NULL,
+  enacted_at              TEXT NULL,
+  resolved_at             TEXT NULL,
+  adopted_by_motion_uuid  TEXT NULL REFERENCES motion(uuid),
   repealed_by_motion_uuid TEXT NULL REFERENCES motion(uuid),
-  deliberation_opened_at TEXT NULL,
-  enacted_at             TEXT NULL,
-  resolved_at            TEXT NULL,
   UNIQUE(body_uuid, motion_number)
 );
 
@@ -267,13 +264,122 @@ CREATE TABLE IF NOT EXISTS motion_comment (
   deleted_at  TEXT NULL
 );
 
-CREATE TABLE IF NOT EXISTS motion_readiness (
-  uuid        TEXT PRIMARY KEY,
-  motion_uuid TEXT NOT NULL REFERENCES motion(uuid),
-  member_uuid TEXT NOT NULL REFERENCES person(uuid),
-  marked_at   TEXT NOT NULL,
-  UNIQUE (motion_uuid, member_uuid)
+-- Meetings: Scheduled assembly gatherings where votes are taken
+CREATE TABLE IF NOT EXISTS meeting (
+  uuid            TEXT PRIMARY KEY,
+  body_uuid       TEXT NOT NULL REFERENCES association(uuid),
+  title           TEXT NOT NULL,
+  scheduled_at    TEXT NOT NULL,
+  location        TEXT NULL,
+  status          TEXT NOT NULL DEFAULT 'scheduled',
+  created_by_uuid TEXT NOT NULL REFERENCES person(uuid),
+  created_at      TEXT NOT NULL,
+  started_at      TEXT NULL,
+  completed_at    TEXT NULL,
+  cancelled_at    TEXT NULL,
+  notes           TEXT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_meeting_body ON meeting(body_uuid);
+CREATE INDEX IF NOT EXISTS idx_meeting_scheduled ON meeting(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_meeting_status ON meeting(status);
+
+CREATE TABLE IF NOT EXISTS meeting_agenda_item (
+  uuid          TEXT PRIMARY KEY,
+  meeting_uuid  TEXT NOT NULL REFERENCES meeting(uuid),
+  motion_uuid   TEXT NOT NULL REFERENCES motion(uuid),
+  display_order INTEGER NOT NULL,
+  notes         TEXT NULL,
+  added_at      TEXT NOT NULL,
+  removed_at    TEXT NULL,
+  UNIQUE (meeting_uuid, motion_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_agenda_item_meeting ON meeting_agenda_item(meeting_uuid);
+CREATE INDEX IF NOT EXISTS idx_agenda_item_motion ON meeting_agenda_item(motion_uuid);
+
+CREATE TABLE IF NOT EXISTS meeting_outcome (
+  uuid          TEXT PRIMARY KEY,
+  meeting_uuid  TEXT NOT NULL REFERENCES meeting(uuid),
+  motion_uuid   TEXT NOT NULL REFERENCES motion(uuid),
+  action_taken  TEXT NOT NULL,
+  vote_aye      INTEGER NULL,
+  vote_nay      INTEGER NULL,
+  vote_abstain  INTEGER NULL,
+  notes         TEXT NULL,
+  recorded_at   TEXT NOT NULL,
+  recorded_by_uuid TEXT NOT NULL REFERENCES person(uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_meeting_outcome_meeting ON meeting_outcome(meeting_uuid);
+CREATE INDEX IF NOT EXISTS idx_meeting_outcome_motion ON meeting_outcome(motion_uuid);
+
+-- Petitions: Community members signal priorities/concerns to assembly
+CREATE TABLE IF NOT EXISTS petition (
+  uuid                TEXT PRIMARY KEY,
+  title               TEXT NOT NULL,
+  body                TEXT NOT NULL,
+  created_by_uuid     TEXT NOT NULL REFERENCES person(uuid),
+  created_at          TEXT NOT NULL,
+  status              TEXT NOT NULL DEFAULT 'open',
+  responded_at        TEXT NULL,
+  responded_by_uuid   TEXT NULL REFERENCES person(uuid),
+  response_body       TEXT NULL,
+  related_motion_uuid TEXT NULL REFERENCES motion(uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_petition_status ON petition(status);
+CREATE INDEX IF NOT EXISTS idx_petition_created ON petition(created_at);
+
+CREATE TABLE IF NOT EXISTS petition_signature (
+  petition_uuid TEXT NOT NULL REFERENCES petition(uuid),
+  person_uuid   TEXT NOT NULL REFERENCES person(uuid),
+  signed_at     TEXT NOT NULL,
+  unsigned_at   TEXT NULL,
+  PRIMARY KEY (petition_uuid, person_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_petition_signature_person ON petition_signature(person_uuid);
+
+-- Referendums: Scheduled community-wide ballots (e.g., annual November referendum)
+CREATE TABLE IF NOT EXISTS referendum (
+  uuid        TEXT PRIMARY KEY,
+  title       TEXT NOT NULL,
+  description TEXT NULL,
+  opens_at    TEXT NOT NULL,
+  closes_at   TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'draft',
+  created_by_uuid TEXT NOT NULL REFERENCES person(uuid),
+  created_at  TEXT NOT NULL,
+  closed_at   TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_referendum_status ON referendum(status);
+CREATE INDEX IF NOT EXISTS idx_referendum_dates ON referendum(opens_at, closes_at);
+
+CREATE TABLE IF NOT EXISTS referendum_question (
+  uuid            TEXT PRIMARY KEY,
+  referendum_uuid TEXT NOT NULL REFERENCES referendum(uuid),
+  question_text   TEXT NOT NULL,
+  question_type   TEXT NOT NULL,
+  description     TEXT NULL,
+  display_order   INTEGER NOT NULL,
+  created_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_referendum_question_ref ON referendum_question(referendum_uuid);
+
+CREATE TABLE IF NOT EXISTS referendum_question_option (
+  uuid         TEXT PRIMARY KEY,
+  question_uuid TEXT NOT NULL REFERENCES referendum_question(uuid),
+  option_text  TEXT NOT NULL,
+  display_order INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_referendum_option_question ON referendum_question_option(question_uuid);
+
+CREATE TABLE IF NOT EXISTS referendum_vote (
+  uuid          TEXT PRIMARY KEY,
+  question_uuid TEXT NOT NULL REFERENCES referendum_question(uuid),
+  person_uuid   TEXT NOT NULL REFERENCES person(uuid),
+  vote_value    TEXT NOT NULL,
+  voted_at      TEXT NOT NULL,
+  UNIQUE (question_uuid, person_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_referendum_vote_question ON referendum_vote(question_uuid);
+CREATE INDEX IF NOT EXISTS idx_referendum_vote_person ON referendum_vote(person_uuid);
 
 -- Library System: unified document storage index
 -- Documents are stored as JSON files, this table provides fast querying
@@ -380,64 +486,6 @@ CREATE TABLE IF NOT EXISTS neighboring_society (
   first_seen_at   TEXT NOT NULL,
   last_checked_at TEXT NULL,
   last_seen_at    TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS contract (
-  uuid                       TEXT PRIMARY KEY,
-  title                      TEXT NOT NULL,
-  body                       TEXT NOT NULL,
-  body_hash                  TEXT NOT NULL,
-  jurisdiction               TEXT NOT NULL,
-  jurisdiction_society_handle TEXT NULL,
-  status                     TEXT NOT NULL DEFAULT 'draft',
-  effective_date             TEXT NULL,
-  expiry_date                TEXT NULL,
-  created_at                 TEXT NOT NULL,
-  activated_at               TEXT NULL,
-  closed_at                  TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS contract_party (
-  uuid                    TEXT PRIMARY KEY,
-  contract_uuid           TEXT NOT NULL REFERENCES contract(uuid),
-  side                    TEXT NOT NULL,
-  principal_uuid          TEXT NOT NULL,
-  principal_handle        TEXT NOT NULL,
-  principal_society_handle TEXT NOT NULL,
-  role                    TEXT NOT NULL,
-  signature               TEXT NULL,
-  signed_at               TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS contract_milestone (
-  uuid                    TEXT PRIMARY KEY,
-  contract_uuid           TEXT NOT NULL REFERENCES contract(uuid),
-  title                   TEXT NOT NULL,
-  description             TEXT NULL,
-  due_date                TEXT NULL,
-  transfer_amount         INTEGER NULL,
-  transfer_from_party_uuid TEXT NULL REFERENCES contract_party(uuid),
-  transfer_to_party_uuid  TEXT NULL REFERENCES contract_party(uuid),
-  status                  TEXT NOT NULL DEFAULT 'pending',
-  attested_by_party_uuid  TEXT NULL REFERENCES contract_party(uuid),
-  attested_at             TEXT NULL
-);
-
-CREATE TABLE IF NOT EXISTS contract_event (
-  uuid              TEXT PRIMARY KEY,
-  contract_uuid     TEXT NOT NULL REFERENCES contract(uuid),
-  event_type        TEXT NOT NULL,
-  actor_party_uuid  TEXT NULL REFERENCES contract_party(uuid),
-  detail            TEXT NULL,
-  recorded_at       TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS outbox (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  event_type   TEXT NOT NULL,
-  payload_json TEXT NOT NULL,
-  created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-  delivered_at TEXT NULL
 );
 
 -- The Record: permanent, public, append-only chronicle of official governance acts
@@ -582,19 +630,6 @@ CREATE TABLE IF NOT EXISTS vouch_verifications (
 
 CREATE INDEX IF NOT EXISTS idx_vouch_verifications_peer ON vouch_verifications(peer_handle);
 CREATE INDEX IF NOT EXISTS idx_vouch_verifications_fresh ON vouch_verifications(peer_handle, checked_at);
-
--- Track interactions with peers as basis for vouching decisions
-CREATE TABLE IF NOT EXISTS peer_interactions (
-  interaction_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-  peer_handle         TEXT NOT NULL,
-  interaction_type    TEXT NOT NULL,  -- banking, mail, assembly, mutual_aid
-  interaction_date    INTEGER NOT NULL,
-  outcome             TEXT NOT NULL,  -- success, failure, neutral
-  details             TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_peer_interactions_peer ON peer_interactions(peer_handle);
-CREATE INDEX IF NOT EXISTS idx_peer_interactions_date ON peer_interactions(interaction_date);
 
 -- Injury System: Formal records of harm for College of Conciliation
 

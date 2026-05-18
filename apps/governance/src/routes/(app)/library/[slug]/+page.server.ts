@@ -1,15 +1,40 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle } from '$lib/server/library.js';
+import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract } from '$lib/server/library.js';
 import { hasPermission } from '$lib/server/permissions.js';
+import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	const document = getDocumentBySlug(params.slug);
-	if (!document) error(404, 'Document not found');
+	// First, check what type of document this is
+	const item = db
+		.prepare('SELECT type, slug FROM library_item WHERE slug = ?')
+		.get(params.slug) as { type: string; slug: string } | undefined;
 
-	const canEdit = hasPermission(locals.person.uuid, 'documents:edit');
+	if (!item) error(404, 'Document not found');
 
-	return { document, canEdit };
+	// Load based on document type
+	if (item.type === 'prose') {
+		const document = loadProseDocument(params.slug);
+		if (!document) error(404, 'Document not found');
+
+		const canEdit = locals.person?.uuid === document.owner_uuid;
+		return { document, canEdit, documentType: 'prose' };
+	} else if (item.type === 'contract') {
+		const document = loadContract(params.slug);
+		if (!document) error(404, 'Document not found');
+
+		// Contracts can be edited while draft
+		const canEdit = document.content.status === 'draft';
+		return { document, canEdit, documentType: 'contract' };
+	} else if (item.type === 'governing') {
+		const document = getDocumentBySlug(params.slug);
+		if (!document) error(404, 'Document not found');
+
+		const canEdit = hasPermission(locals.person.uuid, 'documents:edit');
+		return { document, canEdit, documentType: 'governing' };
+	} else {
+		error(404, 'Document type not supported for viewing');
+	}
 };
 
 export const actions: Actions = {

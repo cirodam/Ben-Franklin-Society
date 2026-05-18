@@ -1,0 +1,21 @@
+{
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "prose",
+  "slug": "welcome-to-bfs",
+  "title": "Welcome to the Banking and Financial System",
+  "owner_uuid": "00000000-0000-0000-0000-000000000001",
+  "created_at": "2026-05-17T16:05:00.000Z",
+  "updated_at": "2026-05-17T16:05:00.000Z",
+  "content": {
+    "status": "published",
+    "paragraphs": [
+      "The Banking and Financial System (BFS) represents a new approach to organizing economic activity within voluntary associations. This document serves as an introduction to the core concepts and principles that guide our system.",
+      "At its heart, BFS is built on the idea that financial institutions should serve their communities, not extract value from them. Community banks operate as mutual organizations, owned by their members and governed democratically through sortition-based councils.",
+      "The system includes multiple layers of governance, from local community banks to the Federal Bank that coordinates inter-society transactions. Each layer is designed to maintain accountability while enabling the scale necessary for modern economic activity.",
+      "We invite you to explore the library to learn more about our Charter, Constitution, and the various bylaws and policies that govern our operations. Every document here represents a decision made collectively by our members through our democratic processes."
+    ],
+    "summary": "An introduction to the Banking and Financial System and its core principles.",
+    "tags": ["introduction", "overview", "governance"],
+    "published_at": "2026-05-17T16:05:00.000Z"
+  }
+}

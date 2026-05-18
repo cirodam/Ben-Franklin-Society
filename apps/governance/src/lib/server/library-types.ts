@@ -84,10 +84,8 @@ export interface MotionContent {
 	vote_closed_at?: string;
 	enacted_at?: string;
 
-	// Adoption/repeal (for compatibility with governing doc patterns)
-	adopted_at?: string;
+	// Adoption/repeal tracking for amendment chains
 	adopted_by_motion_uuid?: string;
-	repealed_at?: string;
 	repealed_by_motion_uuid?: string;
 
 	// Rules
@@ -157,6 +155,113 @@ export interface ReportContent {
 }
 
 export type ReportDocument = LibraryDocument<ReportContent>;
+
+// ============================================================================
+// Prose Documents
+// ============================================================================
+
+export type ProseStatus = 'draft' | 'published' | 'archived';
+
+export interface ProseDocContent {
+	status: ProseStatus;
+	
+	// Document body as paragraphs
+	paragraphs: string[];
+	
+	// Optional metadata
+	summary?: string;
+	tags?: string[];
+	
+	published_at?: string;
+	archived_at?: string;
+}
+
+export type ProseDocument = LibraryDocument<ProseDocContent>;
+
+// ============================================================================
+// Contracts
+// ============================================================================
+
+export type ContractStatus = 'draft' | 'active' | 'completed' | 'terminated';
+
+export interface ContractParty {
+	principal_uuid: string; // person or association UUID
+	principal_name: string; // cached for display
+	role: string; // "buyer", "seller", "guarantor", etc.
+}
+
+export interface ContractContent {
+	status: ContractStatus;
+	
+	// The agreement text
+	body: string;
+	
+	// Two parties
+	party_a: ContractParty;
+	party_b: ContractParty;
+	
+	// Dates
+	effective_date?: string;
+	expiry_date?: string;
+	acknowledged_at?: string; // when both parties signed off
+	completed_at?: string;
+	terminated_at?: string;
+}
+
+export type ContractDocument = LibraryDocument<ContractContent>;
+
+// ============================================================================
+// Organizational Charts
+// ============================================================================
+
+export type OrgChartStatus = 'draft' | 'published';
+
+export interface OrgChartSection {
+	id: string; // Internal reference ID (not UUID)
+	name: string;
+	description?: string;
+	parent_section_id?: string;
+}
+
+export interface OrgChartTemplate {
+	id: string; // Internal reference ID (not UUID)
+	template_key: string; // e.g., "executive_director", "treasurer"
+	title: string;
+	description?: string;
+	compensation_franks: number;
+	permissions: Array<{
+		app: string;
+		permission: string;
+	}>;
+}
+
+export interface OrgChartRole {
+	id: string; // Internal reference ID (not UUID)
+	title: string;
+	description?: string;
+	section_id?: string;
+	template_id?: string;
+	reports_to_role_id?: string;
+	compensation_franks: number;
+}
+
+export interface OrgChartContent {
+	status: OrgChartStatus;
+	version: string; // Format version, currently "1.0"
+	
+	// Optional metadata
+	description?: string;
+	notes?: string;
+	
+	// Organizational structure
+	sections: OrgChartSection[];
+	templates: OrgChartTemplate[];
+	roles: OrgChartRole[];
+	
+	published_at?: string;
+}
+
+export type OrgChartDocument = LibraryDocument<OrgChartContent>;
 
 // ============================================================================
 // Database Index Row

@@ -6,10 +6,23 @@
 
 	let { data, form }: { data: PageData; form: any } = $props();
 
-	const { association, members, activeDeliberations, pending, recentDecisions, canCreateMotion, deliberationRules } = $derived(data);
+	const { 
+		association, 
+		members, 
+		activeDeliberations, 
+		pending, 
+		recentDecisions, 
+		canCreateMotion, 
+		deliberationRules,
+		openPetitions,
+		respondedPetitions,
+		openReferendums,
+		closedReferendums,
+	} = $derived(data);
 
 	let showModal = $state(false);
-	let activeTab = $state<'deliberations' | 'pending' | 'decisions'>('deliberations');
+	let showPetitionModal = $state(false);
+	let activeTab = $state<'referendums' | 'petitions' | 'deliberations' | 'pending' | 'decisions'>('referendums');
 
 	$effect(() => {
 		if (form?.created) {
@@ -23,6 +36,14 @@
 
 	function closeModal() {
 		showModal = false;
+	}
+
+	function openPetitionModal() {
+		showPetitionModal = true;
+	}
+
+	function closePetitionModal() {
+		showPetitionModal = false;
 	}
 
 	function getStatusBadgeClass(status: string): string {
@@ -88,6 +109,18 @@
 	<div class="tab-nav">
 		<button 
 			class="tab-nav__button" 
+			class:active={activeTab === 'referendums'}
+			onclick={() => activeTab = 'referendums'}>
+			🗳️ Referendums {#if openReferendums.length > 0}<span class="badge">{openReferendums.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
+			class:active={activeTab === 'petitions'}
+			onclick={() => activeTab = 'petitions'}>
+			✍️ Petitions {#if openPetitions.length > 0}<span class="badge">{openPetitions.length}</span>{/if}
+		</button>
+		<button 
+			class="tab-nav__button" 
 			class:active={activeTab === 'deliberations'}
 			onclick={() => activeTab = 'deliberations'}>
 			📊 Deliberations {#if activeDeliberations.length > 0}<span class="badge">{activeDeliberations.length}</span>{/if}
@@ -108,7 +141,169 @@
 
 	<!-- Tab Content -->
 	<div class="tab-content">
-		{#if activeTab === 'deliberations'}
+		{#if activeTab === 'referendums'}
+			{#if openReferendums.length > 0}
+				{#each openReferendums as referendum}
+					<section class="section referendum-section">
+						<div class="referendum-header">
+							<div>
+								<h2 class="referendum-title">🗳️ {referendum.title}</h2>
+								{#if referendum.description}
+									<p class="referendum-description">{referendum.description}</p>
+								{/if}
+								<div class="referendum-dates">
+									<span>Open: {formatDate(referendum.opens_at)}</span>
+									<span>Closes: {formatDate(referendum.closes_at)}</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="referendum-questions">
+							{#each referendum.questions as question}
+								<div class="question-card">
+									<h3 class="question-text">{question.question_text}</h3>
+									{#if question.description}
+										<p class="question-description">{question.description}</p>
+									{/if}
+
+									{#if question.question_type === 'yes_no'}
+										<form method="POST" action="?/voteOnQuestion" use:enhance class="vote-form">
+											<input type="hidden" name="question_uuid" value={question.uuid} />
+											<div class="vote-options yes-no">
+												<button 
+													type="submit" 
+													name="vote_value" 
+													value={JSON.stringify('yes')}
+													class="vote-button"
+													class:voted={question.userVote && JSON.parse(question.userVote.vote_value) === 'yes'}
+												>
+													👍 Yes
+												</button>
+												<button 
+													type="submit" 
+													name="vote_value" 
+													value={JSON.stringify('no')}
+													class="vote-button"
+													class:voted={question.userVote && JSON.parse(question.userVote.vote_value) === 'no'}
+												>
+													👎 No
+												</button>
+												<button 
+													type="submit" 
+													name="vote_value" 
+													value={JSON.stringify('abstain')}
+													class="vote-button vote-button--abstain"
+													class:voted={question.userVote && JSON.parse(question.userVote.vote_value) === 'abstain'}
+												>
+													Abstain
+												</button>
+											</div>
+										</form>
+									{:else if question.question_type === 'multiple_choice'}
+										<form method="POST" action="?/voteOnQuestion" use:enhance class="vote-form">
+											<input type="hidden" name="question_uuid" value={question.uuid} />
+											<div class="vote-options multiple-choice">
+												{#each question.options as option}
+													<button 
+														type="submit" 
+														name="vote_value" 
+														value={JSON.stringify(option.uuid)}
+														class="vote-button vote-button--choice"
+														class:voted={question.userVote && JSON.parse(question.userVote.vote_value) === option.uuid}
+													>
+														{option.option_text}
+													</button>
+												{/each}
+											</div>
+										</form>
+									{:else if question.question_type === 'ranking'}
+										<div class="ranking-notice">
+											<p>Ranking questions coming soon</p>
+										</div>
+									{/if}
+
+									{#if question.userVote}
+										<div class="vote-status">
+											✓ You voted on {formatDate(question.userVote.voted_at)}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</section>
+				{/each}
+			{:else}
+				<EmptyState
+					icon="🗳️"
+					title="No open referendums"
+					description="Check back during the November referendum period"
+				/>
+			{/if}
+		{:else if activeTab === 'petitions'}
+			<section class="section">
+				<div class="section__header">
+					<h2 class="section__title">✍️ Community Petitions</h2>
+					<Button onclick={openPetitionModal}>+ Create Petition</Button>
+				</div>
+				<p class="section__desc">Signal priorities and concerns to the assembly</p>
+				
+				{#if openPetitions.length > 0}
+					<div class="petitions">
+						{#each openPetitions as petition}
+							<div class="petition-card">
+								<div class="petition-card__header">
+									<h3 class="petition-card__title">{petition.title}</h3>
+									<span class="petition-card__signatures">{petition.signature_count} signature{petition.signature_count !== 1 ? 's' : ''}</span>
+								</div>
+								<p class="petition-card__body">{petition.body}</p>
+								<div class="petition-card__footer">
+									<span class="petition-card__date">Created {formatDate(petition.created_at)}</span>
+									<form method="POST" action={petition.is_signed_by ? '?/unsignPetition' : '?/signPetition'} use:enhance>
+										<input type="hidden" name="petition_uuid" value={petition.uuid} />
+										<Button type="submit" variant={petition.is_signed_by ? 'secondary' : 'primary'} size="small">
+											{petition.is_signed_by ? 'Unsign' : 'Sign Petition'}
+										</Button>
+									</form>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<EmptyState
+						icon="✍️"
+						title="No open petitions"
+						description="Be the first to create a petition and signal what matters to the community"
+					>
+						<Button onclick={openPetitionModal}>+ Create Petition</Button>
+					</EmptyState>
+				{/if}
+
+				{#if respondedPetitions.length > 0}
+					<div class="responded-section">
+						<h3 class="subsection-title">Responded Petitions</h3>
+						<div class="list">
+							{#each respondedPetitions as petition}
+								<div class="list-item petition-responded">
+									<div class="list-item__main">
+										<span class="list-item__title">{petition.title}</span>
+										<span class="badge badge-responded">Responded</span>
+									</div>
+									<span class="list-item__meta">
+										{petition.signature_count} signatures · Responded {formatDate(petition.responded_at || petition.created_at)}
+									</span>
+									{#if petition.response_body}
+										<div class="petition-response">
+											<strong>Assembly Response:</strong>
+											<p>{petition.response_body}</p>
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</section>
+		{:else if activeTab === 'deliberations'}
 			{#if activeDeliberations.length > 0}
 				<section class="section">
 					<h2 class="section__title">�️ Deliberation & Voting</h2>
@@ -210,7 +405,7 @@
 	</div>
 </div>
 
-<Modal show={showModal} title="Put a Question to the Community">
+<Modal bind:open={showModal} onclose={closeModal} title="Put a Question to the Community">
 	<form method="POST" action="?/create" use:enhance>
 		<Input
 			id="title"
@@ -246,10 +441,39 @@
 				{/each}
 			</Select>
 		{/if}
-		{#snippet actions()}
+		<div style="display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-4);">
 			<Button variant="secondary" onclick={closeModal}>Cancel</Button>
 			<Button type="submit">Submit Question</Button>
-		{/snippet}
+		</div>
+	</form>
+</Modal>
+
+<Modal bind:open={showPetitionModal} onclose={closePetitionModal} title="Create a Petition">
+	<form method="POST" action="?/createPetition" use:enhance={() => {
+		return async ({ update }) => {
+			await update();
+			closePetitionModal();
+		};
+	}}>
+		<Input
+			id="petition-title"
+			name="title"
+			label="Petition Title"
+			placeholder="What do you want the assembly to consider?"
+			required
+		/>
+		<Textarea
+			id="petition-body"
+			name="body"
+			label="Description"
+			rows={6}
+			placeholder="Explain what you're asking for and why it matters..."
+			required
+		/>
+		<div style="display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-4);">
+			<Button variant="secondary" onclick={closePetitionModal}>Cancel</Button>
+			<Button type="submit">Create Petition</Button>
+		</div>
 	</form>
 </Modal>
 
@@ -508,6 +732,243 @@
 
 	.list-item__meta {
 		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	/* Petitions */
+	.section__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-4);
+	}
+
+	.petitions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		margin-bottom: var(--space-6);
+	}
+
+	.petition-card {
+		padding: var(--space-5);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		border-left: 4px solid #10b981;
+	}
+
+	.petition-card__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: start;
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
+	}
+
+	.petition-card__title {
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		margin: 0;
+		flex: 1;
+	}
+
+	.petition-card__signatures {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-accent);
+		white-space: nowrap;
+	}
+
+	.petition-card__body {
+		margin: 0 0 var(--space-4) 0;
+		color: var(--color-text-muted);
+		line-height: 1.6;
+	}
+
+	.petition-card__footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.petition-card__date {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.responded-section {
+		margin-top: var(--space-8);
+		padding-top: var(--space-6);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.subsection-title {
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		margin: 0 0 var(--space-4) 0;
+	}
+
+	.petition-responded {
+		flex-direction: column;
+		align-items: flex-start;
+		padding: var(--space-4);
+	}
+
+	.petition-response {
+		margin-top: var(--space-3);
+		padding: var(--space-3);
+		background: var(--color-accent-subtle);
+		border-left: 3px solid var(--color-accent);
+		border-radius: var(--radius);
+		font-size: var(--text-sm);
+	}
+
+	.petition-response strong {
+		display: block;
+		margin-bottom: var(--space-2);
+		color: var(--color-accent);
+	}
+
+	.petition-response p {
+		margin: 0;
+		line-height: 1.6;
+	}
+
+	.badge-responded {
+		background: #d1fae5;
+		color: #065f46;
+	}
+
+	/* Referendums */
+	.referendum-section {
+		margin-bottom: var(--space-8);
+	}
+
+	.referendum-header {
+		margin-bottom: var(--space-6);
+		padding: var(--space-5);
+		background: linear-gradient(to right, #ede9fe, var(--color-surface));
+		border-left: 4px solid #8b5cf6;
+		border-radius: var(--radius-lg);
+	}
+
+	.referendum-title {
+		font-size: var(--text-2xl);
+		font-weight: var(--weight-bold);
+		margin: 0 0 var(--space-2) 0;
+	}
+
+	.referendum-description {
+		font-size: var(--text-base);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-3) 0;
+		line-height: 1.6;
+	}
+
+	.referendum-dates {
+		display: flex;
+		gap: var(--space-4);
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		font-weight: var(--weight-medium);
+	}
+
+	.referendum-questions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+	}
+
+	.question-card {
+		padding: var(--space-5);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+
+	.question-text {
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		margin: 0 0 var(--space-2) 0;
+	}
+
+	.question-description {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-4) 0;
+		line-height: 1.6;
+	}
+
+	.vote-form {
+		margin-top: var(--space-4);
+	}
+
+	.vote-options {
+		display: flex;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.vote-options.yes-no {
+		gap: var(--space-2);
+	}
+
+	.vote-options.multiple-choice {
+		flex-direction: column;
+	}
+
+	.vote-button {
+		padding: var(--space-3) var(--space-4);
+		font-size: var(--text-base);
+		font-weight: var(--weight-medium);
+		background: var(--color-background);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius);
+		cursor: pointer;
+		transition: all 0.2s;
+		color: var(--color-text);
+	}
+
+	.vote-button:hover {
+		border-color: var(--color-accent);
+		background: var(--color-accent-subtle);
+	}
+
+	.vote-button.voted {
+		background: var(--color-accent);
+		border-color: var(--color-accent);
+		color: white;
+		font-weight: var(--weight-semibold);
+	}
+
+	.vote-button--abstain {
+		color: var(--color-text-muted);
+	}
+
+	.vote-button--choice {
+		text-align: left;
+		justify-content: flex-start;
+	}
+
+	.vote-status {
+		margin-top: var(--space-3);
+		padding: var(--space-2) var(--space-3);
+		background: #d1fae5;
+		color: #065f46;
+		border-radius: var(--radius);
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+	}
+
+	.ranking-notice {
+		margin-top: var(--space-4);
+		padding: var(--space-4);
+		background: var(--color-background);
+		border: 1px dashed var(--color-border);
+		border-radius: var(--radius);
+		text-align: center;
 		color: var(--color-text-muted);
 	}
 

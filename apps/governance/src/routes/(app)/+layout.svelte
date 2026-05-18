@@ -15,15 +15,13 @@
 
 			{#snippet nav()}
 				<SidebarLink href="/">🏛️ Home</SidebarLink>
-				<SidebarLink href="/my/library">📝 My Library</SidebarLink>
-				<SidebarLink href="/my/motions">📋 My Motions</SidebarLink>
+				<SidebarLink href="/library">📚 Library</SidebarLink>
 				<SidebarLink href="/referenda">📢 Community Referenda</SidebarLink>
 				<SidebarLink href="/general-assembly">🏛️ General Assembly</SidebarLink>
 				<SidebarLink href="/committees">📋 Committees</SidebarLink>
 				<SidebarLink href="/directory">📇 Directory</SidebarLink>
 				<SidebarLink href="/services">🏢 Services</SidebarLink>
 				<SidebarLink href="/colleges">🎓 Colleges</SidebarLink>
-				<SidebarLink href="/library">📄 Library</SidebarLink>
 				<SidebarLink href="/record">📝 The Record</SidebarLink>
 				<SidebarLink href="/federation/lineage">🔗 Federation</SidebarLink>
 

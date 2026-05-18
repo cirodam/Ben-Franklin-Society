@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
@@ -8,6 +8,13 @@ import type {
 	GoverningDocContent,
 	MotionDocument,
 	MotionContent,
+	MotionStatus,
+	ProseDocument,
+	ProseDocContent,
+	ContractDocument,
+	ContractContent,
+	OrgChartDocument,
+	OrgChartContent,
 	Article,
 	Section,
 	LibraryItemRow
@@ -30,7 +37,6 @@ interface LegacyDocument {
 	owner_uuid: string;
 	status: DocumentStatus;
 	created_at: string;
-	adopted_at?: string | null;
 	adopted_by_motion_uuid?: string | null;
 	repealed_at?: string | null;
 	repealed_by_motion_uuid?: string | null;
@@ -42,6 +48,9 @@ interface LegacyDocument {
 const LIBRARY_DIR = join(process.cwd(), 'data', 'library');
 const GOVERNING_DIR = join(LIBRARY_DIR, 'governing');
 const MOTIONS_DIR = join(LIBRARY_DIR, 'motions');
+const PROSE_DIR = join(LIBRARY_DIR, 'prose');
+const CONTRACTS_DIR = join(LIBRARY_DIR, 'contracts');
+const ORG_CHARTS_DIR = join(LIBRARY_DIR, 'org-charts');
 
 // Ensure directories exist
 if (!existsSync(LIBRARY_DIR)) {
@@ -53,13 +62,22 @@ if (!existsSync(GOVERNING_DIR)) {
 if (!existsSync(MOTIONS_DIR)) {
 	mkdirSync(MOTIONS_DIR, { recursive: true });
 }
+if (!existsSync(PROSE_DIR)) {
+	mkdirSync(PROSE_DIR, { recursive: true });
+}
+if (!existsSync(CONTRACTS_DIR)) {
+	mkdirSync(CONTRACTS_DIR, { recursive: true });
+}
+if (!existsSync(ORG_CHARTS_DIR)) {
+	mkdirSync(ORG_CHARTS_DIR, { recursive: true });
+}
 
 // --- Utilities ---
 
 /**
  * Get the society association UUID (the top-level association that owns the Corpus of Law)
  */
-function getSocietyUuid(): string | null {
+export function getSocietyUuid(): string | null {
 	const result = db
 		.prepare("SELECT uuid FROM association WHERE type = 'society' LIMIT 1")
 		.get() as { uuid: string } | undefined;
@@ -78,7 +96,6 @@ function toLegacyDocument(doc: GoverningDocument): LegacyDocument {
 		owner_uuid: doc.owner_uuid,
 		status: doc.content.status,
 		created_at: doc.created_at,
-		adopted_at: doc.content.adopted_at ?? null,
 		adopted_by_motion_uuid: doc.content.adopted_by_motion_uuid ?? null,
 		repealed_at: doc.content.repealed_at ?? null,
 		repealed_by_motion_uuid: doc.content.repealed_by_motion_uuid ?? null,
@@ -102,7 +119,6 @@ function fromLegacyDocument(legacy: LegacyDocument): GoverningDocument {
 			status: legacy.status,
 			seniority: legacy.seniority,
 			articles: legacy.articles,
-			adopted_at: legacy.adopted_at ?? undefined,
 			adopted_by_motion_uuid: legacy.adopted_by_motion_uuid ?? undefined,
 			repealed_at: legacy.repealed_at ?? undefined,
 			repealed_by_motion_uuid: legacy.repealed_by_motion_uuid ?? undefined
@@ -157,11 +173,54 @@ function extractMetadata(doc: LibraryDocument): string {
 		return JSON.stringify({
 			status: content.status,
 			seniority: content.seniority,
-			adopted_at: content.adopted_at,
 			repealed_at: content.repealed_at
 		});
 	}
-	// Add other types as needed
+	
+	if (doc.type === 'motion') {
+		const content = doc.content as MotionContent;
+		return JSON.stringify({
+			status: content.status,
+			motion_number: content.motion_number,
+			introduced_at: content.introduced_at,
+			enacted_at: content.enacted_at
+		});
+	}
+	
+	if (doc.type === 'prose') {
+		const content = doc.content as ProseDocContent;
+		return JSON.stringify({
+			status: content.status,
+			paragraph_count: content.paragraphs.length,
+			tags: content.tags || [],
+			published_at: content.published_at
+		});
+	}
+	
+	if (doc.type === 'contract') {
+		const content = doc.content as ContractContent;
+		return JSON.stringify({
+			status: content.status,
+			party_a_name: content.party_a.principal_name,
+			party_b_name: content.party_b.principal_name,
+			effective_date: content.effective_date,
+			acknowledged_at: content.acknowledged_at
+		});
+	}
+	
+	if (doc.type === 'org_chart') {
+		const content = doc.content as OrgChartContent;
+		return JSON.stringify({
+			status: content.status,
+			version: content.version,
+			role_count: content.roles.length,
+			section_count: content.sections.length,
+			template_count: content.templates.length,
+			published_at: content.published_at
+		});
+	}
+	
+	// Default for unknown types
 	return JSON.stringify({});
 }
 
@@ -171,7 +230,7 @@ function extractMetadata(doc: LibraryDocument): string {
  * Load a governing document from file
  * Supports both legacy flat format and new wrapped format
  */
-function loadGoverningDocument(slug: string): GoverningDocument | null {
+export function loadGoverningDocument(slug: string): GoverningDocument | null {
 	try {
 		// Try new location first
 		let filePath = join(GOVERNING_DIR, `${slug}.json`);
@@ -503,7 +562,7 @@ export function getDocumentTree(slug: string): LegacyDocument | null {
 export interface LibrarySearchOptions {
 	type?: string | string[]; // 'governing', 'motion', etc. or array of types
 	status?: string;
-	owner_uuid?: string;
+	owner_uuid?: string | string[]; // Single UUID or array of UUIDs
 	query?: string; // Search in title/slug
 	limit?: number;
 	offset?: number;
@@ -539,10 +598,16 @@ export function searchLibrary(options: LibrarySearchOptions = {}): LibraryItemSu
 		}
 	}
 
-	// Filter by owner
+	// Filter by owner (supports single UUID or array)
 	if (options.owner_uuid) {
-		query += ' AND owner_uuid = ?';
-		params.push(options.owner_uuid);
+		if (Array.isArray(options.owner_uuid)) {
+			const placeholders = options.owner_uuid.map(() => '?').join(', ');
+			query += ` AND owner_uuid IN (${placeholders})`;
+			params.push(...options.owner_uuid);
+		} else {
+			query += ' AND owner_uuid = ?';
+			params.push(options.owner_uuid);
+		}
 	}
 
 	// Search in title/slug
@@ -634,12 +699,18 @@ export function getDocumentByUuid(uuid: string): LibraryDocument | LegacyMotion 
 
 	if (!row) return null;
 
+	// Load document based on type
 	switch (row.type) {
 		case 'governing':
-			return getDocumentBySlug(row.slug);
+			return loadGoverningDocument(row.slug);
 		case 'motion':
-			return getMotionBySlug(row.slug);
+			return loadMotion(row.slug);
+		case 'prose':
+			return loadProseDocument(row.slug);
+		case 'contract':
+			return loadContract(row.slug);
 		default:
+			console.warn(`Unknown document type: ${row.type}`);
 			return null;
 	}
 }
@@ -654,8 +725,6 @@ export interface LegacyMotion {
 	slug: string;
 	motion_number: number;
 	title: string;
-	type: string;
-	seniority: number | null;
 	owner_uuid: string;
 	body: string;
 	reasoning: string | null;
@@ -663,17 +732,15 @@ export interface LegacyMotion {
 	body_uuid: string;
 	deliberation_rule_uuid: string | null;
 	vote_rule_uuid: string | null;
-	status: string;
+	status: MotionStatus;
 	clerk_notes: string | null;
 	parliamentarian_notes: string | null;
 	created_at: string;
-	adopted_at: string | null;
-	adopted_by_motion_uuid: string | null;
-	repealed_at: string | null;
-	repealed_by_motion_uuid: string | null;
-	deliberation_opened_at: string | null;
+	introduced_at: string | null;
 	enacted_at: string | null;
 	resolved_at: string | null;
+	adopted_by_motion_uuid: string | null;
+	repealed_by_motion_uuid: string | null;
 }
 
 /**
@@ -689,8 +756,6 @@ function motionToLegacy(doc: MotionDocument): LegacyMotion {
 		slug: doc.slug,
 		motion_number,
 		title: doc.title,
-		type: 'motion',
-		seniority: null,
 		owner_uuid: doc.owner_uuid,
 		body: doc.content.body,
 		reasoning: doc.content.reasoning ?? null,
@@ -702,20 +767,18 @@ function motionToLegacy(doc: MotionDocument): LegacyMotion {
 		clerk_notes: doc.content.clerk_notes ?? null,
 		parliamentarian_notes: doc.content.parliamentarian_notes ?? null,
 		created_at: doc.created_at,
-		adopted_at: doc.content.adopted_at ?? null,
-		adopted_by_motion_uuid: doc.content.adopted_by_motion_uuid ?? null,
-		repealed_at: doc.content.repealed_at ?? null,
-		repealed_by_motion_uuid: doc.content.repealed_by_motion_uuid ?? null,
-		deliberation_opened_at: doc.content.introduced_at ?? null,
+		introduced_at: doc.content.introduced_at ?? null,
 		enacted_at: doc.content.enacted_at ?? null,
 		resolved_at: doc.content.vote_closed_at ?? null,
+		adopted_by_motion_uuid: doc.content.adopted_by_motion_uuid ?? null,
+		repealed_by_motion_uuid: doc.content.repealed_by_motion_uuid ?? null,
 	};
 }
 
 /**
  * Load a motion from file
  */
-function loadMotion(slug: string): MotionDocument | null {
+export function loadMotion(slug: string): MotionDocument | null {
 	try {
 		const filePath = join(MOTIONS_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
@@ -740,6 +803,176 @@ function saveMotion(doc: MotionDocument): void {
 	
 	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
 	syncToDatabase(doc);
+}
+
+/**
+ * Load a prose document from file
+ */
+export function loadProseDocument(slug: string): ProseDocument | null {
+	try {
+		const filePath = join(PROSE_DIR, `${slug}.json`);
+		if (!existsSync(filePath)) {
+			return null;
+		}
+
+		const content = readFileSync(filePath, 'utf-8');
+		const doc = JSON.parse(content) as ProseDocument;
+		return doc;
+	} catch (err) {
+		console.error(`Error loading prose document ${slug}:`, err);
+		return null;
+	}
+}
+
+/**
+ * Save a prose document to file and sync to database
+ */
+export function saveProseDocument(doc: ProseDocument): void {
+	const filePath = join(PROSE_DIR, `${doc.slug}.json`);
+	doc.updated_at = new Date().toISOString();
+	
+	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
+	syncToDatabase(doc);
+}
+
+// ============================================================================
+// Contracts
+// ============================================================================
+
+/**
+ * Load a contract document by slug
+ */
+export function loadContract(slug: string): ContractDocument | null {
+	try {
+		const filePath = join(CONTRACTS_DIR, `${slug}.json`);
+		if (!existsSync(filePath)) {
+			return null;
+		}
+
+		const content = readFileSync(filePath, 'utf-8');
+		const doc = JSON.parse(content) as ContractDocument;
+		return doc;
+	} catch (err) {
+		console.error(`Error loading contract ${slug}:`, err);
+		return null;
+	}
+}
+
+/**
+ * Save a contract document to file and sync to database
+ */
+export function saveContract(doc: ContractDocument): void {
+	const filePath = join(CONTRACTS_DIR, `${doc.slug}.json`);
+	doc.updated_at = new Date().toISOString();
+	
+	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
+	syncToDatabase(doc);
+}
+
+// ============================================================================
+// Org Charts
+// ============================================================================
+
+/**
+ * Load an org chart document by slug
+ */
+export function loadOrgChartDocument(slug: string): OrgChartDocument | null {
+	try {
+		const filePath = join(ORG_CHARTS_DIR, `${slug}.json`);
+		if (!existsSync(filePath)) {
+			return null;
+		}
+
+		const content = readFileSync(filePath, 'utf-8');
+		const doc = JSON.parse(content) as OrgChartDocument;
+		return doc;
+	} catch (err) {
+		console.error(`Error loading org chart ${slug}:`, err);
+		return null;
+	}
+}
+
+/**
+ * Save an org chart document to file and sync to database
+ */
+export function saveOrgChartDocument(doc: OrgChartDocument): void {
+	const filePath = join(ORG_CHARTS_DIR, `${doc.slug}.json`);
+	doc.updated_at = new Date().toISOString();
+	
+	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
+	syncToDatabase(doc);
+}
+
+/**
+ * List all org chart documents
+ */
+export function listOrgChartDocuments(): OrgChartDocument[] {
+	const documents: OrgChartDocument[] = [];
+
+	if (!existsSync(ORG_CHARTS_DIR)) {
+		return documents;
+	}
+
+	const files = readdirSync(ORG_CHARTS_DIR);
+	for (const file of files) {
+		if (file.endsWith('.json')) {
+			const slug = file.replace('.json', '');
+			const doc = loadOrgChartDocument(slug);
+			if (doc) {
+				documents.push(doc);
+			}
+		}
+	}
+
+	return documents;
+}
+
+/**
+ * Delete a document by UUID
+ */
+export function deleteDocument(uuid: string): boolean {
+	try {
+		// Get document info from database
+		const row = db.prepare('SELECT type, slug FROM library_item WHERE uuid = ?').get(uuid) as { type: string; slug: string } | undefined;
+		
+		if (!row) return false;
+		
+		// Get directory based on type
+		let directory: string;
+		switch (row.type) {
+			case 'governing':
+				directory = 'governing';
+				break;
+			case 'motion':
+				directory = 'motions';
+				break;
+			case 'prose':
+				directory = 'prose';
+				break;
+			case 'contract':
+				directory = 'contracts';
+				break;
+			case 'org_chart':
+				directory = 'org-charts';
+				break;
+			default:
+				return false;
+		}
+		
+		// Delete file
+		const filePath = join(LIBRARY_DIR, directory, `${row.slug}.json`);
+		if (existsSync(filePath)) {
+			unlinkSync(filePath);
+		}
+		
+		// Delete from database
+		db.prepare('DELETE FROM library_item WHERE uuid = ?').run(uuid);
+		
+		return true;
+	} catch (err) {
+		console.error(`Error deleting document ${uuid}:`, err);
+		return false;
+	}
 }
 
 /**

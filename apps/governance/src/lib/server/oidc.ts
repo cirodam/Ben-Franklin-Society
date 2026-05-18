@@ -377,8 +377,6 @@ function loadClientsFromEnv(): void {
 			new Date().toISOString(),
 			'system' // Created by system during env var migration
 		);
-		
-		console.log(`[oidc] Imported client from env: ${c.client_id}`);
 	}
 }
 

@@ -9,6 +9,7 @@ import {
 	assignRole,
 	unassignRole,
 	getPermissionsForRole,
+	applyOrgChartTemplate,
 } from '$lib/server/associations.js';
 import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/server/sortition.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/permissions.js';
@@ -16,7 +17,7 @@ import { addEntry, getBodyRecord } from '$lib/server/record.js';
 import { audit } from '$lib/server/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getVoteTally, getComments, createMotion } from '$lib/server/motions.js';
 import { listDeliberationRules } from '$lib/server/deliberation_rules.js';
-import { getDocumentBySlug } from '$lib/server/library.js';
+import { getDocumentBySlug, listOrgChartDocuments } from '$lib/server/library.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -156,6 +157,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		? getDocumentBySlug(association.governing_document_slug)
 		: null;
 
+	// Load available org chart templates
+	const orgChartTemplates = listOrgChartDocuments();
+
 	return {
 		association,
 		config,
@@ -175,7 +179,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		canVacate,
 		record,
 		deliberationRules,
-		governingDocument
+		governingDocument,
+		orgChartTemplates
 	};
 };
 
@@ -310,5 +315,49 @@ unassignRole(role_uuid, person_uuid);
 		audit(actingAs, 'role.revoke', 'person', person_uuid,
 			`@${person?.handle ?? person_uuid} removed from role "${role?.name ?? role_uuid}"`, motion_uuid);
 		return { success: true };
+	},
+
+	applyTemplate: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Committee not found' });
+
+		// Check permissions - need to be able to create/manage roles
+		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, association.uuid)) {
+			return fail(403, { message: 'Not authorized to apply templates' });
+		}
+
+		const data = await request.formData();
+		const templateSlug = String(data.get('template_slug') ?? '').trim();
+
+		if (!templateSlug) return fail(400, { message: 'Template must be selected' });
+
+		try {
+			const result = applyOrgChartTemplate(association.uuid, templateSlug);
+			
+			if (!result) {
+				return fail(400, { message: 'Failed to apply template - template not found' });
+			}
+
+			// Log to record
+			addEntry(
+				params.uuid,
+				actingAs,
+				'template_applied',
+				'association',
+				params.uuid,
+				`Applied org chart template "${templateSlug}" - created ${result.sections.size} sections, ${result.templates.size} templates, and ${result.roles.size} roles.`
+			);
+
+			audit(actingAs, 'org_chart.apply_template', 'association', params.uuid,
+				`Applied template ${templateSlug}`);
+
+			return { success: true, message: 'Template applied successfully' };
+		} catch (err) {
+			console.error('Error applying template:', err);
+			return fail(500, { message: 'Failed to apply template' });
+		}
 	},
 };

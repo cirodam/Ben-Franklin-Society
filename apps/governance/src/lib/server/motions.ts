@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
 import { getVoteRuleByUuid, evaluateTally } from './vote_rules.js';
 import * as library from './library.js';
+import { getActiveMeetingForMotion } from './meetings.js';
 
 // --- Types ---
 
@@ -20,8 +21,6 @@ export interface Motion {
 	slug: string;
 	motion_number: number;
 	title: string;
-	type: string; // e.g., 'motion', 'governing_document', etc.
-	seniority: number | null; // null for regular motions, 1-6 for governing documents
 	owner_uuid: string; // the association that owns this (typically same as body_uuid)
 	body: string;
 	reasoning: string | null;
@@ -33,13 +32,11 @@ export interface Motion {
 	clerk_notes: string | null;
 	parliamentarian_notes: string | null;
 	created_at: string;
-	adopted_at: string | null; // when enacted
-	adopted_by_motion_uuid: string | null; // self-reference for amendments
-	repealed_at: string | null;
-	repealed_by_motion_uuid: string | null;
-	deliberation_opened_at: string | null;
+	introduced_at: string | null;
 	enacted_at: string | null;
 	resolved_at: string | null;
+	adopted_by_motion_uuid: string | null; // reference to motion that adopted/amended this
+	repealed_by_motion_uuid: string | null;
 }
 
 export interface VoteTally {
@@ -162,40 +159,20 @@ export function advanceMotion(uuid: string, to: MotionStatus): Motion {
 		throw new Error(`Cannot transition motion from '${motion.status}' to '${to}'`);
 	}
 
-	// Require 15 readiness votes to advance from introduced to deliberation
-	if (motion.status === 'introduced' && to === 'deliberation') {
-		const readinessCount = getReadinessCount(uuid);
-		if (readinessCount < 15) {
-			throw new Error(`Motion requires 15 members to mark it ready before deliberation. Currently ${readinessCount}/15.`);
-		}
-	}
-
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
-	const deliberationOpenedAt = (to === 'deliberation' && !motion.deliberation_opened_at) ? now() : null;
+	const introducedAt = (to === 'introduced' && !motion.introduced_at) ? now() : null;
 	
-	// When advancing to deliberation, open voting immediately
+	// Note: Voting now happens during meetings, not automatically when advancing to deliberation
 	if (to === 'deliberation') {
 		// Check if vote rule is set
 		if (!motion.vote_rule_uuid) {
 			throw new Error('A vote rule must be assigned before deliberation can begin');
 		}
-
-		// Get eligible voter count
-		const row = db.prepare(
-			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
-		).get(motion.body_uuid) as { c: number };
-		const count = row.c;
-
-		// Create vote tally
-		db.prepare(
-			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
-			 VALUES (?, ?, 0, 0, 0, ?)`
-		).run(uuid, count, deliberationOpenedAt);
 	}
 	
 	// Update motion status in library
 	return library.updateMotionStatus(motion.slug, to, {
-		introduced_at: deliberationOpenedAt || undefined,
+		introduced_at: introducedAt || undefined,
 		vote_closed_at: resolvedAt || undefined,
 	});
 }
@@ -231,12 +208,8 @@ export function setMotionParliamentarianNotes(motionUuid: string, parliamentaria
 }
 
 // --- Vote ---
-
-// openVote is now called internally by advanceMotion when moving to deliberation
-// This function is kept for backward compatibility but should not be called directly
-export function openVote(motionUuid: string, eligibleCount?: number): VoteTally {
-	throw new Error('openVote should not be called directly. Vote opens automatically when advancing to deliberation.');
-}
+// Voting now happens during active meetings only.
+// Vote tally is created automatically on first vote cast during a meeting.
 
 export function getVoteTally(motionUuid: string): VoteTally | null {
 	return (
@@ -252,15 +225,39 @@ export function hasVoted(motionUuid: string, voterUuid: string): boolean {
 		.get(motionUuid, voterUuid);
 }
 
+/**
+ * Cast a vote on a motion. Votes can ONLY be cast during an active meeting
+ * where the motion is on the agenda.
+ */
 export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoice): void {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status !== 'deliberation') throw new Error('Motion is not in deliberation/voting phase');
+	
+	// Check if motion is on agenda of an active meeting
+	const activeMeetingUuid = getActiveMeetingForMotion(motionUuid);
+	if (!activeMeetingUuid) {
+		throw new Error('Voting is only allowed during an active meeting where this motion is on the agenda');
+	}
+	
 	if (hasVoted(motionUuid, voterUuid)) throw new Error('Already voted');
 
-	const tally = getVoteTally(motionUuid);
-	if (!tally) throw new Error('Vote tally not found');
-	if (tally.closed_at) throw new Error('Vote has already closed');
+	// Get or create vote tally
+	let tally = getVoteTally(motionUuid);
+	if (!tally) {
+		// Create tally on first vote
+		const row = db.prepare(
+			`SELECT COUNT(*) as c FROM association_member WHERE association_uuid = ? AND removed_at IS NULL`
+		).get(motion.body_uuid) as { c: number };
+		const eligibleCount = row.c;
+		
+		db.prepare(
+			`INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
+			 VALUES (?, ?, 0, 0, 0, ?)`
+		).run(motionUuid, eligibleCount, now());
+		
+		tally = getVoteTally(motionUuid);
+		if (!tally) throw new Error('Failed to create vote tally');
+	}
 
 	const col = choice === 'aye' ? 'aye_count' : choice === 'nay' ? 'nay_count' : 'abstain_count';
 
@@ -271,44 +268,6 @@ export function castVote(motionUuid: string, voterUuid: string, choice: VoteChoi
 		// col is derived from a controlled enum, not user input — safe to interpolate
 		db.prepare(`UPDATE motion_vote_tally SET ${col} = ${col} + 1 WHERE motion_uuid = ?`).run(motionUuid);
 	})();
-}
-
-// Close the vote and transition to enacted or rejected.
-// Returns the final status.
-export function closeVote(motionUuid: string): 'enacted' | 'rejected' {
-	const tally = getVoteTally(motionUuid);
-	if (!tally) throw new Error('Vote tally not found');
-	if (tally.closed_at) throw new Error('Vote is already closed');
-
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion || motion.status !== 'deliberation') throw new Error('Motion is not in deliberation status');
-
-	let outcome: 'enacted' | 'rejected';
-	if (motion.vote_rule_uuid) {
-		const rule = getVoteRuleByUuid(motion.vote_rule_uuid);
-		if (!rule) throw new Error(`Vote rule not found: ${motion.vote_rule_uuid}`);
-		outcome = evaluateTally(rule, tally).passed ? 'enacted' : 'rejected';
-	} else {
-		// Fallback: simple majority of aye vs nay
-		outcome = tally.aye_count > tally.nay_count ? 'enacted' : 'rejected';
-	}
-	const resolvedAt = now();
-
-	// Update vote tally
-	db.prepare('UPDATE motion_vote_tally SET closed_at = ? WHERE motion_uuid = ?').run(resolvedAt, motionUuid);
-	
-	// Update motion status and timestamps
-	library.updateMotionStatus(motion.slug, outcome, {
-		vote_closed_at: resolvedAt,
-		enacted_at: outcome === 'enacted' ? resolvedAt : undefined,
-	});
-
-	// Update adopted_at if enacted (library doesn't track this in content currently)
-	if (outcome === 'enacted') {
-		library.updateMotion(motion.slug, { adopted_at: resolvedAt });
-	}
-
-	return outcome;
 }
 
 // --- Comments ---
@@ -343,130 +302,5 @@ export function getComments(motionUuid: string): MotionComment[] {
 		.all(motionUuid) as MotionComment[];
 }
 
-// --- Motion Readiness ---
-
-export function markReady(motionUuid: string, memberUuid: string): void {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.status !== 'introduced') throw new Error('Motion must be in introduced status');
-
-	// Check if already marked
-	const existing = db
-		.prepare('SELECT 1 FROM motion_readiness WHERE motion_uuid = ? AND member_uuid = ?')
-		.get(motionUuid, memberUuid);
-	
-	if (existing) return; // Already marked, no-op
-
-	db.prepare(
-		'INSERT INTO motion_readiness (uuid, motion_uuid, member_uuid, marked_at) VALUES (?, ?, ?, ?)'
-	).run(randomUUID(), motionUuid, memberUuid, now());
-}
-
-export function unmarkReady(motionUuid: string, memberUuid: string): void {
-	db.prepare('DELETE FROM motion_readiness WHERE motion_uuid = ? AND member_uuid = ?')
-		.run(motionUuid, memberUuid);
-}
-
-export function hasMarkedReady(motionUuid: string, memberUuid: string): boolean {
-	return !!db
-		.prepare('SELECT 1 FROM motion_readiness WHERE motion_uuid = ? AND member_uuid = ?')
-		.get(motionUuid, memberUuid);
-}
-
-export function getReadinessCount(motionUuid: string): number {
-	const result = db
-		.prepare('SELECT COUNT(*) as count FROM motion_readiness WHERE motion_uuid = ?')
-		.get(motionUuid) as { count: number };
-	return result.count;
-}
-
-export function getReadinessSigners(motionUuid: string): Array<{
-	uuid: string;
-	given_name: string;
-	family_name: string;
-	handle: string;
-	marked_at: string;
-}> {
-	return db.prepare(`
-		SELECT p.uuid, p.given_name, p.family_name, p.handle, mr.marked_at
-		FROM motion_readiness mr
-		JOIN person p ON p.uuid = mr.member_uuid
-		WHERE mr.motion_uuid = ?
-		ORDER BY mr.marked_at ASC
-	`).all(motionUuid) as Array<{
-		uuid: string;
-		given_name: string;
-		family_name: string;
-		handle: string;
-		marked_at: string;
-	}>;
-}
-
 // --- Motion as Document ---
-
-/**
- * Export a motion in a document-compatible structure.
- * This allows enacted motions to be viewed and treated like governing documents.
- */
-export interface MotionAsDocument {
-	slug: string;
-	title: string;
-	type: string;
-	seniority: number | null;
-	owner_uuid: string;
-	status: 'draft' | 'adopted' | 'repealed';
-	created_at: string;
-	adopted_at: string | null;
-	adopted_by_motion_uuid: string | null;
-	repealed_at: string | null;
-	repealed_by_motion_uuid: string | null;
-	articles: Array<{
-		number: string;
-		title: string;
-		sections: Array<{
-			title: string;
-			body: string;
-			rationale?: string;
-		}>;
-	}>;
-}
-
-export function motionAsDocument(motion: Motion): MotionAsDocument {
-	// Map motion status to document status
-	let docStatus: 'draft' | 'adopted' | 'repealed';
-	if (motion.status === 'enacted') {
-		docStatus = motion.repealed_at ? 'repealed' : 'adopted';
-	} else if (motion.status === 'draft' || motion.status === 'introduced' || motion.status === 'deliberation') {
-		docStatus = 'draft';
-	} else {
-		docStatus = 'draft'; // withdrawn/rejected treated as draft
-	}
-
-	return {
-		slug: motion.slug,
-		title: motion.title,
-		type: motion.type,
-		seniority: motion.seniority,
-		owner_uuid: motion.owner_uuid,
-		status: docStatus,
-		created_at: motion.created_at,
-		adopted_at: motion.adopted_at,
-		adopted_by_motion_uuid: motion.adopted_by_motion_uuid,
-		repealed_at: motion.repealed_at,
-		repealed_by_motion_uuid: motion.repealed_by_motion_uuid,
-		articles: [
-			{
-				number: 'I',
-				title: 'Motion Text',
-				sections: [
-					{
-						title: 'Body',
-						body: motion.body,
-						rationale: motion.reasoning ?? undefined
-					}
-				]
-			}
-		]
-	};
-}
 

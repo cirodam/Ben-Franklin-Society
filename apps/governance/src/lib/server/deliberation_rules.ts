@@ -1,6 +1,11 @@
 import { randomUUID } from 'crypto';
 import { db } from './db.js';
 
+/**
+ * Deliberation rules define recommended discussion periods before voting.
+ * In the meeting-gated voting system, these serve as guidelines rather than
+ * enforced waiting periods. Clerks can reference these when scheduling meetings.
+ */
 export interface DeliberationRule {
 	uuid: string;
 	association_uuid: string;
@@ -37,37 +42,4 @@ export function createDeliberationRule(input: {
 		now
 	);
 	return getDeliberationRuleByUuid(uuid)!;
-}
-
-/**
- * Check if a motion has completed its required deliberation period
- */
-export function isDeliberationPeriodComplete(
-	deliberationOpenedAt: string | null,
-	deliberationRule: DeliberationRule | null
-): boolean {
-	if (!deliberationOpenedAt || !deliberationRule) return true;
-	
-	const openedDate = new Date(deliberationOpenedAt);
-	const now = new Date();
-	const elapsedDays = (now.getTime() - openedDate.getTime()) / (1000 * 60 * 60 * 24);
-	
-	return elapsedDays >= deliberationRule.minimum_days;
-}
-
-/**
- * Get days remaining in deliberation period (returns 0 if complete)
- */
-export function getDaysRemainingInDeliberation(
-	deliberationOpenedAt: string | null,
-	deliberationRule: DeliberationRule | null
-): number {
-	if (!deliberationOpenedAt || !deliberationRule) return 0;
-	
-	const openedDate = new Date(deliberationOpenedAt);
-	const now = new Date();
-	const elapsedDays = (now.getTime() - openedDate.getTime()) / (1000 * 60 * 60 * 24);
-	const remaining = Math.max(0, deliberationRule.minimum_days - elapsedDays);
-	
-	return Math.ceil(remaining);
 }

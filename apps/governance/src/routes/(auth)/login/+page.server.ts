@@ -37,11 +37,9 @@ function getSafeRedirectUrl(next: string | null): string {
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const next = url.searchParams.get('next');
-	console.log('[governance/login/load] Request with next:', next, 'Logged in:', !!locals.session);
 	
 	if (locals.session && locals.person) {
 		const redirectUrl = getSafeRedirectUrl(next);
-		console.log('[governance/login/load] Already logged in, redirecting to:', redirectUrl);
 		redirect(302, redirectUrl);
 	}
 	
@@ -83,7 +81,6 @@ export const actions: Actions = {
 		const next = url.searchParams.get('next');
 		const redirectUrl = getSafeRedirectUrl(next);
 		
-		console.log('[governance/login/action] Login successful, redirecting to:', redirectUrl);
 		redirect(302, redirectUrl);
 	}
 };

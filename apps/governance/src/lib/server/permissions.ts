@@ -7,8 +7,6 @@ import { db } from './db.js';
 export const PERMISSIONS = {
 	MOTIONS_CREATE:    'motions:create',
 	MOTIONS_ADVANCE:   'motions:advance',
-	VOTES_OPEN:        'votes:open',
-	VOTES_CLOSE:       'votes:close',
 	SORTITION_RECORD:  'sortition:record',
 	SEAT_TERMS_VACATE: 'seat_terms:vacate',
 	MEMBERS_ADD:       'members:add',
@@ -23,8 +21,6 @@ export const PERMISSIONS = {
 	PEOPLE_EDIT:       'people:edit',
 	PEOPLE_REMOVE:     'people:remove',
 	CALENDAR_WRITE:    'calendar:write',
-	CONTRACTS_CREATE:  'contracts:create',
-	CONTRACTS_VIEW:    'contracts:view',
 	GOVERNANCE_ADMIN:  'governance:admin',
 } as const;
 
