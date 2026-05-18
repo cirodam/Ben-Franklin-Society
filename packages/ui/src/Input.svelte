@@ -11,7 +11,7 @@
 		hint = undefined,
 		...rest
 	}: {
-		type?: 'text' | 'email' | 'password' | 'url' | 'tel' | 'number' | 'search' | 'date';
+		type?: 'text' | 'email' | 'password' | 'url' | 'tel' | 'number' | 'search' | 'date' | 'datetime-local';
 		name?: string;
 		value?: string | number;
 		label?: string;

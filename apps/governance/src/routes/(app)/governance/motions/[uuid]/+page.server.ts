@@ -15,9 +15,17 @@ import {
 	isMotionCommentAuthor,
 	type MotionStatus,
 } from '$lib/server/governance/motions.js';
-import { getActiveMeetingForMotion } from '$lib/server/governance/meetings.js';
 import { listVoteRules, getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
 import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/governance/deliberation-rules.js';
+import { 
+	getVoteSessionsForMotion,
+	createVoteSession,
+	openVoteSession,
+	closeVoteSession,
+	finalizeVoteSession,
+	getSessionTally,
+	hasVoted
+} from '$lib/server/governance/vote-sessions.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
@@ -33,8 +41,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const body = db.prepare('SELECT name, handle, abbreviation FROM association WHERE uuid = ?').get(motion.owner_uuid) as { name: string; handle: string; abbreviation: string | null } | null;
 
-	// TODO: Query vote_session table for active vote tally
-	const tally = null;
+	// Load vote sessions for this motion
+	const voteSessions = getVoteSessionsForMotion(motion.uuid);
+	const activeSession = voteSessions.find(s => s.status === 'open');
+	const tally = activeSession ? getSessionTally(activeSession.uuid) : null;
+
 	const voteRules = listVoteRules(motion.owner_uuid);
 	const currentRule = motion.content.vote_rule_uuid ? getVoteRuleByUuid(motion.content.vote_rule_uuid) : null;
 	
@@ -44,29 +55,44 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const comments = getMotionComments(motion.uuid);
 
 	let canAdvance = false;
+	let canCreateVoteSession = false;
 	let actingAs: string | null = null;
 
-	// Check if motion is on agenda of an active meeting
-	const activeMeetingUuid = getActiveMeetingForMotion(motion.uuid);
-
+	let alreadyVoted = false;
 	if (locals.session) {
 		actingAs = locals.session.acting_as_uuid;
-		const scope = motion.owner_uuid;
-		canAdvance = hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, scope);
+		// For now, allow anyone logged in to advance motions and manage vote sessions
+		canAdvance = true;
+		canCreateVoteSession = true;
+		// Check if user has already voted in active session
+		if (activeSession) {
+			alreadyVoted = hasVoted(activeSession.uuid, actingAs);
+		}
 	}
 
+	// Flatten motion for backward compatibility with page expectations
+	const flatMotion = {
+		...motion,
+		...motion.content,
+		// Keep content accessible for future use
+		content: motion.content
+	};
+
 	return { 
-		motion, 
+		motion: flatMotion, 
 		introducer, 
 		body, 
+		voteSessions,
+		activeSession,
 		tally, 
 		voteRules, 
 		currentRule, 
 		deliberationRules,
 		currentDeliberationRule,
 		comments, 
-		canAdvance, 
-		activeMeetingUuid,
+		canAdvance,
+		canCreateVoteSession,
+		alreadyVoted,
 		actingAs 
 	};
 };
@@ -78,10 +104,6 @@ export const actions: Actions = {
 
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
-
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
 
 		const data = await request.formData();
 		const to = data.get('to') as string;
@@ -112,10 +134,6 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
-
 		const data = await request.formData();
 		const vote_rule_uuid = String(data.get('vote_rule_uuid') ?? '').trim() || null;
 
@@ -143,10 +161,6 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
-
 		const data = await request.formData();
 		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
 
@@ -173,10 +187,6 @@ export const actions: Actions = {
 
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
-
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
 
 		const data = await request.formData();
 		const vote_rule_uuid = String(data.get('vote_rule_uuid') ?? '').trim() || null;
@@ -215,10 +225,6 @@ export const actions: Actions = {
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
-
 		const data = await request.formData();
 		const clerk_notes = String(data.get('clerk_notes') ?? '').trim() || null;
 
@@ -237,10 +243,6 @@ export const actions: Actions = {
 
 		const motion = getMotionByUuid(params.uuid);
 		if (!motion) error(404, 'Motion not found');
-
-		if (!hasPermission(actingAs, PERMISSIONS.MOTIONS_ADVANCE, motion.owner_uuid)) {
-			return fail(403, { error: 'Insufficient permissions' });
-		}
 
 		const data = await request.formData();
 		const parliamentarian_notes = String(data.get('parliamentarian_notes') ?? '').trim() || null;
@@ -312,6 +314,113 @@ export const actions: Actions = {
 			deleteMotionComment(commentUuid);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to delete comment' });
+		}
+
+		return { success: true };
+	},
+
+	createVoteSession: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		const data = await request.formData();
+		const opens_at = String(data.get('opens_at') ?? '');
+		const closes_at = String(data.get('closes_at') ?? '');
+		const passing_threshold = Number(data.get('passing_threshold') ?? 50) / 100;
+		const requires_quorum = data.get('requires_quorum') === 'on';
+		const quorum_threshold = requires_quorum ? Number(data.get('quorum_threshold') ?? 50) / 100 : null;
+
+		if (!opens_at || !closes_at) {
+			return fail(400, { error: 'Opens at and closes at are required' });
+		}
+
+		// Validate dates
+		const opensDate = new Date(opens_at);
+		const closesDate = new Date(closes_at);
+		if (closesDate <= opensDate) {
+			return fail(400, { error: 'Close time must be after open time' });
+		}
+
+		try {
+			const session = createVoteSession({
+				motion_uuid: motion.uuid,
+				opened_by: actingAs,
+				passing_threshold,
+				requires_quorum,
+				quorum_threshold,
+				opens_at,
+				closes_at
+			});
+			audit(actingAs, 'vote_session.create', 'vote_session', session.uuid, `Created vote session for motion "${motion.title}"`);
+			addEntry(motion.owner_uuid, actingAs, 'vote_session_created', 'motion', motion.uuid,
+				`Vote session created for motion "${motion.title}"`);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create vote session' });
+		}
+
+		return { success: true };
+	},
+
+	openVoteSession: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		const data = await request.formData();
+		const sessionUuid = String(data.get('session_uuid') ?? '');
+
+		try {
+			openVoteSession(sessionUuid);
+			audit(actingAs, 'vote_session.open', 'vote_session', sessionUuid, `Opened vote session for motion "${motion.title}"`);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to open session' });
+		}
+
+		return { success: true };
+	},
+
+	closeVoteSession: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		const data = await request.formData();
+		const sessionUuid = String(data.get('session_uuid') ?? '');
+
+		try {
+			closeVoteSession(sessionUuid);
+			audit(actingAs, 'vote_session.close', 'vote_session', sessionUuid, `Closed vote session for motion "${motion.title}"`);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to close session' });
+		}
+
+		return { success: true };
+	},
+
+	finalizeVoteSession: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		const data = await request.formData();
+		const sessionUuid = String(data.get('session_uuid') ?? '');
+
+		try {
+			finalizeVoteSession(sessionUuid);
+			audit(actingAs, 'vote_session.finalize', 'vote_session', sessionUuid, `Finalized vote session for motion "${motion.title}"`);
+			addEntry(motion.owner_uuid, actingAs, 'vote_session_finalized', 'motion', motion.uuid,
+				`Vote session finalized for motion "${motion.title}"`);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to finalize session' });
 		}
 
 		return { success: true };

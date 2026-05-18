@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import { Button, Modal, Parchment, Textarea, Select } from '@bfs/ui';
+	import { Button, Modal, Parchment, Textarea, Select, Input } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
-	const { motion, introducer, body, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, comments, canAdvance, activeMeetingUuid, alreadyVoted, actingAs } = $derived(data);
+	const { motion, introducer, body, voteSessions, activeSession, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, comments, canAdvance, canCreateVoteSession, alreadyVoted, actingAs } = $derived(data);
 
 	let editingCommentUuid = $state<string | null>(null);
 	let editingCommentBody = $state('');
@@ -14,8 +14,14 @@
 	let showParliamentarianModal = $state(false);
 	let parliamentarianNotesValue = $state('');
 	let showRulesModal = $state(false);
-	let selectedVotingRuleUuid = $state<string | null>(null);
-	let selectedDeliberationRuleUuid = $state<string | null>(null);
+	let selectedVotingRuleUuid = $state<string>('');
+	let selectedDeliberationRuleUuid = $state<string>('');
+	let showVoteSessionModal = $state(false);
+	let voteSessionOpensAt = $state('');
+	let voteSessionClosesAt = $state('');
+	let voteSessionPassingThreshold = $state('50');
+	let voteSessionRequiresQuorum = $state(false);
+	let voteSessionQuorumThreshold = $state('50');
 
 	function startEditComment(uuid: string, currentBody: string) {
 		editingCommentUuid = uuid;
@@ -33,9 +39,23 @@
 	}
 
 	function openRulesModal() {
-		selectedVotingRuleUuid = motion.vote_rule_uuid || null;
-		selectedDeliberationRuleUuid = motion.deliberation_rule_uuid || null;
+		selectedVotingRuleUuid = motion.vote_rule_uuid || '';
+		selectedDeliberationRuleUuid = motion.deliberation_rule_uuid || '';
 		showRulesModal = true;
+	}
+
+	function openVoteSessionModal() {
+		// Default to opening in 1 hour, closing in 7 days
+		const now = new Date();
+		const defaultOpens = new Date(now.getTime() + 60 * 60 * 1000);
+		const defaultCloses = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+		
+		voteSessionOpensAt = defaultOpens.toISOString().slice(0, 16);
+		voteSessionClosesAt = defaultCloses.toISOString().slice(0, 16);
+		voteSessionPassingThreshold = '50';
+		voteSessionRequiresQuorum = false;
+		voteSessionQuorumThreshold = '50';
+		showVoteSessionModal = true;
 	}
 
 	const statusVariant: Record<string, string> = {
@@ -73,14 +93,20 @@
 		<a href="/governance/motions" class="back">← Back to Motions</a>
 		{#if canAdvance}
 			<div class="admin-controls">
-				<Button variant="ghost" size="sm" onclick={openRulesModal}>
-					⚖️ {currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
+				<Button variant="ghost" size="sm" onclick={() => openRulesModal()}>
+					{#snippet children()}
+						⚖️ {currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
+					{/snippet}
 				</Button>
-				<Button variant="ghost" size="sm" onclick={openClerkModal}>
-					{motion.clerk_notes ? '✏️ Edit' : '📝 Add'} Clerk's Notes
+				<Button variant="ghost" size="sm" onclick={() => openClerkModal()}>
+					{#snippet children()}
+						{motion.clerk_notes ? '✏️ Edit' : '📝 Add'} Clerk's Notes
+					{/snippet}
 				</Button>
-				<Button variant="ghost" size="sm" onclick={openParliamentarianModal}>
-					{motion.parliamentarian_notes ? '✏️ Edit' : '📝 Add'} Parliamentarian's Notes
+				<Button variant="ghost" size="sm" onclick={() => openParliamentarianModal()}>
+					{#snippet children()}
+						{motion.parliamentarian_notes ? '✏️ Edit' : '📝 Add'} Parliamentarian's Notes
+					{/snippet}
 				</Button>
 			</div>
 		{/if}
@@ -273,6 +299,83 @@
 		</div>
 	{/if}
 
+	<!-- Vote Sessions -->
+	{#if motion.status === 'deliberation' || voteSessions.length > 0}
+		<div class="paper-card">
+			<div class="paper-card__header">
+				<h3 class="paper-card__title">Vote Sessions</h3>
+				{#if canCreateVoteSession && motion.status === 'deliberation'}
+					<Button variant="primary" size="sm" onclick={() => openVoteSessionModal()}>
+						{#snippet children()}+ Create Vote Session{/snippet}
+					</Button>
+				{/if}
+			</div>
+			
+			{#if voteSessions.length > 0}
+				<div class="vote-sessions-list">
+					{#each voteSessions as session}
+						<div class="vote-session-item" class:is-active={session.status === 'open'}>
+							<div class="session-status">
+								{#if session.status === 'scheduled'}
+									<span class="badge badge--scheduled">📅 Scheduled</span>
+								{:else if session.status === 'open'}
+									<span class="badge badge--open">🗳️ Open</span>
+								{:else if session.status === 'closed'}
+									<span class="badge badge--closed">🔒 Closed</span>
+								{:else if session.status === 'finalized'}
+									{#if session.outcome === 'passed'}
+										<span class="badge badge--passed">✅ Passed</span>
+									{:else}
+										<span class="badge badge--failed">❌ Failed</span>
+									{/if}
+								{/if}
+							</div>
+							
+							<div class="session-info">
+								<div class="session-dates">
+									<span class="session-date">Opens: {new Date(session.opens_at).toLocaleString()}</span>
+									<span class="session-date">Closes: {new Date(session.closes_at).toLocaleString()}</span>
+								</div>
+								<div class="session-threshold">
+									Passing: {(session.passing_threshold * 100).toFixed(0)}%
+									{#if session.requires_quorum}
+										• Quorum: {(session.quorum_threshold * 100).toFixed(0)}%
+									{/if}
+								</div>
+							</div>
+							
+							{#if canAdvance}
+								<div class="session-actions">
+									{#if session.status === 'scheduled'}
+										<form method="POST" action="?/openVoteSession" use:enhance>
+											<input type="hidden" name="session_uuid" value={session.uuid} />
+											<button class="btn btn--sm btn--primary" type="submit">Open Now</button>
+										</form>
+									{:else if session.status === 'open'}
+										<form method="POST" action="?/closeVoteSession" use:enhance>
+											<input type="hidden" name="session_uuid" value={session.uuid} />
+											<button class="btn btn--sm btn--secondary" type="submit">Close Session</button>
+										</form>
+									{:else if session.status === 'closed'}
+										<form method="POST" action="?/finalizeVoteSession" use:enhance>
+											<input type="hidden" name="session_uuid" value={session.uuid} />
+											<button class="btn btn--sm btn--primary" type="submit">Finalize</button>
+										</form>
+									{/if}
+									<a href="/governance/vote-sessions/{session.uuid}" class="btn btn--sm btn--ghost">
+										View Details
+									</a>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{:else if motion.status === 'deliberation'}
+				<p class="empty-state">No vote sessions scheduled yet. Create one to allow voting on this motion.</p>
+			{/if}
+		</div>
+	{/if}
+
 	<!-- Actions -->
 	{#if !['enacted','rejected','withdrawn'].includes(motion.status)}
 		<div class="paper-card">
@@ -301,12 +404,12 @@
 				{#if motion.status === 'deliberation'}
 					{#if currentDeliberationRule}
 						<div class="deliberation-info">
-							<span class="rule-label">Rule: <strong>{currentDeliberationRule.name}</strong></span>
+							<span class="rule-label">Deliberation Period: <strong>{currentDeliberationRule.name}</strong></span>
 						</div>
 					{/if}
 					
-					{#if activeMeetingUuid}
-						<!-- Voting is open during active meeting -->
+					{#if activeSession}
+						<!-- Active vote session - show voting interface -->
 						{#if !alreadyVoted}
 							<form method="POST" action="?/castVote" class="vote-form">
 								<button class="btn btn--aye" name="choice" value="aye">Aye</button>
@@ -317,25 +420,15 @@
 							<span class="vote-recorded">Your vote is recorded.</span>
 						{/if}
 						<div class="meeting-notice">
-							<a href="/governance/general-assembly/meetings/{activeMeetingUuid}" class="meeting-link">
-								🗳️ Voting is open - Meeting in progress
+							<a href="/governance/vote-sessions/{activeSession.uuid}" class="meeting-link">
+								🗳️ Vote session open - Closes {new Date(activeSession.closes_at).toLocaleString()}
 							</a>
 						</div>
 					{:else}
-						<!-- No active meeting -->
+						<!-- No active vote session -->
 						<div class="meeting-notice meeting-notice--waiting">
-							<span>Voting will open when this motion is on the agenda of an active meeting</span>
+							<span>Create a vote session to allow voting on this motion</span>
 						</div>
-						{#if tally}
-							<div class="vote-tally-preview">
-								<h4>Current Vote Count</h4>
-								<div class="tally-counts">
-									<span class="tally-aye">Aye: {tally.aye_count}</span>
-									<span class="tally-nay">Nay: {tally.nay_count}</span>
-									<span class="tally-abstain">Abstain: {tally.abstain_count}</span>
-								</div>
-							</div>
-						{/if}
 					{/if}
 				{/if}
 				{#if canAdvance}
@@ -419,8 +512,8 @@
 	</div> <!-- End discussion -->
 
 	<!-- Clerk Notes Modal -->
-	<Modal show={showClerkModal} title="Clerk's Notes">
-		<form method="POST" action="?/setClerkNotes" use:enhance={() => {
+	<Modal open={showClerkModal} title="Clerk's Notes">
+		<form id="clerk-notes-form" method="POST" action="?/setClerkNotes" use:enhance={() => {
 			return ({ update }) => {
 				update().then(() => {
 					showClerkModal = false;
@@ -434,16 +527,20 @@
 				rows={8}
 				placeholder="Enter clerk's notes here..."
 				autofocus />
-			{#snippet actions()}
-				<Button variant="secondary" onclick={() => showClerkModal = false}>Cancel</Button>
-				<Button type="submit">Save Notes</Button>
-			{/snippet}
 		</form>
+		{#snippet footer()}
+			<Button variant="secondary" onclick={() => showClerkModal = false}>
+				{#snippet children()}Cancel{/snippet}
+			</Button>
+			<Button type="submit" form="clerk-notes-form">
+				{#snippet children()}Save Notes{/snippet}
+			</Button>
+		{/snippet}
 	</Modal>
 
 	<!-- Parliamentarian Notes Modal -->
-	<Modal show={showParliamentarianModal} title="Parliamentarian's Notes">
-		<form method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
+	<Modal open={showParliamentarianModal} title="Parliamentarian's Notes">
+		<form id="parliamentarian-notes-form" method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
 			return ({ update }) => {
 				update().then(() => {
 					showParliamentarianModal = false;
@@ -457,16 +554,20 @@
 				rows={8}
 				placeholder="Enter parliamentarian's notes here..."
 				autofocus />
-			{#snippet actions()}
-				<Button variant="secondary" onclick={() => showParliamentarianModal = false}>Cancel</Button>
-				<Button type="submit">Save Notes</Button>
-			{/snippet}
 		</form>
+		{#snippet footer()}
+			<Button variant="secondary" onclick={() => showParliamentarianModal = false}>
+				{#snippet children()}Cancel{/snippet}
+			</Button>
+			<Button type="submit" form="parliamentarian-notes-form">
+				{#snippet children()}Save Notes{/snippet}
+			</Button>
+		{/snippet}
 	</Modal>
 
 	<!-- Rules Modal -->
-	<Modal show={showRulesModal} title="Set Motion Rules">
-		<form method="POST" action="?/setMotionRules" use:enhance={() => {
+	<Modal open={showRulesModal} title="Set Motion Rules">
+		<form id="rules-form" method="POST" action="?/setMotionRules" use:enhance={() => {
 			return async ({ update }) => {
 				await update();
 				showRulesModal = false;
@@ -501,11 +602,77 @@
 					</option>
 				{/each}
 			</Select>
-			{#snippet actions()}
-				<Button variant="secondary" onclick={() => showRulesModal = false}>Cancel</Button>
-				<Button type="submit">Save Changes</Button>
-			{/snippet}
 		</form>
+		{#snippet footer()}
+			<Button variant="secondary" onclick={() => showRulesModal = false}>
+				{#snippet children()}Cancel{/snippet}
+			</Button>
+			<Button type="submit" form="rules-form">
+				{#snippet children()}Save Changes{/snippet}
+			</Button>
+		{/snippet}
+	</Modal>
+
+	<!-- Vote Session Modal -->
+	<Modal open={showVoteSessionModal} title="Create Vote Session">
+		<form id="vote-session-form" method="POST" action="?/createVoteSession" use:enhance={() => {
+			return async ({ update }) => {
+				await update();
+				showVoteSessionModal = false;
+			};
+		}}>
+			<p class="modal-hint">Schedule a voting period for this motion. Members can vote during the open period.</p>
+			
+			<Input 
+				type="datetime-local"
+				name="opens_at" 
+				label="Opens At:"
+				bind:value={voteSessionOpensAt}
+				required />
+			
+			<Input 
+				type="datetime-local"
+				name="closes_at" 
+				label="Closes At:"
+				bind:value={voteSessionClosesAt}
+				required />
+			
+			<Input 
+				type="number"
+				name="passing_threshold" 
+				label="Passing Threshold (%):"
+				bind:value={voteSessionPassingThreshold}
+				min="0"
+				max="100"
+				required />
+			
+			<label class="checkbox-label">
+				<input 
+					type="checkbox" 
+					name="requires_quorum"
+					bind:checked={voteSessionRequiresQuorum} />
+				Requires Quorum
+			</label>
+			
+			{#if voteSessionRequiresQuorum}
+				<Input 
+					type="number"
+					name="quorum_threshold" 
+					label="Quorum Threshold (%):"
+					bind:value={voteSessionQuorumThreshold}
+					min="0"
+					max="100"
+					required />
+			{/if}
+		</form>
+		{#snippet footer()}
+			<Button variant="secondary" onclick={() => showVoteSessionModal = false}>
+				{#snippet children()}Cancel{/snippet}
+			</Button>
+			<Button type="submit" form="vote-session-form">
+				{#snippet children()}Create Session{/snippet}
+			</Button>
+		{/snippet}
 	</Modal>
 </div> <!-- End page-wrapper -->
 
@@ -1510,6 +1677,104 @@
 		}
 	}
 
+	/* Vote Sessions */
+	.vote-sessions-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.vote-session-item {
+		display: flex;
+		gap: var(--space-4);
+		align-items: center;
+		padding: var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: white;
+		transition: all 0.2s;
+	}
+
+	.vote-session-item.is-active {
+		border-color: #10b981;
+		background: rgba(16, 185, 129, 0.02);
+	}
+
+	.session-status {
+		flex-shrink: 0;
+	}
+
+	.badge {
+		display: inline-block;
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-full);
+		font-size: var(--text-xs);
+		font-weight: var(--weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.badge--scheduled {
+		background: rgba(59, 130, 246, 0.1);
+		color: #1e40af;
+	}
+
+	.badge--open {
+		background: rgba(16, 185, 129, 0.1);
+		color: #047857;
+	}
+
+	.badge--closed {
+		background: rgba(107, 114, 128, 0.1);
+		color: #374151;
+	}
+
+	.badge--passed {
+		background: rgba(16, 185, 129, 0.1);
+		color: #047857;
+	}
+
+	.badge--failed {
+		background: rgba(239, 68, 68, 0.1);
+		color: #991b1b;
+	}
+
+	.session-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.session-dates {
+		display: flex;
+		gap: var(--space-4);
+		flex-wrap: wrap;
+	}
+
+	.session-date {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.session-threshold {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.session-actions {
+		display: flex;
+		gap: var(--space-2);
+		flex-shrink: 0;
+	}
+
+	.empty-state {
+		padding: var(--space-6);
+		text-align: center;
+		color: var(--color-text-muted);
+		font-size: var(--text-sm);
+	}
+
 	@media print {
 		.page-wrapper {
 			background: white;
@@ -1520,5 +1785,20 @@
 		.interactive-section {
 			display: none;
 		}
+	}
+
+	/* Checkbox label styling for modals */
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-sm);
+		color: var(--color-text);
+		cursor: pointer;
+		margin: var(--space-4) 0;
+	}
+
+	.checkbox-label input[type="checkbox"] {
+		cursor: pointer;
 	}
 </style>
