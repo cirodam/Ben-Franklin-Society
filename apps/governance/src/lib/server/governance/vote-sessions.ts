@@ -160,11 +160,6 @@ export function openVoteSession(uuid: string): void {
 		throw new Error(`Cannot open session with status ${session.status}`);
 	}
 	
-	// Check if opens_at time has been reached
-	if (new Date(session.opens_at) > new Date()) {
-		throw new Error('Session opening time has not been reached yet');
-	}
-	
 	db.prepare('UPDATE vote_session SET status = ? WHERE uuid = ?').run('open', uuid);
 }
 

@@ -36,12 +36,13 @@
 
 	const statusVariant = (s: string) =>
 		s === 'enacted'     ? 'success'
+		: s === 'adopted'   ? 'success'
 		: s === 'rejected'  ? 'danger'
 		: s === 'withdrawn' ? 'neutral'
 		: s === 'vote'      ? 'warn'
 		: 'accent';
 
-	const statuses = ['draft', 'introduced', 'deliberation', 'vote', 'enacted', 'rejected', 'withdrawn'];
+	const statuses = ['draft', 'introduced', 'deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'];
 </script>
 
 <div class="page">

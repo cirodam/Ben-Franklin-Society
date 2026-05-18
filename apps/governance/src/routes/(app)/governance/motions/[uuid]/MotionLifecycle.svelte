@@ -8,48 +8,66 @@
 	}: {
 		motion: Motion;
 	} = $props();
+
+	// Determine if motion has concluded
+	const isConcluded = $derived(['adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status));
 </script>
 
 <div class="lifecycle-indicator">
+	<!-- Draft -->
 	<div class="lifecycle-step {motion.status === 'draft' ? 'active' : motion.status !== 'draft' ? 'completed' : ''}">
 		<div class="lifecycle-step__icon">📝</div>
 		<div class="lifecycle-step__label">Draft</div>
 	</div>
-	<div class="lifecycle-connector {['introduced', 'deliberation', 'enacted', 'rejected'].includes(motion.status) ? 'active' : ''}"></div>
-	<div class="lifecycle-step {motion.status === 'introduced' ? 'active' : ['deliberation', 'enacted', 'rejected'].includes(motion.status) ? 'completed' : ''}">
+	<div class="lifecycle-connector {motion.status !== 'draft' ? 'active' : ''}"></div>
+	
+	<!-- Introduced -->
+	<div class="lifecycle-step {motion.status === 'introduced' ? 'active' : ['deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
 		<div class="lifecycle-step__icon">📋</div>
 		<div class="lifecycle-step__label">Introduced</div>
 	</div>
-	<div class="lifecycle-connector {['deliberation', 'enacted', 'rejected'].includes(motion.status) ? 'active' : ''}"></div>
-	<div class="lifecycle-step {motion.status === 'deliberation' ? 'active' : ['enacted', 'rejected'].includes(motion.status) ? 'completed' : ''}">
+	<div class="lifecycle-connector {['deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'active' : ''}"></div>
+	
+	<!-- Deliberation -->
+	<div class="lifecycle-step {motion.status === 'deliberation' ? 'active' : ['adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
 		<div class="lifecycle-step__icon">🗳️</div>
 		<div class="lifecycle-step__label">Deliberation</div>
 	</div>
-	<div class="lifecycle-connector {['enacted', 'rejected'].includes(motion.status) ? 'active' : ''}"></div>
-	<div class="lifecycle-step {['enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
-		<div class="lifecycle-step__icon">
-			{#if motion.status === 'enacted'}
-				✅
-			{:else if motion.status === 'rejected'}
-				❌
-			{:else if motion.status === 'withdrawn'}
-				🚫
-			{:else}
-				🏁
-			{/if}
+
+	{#if isConcluded}
+		<!-- Show outcome steps only after conclusion -->
+		{#if motion.status !== 'rejected' && motion.status !== 'withdrawn'}
+			<!-- Adopted step (only for adopted→enacted path) -->
+			<div class="lifecycle-connector active"></div>
+			<div class="lifecycle-step {motion.status === 'adopted' ? 'active' : motion.status === 'enacted' ? 'completed' : ''}">
+				<div class="lifecycle-step__icon">✅</div>
+				<div class="lifecycle-step__label">Adopted</div>
+			</div>
+		{/if}
+
+		<!-- Final outcome -->
+		<div class="lifecycle-connector active"></div>
+		<div class="lifecycle-step completed">
+			<div class="lifecycle-step__icon">
+				{#if motion.status === 'enacted'}
+					⚖️
+				{:else if motion.status === 'rejected'}
+					❌
+				{:else if motion.status === 'withdrawn'}
+					🚫
+				{/if}
+			</div>
+			<div class="lifecycle-step__label">
+				{#if motion.status === 'enacted'}
+					Enacted
+				{:else if motion.status === 'rejected'}
+					Rejected
+				{:else if motion.status === 'withdrawn'}
+					Withdrawn
+				{/if}
+			</div>
 		</div>
-		<div class="lifecycle-step__label">
-			{#if motion.status === 'enacted'}
-				Enacted
-			{:else if motion.status === 'rejected'}
-				Rejected
-			{:else if motion.status === 'withdrawn'}
-				Withdrawn
-			{:else}
-				Final
-			{/if}
-		</div>
-	</div>
+	{/if}
 </div>
 
 <style>

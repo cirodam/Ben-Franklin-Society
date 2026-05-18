@@ -64,6 +64,7 @@ export type MotionStatus =
 	| 'draft'
 	| 'introduced'
 	| 'deliberation'
+	| 'adopted'
 	| 'enacted'
 	| 'rejected'
 	| 'withdrawn';
@@ -85,6 +86,7 @@ export interface MotionContent {
 	deliberation_ends_at?: string;
 	vote_opened_at?: string;
 	vote_closed_at?: string;
+	adopted_at?: string;
 	enacted_at?: string;
 
 	// Adoption/repeal tracking for amendment chains

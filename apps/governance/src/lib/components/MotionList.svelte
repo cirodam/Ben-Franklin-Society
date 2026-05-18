@@ -32,32 +32,60 @@
 	}
 </script>
 
-{#if motions.length > 0}
-	<div class="list">
-		{#each motions as motion}
-			<a href="/governance/motions/{motion.uuid}" class="list-item">
-				<div class="list-item__header">
-					<span class="list-item__motion-id">{motion.content.motion_number}</span>
-					<Badge label={motion.content.status} variant={statusVariant(motion.content.status)} />
-				</div>
-				<h3 class="list-item__title">{motion.title}</h3>
-				<div class="list-item__meta">
-					<span>Created {formatDate(motion.created_at)}</span>
-				</div>
-			</a>
-		{/each}
-	</div>
-{:else}
-	<div class="empty-state">
-		<p>📋</p>
-		<p class="empty-state__message">No motions in the docket</p>
-		{#if canCreate && onCreateClick}
-			<Button onclick={onCreateClick}>+ New Motion</Button>
-		{/if}
-	</div>
-{/if}
+<div class="motion-list-container">
+	{#if canCreate && onCreateClick}
+		<div class="list-header">
+			<h2 class="list-header__title">Motions</h2>
+			<Button onclick={onCreateClick}>
+				{#snippet children()}+ New Motion{/snippet}
+			</Button>
+		</div>
+	{/if}
+
+	{#if motions.length > 0}
+		<div class="list">
+			{#each motions as motion}
+				<a href="/governance/motions/{motion.uuid}" class="list-item">
+					<div class="list-item__header">
+						<span class="list-item__motion-id">{motion.content.motion_number}</span>
+						<Badge label={motion.content.status} variant={statusVariant(motion.content.status)} />
+					</div>
+					<h3 class="list-item__title">{motion.title}</h3>
+					<div class="list-item__meta">
+						<span>Created {formatDate(motion.created_at)}</span>
+					</div>
+				</a>
+			{/each}
+		</div>
+	{:else}
+		<div class="empty-state">
+			<p>📋</p>
+			<p class="empty-state__message">No motions in the docket</p>
+		</div>
+	{/if}
+</div>
 
 <style>
+	.motion-list-container {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.list-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.list-header__title {
+		font-size: var(--text-xl);
+		font-weight: var(--weight-semibold);
+		margin: 0;
+	}
+
 	.list {
 		display: flex;
 		flex-direction: column;

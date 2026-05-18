@@ -2,11 +2,10 @@
 	import { enhance } from '$app/forms';
 	import { Modal, Button, Textarea } from '@bfs/ui';
 
-	let {
-		show = $bindable(false),
+	let {		open = $bindable(false),
 		clerkNotes = ''
 	}: {
-		show?: boolean;
+		open?: boolean;
 		clerkNotes?: string | null;
 	} = $props();
 
@@ -18,11 +17,11 @@
 	});
 </script>
 
-<Modal {show} title="Clerk's Notes">
-	<form method="POST" action="?/setClerkNotes" use:enhance={() => {
+<Modal {open} title="Clerk's Notes">
+	<form id="clerk-notes-form" method="POST" action="?/setClerkNotes" use:enhance={() => {
 		return ({ update }) => {
 			update().then(() => {
-				show = false;
+				open = false;
 			});
 		};
 	}}>
@@ -33,11 +32,15 @@
 			rows={8}
 			placeholder="Enter clerk's notes here..."
 			autofocus />
-		{#snippet actions()}
-			<Button variant="secondary" onclick={() => show = false}>Cancel</Button>
-			<Button type="submit">Save Notes</Button>
-		{/snippet}
 	</form>
+	{#snippet footer()}
+		<Button variant="secondary" onclick={() => open = false}>
+			{#snippet children()}Cancel{/snippet}
+		</Button>
+		<Button type="submit" form="clerk-notes-form">
+			{#snippet children()}Save Notes{/snippet}
+		</Button>
+	{/snippet}
 </Modal>
 
 <style>

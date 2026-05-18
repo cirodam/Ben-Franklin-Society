@@ -4,6 +4,7 @@ import type { PageServerLoad, Actions } from './$types.js';
 import {
 	getMotionByUuid,
 	advanceMotion,
+	setMotionStatus,
 	setMotionVoteRule,
 	setMotionDeliberationRule,
 	setMotionClerkNotes,
@@ -107,7 +108,7 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const to = data.get('to') as string;
-		const valid: MotionStatus[] = ['introduced', 'deliberation', 'withdrawn'];
+		const valid: MotionStatus[] = ['introduced', 'deliberation', 'enacted', 'withdrawn'];
 		if (!valid.includes(to as MotionStatus)) {
 			return fail(400, { error: 'Invalid target status' });
 		}
@@ -116,6 +117,7 @@ export const actions: Actions = {
 
 		const label = to === 'introduced' ? 'introduced'
 			: to === 'deliberation' ? 'moved to deliberation and voting'
+			: to === 'enacted' ? 'enacted'
 			: 'withdrawn';
 		addEntry(motion.owner_uuid, actingAs, `motion_${to}`, 'motion', motion.uuid,
 			`Motion "${motion.title}" ${label}`);
@@ -421,6 +423,34 @@ export const actions: Actions = {
 				`Vote session finalized for motion "${motion.title}"`);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to finalize session' });
+		}
+
+		return { success: true };
+	},
+
+	changeStatus: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+
+		const motion = getMotionByUuid(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		const data = await request.formData();
+		const new_status = data.get('new_status') as MotionStatus;
+		
+		const validStatuses: MotionStatus[] = ['draft', 'introduced', 'deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'];
+		if (!validStatuses.includes(new_status)) {
+			return fail(400, { error: 'Invalid status' });
+		}
+
+		try {
+			setMotionStatus(motion.uuid, new_status);
+			audit(actingAs, 'motion.change_status', 'motion', motion.uuid, 
+				`Manually changed motion "${motion.title}" status from ${motion.content.status} to ${new_status}`);
+			addEntry(motion.owner_uuid, actingAs, 'motion_status_changed', 'motion', motion.uuid,
+				`Motion "${motion.title}" status manually changed to ${new_status}`);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to change status' });
 		}
 
 		return { success: true };

@@ -24,7 +24,8 @@ function now(): string {
 const ALLOWED_TRANSITIONS: Partial<Record<MotionStatus, MotionStatus[]>> = {
 	draft: ['introduced', 'withdrawn'],
 	introduced: ['deliberation', 'withdrawn'],
-	deliberation: ['withdrawn'], // deliberation → enacted/rejected goes through closeVote()
+	deliberation: ['withdrawn'], // deliberation → adopted/rejected goes through vote session finalization
+	adopted: ['enacted', 'withdrawn'], // adopted → enacted when clerk confirms implementation
 };
 
 // --- Motion queries ---
@@ -131,6 +132,37 @@ export function advanceMotion(uuid: string, to: MotionStatus): MotionDocument {
 	});
 }
 
+/**
+ * Manually set motion status (admin override)
+ * Bypasses normal transition validation - use with caution
+ */
+export function setMotionStatus(uuid: string, to: MotionStatus): MotionDocument {
+	const motion = getMotionByUuid(uuid);
+	if (!motion) throw new Error(`Motion not found: ${uuid}`);
+
+	// Set appropriate timestamps based on status
+	const updates: any = {};
+	
+	if (to === 'introduced' && !motion.content.introduced_at) {
+		updates.introduced_at = now();
+	}
+	
+	if (to === 'adopted' && !motion.content.adopted_at) {
+		updates.adopted_at = now();
+	}
+	
+	if (to === 'enacted' && !motion.content.enacted_at) {
+		updates.enacted_at = now();
+	}
+	
+	if (['rejected', 'withdrawn'].includes(to) && !motion.content.vote_closed_at) {
+		updates.vote_closed_at = now();
+	}
+	
+	// Update motion status in library
+	return library.updateMotionStatus(motion.slug, to, updates);
+}
+
 export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): MotionDocument {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
@@ -176,16 +208,16 @@ export function enactMotion(motionUuid: string, voteSessionUuid: string): Motion
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
 	
-	if (motion.content.status === 'enacted') {
-		// Already enacted, no-op
+	if (motion.content.status === 'adopted' || motion.content.status === 'enacted') {
+		// Already adopted or enacted, no-op
 		return motion;
 	}
 	
-	const enacted_at = now();
+	const adopted_at = now();
 	
 	return library.updateMotion(motion.slug, {
-		status: 'enacted',
-		enacted_at
+		status: 'adopted',
+		adopted_at
 	});
 }
 

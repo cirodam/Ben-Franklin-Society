@@ -3,10 +3,10 @@
 	import { Modal, Button, Textarea } from '@bfs/ui';
 
 	let {
-		show = $bindable(false),
+		open = $bindable(false),
 		parliamentarianNotes = ''
 	}: {
-		show?: boolean;
+		open?: boolean;
 		parliamentarianNotes?: string | null;
 	} = $props();
 
@@ -18,11 +18,11 @@
 	});
 </script>
 
-<Modal {show} title="Parliamentarian's Notes">
-	<form method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
+<Modal {open} title="Parliamentarian's Notes">
+	<form id="parliamentarian-notes-form" method="POST" action="?/setParliamentarianNotes" use:enhance={() => {
 		return ({ update }) => {
 			update().then(() => {
-				show = false;
+				open = false;
 			});
 		};
 	}}>
@@ -33,11 +33,15 @@
 			rows={8}
 			placeholder="Enter parliamentarian's notes here..."
 			autofocus />
-		{#snippet actions()}
-			<Button variant="secondary" onclick={() => show = false}>Cancel</Button>
-			<Button type="submit">Save Notes</Button>
-		{/snippet}
 	</form>
+	{#snippet footer()}
+		<Button variant="secondary" onclick={() => open = false}>
+			{#snippet children()}Cancel{/snippet}
+		</Button>
+		<Button type="submit" form="parliamentarian-notes-form">
+			{#snippet children()}Save Notes{/snippet}
+		</Button>
+	{/snippet}
 </Modal>
 
 <style>

@@ -16,34 +16,34 @@
 	};
 
 	let {
-		show = $bindable(false),
-		voteRuleUuid = null,
-		deliberationRuleUuid = null,
+		open = $bindable(false),
+		voteRuleUuid = '',
+		deliberationRuleUuid = '',
 		voteRules = [],
 		deliberationRules = []
 	}: {
-		show?: boolean;
-		voteRuleUuid?: string | null;
-		deliberationRuleUuid?: string | null;
+		open?: boolean;
+		voteRuleUuid?: string;
+		deliberationRuleUuid?: string;
 		voteRules?: VoteRule[];
 		deliberationRules?: DeliberationRule[];
 	} = $props();
 
-	let selectedVotingRuleUuid = $state<string | null>(voteRuleUuid);
-	let selectedDeliberationRuleUuid = $state<string | null>(deliberationRuleUuid);
+	let selectedVotingRuleUuid = $state<string>(voteRuleUuid || '');
+	let selectedDeliberationRuleUuid = $state<string>(deliberationRuleUuid || '');
 
 	// Update local values when props change
 	$effect(() => {
-		selectedVotingRuleUuid = voteRuleUuid;
-		selectedDeliberationRuleUuid = deliberationRuleUuid;
+		selectedVotingRuleUuid = voteRuleUuid || '';
+		selectedDeliberationRuleUuid = deliberationRuleUuid || '';
 	});
 </script>
 
-<Modal {show} title="Set Motion Rules">
-	<form method="POST" action="?/setMotionRules" use:enhance={() => {
+<Modal {open} title="Set Motion Rules">
+	<form id="rules-form" method="POST" action="?/setMotionRules" use:enhance={() => {
 		return async ({ update }) => {
 			await update();
-			show = false;
+			open = false;
 		};
 	}}>
 		<p class="modal-hint">These rules determine how this motion will be voted on and how long the deliberation period lasts.</p>
@@ -75,11 +75,15 @@
 				</option>
 			{/each}
 		</Select>
-		{#snippet actions()}
-			<Button variant="secondary" onclick={() => show = false}>Cancel</Button>
-			<Button type="submit">Save Changes</Button>
-		{/snippet}
 	</form>
+	{#snippet footer()}
+		<Button variant="secondary" onclick={() => open = false}>
+			{#snippet children()}Cancel{/snippet}
+		</Button>
+		<Button type="submit" form="rules-form">
+			{#snippet children()}Save Changes{/snippet}
+		</Button>
+	{/snippet}
 </Modal>
 
 <style>
