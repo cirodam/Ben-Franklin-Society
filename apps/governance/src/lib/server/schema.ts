@@ -212,6 +212,36 @@ CREATE TABLE IF NOT EXISTS vote_rule (
   UNIQUE (association_uuid, name)
 );
 
+-- Vote Sessions: Voting processes that reference motion documents
+CREATE TABLE IF NOT EXISTS vote_session (
+  uuid              TEXT PRIMARY KEY,
+  motion_uuid       TEXT NOT NULL,
+  opened_by         TEXT NOT NULL REFERENCES person(uuid),
+  meeting_uuid      TEXT NULL REFERENCES meeting(uuid),
+  passing_threshold REAL NOT NULL,
+  requires_quorum   INTEGER NOT NULL DEFAULT 0,
+  quorum_threshold  REAL NULL,
+  opens_at          TEXT NOT NULL,
+  closes_at         TEXT NOT NULL,
+  status            TEXT NOT NULL DEFAULT 'scheduled',
+  closed_at         TEXT NULL,
+  finalized_at      TEXT NULL,
+  outcome           TEXT NULL,
+  created_at        TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_vote_session_motion ON vote_session(motion_uuid);
+CREATE INDEX IF NOT EXISTS idx_vote_session_status ON vote_session(status);
+
+CREATE TABLE IF NOT EXISTS vote_receipt (
+  uuid              TEXT PRIMARY KEY,
+  vote_session_uuid TEXT NOT NULL REFERENCES vote_session(uuid),
+  voter_uuid        TEXT NOT NULL REFERENCES person(uuid),
+  choice            TEXT NOT NULL,
+  voted_at          TEXT NOT NULL,
+  UNIQUE (vote_session_uuid, voter_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_vote_receipt_session ON vote_receipt(vote_session_uuid);
+
 -- Meetings: Scheduled assembly gatherings where votes are taken
 CREATE TABLE IF NOT EXISTS meeting (
   uuid            TEXT PRIMARY KEY,

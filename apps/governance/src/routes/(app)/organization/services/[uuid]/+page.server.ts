@@ -36,6 +36,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	if (association.type !== 'service') redirect(302, `/associations/${params.uuid}`);
 
 	const actingAs = locals.session?.acting_as_uuid ?? null;
+	// Anyone logged in can edit org chart structure; role assignments still require permission
+	const canManage = !!actingAs;
 	const canAssign = actingAs
 		? hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, association.uuid)
 		: false;
@@ -62,7 +64,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				)
 				.all(role.uuid) as { uuid: string; handle: string; given_name: string; family_name: string }[]
 		);
-		const permissions = getPermissionsForRole(role.uuid);
+		const rolePermissions = getPermissionsForRole(role.uuid);
+		const permissions = rolePermissions.map(p => ({ name: `${p.app}:${p.permission}` }));
 		const section = role.section_uuid ? sectionMap.get(role.section_uuid) : null;
 		return { ...role, holders, permissions, section_name: section?.name ?? null };
 	});
@@ -118,9 +121,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		return { ...m, person: person ?? null };
 	});
 
-	const motions = db
-		.prepare('SELECT uuid, title, status, created_at FROM motion WHERE body_uuid = ? ORDER BY created_at DESC LIMIT 10')
-		.all(association.uuid) as { uuid: string; title: string; status: string; created_at: string }[];
+	// Get recent motions for this service (motions are now documents in library)
+	const motionRows = db
+		.prepare('SELECT uuid, title, created_at, metadata_json FROM library_item WHERE type = ? AND owner_uuid = ? ORDER BY created_at DESC LIMIT 10')
+		.all('motion', association.uuid) as { uuid: string; title: string; created_at: string; metadata_json: string | null }[];
+	const motions = motionRows.map(row => ({
+		uuid: row.uuid,
+		title: row.title,
+		created_at: row.created_at,
+		status: row.metadata_json ? JSON.parse(row.metadata_json).status : 'draft'
+	}));
 
 	const enactedMotions = canAssign ? listEnactedMotions() : [];
 
@@ -141,6 +151,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		sections,
 		motions,
 		canAssign,
+		canManage,
 		enactedMotions,
 		governingDocument,
 		templates,
@@ -162,9 +173,6 @@ export const actions: Actions = {
 		const compensation_franks = data.get('compensation_franks') ? Number(data.get('compensation_franks')) : 0;
 
 		if (!title) return fail(400, { message: 'Role title is required' });
-		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
-			return fail(403, { message: 'Forbidden' });
-		}
 
 		const role = createRole({
 			association_uuid: params.uuid,
@@ -274,9 +282,6 @@ assignRoleToMember(role_uuid, person_uuid);
 		const description = String(data.get('description') ?? '').trim() || null;
 
 		if (!name) return fail(400, { message: 'Section name is required' });
-		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
-			return fail(403, { message: 'Forbidden' });
-		}
 
 		const section = createSection({
 			association_uuid: params.uuid,
@@ -309,9 +314,6 @@ assignRoleToMember(role_uuid, person_uuid);
 
 		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
 		if (!name) return fail(400, { message: 'Section name is required' });
-		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
-			return fail(403, { message: 'Forbidden' });
-		}
 
 		updateSection(section_uuid, { name, parent_section_uuid, description });
 
@@ -335,9 +337,6 @@ assignRoleToMember(role_uuid, person_uuid);
 		const section_uuid = String(data.get('section_uuid') ?? '').trim();
 
 		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
-		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
-			return fail(403, { message: 'Forbidden' });
-		}
 
 		deleteSection(section_uuid);
 
@@ -367,9 +366,6 @@ assignRoleToMember(role_uuid, person_uuid);
 
 		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
 		if (!title) return fail(400, { message: 'Role title is required' });
-		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
-			return fail(403, { message: 'Forbidden' });
-		}
 
 		updateRole(role_uuid, {
 			title,
@@ -399,9 +395,6 @@ assignRoleToMember(role_uuid, person_uuid);
 		const role_uuid = String(data.get('role_uuid') ?? '').trim();
 
 		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
-		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
-			return fail(403, { message: 'Forbidden' });
-		}
 
 		deleteRole(role_uuid);
 

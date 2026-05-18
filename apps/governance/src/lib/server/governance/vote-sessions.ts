@@ -268,16 +268,16 @@ export function canVote(sessionUuid: string, personUuid: string): boolean {
 	// Check if person has already voted
 	if (hasVoted(sessionUuid, personUuid)) return false;
 	
-	// Check if person is eligible (member of motion's body)
-	const motion = db.prepare('SELECT body_uuid FROM motion WHERE uuid = ?')
-		.get(session.motion_uuid) as { body_uuid: string } | undefined;
+	// Check if person is eligible (member of motion's owner body)
+	const motion = db.prepare('SELECT owner_uuid FROM library_item WHERE uuid = ? AND type = ?')
+		.get(session.motion_uuid, 'motion') as { owner_uuid: string } | undefined;
 	
 	if (!motion) return false;
 	
 	const isMember = db.prepare(`
 		SELECT 1 FROM association_member 
 		WHERE association_uuid = ? AND person_uuid = ? AND removed_at IS NULL
-	`).get(motion.body_uuid, personUuid);
+	`).get(motion.owner_uuid, personUuid);
 	
 	return !!isMember;
 }
@@ -290,9 +290,9 @@ export function hasVoted(sessionUuid: string, personUuid: string): boolean {
 	if (!session) return false;
 	
 	const receipt = db.prepare(`
-		SELECT 1 FROM motion_vote_receipt 
-		WHERE motion_uuid = ? AND voter_uuid = ? AND vote_session_uuid = ?
-	`).get(session.motion_uuid, personUuid, sessionUuid);
+		SELECT 1 FROM vote_receipt 
+		WHERE vote_session_uuid = ? AND voter_uuid = ?
+	`).get(sessionUuid, personUuid);
 	
 	return !!receipt;
 }
@@ -307,41 +307,11 @@ export function castVote(sessionUuid: string, voterUuid: string, choice: VoteCho
 	
 	const session = getVoteSession(sessionUuid)!;
 	
-	// Get or create vote tally
-	let tally = db.prepare('SELECT * FROM motion_vote_tally WHERE motion_uuid = ?')
-		.get(session.motion_uuid) as any;
-	
-	if (!tally) {
-		// Create tally on first vote
-		const motion = db.prepare('SELECT body_uuid FROM motion WHERE uuid = ?')
-			.get(session.motion_uuid) as { body_uuid: string };
-		
-		const memberCount = db.prepare(`
-			SELECT COUNT(*) as c FROM association_member 
-			WHERE association_uuid = ? AND removed_at IS NULL
-		`).get(motion.body_uuid) as { c: number };
-		
-		db.prepare(`
-			INSERT INTO motion_vote_tally (motion_uuid, eligible_count, aye_count, nay_count, abstain_count, opened_at)
-			VALUES (?, ?, 0, 0, 0, ?)
-		`).run(session.motion_uuid, memberCount.c, session.opens_at);
-	}
-	
-	// Determine which column to increment
-	const col = choice === 'aye' ? 'aye_count' : choice === 'nay' ? 'nay_count' : 'abstain_count';
-	
-	// Record vote in transaction (receipt + tally update)
-	db.transaction(() => {
-		// Create receipt
-		db.prepare(`
-			INSERT INTO motion_vote_receipt (uuid, motion_uuid, voter_uuid, vote_session_uuid, voted_at)
-			VALUES (?, ?, ?, ?, ?)
-		`).run(randomUUID(), session.motion_uuid, voterUuid, sessionUuid, now());
-		
-		// Update tally (col is derived from controlled enum, safe to interpolate)
-		db.prepare(`UPDATE motion_vote_tally SET ${col} = ${col} + 1 WHERE motion_uuid = ?`)
-			.run(session.motion_uuid);
-	})();
+	// Record vote
+	db.prepare(`
+		INSERT INTO vote_receipt (uuid, vote_session_uuid, voter_uuid, choice, voted_at)
+		VALUES (?, ?, ?, ?, ?)
+	`).run(randomUUID(), sessionUuid, voterUuid, choice, now());
 }
 
 // --- Tallies and Outcomes ---
@@ -353,21 +323,43 @@ export function getSessionTally(sessionUuid: string): VoteSessionTally | null {
 	const session = getVoteSession(sessionUuid);
 	if (!session) return null;
 	
-	const tally = db.prepare('SELECT * FROM motion_vote_tally WHERE motion_uuid = ?')
-		.get(session.motion_uuid) as any;
+	// Count votes by choice from vote_receipt
+	const votes = db.prepare(`
+		SELECT choice, COUNT(*) as count 
+		FROM vote_receipt 
+		WHERE vote_session_uuid = ?
+		GROUP BY choice
+	`).all(sessionUuid) as { choice: string; count: number }[];
 	
-	if (!tally) return null;
+	let aye_count = 0;
+	let nay_count = 0;
+	let abstain_count = 0;
 	
-	const total_votes = tally.aye_count + tally.nay_count + tally.abstain_count;
-	const participation_rate = tally.eligible_count > 0 ? total_votes / tally.eligible_count : 0;
+	for (const vote of votes) {
+		if (vote.choice === 'aye') aye_count = vote.count;
+		else if (vote.choice === 'nay') nay_count = vote.count;
+		else if (vote.choice === 'abstain') abstain_count = vote.count;
+	}
+	
+	// Get eligible voter count (members of the motion's owner association)
+	const motion = db.prepare('SELECT owner_uuid FROM library_item WHERE uuid = ? AND type = ?')
+		.get(session.motion_uuid, 'motion') as { owner_uuid: string } | undefined;
+	
+	const eligible_count = motion ? (db.prepare(`
+		SELECT COUNT(*) as c FROM association_member 
+		WHERE association_uuid = ? AND removed_at IS NULL
+	`).get(motion.owner_uuid) as { c: number }).c : 0;
+	
+	const total_votes = aye_count + nay_count + abstain_count;
+	const participation_rate = eligible_count > 0 ? total_votes / eligible_count : 0;
 	
 	return {
 		session_uuid: sessionUuid,
 		motion_uuid: session.motion_uuid,
-		eligible_count: tally.eligible_count,
-		aye_count: tally.aye_count,
-		nay_count: tally.nay_count,
-		abstain_count: tally.abstain_count,
+		eligible_count,
+		aye_count,
+		nay_count,
+		abstain_count,
 		total_votes,
 		participation_rate
 	};

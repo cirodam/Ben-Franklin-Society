@@ -73,7 +73,7 @@ export const actions: Actions = {
 				});
 			}
 
-			redirect(303, `/committees/${params.uuid}`);
+			redirect(303, `/organization/committees/${params.uuid}`);
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to update committee.',

@@ -50,7 +50,7 @@ export const actions: Actions = {
 				established_by_motion_uuid: establishedByMotionUuid
 			});
 
-			redirect(303, `/services/${service.uuid}`);
+			redirect(303, `/organization/services/${service.uuid}`);
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to create service.',

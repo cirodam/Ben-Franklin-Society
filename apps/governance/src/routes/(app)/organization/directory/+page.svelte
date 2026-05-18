@@ -110,7 +110,7 @@
 			<h2 class="section-title">🏛️ Associations</h2>
 			<List>
 				{#each filteredAssociations as a (a.uuid)}
-					<ListItem href="/{a.type === 'committee' ? 'committees' : a.type === 'college' ? 'colleges' : a.type === 'service' ? 'services' : 'associations'}/{a.uuid}">
+					<ListItem href="/organization/{a.type === 'committee' ? 'committees' : a.type === 'college' ? 'colleges' : a.type === 'service' ? 'services' : 'associations'}/{a.uuid}">
 						<div class="result-card__main">
 							<div class="result-card__title">{a.name}</div>
 							<code class="result-card__handle">@{a.handle}</code>

@@ -11,7 +11,7 @@ import { getCommunityConfig } from '$lib/server/infrastructure/config.js';
  * for authentication and then handle the OAuth callback themselves.
  */
 function getSafeRedirectUrl(next: string | null): string {
-	if (!next) return '/bulletin';
+	if (!next) return '/communications/bulletin';
 	
 	// Allow relative paths (same-origin)
 	if (next.startsWith('/')) return next;
@@ -32,7 +32,7 @@ function getSafeRedirectUrl(next: string | null): string {
 		// Invalid URL, fall through to default
 	}
 	
-	return '/bulletin';
+	return '/communications/bulletin';
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {

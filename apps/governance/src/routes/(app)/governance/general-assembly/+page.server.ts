@@ -24,6 +24,7 @@ import { audit } from '$lib/server/documents/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getComments, createMotion } from '$lib/server/governance/motions.js';
 import { listDeliberationRules } from '$lib/server/governance/deliberation-rules.js';
 import { getDocumentBySlug } from '$lib/server/documents/library.js';
+import { listVoteSessions, getSessionTally } from '$lib/server/governance/vote-sessions.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -36,9 +37,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const sections = getSectionsByAssociation(association.uuid);
 
 	const actingAs = locals.session?.acting_as_uuid ?? null;
-	const canAssign = actingAs
-		? hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, association.uuid)
-		: false;
+	// Anyone logged in can edit org chart structure; role assignments still require permission
+	const canAssign = !!actingAs;
 
 	// Create section lookup map
 	const sectionMap = new Map<string, { name: string }>();
@@ -97,40 +97,29 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const draws = listSortitions(association.uuid);
 
-	// Get all motions for this body, grouped by status for deliberation-centric display
+	// Get all motions for this body (docket)
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
-	const activeDeliberations = allMotions
-		.filter((m) => m.content.status === 'deliberation')
-		.map((m) => {
-			// TODO: Query vote_session table for active vote tally
-			const voteTally = null; 
-			const tally = voteTally ? {
-				eligible: voteTally.eligible_count,
-				voted: voteTally.aye_count + voteTally.nay_count + voteTally.abstain_count,
-				aye: voteTally.aye_count,
-				nay: voteTally.nay_count,
-				abstain: voteTally.abstain_count
-			} : null;
-			const comments = getComments(m.uuid);
-			return { ...m, tally, comments };
-		});
+	// Get all vote sessions for motions in this body
+	const motionUuids = allMotions.map(m => m.uuid);
+	const allVoteSessions = motionUuids.length > 0
+		? db.prepare(`
+			SELECT 
+				vs.*,
+				li.title as motion_title,
+				li.slug as motion_slug
+			FROM vote_session vs
+			JOIN library_item li ON li.uuid = vs.motion_uuid
+			WHERE vs.motion_uuid IN (${motionUuids.map(() => '?').join(',')})
+			ORDER BY vs.opens_at DESC
+		`).all(...motionUuids) as any[]
+		: [];
 
-	const pending = allMotions
-		.filter((m) => m.content.status === 'introduced' || m.content.status === 'draft')
-		.map((m) => {
-			const comments = getComments(m.uuid);
-			return { ...m, comments };
-		});
-
-	const recentDecisions = allMotions
-		.filter((m) => m.status === 'enacted' || m.status === 'rejected')
-		.sort((a, b) => {
-			const aDate = a.resolved_at || a.enacted_at || a.created_at;
-			const bDate = b.resolved_at || b.enacted_at || b.created_at;
-			return bDate.localeCompare(aDate);
-		})
-		.slice(0, 10);
+	// Enrich vote sessions with tally data
+	const voteSessions = allVoteSessions.map(vs => {
+		const tally = getSessionTally(vs.uuid);
+		return { ...vs, tally };
+	});
 
 	const canCreateMotion = !!actingAs; // Anyone logged in can create motions
 
@@ -155,9 +144,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		config,
 		termHolders,
 		draws,
-		activeDeliberations,
-		pending,
-		recentDecisions,
+		allMotions,
+		voteSessions,
 		roles: enrichedRoles,
 		roleHierarchy: roots,
 		sections,

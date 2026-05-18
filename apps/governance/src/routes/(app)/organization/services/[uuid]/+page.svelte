@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Button, Card, EmptyState } from '@bfs/ui';
 	import Badge from '@bfs/ui/src/Badge.svelte';
-	import Sections from '$lib/components/Sections.svelte';
+	import InteractiveOrgChart from '$lib/components/InteractiveOrgChart.svelte';
 	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions, governingDocument, templates, vacantRoles, budgetTotal } = $derived(data);
+	const { association, members, roles, roleHierarchy, sections, motions, canAssign, canManage, enactedMotions, governingDocument, templates, vacantRoles, budgetTotal } = $derived(data);
 
 	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
 
@@ -109,7 +109,14 @@
 					<RoleTemplates {templates} associationUuid={association.uuid} />
 				{/if}
 
-				<Sections {sections} />
+				<InteractiveOrgChart 
+					{sections} 
+					{roles} 
+					{members}
+					{enactedMotions}
+					associationUuid={association.uuid}
+					canManage={canManage}
+				/>
 			</div>
 		{:else if activeTab === 'activity'}
 			<Card>

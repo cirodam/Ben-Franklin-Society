@@ -61,7 +61,7 @@
 	function hrefFor(a: { type: string; uuid: string }): string {
 		return systemRoute[a.type]
 			?? (a.type === 'service'   ? `/services/${a.uuid}`
-			:  a.type === 'committee' ? `/committees/${a.uuid}`
+			:  a.type === 'committee' ? `/organization/committees/${a.uuid}`
 			:  a.type === 'college'   ? `/colleges/${a.uuid}`
 			:  `/associations/${a.uuid}`);
 	}

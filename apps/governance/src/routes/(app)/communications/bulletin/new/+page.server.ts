@@ -36,6 +36,6 @@ export const actions: Actions = {
 			VALUES (?, ?, ?, ?, ?, ?)
 		`).run(uuid, session.person_uuid, title.trim(), body.trim(), color, now);
 
-		redirect(303, `/bulletin/${uuid}`);
+		redirect(303, `/communications/bulletin/${uuid}`);
 	}
 };

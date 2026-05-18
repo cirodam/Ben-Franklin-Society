@@ -46,7 +46,6 @@
 			{id}
 			class="radio-input"
 			onchange={handleChange}
-			aria-invalid={hasError}
 			aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
 			{...rest}
 		/>

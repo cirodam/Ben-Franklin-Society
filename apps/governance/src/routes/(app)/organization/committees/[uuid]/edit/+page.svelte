@@ -10,7 +10,7 @@
 
 <div class="page">
 	<PageHeader title="Edit Committee">
-		<Breadcrumb items={[{ label: `← Back to ${data.association.name}`, href: `/committees/${data.association.uuid}` }]} />
+		<Breadcrumb items={[{ label: `← Back to ${data.association.name}`, href: `/organization/committees/${data.association.uuid}` }]} />
 	</PageHeader>
 
 	{#if form?.error}

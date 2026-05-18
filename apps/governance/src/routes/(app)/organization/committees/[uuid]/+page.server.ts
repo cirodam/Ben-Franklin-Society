@@ -10,6 +10,12 @@ import {
 	unassignRole,
 	getPermissionsForRole,
 	applyOrgChartTemplate,
+	createSection,
+	updateSection,
+	deleteSection,
+	createRole,
+	updateRole,
+	deleteRole,
 } from '$lib/server/organization/associations.js';
 import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/server/organization/sortition.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
@@ -18,6 +24,7 @@ import { audit } from '$lib/server/documents/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getComments, createMotion } from '$lib/server/governance/motions.js';
 import { listDeliberationRules } from '$lib/server/governance/deliberation-rules.js';
 import { getDocumentBySlug, listOrgChartDocuments } from '$lib/server/documents/library.js';
+import { listVoteSessions, getSessionTally } from '$lib/server/governance/vote-sessions.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -33,9 +40,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const sections = getSectionsByAssociation(association.uuid);
 
 	const actingAs = locals.session?.acting_as_uuid ?? null;
-	const canAssign = actingAs
-		? hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, association.uuid)
-		: false;
+	// Anyone logged in can edit org chart structure; role assignments still require permission
+	const canAssign = !!actingAs;
 
 	// Create section lookup map
 	const sectionMap = new Map<string, { name: string }>();
@@ -99,40 +105,29 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		? (db.prepare('SELECT name FROM association WHERE uuid = ?').get(config.source_college_uuid) as { name: string } | undefined)
 		: null;
 
-	// Get all motions for this body, grouped by status for deliberation-centric display
+	// Get all motions for this body (docket)
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
-	const activeDeliberations = allMotions
-		.filter((m) => m.content.status === 'deliberation')
-		.map((m) => {
-			// TODO: Query vote_session table for active vote tally
-			const voteTally = null;
-			const tally = voteTally ? {
-				eligible: voteTally.eligible_count,
-				voted: voteTally.aye_count + voteTally.nay_count + voteTally.abstain_count,
-				aye: voteTally.aye_count,
-				nay: voteTally.nay_count,
-				abstain: voteTally.abstain_count
-			} : null;
-			const comments = getComments(m.uuid);
-			return { ...m, tally, comments };
-		});
+	// Get all vote sessions for motions in this body
+	const motionUuids = allMotions.map(m => m.uuid);
+	const allVoteSessions = motionUuids.length > 0
+		? db.prepare(`
+			SELECT 
+				vs.*,
+				li.title as motion_title,
+				li.slug as motion_slug
+			FROM vote_session vs
+			JOIN library_item li ON li.uuid = vs.motion_uuid
+			WHERE vs.motion_uuid IN (${motionUuids.map(() => '?').join(',')})
+			ORDER BY vs.opens_at DESC
+		`).all(...motionUuids) as any[]
+		: [];
 
-	const pending = allMotions
-		.filter((m) => m.status === 'introduced' || m.status === 'draft')
-		.map((m) => {
-			const comments = getComments(m.uuid);
-			return { ...m, comments };
-		});
-
-	const recentDecisions = allMotions
-		.filter((m) => m.status === 'enacted' || m.status === 'rejected')
-		.sort((a, b) => {
-			const aDate = a.enacted_at || a.created_at;
-			const bDate = b.enacted_at || b.created_at;
-			return bDate.localeCompare(aDate);
-		})
-		.slice(0, 10);
+	// Enrich vote sessions with tally data
+	const voteSessions = allVoteSessions.map(vs => {
+		const tally = getSessionTally(vs.uuid);
+		return { ...vs, tally };
+	});
 
 	const canCreateMotion = actingAs
 		? hasPermission(actingAs, PERMISSIONS.MOTIONS_CREATE, association.uuid)
@@ -167,9 +162,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		sourceCollege: sourceCollege ?? null,
 		termHolders,
 		draws,
-		activeDeliberations,
-		pending,
-		recentDecisions,
+		allMotions,
+		voteSessions,
 		roles: enrichedRoles,
 		roleHierarchy: roots,
 		sections,
@@ -360,5 +354,195 @@ unassignRole(role_uuid, person_uuid);
 			console.error('Error applying template:', err);
 			return fail(500, { message: 'Failed to apply template' });
 		}
+	},
+
+	createSection: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Association not found' });
+
+		const data = await request.formData();
+		const name = String(data.get('name') ?? '').trim();
+		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
+		const description = String(data.get('description') ?? '').trim() || null;
+
+		if (!name) return fail(400, { message: 'Section name is required' });
+
+		const section = createSection({
+			association_uuid: association.uuid,
+			name,
+			parent_section_uuid,
+			description,
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'section_created',
+			'section',
+			section.uuid,
+			`Created section "${name}"`
+		);
+
+		return { success: true, section_uuid: section.uuid };
+	},
+
+	updateSection: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Association not found' });
+
+		const data = await request.formData();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim();
+		const name = String(data.get('name') ?? '').trim();
+		const parent_section_uuid = String(data.get('parent_section_uuid') ?? '').trim() || null;
+		const description = String(data.get('description') ?? '').trim() || null;
+
+		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
+		if (!name) return fail(400, { message: 'Section name is required' });
+
+		updateSection(section_uuid, { name, parent_section_uuid, description });
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'section_updated',
+			'section',
+			section_uuid,
+			`Updated section "${name}"`
+		);
+
+		return { success: true };
+	},
+
+	deleteSection: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Association not found' });
+
+		const data = await request.formData();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim();
+
+		if (!section_uuid) return fail(400, { message: 'Section UUID is required' });
+
+		deleteSection(section_uuid);
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'section_deleted',
+			'section',
+			section_uuid,
+			'Deleted section'
+		);
+
+		return { success: true };
+	},
+
+	createRole: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Association not found' });
+
+		const data = await request.formData();
+		const title = String(data.get('title') ?? '').trim();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
+		const reports_to_role_uuid = String(data.get('reports_to_role_uuid') ?? '').trim() || null;
+		const description = String(data.get('description') ?? '').trim() || null;
+		const compensation_franks = data.get('compensation_franks') ? Number(data.get('compensation_franks')) : 0;
+
+		if (!title) return fail(400, { message: 'Role title is required' });
+
+		const role = createRole({
+			association_uuid: association.uuid,
+			title,
+			section_uuid,
+			reports_to_role_uuid,
+			description,
+			compensation_franks,
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'role_created',
+			'role',
+			role.uuid,
+			`Created role "${title}"`
+		);
+
+		return { success: true, role_uuid: role.uuid };
+	},
+
+	updateRole: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Association not found' });
+
+		const data = await request.formData();
+		const role_uuid = String(data.get('role_uuid') ?? '').trim();
+		const title = String(data.get('title') ?? '').trim();
+		const section_uuid = String(data.get('section_uuid') ?? '').trim() || null;
+		const reports_to_role_uuid = String(data.get('reports_to_role_uuid') ?? '').trim() || null;
+		const description = String(data.get('description') ?? '').trim() || null;
+		const compensation_franks = data.get('compensation_franks') ? Number(data.get('compensation_franks')) : undefined;
+
+		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
+		if (!title) return fail(400, { message: 'Role title is required' });
+
+		updateRole(role_uuid, {
+			title,
+			section_uuid,
+			reports_to_role_uuid,
+			description,
+			compensation_franks,
+		});
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'role_updated',
+			'role',
+			role_uuid,
+			`Updated role "${title}"`
+		);
+
+		return { success: true };
+	},
+
+	deleteRole: async ({ request, locals, params }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByUuid(params.uuid);
+		if (!association) return fail(404, { message: 'Association not found' });
+
+		const data = await request.formData();
+		const role_uuid = String(data.get('role_uuid') ?? '').trim();
+
+		if (!role_uuid) return fail(400, { message: 'Role UUID is required' });
+
+		deleteRole(role_uuid);
+
+		addEntry(
+			association.uuid,
+			actingAs,
+			'role_deleted',
+			'role',
+			role_uuid,
+			'Deleted role'
+		);
+
+		return { success: true };
 	},
 };

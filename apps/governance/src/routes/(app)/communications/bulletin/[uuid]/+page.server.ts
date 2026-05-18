@@ -105,7 +105,7 @@ export const actions: Actions = {
 		const now = new Date().toISOString();
 		db.prepare('UPDATE bulletin_post SET deleted_at = ? WHERE uuid = ?').run(now, params.uuid);
 
-		redirect(303, '/bulletin');
+		redirect(303, '/communications/bulletin');
 	},
 
 	deleteComment: async ({ request, locals, params }) => {

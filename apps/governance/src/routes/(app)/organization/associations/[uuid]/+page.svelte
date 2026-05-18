@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { Badge, Card, PageHeader } from '@bfs/ui';
-	import Sections from '$lib/components/Sections.svelte';
+	import InteractiveOrgChart from '$lib/components/InteractiveOrgChart.svelte';
 	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const { association, members, roles, roleHierarchy, sections, motions, canAssign, enactedMotions, templates, vacantRoles, budgetTotal } = $derived(data);
+	const { association, members, roles, roleHierarchy, sections, motions, canAssign, canManage, enactedMotions, templates, vacantRoles, budgetTotal } = $derived(data);
 
 	const typeLabel: Record<string, string> = {
 		association: 'Association',
@@ -60,7 +60,15 @@
 			{/if}
 		</Card>
 
-		<Sections {sections} />
+		<!-- Organization Chart -->
+		<InteractiveOrgChart 
+			{sections} 
+			{roles} 
+			{members}
+			{enactedMotions}
+			associationUuid={association.uuid}
+			canManage={canManage}
+		/>
 
 		{#if canAssign}
 			<RoleTemplates {templates} associationUuid={association.uuid} />

@@ -40,7 +40,7 @@ export const actions: Actions = {
 				status
 			});
 
-			redirect(303, `/services/${params.uuid}`);
+			redirect(303, `/organization/services/${params.uuid}`);
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to update service.',

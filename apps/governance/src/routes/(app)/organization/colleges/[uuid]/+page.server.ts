@@ -23,9 +23,16 @@ export const load: PageServerLoad = async ({ params }) => {
 		return { ...m, person: person ?? null };
 	});
 
-	const motions = db
-		.prepare('SELECT uuid, title, status, created_at FROM motion WHERE body_uuid = ? ORDER BY created_at DESC LIMIT 10')
-		.all(association.uuid) as { uuid: string; title: string; status: string; created_at: string }[];
+	// Get recent motions for this college (motions are now documents in library)
+	const motionRows = db
+		.prepare('SELECT uuid, title, created_at, metadata_json FROM library_item WHERE type = ? AND owner_uuid = ? ORDER BY created_at DESC LIMIT 10')
+		.all('motion', association.uuid) as { uuid: string; title: string; created_at: string; metadata_json: string | null }[];
+	const motions = motionRows.map(row => ({
+		uuid: row.uuid,
+		title: row.title,
+		created_at: row.created_at,
+		status: row.metadata_json ? JSON.parse(row.metadata_json).status : 'draft'
+	}));
 
 	// Load governing document if slug is set
 	const governingDocument = association.governing_document_slug

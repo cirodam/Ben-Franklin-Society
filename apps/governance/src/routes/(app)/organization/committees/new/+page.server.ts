@@ -80,7 +80,7 @@ export const actions: Actions = {
 				});
 			}
 
-			redirect(303, `/committees/${committee.uuid}`);
+			redirect(303, `/organization/committees/${committee.uuid}`);
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to create committee.',

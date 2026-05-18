@@ -8,7 +8,7 @@
 
 <div class="page">
 	<PageHeader title="Edit Service">
-		<Breadcrumb items={[{ label: `← Back to ${data.association.name}`, href: `/services/${data.association.uuid}` }]} />
+		<Breadcrumb items={[{ label: `← Back to ${data.association.name}`, href: `/organization/services/${data.association.uuid}` }]} />
 	</PageHeader>
 
 	{#if form?.error}
