@@ -22,6 +22,7 @@ export { default as RadioGroup } from './RadioGroup.svelte';
 export { default as Select } from './Select.svelte';
 export { default as Sidebar } from './Sidebar.svelte';
 export { default as SidebarDivider } from './SidebarDivider.svelte';
+export { default as SidebarGroup } from './SidebarGroup.svelte';
 export { default as SidebarLink } from './SidebarLink.svelte';
 export { default as Spinner } from './Spinner.svelte';
 export { default as Textarea } from './Textarea.svelte';

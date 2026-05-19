@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import { Button } from '@bfs/ui';
+	import { Button, Card } from '@bfs/ui';
 	
 	// Components
 	import MotionLifecycle from './MotionLifecycle.svelte';
@@ -87,22 +87,26 @@
 
 		<!-- Lifecycle Actions -->
 		{#if !['enacted','rejected','withdrawn'].includes(motion.status)}
-			<div class="paper-card">
-				<div class="paper-card__header">
-					<h3 class="paper-card__title">Actions</h3>
+			<Card padding="lg">
+				<div class="card-header">
+					<h3 class="card-title">Actions</h3>
 				</div>
 				<div class="action-row">
 					{#if motion.status === 'draft' && canAdvance}
 						<form method="POST" action="?/advance" use:enhance>
 							<input type="hidden" name="to" value="introduced" />
-							<button class="btn btn--primary">Introduce</button>
+							<Button variant="primary" type="submit">
+								{#snippet children()}Introduce{/snippet}
+							</Button>
 						</form>
 					{/if}
 					
 					{#if motion.status === 'introduced' && canAdvance}
 						<form method="POST" action="?/advance" use:enhance>
 							<input type="hidden" name="to" value="deliberation" />
-							<button class="btn btn--primary">Begin Deliberation & Voting</button>
+							<Button variant="primary" type="submit">
+								{#snippet children()}Begin Deliberation & Voting{/snippet}
+							</Button>
 						</form>
 					{/if}
 					
@@ -137,7 +141,9 @@
 						{#if canAdvance}
 							<form method="POST" action="?/advance" use:enhance>
 								<input type="hidden" name="to" value="enacted" />
-								<button class="btn btn--primary">Mark as Enacted</button>
+								<Button variant="primary" type="submit">
+									{#snippet children()}Mark as Enacted{/snippet}
+								</Button>
 							</form>
 						{/if}
 					{/if}
@@ -145,11 +151,13 @@
 					{#if canAdvance}
 						<form method="POST" action="?/advance" use:enhance>
 							<input type="hidden" name="to" value="withdrawn" />
-							<button class="btn btn--danger">Withdraw</button>
+							<Button variant="danger" type="submit">
+								{#snippet children()}Withdraw{/snippet}
+							</Button>
 						</form>
 					{/if}
 				</div>
-			</div>
+			</Card>
 		{/if}
 	</div>
 
@@ -213,18 +221,11 @@
 	}
 
 	/* Action row styles */
-	.paper-card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
-	.paper-card__header {
+	.card-header {
 		margin-bottom: var(--space-4);
 	}
 
-	.paper-card__title {
+	.card-title {
 		font-size: var(--text-xl);
 		font-weight: 600;
 		margin: 0;
@@ -297,37 +298,5 @@
 		margin: 0;
 		font-size: var(--text-sm);
 		color: #3d6f4d;
-	}
-
-	/* Button styles */
-	.btn {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-4);
-		font-size: var(--text-sm);
-		font-weight: 500;
-		border-radius: var(--radius);
-		border: 1px solid transparent;
-		cursor: pointer;
-		transition: all 120ms;
-	}
-
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
-	}
-
-	.btn--primary:hover {
-		background: var(--color-accent-hover);
-	}
-
-	.btn--danger {
-		background: var(--color-danger);
-		color: #fff;
-	}
-
-	.btn--danger:hover {
-		background: var(--color-danger-hover);
 	}
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { AppShell, Sidebar, SidebarLink, SidebarDivider } from '@bfs/ui';
+	import { AppShell, Sidebar, SidebarLink, SidebarDivider, SidebarGroup } from '@bfs/ui';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
 
@@ -14,39 +14,46 @@
 			{/snippet}
 
 			{#snippet nav()}
-				<SidebarLink href="/">🏛️ Home</SidebarLink>
-				<SidebarLink href="/library">📚 Library</SidebarLink>
-				<SidebarLink href="/governance/referenda">📢 Community Referenda</SidebarLink>
-				<SidebarLink href="/governance/general-assembly">🏛️ General Assembly</SidebarLink>
-				<SidebarLink href="/organization/committees">📋 Committees</SidebarLink>
-				<SidebarLink href="/organization/directory">📇 Directory</SidebarLink>
-				<SidebarLink href="/organization/services">🏢 Services</SidebarLink>
-				<SidebarLink href="/organization/colleges">🎓 Colleges</SidebarLink>
-				<SidebarLink href="/communications/record">📝 The Record</SidebarLink>
-				<SidebarLink href="/federation/lineage">🔗 Federation</SidebarLink>
+			<SidebarLink href="/">Home</SidebarLink>
+			<SidebarLink href="/library">Library</SidebarLink>
 
-				<SidebarDivider />
+			<SidebarGroup label="Governance">
+				<SidebarLink href="/governance/referenda">Community Referenda</SidebarLink>
+				<SidebarLink href="/governance/general-assembly">General Assembly</SidebarLink>
+			</SidebarGroup>
 
-				<SidebarLink href="/admin/settings/oidc-clients">🔑 OIDC Clients</SidebarLink>
-				<SidebarLink href="/admin/config">⚙️ Settings</SidebarLink>
-			{/snippet}
+			<SidebarGroup label="Organization">
+				<SidebarLink href="/organization/committees">Committees</SidebarLink>
+				<SidebarLink href="/organization/directory">Directory</SidebarLink>
+				<SidebarLink href="/organization/services">Services</SidebarLink>
+				<SidebarLink href="/organization/colleges">Colleges</SidebarLink>
+			</SidebarGroup>
 
-			{#snippet footer()}
-				<div style="display: flex; flex-direction: column; gap: 1px;">
-					<span style="font-size: var(--text-sm); font-weight: var(--weight-medium);">
+			<SidebarGroup label="Communications">
+				<SidebarLink href="/communications/record">The Record</SidebarLink>
+			</SidebarGroup>
+
+			<SidebarLink href="/federation/lineage">Federation</SidebarLink>
+
+			<SidebarDivider />
+
+			<SidebarGroup label="Administration">
+				<SidebarLink href="/admin/settings/oidc-clients">OIDC Clients</SidebarLink>
+				<SidebarLink href="/admin/config">Settings</SidebarLink>
+			</SidebarGroup>
+		{/snippet}
+
+		{#snippet footer()}
+				<div class="footer-identity">
+					<span class="footer-name">
 						{data.person.given_name} {data.person.family_name}
 					</span>
-					<span style="font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono);">
-						@{data.person.handle}
+					<span class="footer-handle">
+						{data.person.handle}
 					</span>
 				</div>
-				<form method="POST" action="/logout" style="margin-top: var(--space-2);">
-					<button 
-						type="submit"
-						style="font-family: var(--font-sans); font-size: var(--text-xs); color: var(--color-text-muted); background: none; border: none; cursor: pointer; padding: 0; text-align: left;"
-						onmouseover={(e) => e.currentTarget.style.color = 'var(--color-danger)'}
-						onmouseout={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-					>
+				<form method="POST" action="/logout" class="footer-signout-form">
+					<button type="submit" class="footer-signout-button">
 						Sign out
 					</button>
 				</form>

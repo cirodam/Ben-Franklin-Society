@@ -1,0 +1,152 @@
+/* Governance App Theme Overrides */
+
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap');
+
+/* Background - Subtle gradient with green-grey tones for formal feel */
+html {
+	background-color: #e8ece9;
+	background-image: linear-gradient(to bottom,
+		#c8d4cc 0%,
+		#d8e4da 18%,
+		#ccd8cf 28%,
+		#e8ece9 38%,
+		#e8ece9 100%
+	);
+	background-attachment: fixed;
+}
+
+body {
+	background: transparent;
+}
+
+/* Sidebar - Dark green-grey with light text */
+.sidebar {
+	background: #1e2926 !important;
+	border-right-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar__brand {
+	color: rgba(255, 255, 255, 0.7) !important;
+	border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+	text-align: left !important;
+	font-family: 'IM Fell English SC', serif !important;
+	font-size: 0.9rem !important;
+	letter-spacing: 0.06em !important;
+}
+
+.sidebar__footer {
+	border-top-color: rgba(255, 255, 255, 0.1) !important;
+	color: rgba(255, 255, 255, 0.8);
+	text-align: left !important;
+}
+
+/* Footer identity section */
+.footer-identity {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.footer-name {
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.footer-handle {
+	font-size: var(--text-xs);
+	color: rgba(255, 255, 255, 0.6);
+	font-family: var(--font-mono);
+}
+
+/* Footer sign out */
+.footer-signout-form {
+	margin-top: var(--space-2);
+}
+
+.footer-signout-button {
+	font-family: var(--font-sans);
+	font-size: var(--text-xs);
+	color: rgba(255, 255, 255, 0.6);
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	text-align: left;
+}
+
+.footer-signout-button:hover {
+	color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sidebar links - Light text on dark background */
+.sidebar-link,
+.sidebar-link:link,
+.sidebar-link:visited {
+	color: rgba(255, 255, 255, 0.75) !important;
+	background: none !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	font-family: 'IM Fell English SC', serif !important;
+	font-size: 0.9rem !important;
+	letter-spacing: 0.08em !important;
+	justify-content: flex-start !important;
+	margin-left: 0 !important;
+	padding-left: var(--space-4) !important;
+}
+
+.sidebar-link:hover,
+.sidebar-link:focus {
+	color: rgba(255, 255, 255, 0.95) !important;
+	background: none !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+}
+
+.sidebar-link--active,
+.sidebar-link--active:link,
+.sidebar-link--active:visited {
+	background: none !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	color: #ffffff !important;
+	border-radius: 0 !important;
+}
+
+.sidebar-link--active:hover,
+.sidebar-link--active:focus {
+	background: none !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	color: #ffffff !important;
+	border-radius: 0 !important;
+}
+
+.sidebar-divider {
+	border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Sidebar groups */
+.sidebar-group__label {
+	color: rgba(255, 255, 255, 0.42) !important;
+	font-family: 'IM Fell English SC', serif !important;
+	font-size: 0.7rem !important;
+	letter-spacing: 0.22em !important;
+	text-align: left !important;
+	padding-left: var(--space-4) !important;
+}
+
+/* Sidebar link badges */
+.sidebar-link__badge {
+	background: rgba(255, 255, 255, 0.3) !important;
+	color: #1e2926 !important;
+	font-size: 11px !important;
+	font-weight: var(--weight-bold) !important;
+}
+
+/* Future governance theme overrides can go here */

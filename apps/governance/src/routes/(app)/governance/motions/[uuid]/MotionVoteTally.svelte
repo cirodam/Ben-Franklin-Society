@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Card } from '@bfs/ui';
+
 	type VoteRule = {
 		uuid: string;
 		name: string;
@@ -37,17 +39,17 @@
 	);
 </script>
 
-<div class="paper-card">
-	<div class="paper-card__header">
-		<h3 class="paper-card__title">
+<Card padding="lg">
+	<div class="card-header">
+		<h3 class="card-title">
 			{tally.closed_at ? 'Vote Closed' : 'Vote in Progress'}
 		</h3>
-		<div class="paper-card__meta">
+		<div class="card-meta">
 			{#if currentRule}
-				<span class="paper-card__badge">{currentRule.name}</span>
+				<span class="card-badge">{currentRule.name}</span>
 			{/if}
 			{#if tally.closed_at}
-				<span class="paper-card__date">{new Date(tally.closed_at).toLocaleDateString()}</span>
+				<span class="card-date">{new Date(tally.closed_at).toLocaleDateString()}</span>
 			{/if}
 		</div>
 	</div>
@@ -77,19 +79,10 @@
 		{tally.aye_count + tally.nay_count + tally.abstain_count} of {tally.eligible_count} voted
 		({ayePct}% aye)
 	</p>
-</div>
+</Card>
 
 <style>
-	.paper-card {
-		background: rgba(255, 255, 255, 0.9);
-		border: 2px solid rgba(139, 115, 85, 0.3);
-		border-radius: 4px;
-		padding: var(--space-6);
-		box-shadow: 0 2px 8px rgba(139, 115, 85, 0.1);
-		margin-bottom: var(--space-4);
-	}
-
-	.paper-card__header {
+	.card-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -98,32 +91,30 @@
 		gap: var(--space-2);
 	}
 
-	.paper-card__title {
+	.card-title {
 		margin: 0;
-		color: #5a4a2a;
-		font-family: 'Georgia', serif;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		font-size: var(--text-base);
 	}
 
-	.paper-card__meta {
+	.card-meta {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
 	}
 
-	.paper-card__badge {
+	.card-badge {
 		font-size: var(--text-xs);
-		background: rgba(139, 115, 85, 0.1);
+		background: var(--color-bg);
 		color: var(--color-text-muted);
 		padding: 2px 8px;
 		border-radius: var(--radius);
 		font-weight: var(--weight-medium);
 	}
 
-	.paper-card__date {
+	.card-date {
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
 	}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from '@bfs/ui';
+	import { Button, Card } from '@bfs/ui';
 	import Badge from '@bfs/ui/src/Badge.svelte';
 
 	type VoteSession = {
@@ -29,9 +29,9 @@
 	} = $props();
 </script>
 
-<div class="paper-card">
-	<div class="paper-card__header">
-		<h3 class="paper-card__title">Vote Sessions</h3>
+<Card padding="lg">
+	<div class="card-header">
+		<h3 class="card-title">Vote Sessions</h3>
 		{#if canCreateVoteSession && motionStatus === 'deliberation'}
 			<Button variant="primary" size="sm" onclick={onCreateSession}>
 				{#snippet children()}+ Create Vote Session{/snippet}
@@ -77,22 +77,28 @@
 							{#if session.status === 'scheduled'}
 								<form method="POST" action="?/openVoteSession" use:enhance>
 									<input type="hidden" name="session_uuid" value={session.uuid} />
-									<button class="btn btn--sm btn--primary" type="submit">Open Now</button>
+									<Button variant="primary" size="sm" type="submit">
+										{#snippet children()}Open Now{/snippet}
+									</Button>
 								</form>
 							{:else if session.status === 'open'}
 								<form method="POST" action="?/closeVoteSession" use:enhance>
 									<input type="hidden" name="session_uuid" value={session.uuid} />
-									<button class="btn btn--sm btn--secondary" type="submit">Close Session</button>
+									<Button variant="secondary" size="sm" type="submit">
+										{#snippet children()}Close Session{/snippet}
+									</Button>
 								</form>
 							{:else if session.status === 'closed'}
 								<form method="POST" action="?/finalizeVoteSession" use:enhance>
 									<input type="hidden" name="session_uuid" value={session.uuid} />
-									<button class="btn btn--sm btn--primary" type="submit">Finalize</button>
+									<Button variant="primary" size="sm" type="submit">
+										{#snippet children()}Finalize{/snippet}
+									</Button>
 								</form>
 							{/if}
-							<a href="/governance/vote-sessions/{session.uuid}" class="btn btn--sm btn--ghost">
-								View Details
-							</a>
+							<Button variant="ghost" size="sm" onclick={() => window.location.href = `/governance/vote-sessions/${session.uuid}`}>
+								{#snippet children()}View Details{/snippet}
+							</Button>
 						</div>
 					{/if}
 				</div>
@@ -101,24 +107,17 @@
 	{:else if motionStatus === 'deliberation'}
 		<p class="empty-state">No vote sessions scheduled yet. Create one to allow voting on this motion.</p>
 	{/if}
-</div>
+</Card>
 
 <style>
-	.paper-card {
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-	}
-
-	.paper-card__header {
+	.card-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: var(--space-5);
 	}
 
-	.paper-card__title {
+	.card-title {
 		font-size: var(--text-xl);
 		font-weight: 600;
 		margin: 0;
@@ -217,49 +216,67 @@
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
 	}
-
-	.btn {
-		display: inline-flex;
+</style>
+		display: flex;
+		justify-content: space-between;
 		align-items: center;
-		padding: var(--space-2) var(--space-3);
-		font-size: var(--text-xs);
-		font-weight: 500;
-		border-radius: var(--radius);
-		border: 1px solid transparent;
-		cursor: pointer;
+		margin-bottom: var(--space-4);
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	.paper-card__title {
+		margin: 0;
+		color: #5a4a2a;
+		font-family: 'Georgia', serif;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-size: var(--text-base);
+	}
+
+	.vote-sessions-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.vote-session-card {
+		display: block;
+		padding: var(--space-4);
+		border: 1px solid rgba(139, 115, 85, 0.2);
+		border-radius: 4px;
+		background: rgba(250, 245, 235, 0.5);
 		text-decoration: none;
-		transition: all 120ms;
+		color: inherit;
+		transition: all 0.2s;
 	}
 
-	.btn--sm {
-		padding: 2px 8px;
+	.vote-session-card:hover {
+		border-color: rgba(139, 115, 85, 0.4);
+		background: rgba(250, 245, 235, 0.8);
+		transform: translateX(4px);
 	}
 
-	.btn--primary {
-		background: var(--color-accent);
-		color: #fff;
+	.vote-session-card__header {
+		display: flex;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
 	}
 
-	.btn--primary:hover {
-		background: var(--color-accent-hover);
+	.vote-session-card__time {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: var(--space-1) 0;
 	}
 
-	.btn--secondary {
-		background: var(--color-surface);
-		color: var(--color-text);
-		border-color: var(--color-border);
+	.empty-message {
+		text-align: center;
+		padding: var(--space-6);
+		color: var(--color-text-muted);
 	}
 
-	.btn--secondary:hover {
-		background: var(--color-bg);
-	}
-
-	.btn--ghost {
-		background: transparent;
-		color: var(--color-accent);
-	}
-
-	.btn--ghost:hover {
-		background: rgba(var(--color-accent-rgb), 0.1);
+	.empty-message a {
+		color: var(--color-primary);
 	}
 </style>

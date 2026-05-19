@@ -43,8 +43,6 @@
 	.sidebar-link {
 		display: flex;
 		align-items: center;
-		font-size: var(--text-sm);
-		color: var(--color-text);
 		padding: var(--space-2) var(--space-4);
 		border-radius: var(--radius);
 		margin: 0 var(--space-2);
@@ -53,33 +51,17 @@
 	}
 
 	.sidebar-link:hover {
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
 		text-decoration: none;
-	}
-
-	.sidebar-link--active {
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-		font-weight: var(--weight-medium);
 	}
 
 	/* Variant: accent (for special sections like admin/moderation) */
 	.sidebar-link--accent {
-		color: var(--color-accent);
-		font-weight: var(--weight-medium);
-	}
-	.sidebar-link--accent:hover {
-		background: var(--color-accent-subtle);
+		/* Styled by app themes */
 	}
 
 	/* Variant: danger (for logout, delete, etc.) */
 	.sidebar-link--danger {
-		color: var(--color-text-muted);
-	}
-	.sidebar-link--danger:hover {
-		background: var(--color-danger-subtle);
-		color: var(--color-danger);
+		/* Styled by app themes */
 	}
 
 	/* Badge (for counts, notifications) */
@@ -91,14 +73,6 @@
 		height: 18px;
 		padding: 0 4px;
 		border-radius: 9px;
-		background: var(--color-accent);
-		color: #fff;
-		font-size: 11px;
-		font-weight: var(--weight-bold);
 		margin-left: auto;
-	}
-
-	.sidebar-link--active .sidebar-link__badge {
-		background: var(--color-accent);
 	}
 </style>
