@@ -16,21 +16,21 @@
 <div class="lifecycle-indicator">
 	<!-- Draft -->
 	<div class="lifecycle-step {motion.status === 'draft' ? 'active' : motion.status !== 'draft' ? 'completed' : ''}">
-		<div class="lifecycle-step__icon">📝</div>
+		<div class="lifecycle-step__dot"></div>
 		<div class="lifecycle-step__label">Draft</div>
 	</div>
 	<div class="lifecycle-connector {motion.status !== 'draft' ? 'active' : ''}"></div>
 	
 	<!-- Introduced -->
 	<div class="lifecycle-step {motion.status === 'introduced' ? 'active' : ['deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
-		<div class="lifecycle-step__icon">📋</div>
+		<div class="lifecycle-step__dot"></div>
 		<div class="lifecycle-step__label">Introduced</div>
 	</div>
 	<div class="lifecycle-connector {['deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'active' : ''}"></div>
 	
 	<!-- Deliberation -->
 	<div class="lifecycle-step {motion.status === 'deliberation' ? 'active' : ['adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
-		<div class="lifecycle-step__icon">🗳️</div>
+		<div class="lifecycle-step__dot"></div>
 		<div class="lifecycle-step__label">Deliberation</div>
 	</div>
 
@@ -40,7 +40,7 @@
 			<!-- Adopted step (only for adopted→enacted path) -->
 			<div class="lifecycle-connector active"></div>
 			<div class="lifecycle-step {motion.status === 'adopted' ? 'active' : motion.status === 'enacted' ? 'completed' : ''}">
-				<div class="lifecycle-step__icon">✅</div>
+				<div class="lifecycle-step__dot"></div>
 				<div class="lifecycle-step__label">Adopted</div>
 			</div>
 		{/if}
@@ -48,15 +48,7 @@
 		<!-- Final outcome -->
 		<div class="lifecycle-connector active"></div>
 		<div class="lifecycle-step completed">
-			<div class="lifecycle-step__icon">
-				{#if motion.status === 'enacted'}
-					⚖️
-				{:else if motion.status === 'rejected'}
-					❌
-				{:else if motion.status === 'withdrawn'}
-					🚫
-				{/if}
-			</div>
+			<div class="lifecycle-step__dot"></div>
 			<div class="lifecycle-step__label">
 				{#if motion.status === 'enacted'}
 					Enacted
@@ -95,57 +87,48 @@
 	.lifecycle-step.active { opacity: 1; }
 	.lifecycle-step.completed { opacity: 0.7; }
 
-	.lifecycle-step__icon {
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.8);
-		border: 2px solid rgba(0, 0, 0, 0.1);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 20px;
+	.lifecycle-step__dot {
+		width: 16px;
+		height: 16px;
+		border: 2px solid rgba(45, 90, 79, 0.3);
+		background: transparent;
 		transition: all 0.3s;
 	}
 
-	.lifecycle-step.active .lifecycle-step__icon {
-		background: white;
-		border-color: #5b8cb8;
-		box-shadow: 0 2px 8px rgba(91, 140, 184, 0.3);
-		transform: scale(1.1);
+	.lifecycle-step.active .lifecycle-step__dot {
+		background: #7a5c1a;
+		border-color: #7a5c1a;
+		box-shadow: 0 0 0 4px rgba(122, 92, 26, 0.1);
 	}
 
-	.lifecycle-step.completed .lifecycle-step__icon {
-		background: #e8f4ea;
-		border-color: #28704a;
+	.lifecycle-step.completed .lifecycle-step__dot {
+		background: rgba(45, 90, 79, 0.5);
+		border-color: rgba(45, 90, 79, 0.5);
 	}
 
 	.lifecycle-step__label {
+		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-xs);
-		font-weight: 600;
-		color: var(--color-text-muted);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: #374340;
 		text-align: center;
 	}
 
 	.lifecycle-step.active .lifecycle-step__label {
-		color: var(--color-text);
-	}
-
-	.lifecycle-step__detail {
-		font-size: 10px;
-		color: var(--color-text-muted);
-		text-align: center;
+		color: #151c1a;
 	}
 
 	.lifecycle-connector {
 		flex: 1;
 		height: 2px;
-		background: rgba(0, 0, 0, 0.1);
+		background: rgba(45, 90, 79, 0.2);
 		max-width: 60px;
 		transition: background 0.3s;
 	}
 
 	.lifecycle-connector.active {
-		background: #28704a;
+		background: rgba(45, 90, 79, 0.5);
 	}
 </style>

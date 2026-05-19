@@ -42,13 +42,7 @@
 
 <div class="page">
 	<header class="header">
-		<div class="header__top">
-			<h1>Community Referenda & Petitions</h1>
-			<span class="header__subtitle">Direct democracy for society-wide deliberation</span>
-		</div>
-		<div class="header__meta">
-			<span>{members.length} members</span>
-		</div>
+		<h1 class="page-title">Petitions and Referenda</h1>
 	</header>
 
 	<!-- Tab Navigation -->
@@ -57,19 +51,23 @@
 			class="tab-nav__button" 
 			class:active={activeTab === 'petitions'}
 			onclick={() => activeTab = 'petitions'}>
-			✍️ Petitions {#if openPetitions.length > 0}<span class="badge">{openPetitions.length}</span>{/if}
+			Petitions
 		</button>
 		<button 
 			class="tab-nav__button" 
 			class:active={activeTab === 'referendums'}
 			onclick={() => activeTab = 'referendums'}>
-			🗳️ Referendums {#if openReferendums.length > 0}<span class="badge">{openReferendums.length}</span>{/if}
-		</button>
-	</div>
+		Referenda
+	</button>
+</div>
 
-	<!-- Tab Content -->
+<!-- Tab Content -->
 	<div class="tab-content">
 		{#if activeTab === 'petitions'}
+			<div class="section-header">
+				<Button onclick={openPetitionModal}>Create Petition</Button>
+			</div>
+			
 			{#if openPetitions.length > 0}
 				<section class="section">
 					<div class="list">
@@ -82,7 +80,7 @@
 								<p class="petition-body">{petition.body}</p>
 								<div class="petition-footer">
 									<span class="petition-signatures">{petition.signature_count || 0} signatures</span>
-									{#if petition.user_signed}
+									{#if petition.is_signed_by}
 										<form method="POST" action="?/unsignPetition" use:enhance>
 											<input type="hidden" name="petition_uuid" value={petition.uuid} />
 											<Button variant="secondary" size="small" type="submit">Unsign</Button>
@@ -100,12 +98,9 @@
 				</section>
 			{:else}
 				<EmptyState
-					icon="✍️"
 					title="No open petitions"
 					description="Be the first to create a petition and signal what matters to the community"
-				>
-					<Button onclick={openPetitionModal}>+ Create Petition</Button>
-				</EmptyState>
+				/>
 			{/if}
 
 			{#if respondedPetitions.length > 0}
@@ -134,7 +129,7 @@
 			{/if}
 		{:else if activeTab === 'referendums'}			{#if draftReferendums.length > 0}
 				<section class="section">
-					<h3 class="subsection-title">Scheduled Referendums</h3>
+					<h3 class="subsection-title">Scheduled Referenda</h3>
 					<div class="list">
 						{#each draftReferendums as referendum}
 							<div class="list-item">
@@ -158,7 +153,7 @@
 					<section class="section referendum-section">
 						<div class="referendum-header">
 							<div>
-								<h2 class="referendum-title">🗳️ {referendum.title}</h2>
+								<h2 class="referendum-title">{referendum.title}</h2>
 								{#if referendum.description}
 									<p class="referendum-description">{referendum.description}</p>
 								{/if}
@@ -242,7 +237,6 @@
 				{/each}
 			{:else}
 				<EmptyState
-					icon="🗳️"
 					title="No open referendums"
 					description="Referendums allow the entire community to vote on important questions"
 				/>
@@ -250,7 +244,7 @@
 
 			{#if closedReferendums.length > 0}
 				<section class="section">
-					<h3 class="subsection-title">Past Referendums</h3>
+					<h3 class="subsection-title">Past Referenda</h3>
 					<div class="list">
 						{#each closedReferendums as referendum}
 							<div class="list-item">
@@ -307,101 +301,111 @@
 	}
 
 	.header {
-		margin-bottom: var(--space-6);
+		margin-bottom: var(--space-8);
+		text-align: center;
 	}
 
-	.header__top {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		margin-bottom: var(--space-2);
-	}
-
-	.header__subtitle {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.header__meta {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+	.page-title {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0;
+		line-height: 1.2;
 	}
 
 	.tab-nav {
 		display: flex;
-		gap: var(--space-2);
-		border-bottom: 1px solid var(--color-border);
-		margin-bottom: var(--space-6);
+		gap: var(--space-6);
+		justify-content: center;
+		border-bottom: 1px solid rgba(45, 90, 79, 0.3);
+		margin-bottom: var(--space-8);
 	}
 
 	.tab-nav__button {
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-3) 0;
 		background: none;
 		border: none;
 		border-bottom: 2px solid transparent;
-		font-family: var(--font-sans);
-		font-size: var(--text-base);
-		color: var(--color-text-muted);
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: #374340;
 		cursor: pointer;
 		transition: all 0.2s;
 		position: relative;
 	}
 
 	.tab-nav__button:hover {
-		color: var(--color-text);
-		background: var(--color-bg-subtle);
+		color: #151c1a;
 	}
 
 	.tab-nav__button.active {
-		color: var(--color-primary);
-		border-bottom-color: var(--color-primary);
+		color: #d4a24a;
+		border-bottom-color: #d4a24a;
 	}
 
 	.badge {
 		display: inline-block;
 		padding: 0.125rem 0.5rem;
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-xs);
-		font-weight: 500;
-		border-radius: var(--radius-full);
+		font-weight: 400;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		border-radius: 2px;
 		margin-left: var(--space-2);
 	}
 
 	.badge-warning {
-		background: var(--color-warning-bg);
-		color: var(--color-warning-text);
+		background: rgba(212, 162, 74, 0.15);
+		color: #7a5c1a;
+		border: 1px solid rgba(212, 162, 74, 0.3);
 	}
 
 	.badge-success {
-		background: var(--color-success-bg);
-		color: var(--color-success-text);
+		background: rgba(90, 115, 90, 0.15);
+		color: #3a5a3a;
+		border: 1px solid rgba(90, 115, 90, 0.3);
 	}
 
 	.badge-neutral {
-		background: var(--color-bg-muted);
-		color: var(--color-text-muted);
+		background: rgba(45, 90, 79, 0.1);
+		color: #374340;
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.badge-info {
-		background: var(--color-info-bg);
-		color: var(--color-info-text);
+		background: rgba(90, 120, 140, 0.15);
+		color: #3a5a6a;
+		border: 1px solid rgba(90, 120, 140, 0.3);
 	}
 
 	.section {
 		margin-bottom: var(--space-8);
 	}
 
+	.section-header {
+		display: flex;
+		justify-content: flex-end;
+		margin-bottom: var(--space-6);
+	}
+
 	.subsection-title {
-		font-size: var(--text-lg);
-		font-weight: 600;
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		color: #151c1a;
 		margin-bottom: var(--space-4);
 	}
 
 	.referendum-section {
-		background: var(--color-bg-subtle);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		padding: var(--space-6);
-		margin-bottom: var(--space-4);
+		margin-bottom: var(--space-6);
 	}
 
 	.referendum-header {
@@ -409,27 +413,35 @@
 	}
 
 	.referendum-title {
+		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-2xl);
-		font-weight: 600;
-		margin-bottom: var(--space-2);
+		font-weight: 400;
+		color: #151c1a;
+		margin-bottom: var(--space-3);
 	}
 
 	.referendum-description {
-		color: var(--color-text-muted);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: #5a5a50;
+		line-height: 1.7;
 		margin-bottom: var(--space-3);
 	}
 
 	.referendum-description-small {
-		color: var(--color-text-muted);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: #5a5a50;
 		font-size: var(--text-sm);
+		line-height: 1.6;
 		margin-top: var(--space-2);
 	}
 
 	.referendum-meta {
 		display: flex;
 		gap: var(--space-4);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: #5a5a50;
+		font-variant-numeric: oldstyle-nums;
 	}
 
 	.questions {
@@ -439,20 +451,23 @@
 	}
 
 	.question-card {
-		background: var(--color-bg);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		padding: var(--space-4);
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		padding: var(--space-5);
 	}
 
 	.question-title {
+		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-lg);
-		font-weight: 600;
-		margin-bottom: var(--space-2);
+		font-weight: 400;
+		color: #151c1a;
+		margin-bottom: var(--space-3);
 	}
 
 	.question-description {
-		color: var(--color-text-muted);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: #5a5a50;
+		line-height: 1.7;
 		margin-bottom: var(--space-4);
 	}
 
@@ -466,45 +481,48 @@
 	.vote-option {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-3);
 		padding: var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		background: var(--paper);
 		cursor: pointer;
 		transition: all 0.2s;
+		font-family: 'Libre Baskerville', Georgia, serif;
 	}
 
 	.vote-option:hover {
-		background: var(--color-bg-subtle);
-		border-color: var(--color-primary);
+		border-color: #d4a24a;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 	}
 
 	.vote-confirmation {
 		margin-top: var(--space-3);
 		padding: var(--space-3);
-		background: var(--color-success-bg);
-		color: var(--color-success-text);
-		border-radius: var(--radius-md);
+		background: rgba(90, 115, 90, 0.1);
+		color: #3a5a3a;
+		border: 1px solid rgba(90, 115, 90, 0.3);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 	}
 
 	.list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: var(--space-3);
 	}
 
 	.list-item {
-		padding: var(--space-4);
-		background: var(--color-bg);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		padding: var(--space-5);
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		transition: all 0.2s;
 	}
 
 	.list-item:hover {
-		border-color: var(--color-primary);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		border-color: #d4a24a;
+		box-shadow: 
+			0 1px 3px rgba(0, 0, 0, 0.06),
+			0 4px 8px rgba(0, 0, 0, 0.08);
 	}
 
 	.list-item__main {
@@ -515,16 +533,23 @@
 	}
 
 	.list-item__title {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-lg);
 		font-weight: 600;
+		color: #151c1a;
 	}
 
 	.list-item__meta {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: #5a5a50;
+		font-variant-numeric: oldstyle-nums;
 	}
 
 	.petition-body {
-		color: var(--color-text-muted);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: #5a5a50;
+		line-height: 1.7;
 		margin-bottom: var(--space-3);
 	}
 
@@ -533,20 +558,34 @@
 		align-items: center;
 		justify-content: space-between;
 		padding-top: var(--space-3);
-		border-top: 1px solid var(--color-border);
+		border-top: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.petition-signatures {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: #5a5a50;
 	}
 
 	.petition-response {
 		margin-top: var(--space-3);
-		padding: var(--space-3);
-		background: var(--color-bg-subtle);
-		border-left: 3px solid var(--color-primary);
-		border-radius: var(--radius-sm);
+		padding: var(--space-4);
+		background: rgba(45, 90, 79, 0.05);
+		border-left: 3px solid #7a5c1a;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		line-height: 1.7;
+	}
+
+	.petition-response strong {
+		font-family: 'IM Fell English', Georgia, serif;
+		color: #151c1a;
+		display: block;
+		margin-bottom: var(--space-2);
+	}
+
+	.petition-response p {
+		margin: 0;
+		color: #5a5a50;
 	}
 
 	.responded-section {

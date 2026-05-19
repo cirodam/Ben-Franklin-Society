@@ -47,15 +47,15 @@
 				0deg,
 				transparent,
 				transparent 1.5rem,
-				rgba(139, 115, 85, 0.03) 1.5rem,
-				rgba(139, 115, 85, 0.03) calc(1.5rem + 1px)
+				rgba(45, 90, 79, 0.03) 1.5rem,
+				rgba(45, 90, 79, 0.03) calc(1.5rem + 1px)
 			);
 		pointer-events: none;
 	}
 
 	.document-header {
 		padding: var(--space-12) var(--space-10) var(--space-8);
-		border-bottom: 2px solid rgba(139, 115, 85, 0.2);
+		border-bottom: 2px solid rgba(45, 90, 79, 0.2);
 		position: relative;
 		z-index: 1;
 	}
@@ -86,7 +86,7 @@
 		font-size: 2.5rem;
 		font-weight: 400;
 		line-height: 1.2;
-		color: #2c2416;
+		color: #151c1a;
 		margin: 0 0 var(--space-4);
 		text-align: center;
 		letter-spacing: -0.02em;
@@ -199,7 +199,7 @@
 	/* Common text colors */
 	:global(.document .prose-paragraph),
 	:global(.document .contract-text p) {
-		color: #2c2416;
+		color: #151c1a;
 		font-size: var(--text-base);
 		line-height: 1.8;
 		text-align: justify;

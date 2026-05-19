@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Badge, Button } from '@bfs/ui';
+	import { Button } from '@bfs/ui';
 	import MotionCreationModal from '$lib/components/MotionCreationModal.svelte';
 	import InteractiveOrgChart from '$lib/components/InteractiveOrgChart.svelte';
 	import MotionList from '$lib/components/MotionList.svelte';
@@ -42,54 +42,36 @@
 
 <div class="page">
 	<header class="header">
-		<div class="header__top">
-			<div class="title-row">
-				<h1>{association.name}</h1>
-				<div class="button-group">
-					<Button variant="secondary" size="sm" href="/organization/committees/{association.uuid}/meetings">📅 Meetings</Button>
-					<Button variant="secondary" size="sm" href="/organization/committees/{association.uuid}/edit">✏️ Edit</Button>
-				</div>
-			</div>
-			<div class="header__badges">
-				<Badge label={config?.is_permanent ? 'Permanent' : 'Ad Hoc'} variant="neutral" />
-				<Badge label={association.status} variant={association.status === 'active' ? 'success' : 'neutral'} />
+		<div class="title-row">
+			<h1>{association.name}</h1>
+			<div class="button-group">
+				<Button variant="secondary" size="sm" href="/organization/committees/{association.uuid}/meetings">Meetings</Button>
+				<Button variant="secondary" size="sm" href="/organization/committees/{association.uuid}/edit">Edit</Button>
 			</div>
 		</div>
 		<p class="header__handle">@{association.handle}</p>
-		<div class="header__meta">
-			<span>{config?.seat_count ?? '—'} seats</span>
-			<span>·</span>
-			<span>{termHolders.length} currently seated</span>
-			<span>·</span>
-			<span>{config?.term_days ?? '—'} day terms</span>
-			<span>·</span>
-			<span>Pool: {sourceCollege ? sourceCollege.name : 'Community'}</span>
-			{#if governingDocument}
-				<span>·</span>
-				<a href="/library/{governingDocument.slug}" class="rules-link">📜 {governingDocument.title}</a>
-			{/if}
-		</div>
-	</header>
-
+	{#if governingDocument}
+		<a href="/library/{governingDocument.slug}" class="rules-link">{governingDocument.title}</a>
+	{/if}
 	<!-- Tab Navigation -->
 	<div class="tab-nav">
 		<button 
 			class="tab-nav__button" 
 			class:active={activeTab === 'docket'}
 			onclick={() => activeTab = 'docket'}>
-			📋 Docket ({allMotions.length})
+			Docket
 		</button>
 		<button 
 			class="tab-nav__button" 
 			class:active={activeTab === 'votes'}
 			onclick={() => activeTab = 'votes'}>
-			🗳️ Votes ({voteSessions.length})
+			Votes
 		</button>
 		<button 
 			class="tab-nav__button" 
 			class:active={activeTab === 'organization'}
 			onclick={() => activeTab = 'organization'}>
-			🏢 Organization
+			Organization
 		</button>
 	</div>
 
@@ -129,24 +111,23 @@
 	.page {
 		max-width: 1200px;
 		margin: 0 auto;
-		padding: var(--space-6);
-	}
-
-	.header__top {
-		margin-bottom: var(--space-3);
+		padding: var(--space-6) var(--space-4);
 	}
 
 	.title-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--space-2);
+		margin-bottom: var(--space-3);
 	}
 
 	.title-row h1 {
+		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-3xl);
-		font-weight: var(--weight-bold);
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0;
+		line-height: 1.2;
 	}
 
 	.button-group {
@@ -154,68 +135,62 @@
 		gap: var(--space-2);
 	}
 
-	.header__badges {
-		display: flex;
-		gap: var(--space-2);
-	}
-
 	.header__handle {
-		font-size: var(--text-base);
-		color: var(--color-text-muted);
-		font-family: var(--font-mono);
-		margin: 0 0 var(--space-2) 0;
-	}
-
-	.header__meta {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-6);
+		letter-spacing: 0.1em;
+		color: #7a5c1a;
+		margin: 0 0 var(--space-3) 0;
 	}
 
 	.rules-link {
-		color: var(--color-accent);
+		display: block;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #7a5c1a;
 		text-decoration: none;
+		transition: color 0.2s;
+		margin-bottom: var(--space-6);
 	}
 
 	.rules-link:hover {
-		text-decoration: underline;
+		color: #d4a24a;
 	}
 
 	/* Tab Navigation */
 	.tab-nav {
 		display: flex;
-		gap: var(--space-2);
-		margin-bottom: var(--space-6);
-		border-bottom: 2px solid var(--color-border);
+		gap: var(--space-6);
+		justify-content: center;
+		margin-bottom: var(--space-8);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
 		overflow-x: auto;
 	}
 
 	.tab-nav__button {
 		background: none;
 		border: none;
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-base);
-		font-weight: var(--weight-medium);
-		color: var(--color-text-muted);
+		padding: var(--space-3) 0;
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		font-weight: 400;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: #374340;
 		cursor: pointer;
-		border-bottom: 3px solid transparent;
+		border-bottom: 2px solid transparent;
 		transition: all 0.2s;
 		white-space: nowrap;
-		margin-bottom: -2px;
+		margin-bottom: -1px;
 	}
 
 	.tab-nav__button:hover {
-		color: var(--color-text);
-		background: var(--color-accent-subtle);
+		color: #151c1a;
 	}
 
 	.tab-nav__button.active {
-		color: var(--color-accent);
-		border-bottom-color: var(--color-accent);
-		font-weight: var(--weight-semibold);
+		color: #d4a24a;
+		border-bottom-color: #d4a24a;
 	}
 
 	.tab-content {

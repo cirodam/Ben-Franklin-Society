@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button, EmptyState, PageHeader, Input, Textarea } from '@bfs/ui';
+	import { Button, EmptyState, Input, Textarea } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -16,24 +16,25 @@
 		const date = new Date(dateString);
 		return date.toLocaleDateString('en-US', { 
 			year: 'numeric', 
-			month: 'short', 
+			month: 'long', 
 			day: 'numeric' 
 		});
 	}
 </script>
 
 <div class="page">
-	<PageHeader title="Community Bulletin Board">
-		{#snippet actions()}
+	<header class="header">
+		<h1 class="page-title">Community Bulletin Board</h1>
+		<div class="header-actions">
 			<Button onclick={() => showForm = !showForm}>
-				{showForm ? 'Cancel' : 'Start a thread'}
+				{showForm ? 'Cancel' : '+ Start a thread'}
 			</Button>
-		{/snippet}
-	</PageHeader>
+		</div>
+	</header>
 
 	{#if showForm}
 		<form method="POST" use:enhance class="new-thread-form">
-			<div class="form-header t-label">New Thread</div>
+			<h3 class="form-header">New Thread</h3>
 			<Input
 				name="title"
 				placeholder="What's on your mind?"
@@ -47,7 +48,7 @@
 			/>
 			<div class="form-actions">
 				<Button type="button" variant="secondary" onclick={() => showForm = false}>Cancel</Button>
-				<Button type="submit">Post to Square</Button>
+				<Button type="submit">Post to Board</Button>
 			</div>
 		</form>
 	{/if}
@@ -63,14 +64,14 @@
 			{#each data.posts as post}
 				<a href="/communications/bulletin/{post.uuid}" class="thread-row">
 					<div class="thread-main">
-						<h2 class="thread-title t-display">{post.title}</h2>
-						<p class="thread-preview t-prose-italic">{excerpt(post.body)}</p>
+						<h2 class="thread-title">{post.title}</h2>
+						<p class="thread-preview">{excerpt(post.body)}</p>
 						<div class="thread-meta">
-							<span class="thread-author t-label">{post.given_name} {post.family_name}</span>
-							<span class="thread-separator"></span>
-							<span class="thread-date t-label">{formatDate(post.created_at)}</span>
+							<span class="thread-author">{post.given_name} {post.family_name}</span>
+							<span class="thread-separator">•</span>
+							<span class="thread-date">{formatDate(post.created_at)}</span>
 							{#if post.comment_count > 0}
-								<span class="thread-replies t-label">{post.comment_count} {post.comment_count === 1 ? 'reply' : 'replies'}</span>
+								<span class="thread-replies">{post.comment_count} {post.comment_count === 1 ? 'reply' : 'replies'}</span>
 							{/if}
 						</div>
 					</div>
@@ -82,12 +83,31 @@
 
 <style>
 	.page {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-6);
 		max-width: 1000px;
 		margin: 0 auto;
-		width: 100%;
+		padding: var(--space-6) var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-8);
+	}
+
+	.header {
+		text-align: center;
+		margin-bottom: var(--space-6);
+	}
+
+	.page-title {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-6) 0;
+		line-height: 1.2;
+	}
+
+	.header-actions {
+		display: flex;
+		justify-content: center;
 	}
 
 	.new-thread-form {
@@ -95,15 +115,17 @@
 		flex-direction: column;
 		gap: var(--space-4);
 		background: var(--paper);
-		padding: 1.5rem 2rem;
-		border-radius: var(--radius);
-		box-shadow: var(--shadow-elevated);
+		padding: var(--space-6);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		margin-bottom: var(--space-4);
 	}
 
 	.form-header {
-		font-size: var(--text-sm);
-		color: var(--ink-mid);
-		text-transform: uppercase;
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0;
 	}
 
 	.form-actions {
@@ -116,7 +138,7 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--paper);
-		box-shadow: var(--shadow-elevated);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.thread-row {
@@ -124,11 +146,11 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: var(--space-6);
-		padding: 1.4rem 2rem;
-		border-bottom: 1px solid var(--rule);
+		padding: var(--space-5) var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
 		background: transparent;
 		cursor: pointer;
-		transition: background 0.12s;
+		transition: all 0.2s;
 		text-decoration: none;
 		color: inherit;
 	}
@@ -138,7 +160,10 @@
 	}
 
 	.thread-row:hover {
-		background: var(--surface-dk);
+		border-color: #d4a24a;
+		box-shadow: 
+			0 1px 3px rgba(0, 0, 0, 0.06),
+			0 4px 8px rgba(0, 0, 0, 0.08);
 	}
 
 	.thread-main {
@@ -150,50 +175,59 @@
 	}
 
 	.thread-title {
-		font-size: var(--text-lg);
-		color: var(--ink);
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0;
+		line-height: 1.3;
 	}
 
 	.thread-row:hover .thread-title {
-		color: var(--accent);
+		color: #7a5c1a;
 	}
 
 	.thread-preview {
-		font-size: var(--text-body);
-		color: var(--ink-faint);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		font-style: italic;
+		color: #5a5a50;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		margin: 0;
+		line-height: 1.6;
 	}
 
 	.thread-meta {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		flex-wrap: wrap;
 	}
 
 	.thread-author {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--ink-mid);
+		color: #5a5a50;
 	}
 
 	.thread-separator {
-		width: 2px;
-		height: 2px;
-		border-radius: 50%;
-		background: var(--rule-strong);
+		font-size: var(--text-sm);
+		color: #7a5c1a;
 	}
 
 	.thread-date {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--ink-faint);
+		color: #5a5a50;
+		font-variant-numeric: oldstyle-nums;
 	}
 
 	.thread-replies {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--ink-faint);
+		color: #7a5c1a;
 		margin-left: auto;
 	}
 </style>

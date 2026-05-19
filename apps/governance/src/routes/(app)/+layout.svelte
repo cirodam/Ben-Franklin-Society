@@ -18,7 +18,7 @@
 			<SidebarLink href="/library">Library</SidebarLink>
 
 			<SidebarGroup label="Governance">
-				<SidebarLink href="/governance/referenda">Community Referenda</SidebarLink>
+				<SidebarLink href="/governance/referenda">Petitions and Referenda</SidebarLink>
 				<SidebarLink href="/governance/general-assembly">General Assembly</SidebarLink>
 			</SidebarGroup>
 
@@ -61,6 +61,21 @@
 		</Sidebar>
 	{/snippet}
 
+	{#snippet footer()}
+		<div class="motto">The Work Shall Not Be Lost</div>
+	{/snippet}
+
 	{@render children()}
 </AppShell>
+
+<style>
+	.motto {
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		letter-spacing: 0.25em;
+		text-align: center;
+		color: #7a5c1a;
+		text-transform: uppercase;
+	}
+</style>
 

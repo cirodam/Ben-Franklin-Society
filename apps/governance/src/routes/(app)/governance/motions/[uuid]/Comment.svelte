@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button } from '@bfs/ui';
 
 	type CommentData = {
 		uuid: string;
@@ -38,91 +39,92 @@
 </script>
 
 <div class="comment">
-	<div class="comment__avatar">
-		{comment.given_name[0]}{comment.family_name[0]}
-	</div>
-	<div class="comment__content">
-		<div class="comment__header">
-			<strong class="comment__author">{comment.given_name} {comment.family_name}</strong>
-			<span class="comment__handle">@{comment.handle}</span>
-			<span class="comment__date">{new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-			{#if comment.edited_at}<span class="comment__edited">(edited)</span>{/if}
-			{#if comment.author_uuid === actingAs}
-				<div class="comment__actions">
-					<button class="comment__action" onclick={startEdit}>Edit</button>
-					<form method="POST" action="?/deleteComment" use:enhance style="display: inline;">
-						<input type="hidden" name="comment_uuid" value={comment.uuid} />
-						<button class="comment__action comment__action--danger" type="submit">Delete</button>
-					</form>
-				</div>
-			{/if}
-		</div>
-		{#if isEditing}
-			<form method="POST" action="?/editComment" use:enhance={() => {
-				return ({ result, update }) => {
-					if (result.type === 'success') {
-						isEditing = false;
-					}
-					update();
-				};
-			}} class="comment__edit-form">
-				<input type="hidden" name="comment_uuid" value={comment.uuid} />
-				<textarea class="comment__edit-input" name="body" rows="3" bind:value={editBody} required></textarea>
-				<div class="comment__edit-actions">
-					<button type="submit" class="btn btn--sm btn--primary">Save</button>
-					<button type="button" class="btn btn--sm btn--secondary" onclick={cancelEdit}>Cancel</button>
-				</div>
-			</form>
-		{:else}
-			<p class="comment__body">{comment.body}</p>
+	<div class="comment__header">
+		<span class="comment__author">{comment.given_name} {comment.family_name}</span>
+		<span class="comment__separator">•</span>
+		<time class="comment__date">{new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time>
+		{#if comment.edited_at}<span class="comment__edited">(edited)</span>{/if}
+		{#if comment.author_uuid === actingAs}
+			<div class="comment__actions">
+				<button class="comment__action" onclick={startEdit}>Edit</button>
+				<form method="POST" action="?/deleteComment" use:enhance style="display: inline;">
+					<input type="hidden" name="comment_uuid" value={comment.uuid} />
+					<button class="comment__action comment__action--danger" type="submit">Delete</button>
+				</form>
+			</div>
 		{/if}
 	</div>
+	{#if isEditing}
+		<form method="POST" action="?/editComment" use:enhance={() => {
+			return ({ result, update }) => {
+				if (result.type === 'success') {
+					isEditing = false;
+				}
+				update();
+			};
+		}} class="comment__edit-form">
+			<input type="hidden" name="comment_uuid" value={comment.uuid} />
+			<textarea class="comment__edit-input" name="body" rows="3" bind:value={editBody} required></textarea>
+			<div class="comment__edit-actions">
+				<Button type="submit" size="sm">
+					{#snippet children()}Save{/snippet}
+				</Button>
+				<Button type="button" variant="secondary" size="sm" onclick={cancelEdit}>
+					{#snippet children()}Cancel{/snippet}
+				</Button>
+			</div>
+		</form>
+	{:else}
+		<p class="comment__body">{comment.body}</p>
+	{/if}
 </div>
 
 <style>
 	.comment {
 		display: flex;
+		flex-direction: column;
 		gap: var(--space-3);
-		align-items: flex-start;
+		padding-bottom: var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
 	}
 
-	.comment__avatar {
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: var(--text-sm);
-		font-weight: var(--weight-semibold);
-		flex-shrink: 0;
-	}
-
-	.comment__content {
-		flex: 1;
-		min-width: 0;
+	.comment:last-child {
+		border-bottom: none;
+		padding-bottom: 0;
 	}
 
 	.comment__header {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		margin-bottom: var(--space-2);
 		flex-wrap: wrap;
 		font-size: var(--text-sm);
 	}
 
 	.comment__author {
-		font-weight: var(--weight-semibold);
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		letter-spacing: 0.15em;
+		color: #374340;
 	}
 
-	.comment__handle,
-	.comment__date,
-	.comment__edited {
-		color: var(--color-text-muted);
+	.comment__separator {
+		color: #7a5c1a;
 		font-size: var(--text-xs);
+	}
+
+	.comment__date {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #7a5c1a;
+		font-variant-numeric: oldstyle-nums;
+	}
+
+	.comment__edited {
+		color: #374340;
+		font-size: var(--text-xs);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-style: italic;
 	}
 
 	.comment__edited {
@@ -140,13 +142,15 @@
 		border: none;
 		padding: 0;
 		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: #7a5c1a;
 		cursor: pointer;
-		text-decoration: underline;
+		text-decoration: none;
 	}
 
 	.comment__action:hover {
-		color: var(--color-text);
+		color: #d4a24a;
+		text-decoration: underline;
 	}
 
 	.comment__action--danger:hover {
@@ -155,8 +159,10 @@
 
 	.comment__body {
 		margin: 0;
-		font-size: var(--text-sm);
-		line-height: 1.7;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-body);
+		line-height: 1.75;
+		color: #151c1a;
 		white-space: pre-wrap;
 	}
 
@@ -169,21 +175,19 @@
 	.comment__edit-input {
 		width: 100%;
 		box-sizing: border-box;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		padding: var(--space-2) var(--space-3);
 		font-size: var(--text-sm);
-		font-family: inherit;
-		background: var(--color-bg);
-		color: var(--color-text);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		background: #fafaf7;
+		color: #151c1a;
 		resize: vertical;
 		line-height: 1.6;
 	}
 
 	.comment__edit-input:focus {
 		outline: none;
-		border-color: var(--color-primary, #2563eb);
-		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+		border-color: #7a5c1a;
 	}
 
 	.comment__edit-actions {

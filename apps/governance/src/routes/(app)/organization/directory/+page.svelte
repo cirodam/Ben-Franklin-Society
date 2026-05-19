@@ -1,6 +1,5 @@
 <script lang="ts">
-	import Badge from '@bfs/ui/src/Badge.svelte';
-	import { Button, EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
+	import { Button, EmptyState } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -34,19 +33,23 @@
 		})
 	);
 
-	const statusVariant = (s: string): 'success' | 'warn' | 'danger' =>
-		s === 'active' ? 'success' : s === 'suspended' ? 'warn' : 'danger';
+	function formatDate(dateStr: string) {
+		return new Date(dateStr).toLocaleDateString('en-US', { 
+			month: 'long', 
+			day: 'numeric', 
+			year: 'numeric'
+		});
+	}
 </script>
 
 <div class="page">
-	<PageHeader 
-		title="Directory" 
-		description="Search for people and associations"
-	>
-		{#snippet actions()}
+	<header class="header">
+		<h1 class="page-title">Directory</h1>
+		<p class="page-description">Search for people and associations</p>
+		<div class="header-actions">
 			<Button href="/organization/directory/new">+ Add Person</Button>
-		{/snippet}
-	</PageHeader>
+		</div>
+	</header>
 
 	<div class="toolbar">
 		<input
@@ -87,41 +90,53 @@
 
 	{#if (filter === 'all' || filter === 'people') && filteredPeople.length > 0}
 		<section class="results-section">
-			<h2 class="section-title">👤 People</h2>
-			<List>
+			<h2 class="section-title">People</h2>
+			<div class="results-list">
 				{#each filteredPeople as p (p.uuid)}
-					<ListItem href="/organization/people/{p.uuid}">
+					<a href="/organization/people/{p.uuid}" class="result-card">
 						<div class="result-card__main">
 							<div class="result-card__title">{p.given_name} {p.family_name}</div>
-							<code class="result-card__handle">@{p.handle}</code>
+							<span class="result-card__handle">@{p.handle}</span>
 						</div>
 						<div class="result-card__meta">
-							<Badge label={p.status} variant={statusVariant(p.status)} />
-							<span class="result-card__date">Joined {p.joined_at.slice(0, 10)}</span>
+							{#if p.status === 'active'}
+								<span class="status-badge status-active">Active</span>
+							{:else if p.status === 'suspended'}
+								<span class="status-badge status-suspended">Suspended</span>
+							{:else}
+								<span class="status-badge status-inactive">{p.status}</span>
+							{/if}
+							<span class="result-card__date">Joined {formatDate(p.joined_at)}</span>
 						</div>
-					</ListItem>
+					</a>
 				{/each}
-			</List>
+			</div>
 		</section>
 	{/if}
 
 	{#if (filter === 'all' || filter === 'associations') && filteredAssociations.length > 0}
 		<section class="results-section">
-			<h2 class="section-title">🏛️ Associations</h2>
-			<List>
+			<h2 class="section-title">Associations</h2>
+			<div class="results-list">
 				{#each filteredAssociations as a (a.uuid)}
-					<ListItem href="/organization/{a.type === 'committee' ? 'committees' : a.type === 'college' ? 'colleges' : a.type === 'service' ? 'services' : 'associations'}/{a.uuid}">
+					<a href="/organization/{a.type === 'committee' ? 'committees' : a.type === 'college' ? 'colleges' : a.type === 'service' ? 'services' : 'associations'}/{a.uuid}" class="result-card">
 						<div class="result-card__main">
 							<div class="result-card__title">{a.name}</div>
-							<code class="result-card__handle">@{a.handle}</code>
+							<span class="result-card__handle">@{a.handle}</span>
 						</div>
 						<div class="result-card__meta">
 							<span class="type-badge type-badge--{a.type}">{a.type}</span>
-							<Badge label={a.status} variant={statusVariant(a.status)} />
+							{#if a.status === 'active'}
+								<span class="status-badge status-active">Active</span>
+							{:else if a.status === 'suspended'}
+								<span class="status-badge status-suspended">Suspended</span>
+							{:else}
+								<span class="status-badge status-inactive">{a.status}</span>
+							{/if}
 						</div>
-					</ListItem>
+					</a>
 				{/each}
-			</List>
+			</div>
 		</section>
 	{/if}
 
@@ -135,61 +150,111 @@
 
 <style>
 	.page {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: var(--space-6) var(--space-4);
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-6);
+		gap: var(--space-8);
 	}
 
+	.header {
+		text-align: center;
+		max-width: 800px;
+		margin: 0 auto var(--space-6) auto;
+	}
 
+	.page-title {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-3) 0;
+		line-height: 1.2;
+	}
+
+	.page-description {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: #5a5a50;
+		line-height: 1.8;
+		margin: 0 0 var(--space-6) 0;
+	}
+
+	.header-actions {
+		display: flex;
+		justify-content: center;
+	}
 
 	.toolbar {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3);
+		gap: var(--space-4);
+		max-width: 800px;
+		margin: 0 auto;
+		width: 100%;
 	}
 
 	.search {
 		width: 100%;
 		padding: var(--space-3) var(--space-4);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-surface);
+		border: 1px solid rgba(45, 90, 79, 0.3);
+		background: var(--paper);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
-		color: var(--color-text);
+		color: #151c1a;
 		outline: none;
+		transition: border-color 0.2s;
 	}
-	.search:focus { border-color: var(--color-primary, #3b82f6); }
+	
+	.search:focus { 
+		border-color: #d4a24a;
+	}
+
+	.search::placeholder {
+		color: #374340;
+		opacity: 0.6;
+	}
 
 	.filters {
 		display: flex;
-		gap: var(--space-2);
+		gap: var(--space-3);
 		flex-wrap: wrap;
+		justify-content: center;
 	}
 
 	.filter-chip {
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-full, 9999px);
-		border: 1px solid var(--color-border);
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid rgba(45, 90, 79, 0.3);
 		background: transparent;
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		color: var(--color-text-muted);
+		font-weight: 400;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		color: #374340;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		text-transform: capitalize;
-		transition: background 0.1s, border-color 0.1s, color 0.1s;
+		transition: all 0.2s;
 	}
-	.filter-chip:hover { border-color: var(--color-text-muted); color: var(--color-text); }
+	
+	.filter-chip:hover { 
+		border-color: #7a5c1a; 
+		color: #151c1a;
+	}
+	
 	.filter-chip--active {
-		background: var(--color-text);
-		border-color: var(--color-text);
-		color: var(--color-bg, #fff);
+		background: rgba(212, 162, 74, 0.15);
+		border-color: #d4a24a;
+		color: #7a5c1a;
 	}
+	
 	.filter-chip__count {
 		opacity: 0.7;
 		font-size: var(--text-xs);
+		font-variant-numeric: oldstyle-nums;
 	}
 
 	.results-section {
@@ -199,9 +264,42 @@
 	}
 
 	.section-title {
-		font-size: var(--text-xl);
-		font-weight: var(--weight-semibold);
-		margin: 0;
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-2xl);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-4) 0;
+	}
+
+	.results-list {
+		display: flex;
+		flex-direction: column;
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+	}
+
+	.result-card {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-5) var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+		text-decoration: none;
+		color: inherit;
+		transition: all 0.2s;
+	}
+
+	.result-card:last-child {
+		border-bottom: none;
+	}
+
+	.result-card:hover {
+		border-color: #d4a24a;
+		box-shadow: 
+			0 1px 3px rgba(0, 0, 0, 0.06),
+			0 4px 8px rgba(0, 0, 0, 0.08);
+		text-decoration: none;
 	}
 
 	.result-card__main {
@@ -213,14 +311,17 @@
 	}
 
 	.result-card__title {
-		font-weight: var(--weight-medium);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-weight: 600;
 		font-size: var(--text-base);
+		color: #151c1a;
 	}
 
 	.result-card__handle {
-		font-family: var(--font-mono);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: #7a5c1a;
+		font-style: italic;
 	}
 
 	.result-card__meta {
@@ -228,35 +329,95 @@
 		align-items: center;
 		gap: var(--space-3);
 		flex-shrink: 0;
+		flex-wrap: wrap;
 	}
 
 	.result-card__date {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+		color: #5a5a50;
+		font-variant-numeric: oldstyle-nums;
 	}
 
-	.type-badge {
+	.status-badge {
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-xs);
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		font-weight: var(--weight-medium);
-		text-transform: capitalize;
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-		border: 1px solid var(--color-accent);
+		font-weight: 400;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		padding: 0.125rem 0.5rem;
+		border: 1px solid;
 		white-space: nowrap;
 	}
 
-	.type-badge--committee { background: #ede9fe; border-color: #8b5cf6; color: #6b21a8; }
-	.type-badge--college { background: #dbeafe; border-color: #3b82f6; color: #1e40af; }
-	.type-badge--service { background: #dcfce7; border-color: #22c55e; color: #166534; }
-	.type-badge--society { background: #fefce8; border-color: #fbbf24; color: #92400e; }
-	.type-badge--general_assembly { background: #fce7f3; border-color: #ec4899; color: #9f1239; }
+	.status-active {
+		background: rgba(90, 115, 90, 0.15);
+		color: #3a5a3a;
+		border-color: rgba(90, 115, 90, 0.3);
+	}
 
-	.empty {
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
-		text-align: center;
-		padding: var(--space-8);
+	.status-suspended {
+		background: rgba(212, 162, 74, 0.15);
+		color: #7a5c1a;
+		border-color: rgba(212, 162, 74, 0.3);
+	}
+
+	.status-inactive {
+		background: rgba(45, 90, 79, 0.1);
+		color: #374340;
+		border-color: rgba(45, 90, 79, 0.2);
+	}
+
+	.type-badge {
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-xs);
+		font-weight: 400;
+		letter-spacing: 0.15em;
+		padding: 0.125rem 0.5rem;
+		text-transform: capitalize;
+		border: 1px solid;
+		white-space: nowrap;
+	}
+
+	.type-badge--committee { 
+		background: rgba(139, 115, 170, 0.12); 
+		border-color: rgba(139, 115, 170, 0.3); 
+		color: #5a4a6a; 
+	}
+	
+	.type-badge--college { 
+		background: rgba(90, 120, 140, 0.12); 
+		border-color: rgba(90, 120, 140, 0.3); 
+		color: #3a5a6a; 
+	}
+	
+	.type-badge--service { 
+		background: rgba(90, 115, 90, 0.12); 
+		border-color: rgba(90, 115, 90, 0.3); 
+		color: #3a5a3a; 
+	}
+	
+	.type-badge--society { 
+		background: rgba(212, 162, 74, 0.12); 
+		border-color: rgba(212, 162, 74, 0.3); 
+		color: #7a5c1a; 
+	}
+	
+	.type-badge--general_assembly { 
+		background: rgba(180, 100, 120, 0.12); 
+		border-color: rgba(180, 100, 120, 0.3); 
+		color: #6a3a4a; 
+	}
+
+	@media (max-width: 768px) {
+		.result-card {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+		
+		.result-card__meta {
+			width: 100%;
+			justify-content: flex-start;
+		}
 	}
 </style>

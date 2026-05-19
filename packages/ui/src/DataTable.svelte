@@ -49,35 +49,36 @@
 	.table-wrap {
 		width: 100%;
 		overflow-x: auto;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		background: var(--color-surface);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		background: white;
 	}
 
 	table {
 		width: 100%;
 		border-collapse: collapse;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 	}
 
 	thead {
-		background: var(--color-bg);
-		border-bottom: 1px solid var(--color-border);
+		background: rgba(45, 90, 79, 0.03);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	th {
 		text-align: left;
-		font-weight: var(--weight-medium);
-		color: var(--color-text-muted);
+		font-family: 'IM Fell English SC', serif;
+		font-weight: 400;
+		color: #374340;
 		font-size: var(--text-xs);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		text-transform: lowercase;
+		letter-spacing: 0.1em;
 		padding: var(--space-3) var(--space-4);
 		white-space: nowrap;
 	}
 
 	:global(tbody tr) {
-		border-bottom: 1px solid var(--color-border-faint);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
 	}
 
 	:global(tbody tr:last-child) {
@@ -85,18 +86,19 @@
 	}
 
 	:global(tbody tr:hover) {
-		background: var(--color-bg);
+		background: rgba(122, 92, 26, 0.03);
 	}
 
 	:global(tbody td) {
 		padding: var(--space-3) var(--space-4);
 		vertical-align: middle;
-		color: var(--color-text);
+		color: #151c1a;
 	}
 
 	.empty {
 		text-align: center;
-		color: var(--color-text-subtle);
+		color: #9ca3af;
+		font-style: italic;
 		padding: var(--space-8) !important;
 	}
 </style>

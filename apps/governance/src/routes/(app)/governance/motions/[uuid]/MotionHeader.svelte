@@ -131,7 +131,7 @@
 	.motion-header {
 		margin-bottom: var(--space-8);
 		padding-bottom: var(--space-6);
-		border-bottom: 2px solid rgba(139, 115, 85, 0.2);
+		border-bottom: 2px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.motion-letterhead {
@@ -162,7 +162,7 @@
 		font-size: 2rem;
 		font-weight: 700;
 		line-height: 1.3;
-		color: #2c2416;
+		color: #151c1a;
 		margin: 0 0 var(--space-6);
 		text-align: center;
 	}
@@ -189,7 +189,7 @@
 	}
 
 	.meta-value {
-		color: #2c2416;
+		color: #151c1a;
 	}
 
 	.motion-status {
@@ -215,7 +215,7 @@
 		margin-top: var(--space-6);
 		padding: var(--space-4);
 		background: rgba(255, 255, 255, 0.4);
-		border: 1px solid rgba(139, 115, 85, 0.15);
+		border: 1px solid rgba(45, 90, 79, 0.15);
 		border-radius: 3px;
 		display: flex;
 		flex-direction: column;
@@ -239,7 +239,7 @@
 
 	.rule-value {
 		font-weight: 500;
-		color: #2c2416;
+		color: #151c1a;
 	}
 
 	.rule-detail {

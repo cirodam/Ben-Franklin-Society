@@ -106,9 +106,7 @@
 	</Card>
 
 	<Card>
-		<div class="section-header">
-			<h2>Registered Clients</h2>
-		</div>
+		<h2>Registered Clients</h2>
 
 		{#if data.clients.length === 0}
 			<EmptyState 
@@ -145,7 +143,7 @@
 
 							<div class="detail-row">
 								<span class="detail-label">Created:</span>
-								<span>{client.createdAt.slice(0, 10)}</span>
+								<span class="detail-value">{client.createdAt.slice(0, 10)}</span>
 							</div>
 						</div>
 
@@ -198,55 +196,32 @@
 	.page {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-8);
+		gap: var(--space-6);
 		max-width: 900px;
+		margin: 0 auto;
 	}
 
-	.page-header h1 {
-		margin: 0 0 var(--space-1);
-	}
-
-	.subtitle {
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
-		margin: 0;
-	}
-
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--space-5);
-	}
-
-	.section-header h2 {
-		margin: 0;
+	h2 {
+		font-family: 'IM Fell English', serif;
 		font-size: var(--text-lg);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-3) 0;
 	}
 
-	.alert {
-		padding: var(--space-4);
-		border-radius: var(--radius-md);
-		border-left: 4px solid;
-	}
-
-	.alert--success {
-		background: var(--color-success-bg);
-		border-color: var(--color-success);
-		color: var(--color-success-text);
-	}
-
-	.alert--error {
-		background: var(--color-error-bg);
-		border-color: var(--color-error);
-		color: var(--color-error-text);
+	.section-description {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #374340;
+		margin-bottom: var(--space-4);
+		line-height: 1.6;
 	}
 
 	.credentials {
 		margin: var(--space-3) 0;
 		padding: var(--space-3);
-		background: rgba(0, 0, 0, 0.05);
-		border-radius: var(--radius-sm);
+		background: rgba(122, 92, 26, 0.05);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.credential-row {
@@ -254,6 +229,8 @@
 		gap: var(--space-3);
 		align-items: center;
 		margin-bottom: var(--space-2);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
 	}
 
 	.credential-row:last-child {
@@ -261,37 +238,36 @@
 	}
 
 	.credential-label {
-		font-weight: 600;
+		font-family: 'IM Fell English SC', serif;
+		letter-spacing: 0.1em;
+		text-transform: lowercase;
 		min-width: 120px;
+		color: #374340;
 	}
 
 	.credential-value {
-		font-family: var(--font-mono);
+		font-family: 'Courier New', monospace;
 		font-size: var(--text-sm);
 		background: white;
 		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		user-select: all;
+		color: #151c1a;
 	}
 
 	.warning-text {
 		margin-top: var(--space-3);
 		margin-bottom: 0;
-		font-weight: 600;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-	}
-
-	.section-description {
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
-		margin-bottom: var(--space-4);
+		color: #7a5c1a;
 	}
 
 	.quick-setup-buttons {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 		gap: var(--space-3);
-		margin-bottom: var(--space-5);
+		margin-bottom: var(--space-4);
 	}
 
 	.quick-setup-buttons form {
@@ -305,37 +281,13 @@
 	.quick-setup-buttons button:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
-		background: var(--color-success);
-		border-color: var(--color-success);
 	}
 
 	.create-form {
 		padding: var(--space-5);
-		background: var(--color-bg-secondary);
-		border-radius: var(--radius-md);
-		margin-bottom: var(--space-5);
-	}
-
-	.form-group {
-		margin-bottom: var(--space-4);
-	}
-
-	.form-group label {
-		display: block;
-		font-weight: 600;
-		margin-bottom: var(--space-2);
-	}
-
-	.form-help {
-		margin-top: var(--space-1);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-	}
-
-	.empty {
-		color: var(--color-text-muted);
-		font-style: italic;
-		padding: var(--space-4);
+		background: rgba(122, 92, 26, 0.03);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		margin-top: var(--space-4);
 	}
 
 	.clients-list {
@@ -345,8 +297,9 @@
 	}
 
 	.client-card {
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		border-left: 3px solid rgba(45, 90, 79, 0.3);
+		background: white;
 		padding: var(--space-4);
 	}
 
@@ -355,6 +308,8 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		margin-bottom: var(--space-3);
+		padding-bottom: var(--space-3);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
 	}
 
 	.client-info {
@@ -362,18 +317,20 @@
 	}
 
 	.client-name {
-		margin: 0 0 var(--space-1);
+		margin: 0 0 var(--space-2);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
 		font-weight: 600;
+		color: #151c1a;
 	}
 
 	.client-id {
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		font-family: 'Courier New', monospace;
+		font-size: var(--text-xs);
+		color: #374340;
 		padding: var(--space-1) var(--space-2);
-		background: var(--color-bg-secondary);
-		border-radius: var(--radius-sm);
+		background: rgba(45, 90, 79, 0.05);
+		border: 1px solid rgba(45, 90, 79, 0.15);
 	}
 
 	.client-badges {
@@ -383,12 +340,12 @@
 
 	.client-details {
 		margin-bottom: var(--space-4);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
 	}
 
 	.detail-row {
-		margin-bottom: var(--space-2);
-		display: flex;
-		gap: var(--space-2);
+		margin-bottom: var(--space-3);
 	}
 
 	.detail-row:last-child {
@@ -396,8 +353,18 @@
 	}
 
 	.detail-label {
-		font-weight: 600;
-		min-width: 120px;
+		font-family: 'IM Fell English SC', serif;
+		letter-spacing: 0.1em;
+		text-transform: lowercase;
+		color: #374340;
+		display: block;
+		margin-bottom: var(--space-1);
+	}
+
+	.detail-value {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #151c1a;
 	}
 
 	.uri-list {
@@ -411,25 +378,35 @@
 	}
 
 	.uri-list code {
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		font-family: 'Courier New', monospace;
+		font-size: var(--text-xs);
+		color: #374340;
+		padding: var(--space-1) var(--space-2);
+		background: rgba(45, 90, 79, 0.05);
+		border: 1px solid rgba(45, 90, 79, 0.15);
+		display: inline-block;
 	}
 
 	.delete-form {
-		border-top: 1px solid var(--color-border);
+		border-top: 1px solid rgba(45, 90, 79, 0.15);
 		padding-top: var(--space-3);
 		margin-top: var(--space-3);
 	}
 
 	.info-content {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #374340;
 		line-height: 1.6;
 	}
 
 	.info-content h3 {
 		margin-top: var(--space-4);
 		margin-bottom: var(--space-2);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
+		font-weight: 600;
+		color: #151c1a;
 	}
 
 	.info-content ul {
@@ -438,14 +415,15 @@
 	}
 
 	.info-content li {
-		margin-bottom: var(--space-1);
+		margin-bottom: var(--space-2);
 	}
 
 	.info-content code {
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		background: var(--color-bg-secondary);
-		padding: 2px var(--space-1);
-		border-radius: var(--radius-sm);
+		font-family: 'Courier New', monospace;
+		font-size: var(--text-xs);
+		background: rgba(45, 90, 79, 0.05);
+		padding: 2px var(--space-2);
+		border: 1px solid rgba(45, 90, 79, 0.15);
+		color: #374340;
 	}
 </style>

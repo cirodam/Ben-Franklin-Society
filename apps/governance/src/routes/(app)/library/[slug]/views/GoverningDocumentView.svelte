@@ -271,7 +271,7 @@
 		font-size: 1.75rem;
 		font-weight: 700;
 		line-height: 1.3;
-		color: #2c2416;
+		color: #151c1a;
 	}
 
 	.article-heading-container {
@@ -281,7 +281,7 @@
 		gap: var(--space-4);
 		margin-bottom: var(--space-8);
 		padding-bottom: var(--space-4);
-		border-bottom: 1px solid rgba(139, 115, 85, 0.2);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.article-actions, .section-actions {
@@ -325,14 +325,14 @@
 	.section-title {
 		font-weight: 700;
 		font-size: var(--text-base);
-		color: #2c2416;
+		color: #151c1a;
 		flex: 1;
 		font-style: italic;
 	}
 
 	.copy-link-btn, .edit-btn, .delete-btn {
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid rgba(139, 115, 85, 0.2);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		border-radius: 2px;
 		background: rgba(255, 255, 255, 0.5);
 		cursor: pointer;
@@ -371,7 +371,7 @@
 	.section-body {
 		font-size: 1.0625rem;
 		line-height: 1.75;
-		color: #2c2416;
+		color: #151c1a;
 		text-align: justify;
 		hyphens: auto;
 		margin-left: 2.5rem;
@@ -408,7 +408,7 @@
 	.add-article-container {
 		margin-top: var(--space-12);
 		padding-top: var(--space-8);
-		border-top: 2px solid rgba(139, 115, 85, 0.2);
+		border-top: 2px solid rgba(45, 90, 79, 0.2);
 		text-align: center;
 	}
 

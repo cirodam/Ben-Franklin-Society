@@ -49,7 +49,7 @@
 	.document-summary {
 		font-size: var(--text-base);
 		font-style: italic;
-		color: #5a4a2a;
+		color: #374340;
 		margin: var(--space-4) 0;
 		padding: var(--space-4);
 		background: rgba(212, 162, 74, 0.1);
@@ -69,10 +69,10 @@
 		display: inline-block;
 		padding: var(--space-1) var(--space-3);
 		background: rgba(212, 162, 74, 0.2);
-		border: 1px solid rgba(139, 115, 85, 0.3);
+		border: 1px solid rgba(45, 90, 79, 0.3);
 		border-radius: 12px;
 		font-size: var(--text-xs);
-		color: #5a4a2a;
+		color: #374340;
 		font-weight: 500;
 	}
 
@@ -80,7 +80,7 @@
 		max-width: 65ch;
 		margin: 0 auto;
 		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #2c2416;
+		color: #151c1a;
 	}
 
 	.prose-paragraph {

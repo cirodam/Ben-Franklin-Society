@@ -148,7 +148,7 @@
 
 	.vote-bar {
 		height: 8px;
-		background: rgba(139, 115, 85, 0.1);
+		background: rgba(45, 90, 79, 0.1);
 		border-radius: var(--radius-full);
 		overflow: hidden;
 		display: flex;

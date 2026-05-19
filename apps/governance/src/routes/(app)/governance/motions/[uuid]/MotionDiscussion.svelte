@@ -29,10 +29,9 @@
 </script>
 
 <div class="discussion">
-	<div class="paper-card__header">
-		<h3 class="paper-card__title">Discussion</h3>
-		<span class="paper-card__subtitle">{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</span>
-	</div>
+	<h2 class="discussion-title">Deliberation</h2>
+	
+	<CommentForm {actingAs} />
 
 	{#if comments.length > 0}
 		<div class="thread">
@@ -43,42 +42,34 @@
 	{:else}
 		<p class="discussion__empty">No comments yet. Be the first to share your thoughts.</p>
 	{/if}
-
-	<CommentForm {actingAs} />
 </div>
 
 <style>
 	.discussion {
-		max-width: 900px;
-		margin: var(--space-6) auto var(--space-8);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-6);
+		background: var(--paper);
+		padding: var(--space-8);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		box-shadow: 
+			0 2px 4px rgba(0,0,0,0.06),
+			0 8px 24px rgba(0,0,0,0.10);
 	}
 
-	.paper-card__header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--space-4);
-	}
-
-	.paper-card__title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-semibold);
-		margin: 0;
-	}
-
-	.paper-card__subtitle {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+	.discussion-title {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-6) 0;
 	}
 
 	.discussion__empty {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		font-style: italic;
+		color: #374340;
 		text-align: center;
-		color: var(--color-text-muted);
-		font-size: var(--text-sm);
-		padding: var(--space-8) 0;
+		padding: var(--space-6) 0;
+		margin: 0;
 	}
 
 	.thread {

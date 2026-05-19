@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button } from '@bfs/ui';
+	import { Button } from '@bfs/ui';
 	import type { MotionDocument } from '$lib/server/governance/motions.js';
 
 	interface Props {
@@ -10,132 +10,118 @@
 
 	let { motions, canCreate = false, onCreateClick }: Props = $props();
 
-	const statusVariant = (status: string): 'success' | 'warning' | 'danger' | 'neutral' | 'info' => {
-		switch (status) {
-			case 'enacted': return 'success';
-			case 'rejected': return 'danger';
-			case 'deliberation': return 'warning';
-			case 'introduced': return 'info';
-			case 'withdrawn': return 'neutral';
-			default: return 'neutral';
-		}
-	};
-
 	function formatDate(dateStr: string) {
 		return new Date(dateStr).toLocaleDateString('en-US', { 
-			month: 'short', 
+			month: 'long', 
 			day: 'numeric', 
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
+			year: 'numeric'
 		});
 	}
 </script>
 
-<div class="motion-list-container">
+<div class="motion-list-card">
 	{#if canCreate && onCreateClick}
-		<div class="list-header">
-			<h2 class="list-header__title">Motions</h2>
+		<div class="card-header">
 			<Button onclick={onCreateClick}>
-				{#snippet children()}+ New Motion{/snippet}
+				{#snippet children()}New Motion{/snippet}
 			</Button>
 		</div>
 	{/if}
 
 	{#if motions.length > 0}
-		<div class="list">
+		<div class="motion-list">
 			{#each motions as motion}
-				<a href="/governance/motions/{motion.uuid}" class="list-item">
-					<div class="list-item__header">
-						<span class="list-item__motion-id">{motion.content.motion_number}</span>
-						<Badge label={motion.content.status} variant={statusVariant(motion.content.status)} />
+				<a href="/governance/motions/{motion.uuid}" class="motion-item">
+					<div class="motion-title">
+						<span class="motion-number">{motion.content.motion_number}</span>
+						<span class="separator">•</span>
+						<span class="motion-name">{motion.title}</span>
 					</div>
-					<h3 class="list-item__title">{motion.title}</h3>
-					<div class="list-item__meta">
-						<span>Created {formatDate(motion.created_at)}</span>
+					<div class="motion-meta">
+						<span class="meta-date">Introduced {formatDate(motion.content.introduced_at || motion.created_at)}</span>
 					</div>
 				</a>
 			{/each}
 		</div>
 	{:else}
 		<div class="empty-state">
-			<p>📋</p>
-			<p class="empty-state__message">No motions in the docket</p>
+			<p class="empty-message">No motions in the docket</p>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.motion-list-container {
+	.motion-list-card {
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+	}
+
+	.card-header {
+		display: flex;
+		justify-content: flex-end;
+		padding: var(--space-4) var(--space-5);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+	}
+
+	.motion-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
 	}
 
-	.list-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding-bottom: var(--space-2);
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	.list-header__title {
-		font-size: var(--text-xl);
-		font-weight: var(--weight-semibold);
-		margin: 0;
-	}
-
-	.list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-	}
-
-	.list-item {
+	.motion-item {
 		display: block;
-		padding: var(--space-4);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		padding: var(--space-5) var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
 		text-decoration: none;
 		color: inherit;
-		transition: all 0.2s;
+		transition: background 0.2s;
 	}
 
-	.list-item:hover {
-		border-color: var(--color-accent);
-		box-shadow: var(--shadow-sm);
-		text-decoration: none;
+	.motion-item:last-child {
+		border-bottom: none;
 	}
 
-	.list-item__header {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
+	.motion-item:hover {
+		background: rgba(212, 162, 74, 0.05);
+	}
+
+	.motion-title {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-lg);
+		font-weight: 400;
+		line-height: 1.4;
+		color: #151c1a;
 		margin-bottom: var(--space-2);
 	}
 
-	.list-item__motion-id {
-		font-family: var(--font-mono);
+	.motion-number {
+		font-weight: 600;
+	}
+
+	.separator {
+		margin: 0 var(--space-2);
+		color: #7a5c1a;
+	}
+
+	.motion-name {
+		font-weight: 400;
+	}
+
+	.motion-meta {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		font-weight: var(--weight-semibold);
-		color: var(--color-text-muted);
-	}
-
-	.list-item__title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-semibold);
-		margin: 0 0 var(--space-2) 0;
-		line-height: 1.3;
-	}
-
-	.list-item__meta {
+		color: #5a5a50;
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		gap: var(--space-1);
+	}
+
+	.meta-author {
+		font-style: italic;
+	}
+
+	.meta-date {
+		font-variant-numeric: oldstyle-nums;
 	}
 
 	.empty-state {
@@ -143,19 +129,15 @@
 		text-align: center;
 	}
 
-	.empty-state p:first-child {
-		font-size: 4rem;
-		margin: 0 0 var(--space-4) 0;
-	}
-
-	.empty-state__message {
-		font-size: var(--text-lg);
+	.empty-message {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
 		color: var(--color-text-muted);
-		margin: 0 0 var(--space-4) 0;
+		margin: 0;
 	}
 
 	@media (max-width: 768px) {
-		.list-item__title {
+		.motion-title {
 			font-size: var(--text-base);
 		}
 	}

@@ -59,7 +59,7 @@
 	.body-text {
 		font-size: 1.0625rem;
 		line-height: 1.75;
-		color: #2c2416;
+		color: #151c1a;
 		white-space: pre-wrap;
 		text-align: justify;
 		hyphens: auto;
@@ -68,7 +68,7 @@
 	.reasoning-section {
 		margin-top: var(--space-8);
 		padding-top: var(--space-6);
-		border-top: 1px solid rgba(139, 115, 85, 0.2);
+		border-top: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.section-heading {
@@ -158,7 +158,7 @@
 		font-family: 'Georgia', serif;
 		font-size: var(--text-sm);
 		line-height: 1.7;
-		color: #2c2416;
+		color: #151c1a;
 		white-space: pre-wrap;
 	}
 

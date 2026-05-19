@@ -3,6 +3,7 @@
 	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
 	import ProseDocumentView from './views/ProseDocumentView.svelte';
 	import ContractDocumentView from './views/ContractDocumentView.svelte';
+	import MotionDocumentView from './views/MotionDocumentView.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -18,9 +19,9 @@
 </svelte:head>
 
 <div class="document-controls">
-	<a href="/library" class="back">← Back to Library</a>
+	<a href="/library" class="back">← Library</a>
 	{#if canEdit && (documentType === 'prose' || documentType === 'contract')}
-		<a href="/library/{doc.slug}/edit" class="edit-link">✏️ Edit</a>
+		<a href="/library/{doc.slug}/edit" class="edit-link">Edit</a>
 	{/if}
 </div>
 
@@ -28,6 +29,8 @@
 	<ProseDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ProseDocument} />
 {:else if documentType === 'contract'}
 	<ContractDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ContractDocument} />
+{:else if documentType === 'motion'}
+	<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} />
 {:else}
 	<GoverningDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').GoverningDocument} {canEdit} />
 {/if}
@@ -39,6 +42,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
+		padding: 0 var(--space-4);
 	}
 
 	.back {
@@ -46,19 +50,21 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-2) var(--space-4);
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		letter-spacing: 0.1em;
+		color: #374340;
 		text-decoration: none;
-		background: rgba(255, 255, 255, 0.6);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: var(--radius);
+		background: transparent;
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		transition: all 0.2s;
 	}
 
 	.back:hover {
-		background: rgba(255, 255, 255, 0.9);
-		color: var(--color-text);
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		background: var(--paper);
+		color: #151c1a;
+		border-color: #d4a24a;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
 	.edit-link {
@@ -66,17 +72,20 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-2) var(--space-4);
-		background: var(--color-background);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		color: var(--color-text);
-		text-decoration: none;
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
-		transition: all 0.15s;
+		letter-spacing: 0.1em;
+		color: #7a5c1a;
+		text-decoration: none;
+		background: transparent;
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		transition: all 0.2s;
 	}
 
 	.edit-link:hover {
-		background: var(--color-background-hover);
-		border-color: var(--color-border-hover);
+		background: var(--paper);
+		color: #7a5c1a;
+		border-color: #d4a24a;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 </style>

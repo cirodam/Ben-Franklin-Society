@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button } from '@bfs/ui';
 
 	let {
 		actingAs = null
@@ -10,12 +11,12 @@
 
 {#if actingAs}
 	<form method="POST" action="?/comment" use:enhance class="comment-form">
-		<div class="comment-form__avatar">
-			You
-		</div>
-		<div class="comment-form__input-wrapper">
-			<textarea class="comment-form__input" name="body" rows="3" placeholder="Add to the discussion…" required></textarea>
-			<button type="submit" class="btn btn--primary btn--sm">Post Comment</button>
+		<div class="comment-form__label">Add to the conversation</div>
+		<textarea class="comment-form__input" name="body" rows="3" placeholder="Say something..." required></textarea>
+		<div class="comment-form__footer">
+			<Button type="submit">
+				{#snippet children()}Post Comment{/snippet}
+			</Button>
 		</div>
 	</form>
 {:else}
@@ -25,59 +26,51 @@
 <style>
 	.comment-form {
 		display: flex;
-		gap: var(--space-3);
-		align-items: flex-start;
-		padding-top: var(--space-4);
-		border-top: 1px solid var(--color-border);
-	}
-
-	.comment-form__avatar {
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-		color: white;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		flex-shrink: 0;
-	}
-
-	.comment-form__input-wrapper {
-		flex: 1;
-		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: var(--space-3);
+		margin-bottom: var(--space-8);
+		padding-bottom: var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+	}
+
+	.comment-form__label {
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		letter-spacing: 0.15em;
+		color: #374340;
+	}
+
+	.comment-form__footer {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
 	}
 
 	.comment-form__input {
 		width: 100%;
 		box-sizing: border-box;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		padding: var(--space-2) var(--space-3);
 		font-size: var(--text-sm);
-		font-family: inherit;
-		background: var(--color-bg);
-		color: var(--color-text);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		background: #fafaf7;
+		color: #151c1a;
 		resize: vertical;
 		line-height: 1.6;
 	}
 
 	.comment-form__input:focus {
 		outline: none;
-		border-color: var(--color-primary, #2563eb);
-		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+		border-color: #7a5c1a;
 	}
 
 	.discussion__login {
 		text-align: center;
-		color: var(--color-text-muted);
+		color: #374340;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		padding: var(--space-4);
-		background: rgba(255, 255, 255, 0.5);
-		border-radius: var(--radius-md);
+		background: rgba(250, 250, 247, 0.5);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 </style>

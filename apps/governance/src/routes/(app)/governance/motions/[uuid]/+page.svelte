@@ -4,8 +4,7 @@
 	import { Button, Card } from '@bfs/ui';
 	
 	// Components
-	import MotionLifecycle from './MotionLifecycle.svelte';
-	import MotionDocument from './MotionDocument.svelte';
+	import MotionDocumentView from '../../../library/[slug]/views/MotionDocumentView.svelte';
 	import MotionVoteTally from './MotionVoteTally.svelte';
 	import VoteSessionsList from './VoteSessionsList.svelte';
 	import MotionDiscussion from './MotionDiscussion.svelte';
@@ -30,44 +29,20 @@
 </script>
 
 <div class="page">
-	<!-- Header with back button and admin controls -->
+	<!-- Header with back button -->
 	<div class="page-header">
 		<a href="/governance/motions" class="back-link">← Back to Motions</a>
-		{#if canAdvance}
-			<div class="admin-controls">
-				<Button variant="ghost" size="sm" onclick={() => showChangeStatusModal = true}>
-					{#snippet children()}
-						🔄 Change Status
-					{/snippet}
-				</Button>
-				<Button variant="ghost" size="sm" onclick={() => showRulesModal = true}>
-					{#snippet children()}
-						⚖️ {currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
-					{/snippet}
-				</Button>
-				<Button variant="ghost" size="sm" onclick={() => showClerkModal = true}>
-					{#snippet children()}
-						{motion.clerk_notes ? '✏️ Edit' : '📝 Add'} Clerk's Notes
-					{/snippet}
-				</Button>
-				<Button variant="ghost" size="sm" onclick={() => showParliamentarianModal = true}>
-					{#snippet children()}
-						{motion.parliamentarian_notes ? '✏️ Edit' : '📝 Add'} Parliamentarian's Notes
-					{/snippet}
-				</Button>
-			</div>
-		{/if}
 	</div>
 
-	<!-- Lifecycle visual -->
-	<MotionLifecycle {motion} />
+	<!-- Page Title -->
+	<h1 class="motion-page-title">Motion Deliberation</h1>
 
-	<!-- 1. MOTION DOCUMENT -->
-	<div class="section">
-		<MotionDocument {motion} {body} {introducer} {currentRule} {currentDeliberationRule} />
+	<!-- SECTION 1: MOTION DOCUMENT -->
+	<div class="section document-section">
+		<MotionDocumentView document={motion} />
 	</div>
 
-	<!-- 2. ACTIONS AREA -->
+	<!-- SECTION 2: ACTIONS -->
 	<div class="section actions-section">
 		<!-- Vote Tally -->
 		{#if tally}
@@ -92,6 +67,31 @@
 					<h3 class="card-title">Actions</h3>
 				</div>
 				<div class="action-row">
+					{#if canAdvance}
+						<div class="admin-actions">
+							<Button variant="ghost" size="sm" onclick={() => showChangeStatusModal = true}>
+								{#snippet children()}
+									Change Status
+								{/snippet}
+							</Button>
+							<Button variant="ghost" size="sm" onclick={() => showRulesModal = true}>
+								{#snippet children()}
+									{currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
+								{/snippet}
+							</Button>
+							<Button variant="ghost" size="sm" onclick={() => showClerkModal = true}>
+								{#snippet children()}
+									{motion.clerk_notes ? 'Edit' : 'Add'} Clerk's Notes
+								{/snippet}
+							</Button>
+							<Button variant="ghost" size="sm" onclick={() => showParliamentarianModal = true}>
+								{#snippet children()}
+									{motion.parliamentarian_notes ? 'Edit' : 'Add'} Parliamentarian's Notes
+								{/snippet}
+							</Button>
+						</div>
+					{/if}
+
 					{#if motion.status === 'draft' && canAdvance}
 						<form method="POST" action="?/advance" use:enhance>
 							<input type="hidden" name="to" value="introduced" />
@@ -120,7 +120,7 @@
 						{#if activeSession}
 							<div class="meeting-notice">
 								<a href="/governance/vote-sessions/{activeSession.uuid}" class="meeting-link">
-									🗳️ Vote session open - Click to vote - Closes {new Date(activeSession.closes_at).toLocaleString()}
+									Vote session open - Click to vote - Closes {new Date(activeSession.closes_at).toLocaleString()}
 								</a>
 							</div>
 						{:else}
@@ -132,7 +132,6 @@
 
 					{#if motion.status === 'adopted'}
 						<div class="adopted-notice">
-							<div class="notice-icon">✅</div>
 							<div class="notice-content">
 								<strong>Motion Adopted</strong>
 								<p>This motion has been approved by vote. The clerk should implement the required actions and then mark it as enacted.</p>
@@ -162,7 +161,7 @@
 	</div>
 
 	<!-- 3. COMMENT THREAD -->
-	<div class="section">
+	<div class="section deliberation-section">
 		<MotionDiscussion {comments} {actingAs} />
 	</div>
 </div>
@@ -182,7 +181,7 @@
 
 <style>
 	.page {
-		max-width: 1200px;
+		max-width: 1000px;
 		margin: 0 auto;
 		padding: var(--space-6) var(--space-4);
 	}
@@ -205,13 +204,18 @@
 		text-decoration: underline;
 	}
 
-	.admin-controls {
-		display: flex;
-		gap: var(--space-2);
+	.motion-page-title {
+		font-family: 'IM Fell English', serif;
+		font-size: var(--text-4xl);
+		font-weight: 400;
+		color: #151c1a;
+		text-align: center;
+		margin: 0 0 var(--space-8) 0;
+		line-height: 1.2;
 	}
 
 	.section {
-		margin-bottom: var(--space-8);
+		margin-bottom: var(--space-10);
 	}
 
 	.actions-section {
@@ -220,14 +224,26 @@
 		gap: var(--space-6);
 	}
 
+	/* Override Card component to match classical aesthetic */
+	.actions-section :global(.card) {
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		border-radius: 0;
+		box-shadow: 
+			0 2px 4px rgba(0,0,0,0.06),
+			0 8px 24px rgba(0,0,0,0.10);
+	}
+
 	/* Action row styles */
 	.card-header {
 		margin-bottom: var(--space-4);
 	}
 
 	.card-title {
+		font-family: 'IM Fell English', serif;
 		font-size: var(--text-xl);
-		font-weight: 600;
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0;
 	}
 
@@ -237,22 +253,32 @@
 		gap: var(--space-4);
 	}
 
+	.admin-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		padding-bottom: var(--space-4);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+	}
+
 	.deliberation-info {
 		padding: var(--space-3);
-		background: var(--color-bg);
-		border-radius: var(--radius);
+		background: rgba(250, 250, 247, 0.5);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.rule-label {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: #374340;
 	}
 
 	.meeting-notice {
 		padding: var(--space-4);
-		background: var(--color-bg);
-		border-radius: var(--radius);
-		border: 1px solid var(--color-border);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		background: rgba(250, 250, 247, 0.5);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.meeting-notice--waiting {
@@ -261,27 +287,21 @@
 	}
 
 	.meeting-link {
-		color: var(--color-accent);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: #7a5c1a;
 		text-decoration: none;
 		font-weight: 500;
 	}
 
 	.meeting-link:hover {
+		color: #d4a24a;
 		text-decoration: underline;
 	}
 
 	.adopted-notice {
-		display: flex;
-		gap: var(--space-3);
 		padding: var(--space-4);
 		background: #f0f9f4;
 		border: 1px solid #86c392;
-		border-radius: var(--radius);
-	}
-
-	.adopted-notice .notice-icon {
-		font-size: var(--text-2xl);
-		flex-shrink: 0;
 	}
 
 	.adopted-notice .notice-content {
@@ -290,12 +310,15 @@
 
 	.adopted-notice .notice-content strong {
 		display: block;
+		font-family: 'IM Fell English SC', serif;
+		letter-spacing: 0.1em;
 		color: #2d5f3d;
 		margin-bottom: var(--space-1);
 	}
 
 	.adopted-notice .notice-content p {
 		margin: 0;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		color: #3d6f4d;
 	}

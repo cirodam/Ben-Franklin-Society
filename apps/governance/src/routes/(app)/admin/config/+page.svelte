@@ -36,11 +36,16 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
+		max-width: 1200px;
+		margin: 0 auto;
 	}
 
 	code {
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		font-family: 'Courier New', monospace;
+		font-size: var(--text-xs);
+		color: #374340;
+		padding: var(--space-1) var(--space-2);
+		background: rgba(45, 90, 79, 0.05);
+		border: 1px solid rgba(45, 90, 79, 0.15);
 	}
 </style>

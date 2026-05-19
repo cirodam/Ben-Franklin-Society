@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Card, EmptyState, PageHeader } from '@bfs/ui';
+	import { Button, EmptyState } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -7,41 +7,31 @@
 </script>
 
 <div class="page">
-	<PageHeader 
-		title="Colleges" 
-		description="Professional communities and sortition pools"
-	>
-		{#snippet actions()}
-			<Button href="/organization/colleges/new">+ Create College</Button>
-		{/snippet}
-	</PageHeader>
-
-	<Card padding="lg" class="description">
-		<p>
+	<header class="header">
+		<h1 class="page-title">Colleges</h1>
+		<p class="page-description">
 			Colleges are voluntary associations of people who share a professional interest or skill. 
 			Members join colleges to collaborate, learn from peers, and maintain professional standards. 
 			When specialized committees need members with domain expertise, they draw randomly from the 
 			relevant college through sortition—ensuring that governance decisions are made by people with 
 			actual knowledge of the subject matter.
 		</p>
-	</Card>
+		<div class="header-actions">
+			<Button href="/organization/colleges/new">Create College</Button>
+		</div>
+	</header>
 
 	{#if colleges.length > 0}
 		<div class="list">
 			{#each colleges as college}
-				<Card href="/organization/colleges/{college.uuid}" hover>
+				<a href="/organization/colleges/{college.uuid}" class="college-card">
 					<h3 class="card__title">{college.name}</h3>
 					<span class="card__handle">@{college.handle}</span>
-					<Badge 
-						label={college.status} 
-						variant={college.status === 'active' ? 'success' : 'neutral'} 
-					/>
-				</Card>
+				</a>
 			{/each}
 		</div>
 	{:else}
 		<EmptyState 
-			icon="🎓"
 			title="No colleges yet"
 		/>
 	{/if}
@@ -51,17 +41,39 @@
 	.page {
 		max-width: 1200px;
 		margin: 0 auto;
+		padding: var(--space-6) var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-8);
 	}
 
-	:global(.description) {
-		margin-bottom: var(--space-6);
+	.header {
+		text-align: center;
+		max-width: 800px;
+		margin: 0 auto var(--space-8) auto;
 	}
 
-	:global(.description p) {
-		margin: 0;
+	.page-title {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-4) 0;
+		line-height: 1.2;
+	}
+
+	.page-description {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
-		line-height: 1.6;
-		color: var(--color-text);
+		color: #5a5a50;
+		line-height: 1.8;
+		max-width: 65ch;
+		margin: 0 auto var(--space-6) auto;
+	}
+
+	.header-actions {
+		display: flex;
+		justify-content: center;
 	}
 
 	.list {
@@ -70,17 +82,37 @@
 		gap: var(--space-4);
 	}
 
+	.college-card {
+		display: block;
+		padding: var(--space-5);
+		background: var(--paper);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		text-decoration: none;
+		color: inherit;
+		transition: all 0.2s;
+	}
+
+	.college-card:hover {
+		border-color: #d4a24a;
+		box-shadow: 
+			0 1px 3px rgba(0, 0, 0, 0.06),
+			0 4px 8px rgba(0, 0, 0, 0.08);
+		text-decoration: none;
+	}
+
 	.card__title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-semibold);
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0 0 var(--space-2) 0;
 	}
 
 	.card__handle {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		font-family: var(--font-mono);
+		color: #7a5c1a;
+		font-style: italic;
 		display: block;
-		margin-bottom: var(--space-2);
 	}
 </style>

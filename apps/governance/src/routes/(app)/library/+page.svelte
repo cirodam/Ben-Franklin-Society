@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, EmptyState, PageHeader } from '@bfs/ui';
+	import { Button, EmptyState } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
 	import { documentTypes } from '$lib/documents';
@@ -49,7 +49,7 @@
 		const date = new Date(dateString);
 		return date.toLocaleDateString('en-US', { 
 			year: 'numeric', 
-			month: 'short', 
+			month: 'long', 
 			day: 'numeric' 
 		});
 	}
@@ -58,11 +58,12 @@
 </script>
 
 <div class="page">
-	<PageHeader title="Library">
-		{#snippet actions()}
-			<Button onclick={() => showCreateDialog = true}>Create document</Button>
-		{/snippet}
-	</PageHeader>
+	<header class="header">
+		<h1 class="page-title">Library</h1>
+		<div class="header-actions">
+			<Button onclick={() => showCreateDialog = true}>+ Create document</Button>
+		</div>
+	</header>
 
 	<div class="search-row">
 		<input
@@ -108,14 +109,14 @@
 			{#each data.items as item}
 				<a href={documentTypes.getDetailRoute(item)} class="document-row">
 					<div class="document-main">
-						<h2 class="document-title t-display">{item.title}</h2>
+						<h2 class="document-title">{item.title}</h2>
 						<div class="document-meta-line">
-							<span class="document-author t-label">{item.given_name} {item.family_name}</span>
+							<span class="document-author">{item.given_name} {item.family_name}</span>
 							<span class="meta-dot">•</span>
-							<span class="document-type t-label">{documentTypes.get(item.type).label}</span>
+							<span class="document-type">{documentTypes.get(item.type).label}</span>
 						</div>
 					</div>
-					<span class="document-date t-label">{formatDate(item.updated_at)}</span>
+					<span class="document-date">{formatDate(item.updated_at)}</span>
 				</a>
 			{/each}
 		</div>
@@ -132,60 +133,81 @@
 	.page {
 		max-width: 1200px;
 		margin: 0 auto;
+		padding: var(--space-6) var(--space-4);
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-6);
+		gap: var(--space-8);
+	}
+
+	.header {
+		text-align: center;
+		margin-bottom: var(--space-6);
+	}
+
+	.page-title {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0 0 var(--space-6) 0;
+		line-height: 1.2;
+	}
+
+	.header-actions {
+		display: flex;
+		justify-content: center;
 	}
 
 	.search-row {
 		display: flex;
 		gap: var(--space-3);
 		align-items: center;
+		margin-bottom: var(--space-4);
 	}
 
 	.search-input {
 		flex: 1;
 		padding: 0.75rem 1rem;
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
+		border: 1px solid rgba(45, 90, 79, 0.3);
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-base);
 		letter-spacing: 0.08em;
-		color: var(--ink);
+		color: #151c1a;
 		background: var(--paper);
+		transition: border-color 0.2s;
 	}
 
 	.search-input:focus {
 		outline: none;
-		border-color: var(--accent);
+		border-color: #d4a24a;
 	}
 
 	.search-input::placeholder {
-		color: var(--ink-faint);
+		color: #374340;
+		opacity: 0.6;
 	}
 
 	.type-select {
 		padding: 0.75rem 1rem;
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
+		border: 1px solid rgba(45, 90, 79, 0.3);
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-base);
 		letter-spacing: 0.08em;
-		color: var(--ink);
+		color: #151c1a;
 		background: var(--paper);
 		cursor: pointer;
 		min-width: 180px;
+		transition: border-color 0.2s;
 	}
 
 	.type-select:focus {
 		outline: none;
-		border-color: var(--accent);
+		border-color: #d4a24a;
 	}
 
 	.owner-toggle {
 		display: flex;
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
+		border: 1px solid rgba(45, 90, 79, 0.3);
 		overflow: hidden;
 	}
 
@@ -196,10 +218,10 @@
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.08em;
-		color: var(--ink-mid);
+		color: #374340;
 		cursor: pointer;
-		transition: all 0.15s;
-		border-right: 1px solid var(--rule);
+		transition: all 0.2s;
+		border-right: 1px solid rgba(45, 90, 79, 0.3);
 	}
 
 	.owner-toggle-btn:last-child {
@@ -207,20 +229,21 @@
 	}
 
 	.owner-toggle-btn:hover {
-		background: var(--surface-dk);
+		background: rgba(45, 90, 79, 0.05);
+		color: #151c1a;
 	}
 
 	.owner-toggle-btn.active {
-		background: var(--accent);
-		color: var(--paper);
+		background: rgba(212, 162, 74, 0.15);
+		color: #7a5c1a;
+		border-color: #d4a24a;
 	}
 
 	.document-list {
 		display: flex;
 		flex-direction: column;
 		background: var(--paper);
-		border-radius: var(--radius);
-		box-shadow: var(--shadow-elevated);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		overflow: hidden;
 	}
 
@@ -229,11 +252,11 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-6);
-		padding: 1.5rem 2rem;
-		border-bottom: 1px solid var(--rule);
+		padding: var(--space-5) var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
 		text-decoration: none;
 		color: inherit;
-		transition: background 0.15s;
+		transition: all 0.2s;
 	}
 
 	.document-row:last-child {
@@ -241,7 +264,10 @@
 	}
 
 	.document-row:hover {
-		background: var(--surface-dk);
+		border-color: #d4a24a;
+		box-shadow: 
+			0 1px 3px rgba(0, 0, 0, 0.06),
+			0 4px 8px rgba(0, 0, 0, 0.08);
 	}
 
 	.document-main {
@@ -253,14 +279,16 @@
 	}
 
 	.document-title {
-		font-size: var(--text-lg);
-		color: var(--ink);
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0;
 		line-height: 1.3;
 	}
 
 	.document-row:hover .document-title {
-		color: var(--accent);
+		color: #7a5c1a;
 	}
 
 	.document-meta-line {
@@ -270,24 +298,28 @@
 	}
 
 	.document-author {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--ink-faint);
+		color: #5a5a50;
 	}
 
 	.document-type {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--ink-faint);
+		color: #5a5a50;
 	}
 
 	.meta-dot {
 		font-size: var(--text-sm);
-		color: var(--ink-faint);
+		color: #7a5c1a;
 	}
 
 	.document-date {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--ink-faint);
+		color: #5a5a50;
 		white-space: nowrap;
+		font-variant-numeric: oldstyle-nums;
 	}
 </style>
 

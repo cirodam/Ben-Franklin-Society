@@ -46,7 +46,6 @@
 
 	{#if entries.length === 0}
 		<EmptyState 
-			icon="📜"
 			title="The Record is empty"
 			description="Actions taken in the app will appear here."
 		/>
@@ -111,16 +110,25 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
-		max-width: 740px;
+		max-width: 1000px;
 		margin: 0 auto;
 	}
 
+	.page :global(.page-header h1) {
+		font-family: 'IM Fell English', serif;
+		font-size: var(--text-4xl);
+		font-weight: 400;
+		line-height: 1.2;
+		color: #151c1a !important;
+	}
+
 	.card__label {
+		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-xs);
 		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--color-text-muted);
-		font-weight: var(--weight-medium);
+		letter-spacing: 0.2em;
+		color: #7a5c1a;
+		font-weight: 400;
 	}
 
 	.add-form {
@@ -136,7 +144,6 @@
 		flex-direction: column;
 		gap: 0;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
 		overflow: hidden;
 	}
 
@@ -201,7 +208,6 @@
 		padding: var(--space-2) var(--space-4);
 		font-size: var(--text-sm);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
 		text-decoration: none;
 		color: var(--color-text);
 		background: var(--color-surface, #fff);

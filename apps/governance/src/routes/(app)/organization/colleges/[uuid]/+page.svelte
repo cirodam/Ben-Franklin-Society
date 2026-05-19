@@ -1,19 +1,10 @@
 <script lang="ts">
 	import { Button, Card, EmptyState } from '@bfs/ui';
-	import Badge from '@bfs/ui/src/Badge.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
 	const { association, members, roles, motions, governingDocument } = $derived(data);
-
-	const statusVariant = (s: string) => s === 'active' ? 'success' : 'neutral';
-
-	const motionVariant = (s: string) =>
-		s === 'enacted' ? 'success'
-		: s === 'rejected' ? 'danger'
-		: s === 'vote' ? 'warn'
-		: 'neutral';
 
 	let activeTab: 'members' | 'roles' | 'motions' = $state('members');
 
@@ -22,22 +13,16 @@
 
 <div class="page">
 	<div class="page-header">
-		<div class="page-header__top">
-			<div class="title-row">
-				<h1>{association.name}</h1>
-				<Button variant="secondary" size="sm" href="/organization/colleges/{association.uuid}/edit">✏️ Edit</Button>
-			</div>
-			<div class="page-header__badges">
-				<Badge label="College" variant="accent" />
-				<Badge label={association.status} variant={statusVariant(association.status)} />
-			</div>
+		<div class="title-row">
+			<h1>{association.name}</h1>
+			<Button variant="secondary" size="sm" href="/organization/colleges/{association.uuid}/edit">Edit</Button>
 		</div>
 		<div class="page-header__meta">
 			<span class="handle">@{association.handle}</span>
 			{#if governingDocument}
-				<span>·</span>
+				<span>•</span>
 				<a href="/library/{governingDocument.slug}" class="founding-doc-link">
-					📜 Founding Document
+					Founding Document
 				</a>
 			{/if}
 		</div>
@@ -50,9 +35,6 @@
 			onclick={() => (activeTab = 'members')}
 		>
 			Members
-			{#if members.length > 0}
-				<span class="badge">{members.length}</span>
-			{/if}
 		</button>
 		<button
 			class="tab"
@@ -60,9 +42,6 @@
 			onclick={() => (activeTab = 'roles')}
 		>
 			Roles
-			{#if roles.length > 0}
-				<span class="badge">{roles.length}</span>
-			{/if}
 		</button>
 		<button
 			class="tab"
@@ -70,9 +49,6 @@
 			onclick={() => (activeTab = 'motions')}
 		>
 			Activity
-			{#if motions.length > 0}
-				<span class="badge">{motions.length}</span>
-			{/if}
 		</button>
 	</nav>
 
@@ -82,7 +58,6 @@
 				<h2>Members</h2>
 				{#if members.length === 0}
 					<EmptyState
-						icon="👥"
 						title="No current members"
 					/>
 				{:else}
@@ -108,7 +83,6 @@
 				<h2>Roles</h2>
 				{#if roles.length === 0}
 					<EmptyState
-						icon="🎭"
 						title="No roles defined"
 					/>
 				{:else}
@@ -124,7 +98,6 @@
 				<h2>Recent Activity</h2>
 				{#if motions.length === 0}
 					<EmptyState
-						icon="📋"
 						title="No motions yet"
 					/>
 				{:else}
@@ -132,10 +105,7 @@
 						{#each motions as m}
 							<li class="motion">
 								<a href="/governance/motions/{m.uuid}" class="motion__title">{m.title}</a>
-								<div class="motion__meta">
-									<Badge label={m.status} variant={motionVariant(m.status)} />
-									<span class="motion__date">{m.created_at.slice(0, 10)}</span>
-								</div>
+								<span class="motion__date">{m.created_at.slice(0, 10)}</span>
 							</li>
 						{/each}
 					</ul>
@@ -150,101 +120,95 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
+		max-width: 1200px;
+		margin: 0 auto;
 	}
 
-	.page-header__top {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
+	.page-header {
+		text-align: center;
+		padding: var(--space-6) 0;
 	}
 
 	.title-row {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: center;
 		gap: var(--space-4);
-		width: 100%;
+		margin-bottom: var(--space-3);
 	}
 
 	.title-row h1 {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: clamp(2rem, 4vw, 3rem);
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0;
-	}
-
-	.page-header__badges {
-		display: flex;
-		gap: var(--space-2);
+		line-height: 1.2;
 	}
 
 	.page-header__meta {
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: var(--space-2);
-		margin-top: var(--space-2);
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
 	}
 
 	.handle {
-		font-family: var(--font-mono);
+		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: #7a5c1a;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.page-header__meta > span {
+		color: #7a5c1a;
 	}
 
 	.founding-doc-link {
-		color: var(--color-accent);
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #7a5c1a;
 		text-decoration: none;
-		font-weight: var(--weight-medium);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		transition: color 0.2s;
 	}
 
 	.founding-doc-link:hover {
-		text-decoration: underline;
+		color: #d4a24a;
 	}
 
 	.tabs {
 		display: flex;
-		gap: var(--space-2);
-		border-bottom: 2px solid var(--color-border);
-		margin-top: var(--space-4);
+		justify-content: center;
+		gap: var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.tab {
 		background: none;
 		border: none;
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-base);
-		font-weight: var(--weight-medium);
-		color: var(--color-text-muted);
+		padding: var(--space-3) 0;
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-sm);
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: #374340;
 		cursor: pointer;
 		border-bottom: 2px solid transparent;
-		margin-bottom: -2px;
+		margin-bottom: -1px;
 		transition: all 0.2s;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
 	}
 
 	.tab:hover {
-		color: var(--color-text);
+		color: #151c1a;
 	}
 
 	.tab.active {
-		color: var(--color-accent);
-		border-bottom-color: var(--color-accent);
-	}
-
-	.tab .badge {
-		font-size: var(--text-xs);
-		background: var(--color-bg);
-		border: 1px solid var(--color-border);
-		border-radius: 999px;
-		padding: 1px 6px;
-		font-weight: var(--weight-normal);
-	}
-
-	.tab.active .badge {
-		background: var(--color-accent-bg);
-		border-color: var(--color-accent);
-		color: var(--color-accent);
+		color: #d4a24a;
+		border-bottom-color: #d4a24a;
 	}
 
 	.tab-content {
@@ -252,8 +216,10 @@
 	}
 
 	h2 {
-		font-size: var(--text-xl);
-		font-weight: var(--weight-semibold);
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-2xl);
+		font-weight: 400;
+		color: #151c1a;
 		margin: 0 0 var(--space-5) 0;
 	}
 
@@ -269,38 +235,44 @@
 	.member {
 		display: flex;
 		align-items: baseline;
-		gap: var(--space-2);
+		gap: var(--space-3);
 		font-size: var(--text-sm);
 		padding: var(--space-3);
-		background: var(--color-bg);
-		border-radius: var(--radius);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
+	}
+
+	.member:last-child {
+		border-bottom: none;
 	}
 
 	.member__name {
-		font-weight: var(--weight-medium);
-		color: var(--color-text);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-weight: 400;
+		color: #151c1a;
 		text-decoration: none;
 	}
 
 	.member__name:hover {
-		text-decoration: underline;
+		color: #7a5c1a;
 	}
 
 	.member__name.muted {
-		color: var(--color-text-muted);
-		font-weight: normal;
+		color: #374340;
+		font-style: italic;
 	}
 
 	.member__handle {
-		font-family: var(--font-mono);
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+		font-style: italic;
+		color: #7a5c1a;
 	}
 
 	.member__since {
 		margin-left: auto;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+		color: #374340;
 	}
 
 	.tag-list {
@@ -313,12 +285,14 @@
 	}
 
 	.tag {
-		font-size: var(--text-sm);
-		background: var(--color-bg);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
+		font-family: 'IM Fell English SC', Georgia, serif;
+		font-size: var(--text-xs);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		background: rgba(45, 90, 79, 0.05);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 		padding: var(--space-2) var(--space-4);
-		font-weight: var(--weight-medium);
+		color: #374340;
 	}
 
 	.motion-list {
@@ -336,30 +310,28 @@
 		justify-content: space-between;
 		gap: var(--space-4);
 		padding: var(--space-3);
-		background: var(--color-bg);
-		border-radius: var(--radius);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
+	}
+
+	.motion:last-child {
+		border-bottom: none;
 	}
 
 	.motion__title {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: var(--color-text);
+		color: #151c1a;
 		text-decoration: none;
-		font-weight: var(--weight-medium);
 	}
 
 	.motion__title:hover {
-		text-decoration: underline;
-	}
-
-	.motion__meta {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		flex-shrink: 0;
+		color: #7a5c1a;
 	}
 
 	.motion__date {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+		color: #374340;
+		font-style: italic;
 	}
 </style>

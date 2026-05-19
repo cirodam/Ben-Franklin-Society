@@ -3,15 +3,15 @@
 /* Import fonts */
 @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English&family=IM+Fell+English+SC&family=Libre+Baskerville&display=swap');
 
-/* Background - Subtle gradient with green-grey tones for formal feel */
+/* Background - Subtle sage/library green for classical institutional feel */
 html {
-	background-color: #e8ece9;
+	background-color: #e8ebe5;
 	background-image: linear-gradient(to bottom,
-		#c8d4cc 0%,
-		#d8e4da 18%,
-		#ccd8cf 28%,
-		#e8ece9 38%,
-		#e8ece9 100%
+		#d4d8d0 0%,
+		#dfe2da 18%,
+		#e3e6df 28%,
+		#e8ebe5 38%,
+		#ebe9e1 100%
 	);
 	background-attachment: fixed;
 }
@@ -176,8 +176,8 @@ body {
 	font-family: 'IM Fell English', serif !important;
 	font-size: var(--text-3xl) !important;
 	font-weight: 400 !important;
-	color: #fff !important;
-	text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25) !important;
+	color: #151c1a !important;
+	text-shadow: none !important;
 }
 
 /* Content Container */
@@ -185,7 +185,7 @@ body {
 	margin-top: 80px !important;
 }
 
-/* Sidebar - Dark green-grey with light text */
+/* Sidebar - Dark green with light text */
 .sidebar {
 	background: #1e2926 !important;
 	border-right-color: rgba(255, 255, 255, 0.1) !important;

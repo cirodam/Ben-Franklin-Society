@@ -40,42 +40,28 @@
 
 <div class="page">
 	<header class="header">
-		<div class="header__top">
-			<h1>General Assembly</h1>
-			<p class="header__subtitle">The sovereign governing body of the society</p>
-		</div>
-		<div class="header__meta">
-			<span>{config?.seat_count ?? '—'} seats</span>
-			<span>·</span>
-			<span>{termHolders.length} currently seated</span>
-			<span>·</span>
-			<span>{config?.term_days ?? '—'} day terms</span>
-			{#if assemblyRules}
-				<span>·</span>
-				<a href="/library/assembly-rules" class="rules-link">📜 Rules of the Assembly</a>
-			{/if}
-		</div>
+		<h1 class="page-title">General Assembly</h1>
 	</header>
 
 	<!-- Tab Navigation -->
 	<div class="tab-nav">
 		<button 
-			class="tab-nav__button" 
+			class="tab-button" 
 			class:active={activeTab === 'docket'}
 			onclick={() => activeTab = 'docket'}>
-			📋 Docket ({allMotions.length})
+			Motions
 		</button>
 		<button 
-			class="tab-nav__button" 
+			class="tab-button" 
 			class:active={activeTab === 'votes'}
 			onclick={() => activeTab = 'votes'}>
-			🗳️ Votes ({voteSessions.length})
+			Seats
 		</button>
 		<button 
-			class="tab-nav__button" 
+			class="tab-button" 
 			class:active={activeTab === 'organization'}
 			onclick={() => activeTab = 'organization'}>
-			🏢 Organization
+			Organizations
 		</button>
 	</div>
 
@@ -115,75 +101,56 @@
 	.page {
 		max-width: 1200px;
 		margin: 0 auto;
-		padding: var(--space-6);
+		padding: var(--space-8) var(--space-6);
 	}
 
-	.header__top {
-		margin-bottom: var(--space-2);
+	.header {
+		margin-bottom: var(--space-10);
 	}
 
-	.header__top h1 {
-		font-size: var(--text-3xl);
-		font-weight: var(--weight-bold);
+	.page-title {
+		font-family: 'IM Fell English', serif;
+		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-weight: 400;
+		text-align: center;
 		margin: 0;
-	}
-
-	.header__subtitle {
-		font-size: var(--text-base);
-		color: var(--color-text-muted);
-		margin: var(--space-2) 0 0 0;
-	}
-
-	.header__meta {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-6);
-	}
-
-	.rules-link {
-		color: var(--color-accent);
-		text-decoration: none;
-	}
-
-	.rules-link:hover {
-		text-decoration: underline;
+		color: #151c1a;
+		letter-spacing: -0.02em;
 	}
 
 	/* Tab Navigation */
 	.tab-nav {
 		display: flex;
-		gap: var(--space-2);
-		margin-bottom: var(--space-6);
-		border-bottom: 2px solid var(--color-border);
-		overflow-x: auto;
+		justify-content: center;
+		gap: var(--space-1);
+		margin-bottom: var(--space-8);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
-	.tab-nav__button {
+	.tab-button {
 		background: none;
 		border: none;
-		padding: var(--space-3) var(--space-4);
-		font-size: var(--text-base);
-		font-weight: var(--weight-medium);
-		color: var(--color-text-muted);
+		padding: var(--space-3) var(--space-6);
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-sm);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: #7a5c1a;
 		cursor: pointer;
-		border-bottom: 3px solid transparent;
+		border-bottom: 2px solid transparent;
 		transition: all 0.2s;
-		white-space: nowrap;
-		margin-bottom: -2px;
+		margin-bottom: -1px;
 	}
 
-	.tab-nav__button:hover {
-		color: var(--color-text);
-		background: var(--color-accent-subtle);
+	.tab-button:hover {
+		color: #151c1a;
+		background: rgba(212, 162, 74, 0.05);
 	}
 
-	.tab-nav__button.active {
-		color: var(--color-accent);
-		border-bottom-color: var(--color-accent);
-		font-weight: var(--weight-semibold);
+	.tab-button.active {
+		color: #151c1a;
+		border-bottom-color: #d4a24a;
 	}
 
 	.tab-content {
@@ -195,12 +162,8 @@
 			padding: var(--space-4);
 		}
 
-		.header__top h1 {
-			font-size: var(--text-2xl);
-		}
-
-		.header__meta {
-			flex-wrap: wrap;
+		.page-title {
+			font-size: 2rem;
 		}
 	}
 </style>
