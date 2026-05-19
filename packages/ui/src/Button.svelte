@@ -7,6 +7,7 @@
 		type = 'button',
 		disabled = false,
 		fullWidth = false,
+		href = undefined,
 		children,
 		...rest
 	}: {
@@ -15,20 +16,34 @@
 		type?: 'button' | 'submit' | 'reset';
 		disabled?: boolean;
 		fullWidth?: boolean;
+		href?: string;
 		children: Snippet;
 		[key: string]: unknown;
 	} = $props();
 </script>
 
-<button
-	{type}
-	{disabled}
-	class="btn btn--{variant} btn--{size}"
-	class:btn--full={fullWidth}
-	{...rest}
->
-	{@render children()}
-</button>
+{#if href}
+	<a
+		{href}
+		class="btn btn--{variant} btn--{size}"
+		class:btn--full={fullWidth}
+		class:btn--disabled={disabled}
+		aria-disabled={disabled}
+		{...rest}
+	>
+		{@render children()}
+	</a>
+{:else}
+	<button
+		{type}
+		{disabled}
+		class="btn btn--{variant} btn--{size}"
+		class:btn--full={fullWidth}
+		{...rest}
+	>
+		{@render children()}
+	</button>
+{/if}
 
 <style>
 	.btn {
@@ -41,12 +56,15 @@
 		border: 1px solid transparent;
 		cursor: pointer;
 		white-space: nowrap;
+		text-decoration: none;
 		transition: background 120ms, color 120ms, border-color 120ms;
 	}
 
-	.btn:disabled {
+	.btn:disabled,
+	.btn--disabled {
 		opacity: 0.45;
 		cursor: not-allowed;
+		pointer-events: none;
 	}
 
 	.btn--full {

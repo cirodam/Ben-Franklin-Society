@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button, Card, Textarea } from '@bfs/ui';
+	import { Button, Textarea } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
@@ -11,284 +11,226 @@
 </script>
 
 <div class="page">
-	<a href="/communications/bulletin" class="back-link">← Back to Bulletin Board</a>
+	<a href="/communications/bulletin" class="back-link">← Back to Town Square</a>
 
-	<div class="post-card" style="background-color: {data.post.color}">
-		<div class="post-header">
-			<h1 class="post-title">{data.post.title}</h1>
-			{#if canDelete(data.post.author_uuid)}
-				<form method="POST" action="?/deletePost" use:enhance>
-					<button type="submit" class="btn-delete" title="Delete post">×</button>
-				</form>
-			{/if}
-		</div>
-		
-		<div class="post-body">{data.post.body}</div>
-		
-		<div class="post-footer">
-			<div class="post-author">
-				<a href="/organization/people/{data.post.author_uuid}" class="author-link">
-					{data.post.given_name} {data.post.family_name}
-				</a>
-				<span class="author-handle">@{data.post.handle}</span>
+	<article class="thread">
+		<header class="thread-header">
+			<h1 class="thread-title">{data.post.title}</h1>
+			<div class="thread-meta">
+				<span class="thread-author">{data.post.given_name} {data.post.family_name}</span>
+				<span class="thread-separator"></span>
+				<time class="thread-date">{data.post.created_at.slice(0, 10)}</time>
 			</div>
-			<div class="post-meta">
-				<time>{data.post.created_at.slice(0, 10)}</time>
-				{#if data.post.updated_at}
-					<span class="edited">(edited)</span>
-				{/if}
-			</div>
-		</div>
-	</div>
+		</header>
 
-	<Card>
-		<h2 class="comments-title">
-			Comments
-			<span class="comment-count">({data.comments.length})</span>
-		</h2>
+		<div class="thread-body">{data.post.body}</div>
+	</article>
 
-		<form method="POST" action="?/comment" use:enhance class="comment-form">
+	<section class="replies">
+		<h2 class="replies-title">Replies</h2>
+
+		<form method="POST" action="?/comment" use:enhance class="reply-form">
+			<div class="reply-form-label">Add to the conversation</div>
 			<Textarea
 				name="body"
-				placeholder="Add a comment..."
-				rows={3}
+				placeholder="Say something..."
+				rows={4}
 				required
 			/>
-			<Button type="submit">Post Comment</Button>
+			<div class="reply-form-footer">
+				<p class="reply-form-note">Replies become part of the chapter record</p>
+				<Button type="submit">Reply</Button>
+			</div>
 		</form>
 
-		{#if data.comments.length === 0}
-			<p class="no-comments">No comments yet. Be the first to comment!</p>
-		{:else}
-			<div class="comments-list">
+		{#if data.comments.length > 0}
+			<div class="replies-list">
 				{#each data.comments as comment}
-					<div class="comment">
-						<div class="comment-header">
-							<div class="comment-author">
-								<a href="/organization/people/{comment.author_uuid}" class="author-link">
-									{comment.given_name} {comment.family_name}
-								</a>
-								<span class="author-handle">@{comment.handle}</span>
-							</div>
-							<div class="comment-meta">
-								<time>{comment.created_at.slice(0, 10)}</time>
-								{#if comment.updated_at}
-									<span class="edited">(edited)</span>
-								{/if}
-								{#if canDelete(comment.author_uuid)}
-									<form method="POST" action="?/deleteComment" use:enhance class="delete-form">
-										<input type="hidden" name="comment_uuid" value={comment.uuid} />
-										<button type="submit" class="btn-delete-comment">Delete</button>
-									</form>
-								{/if}
-							</div>
-						</div>
-						<div class="comment-body">{comment.body}</div>
-					</div>
+					<article class="reply">
+						<header class="reply-header">
+							<span class="reply-author">{comment.given_name} {comment.family_name}</span>
+							<time class="reply-date">{comment.created_at.slice(0, 10)}</time>
+						</header>
+						<div class="reply-body">{comment.body}</div>
+					</article>
 				{/each}
 			</div>
 		{/if}
-	</Card>
+	</section>
 </div>
 
 <style>
 	.page {
-		max-width: 800px;
+		max-width: 900px;
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-6);
+		gap: var(--space-8);
 	}
 
 	.back-link {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
 		text-decoration: none;
+		transition: color 0.15s;
 	}
 
 	.back-link:hover {
-		color: var(--color-accent);
-		text-decoration: underline;
+		color: var(--accent);
 	}
 
-	.post-card {
-		padding: var(--space-6);
-		border-radius: var(--radius-lg);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	}
-
-	.post-header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-3);
-		margin-bottom: var(--space-4);
-	}
-
-	.post-title {
-		font-size: var(--text-2xl);
-		font-weight: var(--weight-bold);
-		margin: 0;
-		color: rgba(0, 0, 0, 0.9);
-		flex: 1;
-	}
-
-	.btn-delete {
-		font-size: var(--text-2xl);
-		font-weight: bold;
-		line-height: 1;
-		background: rgba(0, 0, 0, 0.1);
-		border: none;
+	/* Thread (Original Post) */
+	.thread {
+		background: var(--paper);
+		padding: 3rem 3rem 2.5rem;
 		border-radius: var(--radius);
-		width: 32px;
-		height: 32px;
-		cursor: pointer;
-		color: rgba(0, 0, 0, 0.6);
-		transition: background 0.2s, color 0.2s;
+		box-shadow:
+			0 2px 4px rgba(0,0,0,0.06),
+			0 8px 24px rgba(0,0,0,0.10),
+			0 24px 64px rgba(0,0,0,0.12),
+			0 48px 96px rgba(0,0,0,0.08);
 	}
 
-	.btn-delete:hover {
-		background: #fee2e2;
-		color: #991b1b;
+	.thread-header {
+		margin-bottom: 1.5rem;
 	}
 
-	.post-body {
-		font-size: var(--text-base);
-		line-height: 1.6;
+	.thread-title {
+		font-family: 'IM Fell English', serif;
+		font-size: 2rem;
+		font-weight: 400;
+		line-height: 1.3;
+		color: var(--ink);
+		margin: 0 0 0.75rem 0;
+	}
+
+	.thread-meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.thread-author {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-mid);
+	}
+
+	.thread-separator {
+		width: 2px;
+		height: 2px;
+		border-radius: 50%;
+		background: var(--rule-strong);
+	}
+
+	.thread-date {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.68rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
+	}
+
+	.thread-body {
+		font-family: 'Libre Baskerville', serif;
+		font-size: 1rem;
+		line-height: 1.65;
+		color: var(--ink);
 		white-space: pre-wrap;
-		color: rgba(0, 0, 0, 0.8);
-		margin-bottom: var(--space-5);
 	}
 
-	.post-footer {
+	/* Replies Section */
+	.replies {
+		background: var(--disc-bg);
+		padding: 2.5rem 3rem;
+		border-radius: var(--radius);
+		box-shadow:
+			0 2px 4px rgba(0,0,0,0.06),
+			0 8px 24px rgba(0,0,0,0.10),
+			0 24px 64px rgba(0,0,0,0.12),
+			0 48px 96px rgba(0,0,0,0.08);
+	}
+
+	.replies-title {
+		font-family: 'IM Fell English', serif;
+		font-size: 1.5rem;
+		font-weight: 400;
+		color: var(--ink);
+		margin: 0 0 2rem 0;
+	}
+
+	/* Reply Form */
+	.reply-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		margin-bottom: 3rem;
+		padding-bottom: 2rem;
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.reply-form-label {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-mid);
+	}
+
+	.reply-form-footer {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding-top: var(--space-4);
-		border-top: 1px solid rgba(0, 0, 0, 0.1);
 	}
 
-	.post-author {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
-	}
-
-	.author-link {
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		color: rgba(0, 0, 0, 0.8);
-		text-decoration: none;
-	}
-
-	.author-link:hover {
-		text-decoration: underline;
-	}
-
-	.author-handle {
-		font-size: var(--text-xs);
-		font-family: var(--font-mono);
-		color: rgba(0, 0, 0, 0.5);
-	}
-
-	.post-meta {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: var(--text-xs);
-		color: rgba(0, 0, 0, 0.6);
-	}
-
-	.edited {
+	.reply-form-note {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.62rem;
+		letter-spacing: 0.08em;
+		color: var(--ink-faint);
+		margin: 0;
 		font-style: italic;
 	}
 
-	.comments-title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-semibold);
-		margin: 0 0 var(--space-5) 0;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.comment-count {
-		font-size: var(--text-sm);
-		font-weight: var(--weight-normal);
-		color: var(--color-text-muted);
-	}
-
-	.comment-form {
+	/* Replies List */
+	.replies-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3);
-		align-items: flex-end;
-		margin-bottom: var(--space-5);
+		gap: 2rem;
 	}
 
-	.no-comments {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		text-align: center;
-		padding: var(--space-6) 0;
-	}
-
-	.comments-list {
+	.reply {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
+		gap: 0.75rem;
 	}
 
-	.comment {
-		padding: var(--space-4);
-		background: var(--color-bg);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-	}
-
-	.comment-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--space-2);
-	}
-
-	.comment-author {
+	.reply-header {
 		display: flex;
 		align-items: baseline;
-		gap: var(--space-2);
+		gap: var(--space-3);
 	}
 
-	.comment-meta {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+	.reply-author {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-mid);
 	}
 
-	.delete-form {
-		display: inline;
+	.reply-date {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.68rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
 	}
 
-	.btn-delete-comment {
-		font-size: var(--text-xs);
-		padding: 2px 8px;
-		background: transparent;
-		color: var(--color-text-muted);
-		border: none;
-		cursor: pointer;
-	}
-
-	.btn-delete-comment:hover {
-		color: var(--color-danger);
-		text-decoration: underline;
-	}
-
-	.comment-body {
-		font-size: var(--text-sm);
-		line-height: 1.5;
+	.reply-body {
+		font-family: 'Libre Baskerville', serif;
+		font-size: 0.95rem;
+		line-height: 1.65;
+		color: var(--ink);
 		white-space: pre-wrap;
-		color: var(--color-text);
 	}
 </style>

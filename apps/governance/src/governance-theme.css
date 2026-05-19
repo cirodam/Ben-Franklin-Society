@@ -1,7 +1,7 @@
 /* Governance App Theme Overrides */
 
 /* Import fonts */
-@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English&family=IM+Fell+English+SC&family=Libre+Baskerville&display=swap');
 
 /* Background - Subtle gradient with green-grey tones for formal feel */
 html {
@@ -18,6 +18,90 @@ html {
 
 body {
 	background: transparent;
+}
+
+/* Governance-specific color variables */
+:root {
+	--rule-strong: rgba(0, 0, 0, 0.15);
+	--rule:        rgba(0, 0, 0, 0.08);
+	
+	--accent:     #2d5a4f;
+	--accent-mid: #4a8070;
+	--accent-lt:  #e8f0ee;
+	
+	--ink:        #151c1a;
+	--ink-mid:    #374340;
+	--ink-faint:  #7a8c89;
+	
+	--danger:     #7a2e2e;
+	--danger-lt:  #f7efef;
+	
+	--paper:      #fafaf7;
+	--surface-dk: #f2f2ef;
+	--disc-bg:    #f2f4f3;
+}
+
+/* Button styling */
+.btn {
+	font-family: 'IM Fell English SC', serif !important;
+	font-size: 0.72rem !important;
+	letter-spacing: 0.16em !important;
+	line-height: 1 !important;
+	padding: 0.75rem 1.5rem !important;
+	border: 1px solid var(--rule-strong) !important;
+	background: transparent !important;
+	color: var(--ink-mid) !important;
+	cursor: pointer !important;
+	border-radius: 0 !important;
+	transition: color 0.15s, background 0.15s, border-color 0.15s !important;
+}
+
+.btn:hover:not(:disabled) {
+	border-color: var(--ink-mid) !important;
+	color: var(--ink) !important;
+}
+
+.btn--primary {
+	background: var(--accent) !important;
+	border-color: var(--accent) !important;
+	color: #fff !important;
+}
+
+.btn--primary:hover:not(:disabled) {
+	background: #224438 !important;
+	border-color: #224438 !important;
+	color: #fff !important;
+}
+
+.btn--secondary {
+	background: var(--ink) !important;
+	border-color: var(--ink) !important;
+	color: var(--paper) !important;
+}
+
+.btn--secondary:hover:not(:disabled) {
+	background: var(--ink-mid) !important;
+	border-color: var(--ink-mid) !important;
+	color: var(--paper) !important;
+}
+
+.btn:disabled {
+	opacity: 0.45 !important;
+	cursor: not-allowed !important;
+}
+
+/* Page Headers */
+.page-header h1 {
+	font-family: 'IM Fell English', serif !important;
+	font-size: clamp(1.6rem, 3vw, 2.2rem) !important;
+	font-weight: 400 !important;
+	color: #fff !important;
+	text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Content Container */
+.app-shell__content {
+	margin-top: 80px !important;
 }
 
 /* Sidebar - Dark green-grey with light text */

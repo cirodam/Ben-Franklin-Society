@@ -497,27 +497,29 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at       TEXT NOT NULL
 );
 
--- Bulletin Board: community notices and discussion
+-- Bulletin Board: community threads and replies
 
 CREATE TABLE IF NOT EXISTS bulletin_post (
   uuid       TEXT PRIMARY KEY,
   author_uuid TEXT NOT NULL REFERENCES person(uuid),
   title      TEXT NOT NULL,
   body       TEXT NOT NULL,
-  color      TEXT NOT NULL,  -- hex color chosen by author
   created_at TEXT NOT NULL,
   updated_at TEXT NULL,
+  expires_at TEXT NULL,
   deleted_at TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS bulletin_comment (
-  uuid       TEXT PRIMARY KEY,
-  post_uuid  TEXT NOT NULL REFERENCES bulletin_post(uuid),
-  author_uuid TEXT NOT NULL REFERENCES person(uuid),
-  body       TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NULL,
-  deleted_at TEXT NULL
+  uuid                TEXT PRIMARY KEY,
+  post_uuid           TEXT NOT NULL REFERENCES bulletin_post(uuid),
+  author_uuid         TEXT NOT NULL REFERENCES person(uuid),
+  body                TEXT NOT NULL,
+  quoted_author_name  TEXT NULL,
+  quoted_excerpt      TEXT NULL,
+  quoted_reply_id     TEXT NULL,
+  created_at          TEXT NOT NULL,
+  deleted_at          TEXT NULL
 );
 
 -- General-purpose discussion threads and comments

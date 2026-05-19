@@ -1,8 +1,11 @@
 <script lang="ts">
-	import { Button, EmptyState, PageHeader, Card } from '@bfs/ui';
-	import type { PageData } from './$types.js';
+	import { enhance } from '$app/forms';
+	import { Button, EmptyState, PageHeader, Input, Textarea } from '@bfs/ui';
+	import type { ActionData, PageData } from './$types.js';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	let showForm = $state(false);
 
 	function excerpt(text: string, maxLength = 120): string {
 		if (text.length <= maxLength) return text;
@@ -13,9 +16,32 @@
 <div class="page">
 	<PageHeader title="Community Bulletin Board">
 		{#snippet actions()}
-			<Button href="/communications/bulletin/new">+ New Notice</Button>
+			<Button onclick={() => showForm = !showForm}>
+				{showForm ? 'Cancel' : 'Start a thread'}
+			</Button>
 		{/snippet}
 	</PageHeader>
+
+	{#if showForm}
+		<form method="POST" use:enhance class="new-thread-form">
+			<div class="form-header">New Thread</div>
+			<Input
+				name="title"
+				placeholder="What's on your mind?"
+				required
+			/>
+			<Textarea
+				name="body"
+				placeholder="Say more, or leave it at the title..."
+				rows={4}
+				required
+			/>
+			<div class="form-actions">
+				<Button type="button" variant="secondary" onclick={() => showForm = false}>Cancel</Button>
+				<Button type="submit">Post to Square</Button>
+			</div>
+		</form>
+	{/if}
 
 	{#if data.posts.length === 0}
 		<EmptyState
@@ -24,26 +50,22 @@
 			description="Be the first to post!"
 		/>
 	{:else}
-		<div class="card-grid">
+		<div class="thread-list">
 			{#each data.posts as post}
-				<Card href="/communications/bulletin/{post.uuid}" hover style="background-color: {post.color}; min-height: 200px">
-					<div class="card-content">
-						<h2 class="card-title">{post.title}</h2>
-						<p class="card-body">{excerpt(post.body)}</p>
-					</div>
-					<div class="card-footer">
-						<div class="card-author">
-							<span class="author-name">{post.given_name} {post.family_name}</span>
-							<span class="author-handle">@{post.handle}</span>
-						</div>
-						<div class="card-meta">
+				<a href="/communications/bulletin/{post.uuid}" class="thread-row">
+					<div class="thread-main">
+						<h2 class="thread-title">{post.title}</h2>
+						<p class="thread-preview">{excerpt(post.body)}</p>
+						<div class="thread-meta">
+							<span class="thread-author">{post.given_name} {post.family_name}</span>
+							<span class="thread-separator"></span>
+							<span class="thread-date">{post.created_at.slice(0, 10)}</span>
 							{#if post.comment_count > 0}
-								<span class="comment-count">💬 {post.comment_count}</span>
+								<span class="thread-replies">{post.comment_count} {post.comment_count === 1 ? 'reply' : 'replies'}</span>
 							{/if}
-							<span class="post-date">{post.created_at.slice(0, 10)}</span>
 						</div>
 					</div>
-				</Card>
+				</a>
 			{/each}
 		</div>
 	{/if}
@@ -54,70 +76,136 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
+		max-width: 1000px;
+		margin: 0 auto;
+		width: 100%;
 	}
 
-	.card-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	.new-thread-form {
+		display: flex;
+		flex-direction: column;
 		gap: var(--space-4);
+		background: var(--paper);
+		padding: 1.5rem 2rem;
+		border-radius: var(--radius);
+		box-shadow:
+			0 2px 4px rgba(0,0,0,0.06),
+			0 8px 24px rgba(0,0,0,0.10),
+			0 24px 64px rgba(0,0,0,0.12),
+			0 48px 96px rgba(0,0,0,0.08);
 	}
 
-	.card-content {
+	.form-header {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-mid);
+		text-transform: uppercase;
+	}
+
+	.form-actions {
+		display: flex;
+		gap: var(--space-3);
+		justify-content: flex-end;
+	}
+
+	.thread-list {
+		display: flex;
+		flex-direction: column;
+		background: var(--paper);
+		box-shadow:
+			0 2px 4px rgba(0,0,0,0.06),
+			0 8px 24px rgba(0,0,0,0.10),
+			0 24px 64px rgba(0,0,0,0.12),
+			0 48px 96px rgba(0,0,0,0.08);
+	}
+
+	.thread-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-6);
+		padding: 1.4rem 2rem;
+		border-bottom: 1px solid var(--rule);
+		background: transparent;
+		cursor: pointer;
+		transition: background 0.12s;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.thread-row:last-child {
+		border-bottom: none;
+	}
+
+	.thread-row:hover {
+		background: var(--surface-dk);
+	}
+
+	.thread-main {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3);
-	}
-
-	.card-title {
-		font-size: var(--text-lg);
-		font-weight: var(--weight-bold);
-		margin: 0;
-		color: rgba(0, 0, 0, 0.9);
-	}
-
-	.card-body {
-		font-size: var(--text-sm);
-		line-height: 1.5;
-		margin: 0;
-		color: rgba(0, 0, 0, 0.7);
-	}
-
-	.card-footer {
-		display: flex;
-		flex-direction: column;
 		gap: var(--space-2);
-		padding-top: var(--space-3);
-		border-top: 1px solid rgba(0, 0, 0, 0.1);
+		min-width: 0;
 	}
 
-	.card-author {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
+	.thread-title {
+		font-family: 'IM Fell English', serif;
+		font-size: 1.2rem;
+		font-weight: 400;
+		color: var(--ink);
+		line-height: 1.3;
+		margin: 0;
 	}
 
-	.author-name {
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		color: rgba(0, 0, 0, 0.8);
+	.thread-row:hover .thread-title {
+		color: var(--accent);
 	}
 
-	.author-handle {
-		font-size: var(--text-xs);
-		font-family: var(--font-mono);
-		color: rgba(0, 0, 0, 0.5);
+	.thread-preview {
+		font-family: 'Libre Baskerville', serif;
+		font-size: 0.95rem;
+		color: var(--ink-faint);
+		line-height: 1.55;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		margin: 0;
 	}
 
-	.card-meta {
+	.thread-meta {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		font-size: var(--text-xs);
-		color: rgba(0, 0, 0, 0.6);
+		gap: var(--space-2);
 	}
 
-	.comment-count {
-		font-weight: var(--weight-medium);
+	.thread-author {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-mid);
+	}
+
+	.thread-separator {
+		width: 2px;
+		height: 2px;
+		border-radius: 50%;
+		background: var(--rule-strong);
+	}
+
+	.thread-date {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.68rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
+	}
+
+	.thread-replies {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 0.68rem;
+		letter-spacing: 0.1em;
+		color: var(--ink-faint);
+		margin-left: auto;
 	}
 </style>

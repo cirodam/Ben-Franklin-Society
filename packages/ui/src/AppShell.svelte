@@ -29,8 +29,10 @@
 		{@render sidebar()}
 	{/if}
 
-	<main class="app-shell__main" style="max-width: {mainMaxWidth};">
-		{@render children()}
+	<main class="app-shell__main">
+		<div class="app-shell__content" style="max-width: {mainMaxWidth};">
+			{@render children()}
+		</div>
 	</main>
 </div>
 
@@ -43,6 +45,12 @@
 	.app-shell__main {
 		flex: 1;
 		min-width: 0;
+		display: flex;
+		justify-content: center;
+	}
+
+	.app-shell__content {
+		width: 100%;
 		padding: var(--space-8);
 	}
 </style>

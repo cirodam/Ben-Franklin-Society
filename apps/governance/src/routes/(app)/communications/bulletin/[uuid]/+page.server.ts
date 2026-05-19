@@ -10,9 +10,9 @@ export const load: PageServerLoad = async ({ params }) => {
 			bp.uuid,
 			bp.title,
 			bp.body,
-			bp.color,
 			bp.created_at,
 			bp.updated_at,
+			bp.expires_at,
 			bp.author_uuid,
 			p.given_name,
 			p.family_name,
@@ -24,9 +24,9 @@ export const load: PageServerLoad = async ({ params }) => {
 		uuid: string;
 		title: string;
 		body: string;
-		color: string;
 		created_at: string;
 		updated_at: string | null;
+		expires_at: string | null;
 		author_uuid: string;
 		given_name: string;
 		family_name: string;
@@ -41,8 +41,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		SELECT 
 			bc.uuid,
 			bc.body,
+			bc.quoted_author_name,
+			bc.quoted_excerpt,
+			bc.quoted_reply_id,
 			bc.created_at,
-			bc.updated_at,
 			bc.author_uuid,
 			p.given_name,
 			p.family_name,
@@ -54,8 +56,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	`).all(params.uuid) as Array<{
 		uuid: string;
 		body: string;
+		quoted_author_name: string | null;
+		quoted_excerpt: string | null;
+		quoted_reply_id: string | null;
 		created_at: string;
-		updated_at: string | null;
 		author_uuid: string;
 		given_name: string;
 		family_name: string;
