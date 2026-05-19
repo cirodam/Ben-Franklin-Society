@@ -5,32 +5,37 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const canDelete = (authorUuid: string) => {
-		return data.post.author_uuid === authorUuid;
-	};
+	function formatDate(dateString: string): string {
+		const date = new Date(dateString);
+		return date.toLocaleDateString('en-US', { 
+			year: 'numeric', 
+			month: 'short', 
+			day: 'numeric' 
+		});
+	}
 </script>
 
 <div class="page">
-	<a href="/communications/bulletin" class="back-link">← Back to Town Square</a>
+	<a href="/communications/bulletin" class="back-link t-label-tight">← Back to Town Square</a>
 
 	<article class="thread">
 		<header class="thread-header">
-			<h1 class="thread-title">{data.post.title}</h1>
+			<h1 class="thread-title t-display">{data.post.title}</h1>
 			<div class="thread-meta">
-				<span class="thread-author">{data.post.given_name} {data.post.family_name}</span>
+				<span class="thread-author t-label">{data.post.given_name} {data.post.family_name}</span>
 				<span class="thread-separator"></span>
-				<time class="thread-date">{data.post.created_at.slice(0, 10)}</time>
+				<time class="thread-date t-label">{formatDate(data.post.created_at)}</time>
 			</div>
 		</header>
 
-		<div class="thread-body">{data.post.body}</div>
+		<div class="thread-body t-prose">{data.post.body}</div>
 	</article>
 
 	<section class="replies">
-		<h2 class="replies-title">Replies</h2>
+		<h2 class="replies-title t-display">Replies</h2>
 
 		<form method="POST" action="?/comment" use:enhance class="reply-form">
-			<div class="reply-form-label">Add to the conversation</div>
+			<div class="reply-form-label t-label">Add to the conversation</div>
 			<Textarea
 				name="body"
 				placeholder="Say something..."
@@ -38,7 +43,7 @@
 				required
 			/>
 			<div class="reply-form-footer">
-				<p class="reply-form-note">Replies become part of the chapter record</p>
+				<p class="reply-form-note t-label-tight">Replies become part of the chapter record</p>
 				<Button type="submit">Reply</Button>
 			</div>
 		</form>
@@ -48,13 +53,15 @@
 				{#each data.comments as comment}
 					<article class="reply">
 						<header class="reply-header">
-							<span class="reply-author">{comment.given_name} {comment.family_name}</span>
-							<time class="reply-date">{comment.created_at.slice(0, 10)}</time>
+							<span class="reply-author t-label">{comment.given_name} {comment.family_name}</span>
+							<time class="reply-date t-label">{formatDate(comment.created_at)}</time>
 						</header>
-						<div class="reply-body">{comment.body}</div>
+						<div class="reply-body t-prose">{comment.body}</div>
 					</article>
 				{/each}
 			</div>
+		{:else}
+			<p class="no-replies">No replies yet. Be the first to join the conversation!</p>
 		{/if}
 	</section>
 </div>
@@ -69,9 +76,7 @@
 	}
 
 	.back-link {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-faint);
 		text-decoration: none;
 		transition: color 0.15s;
@@ -86,11 +91,7 @@
 		background: var(--paper);
 		padding: 3rem 3rem 2.5rem;
 		border-radius: var(--radius);
-		box-shadow:
-			0 2px 4px rgba(0,0,0,0.06),
-			0 8px 24px rgba(0,0,0,0.10),
-			0 24px 64px rgba(0,0,0,0.12),
-			0 48px 96px rgba(0,0,0,0.08);
+		box-shadow: var(--shadow-elevated);
 	}
 
 	.thread-header {
@@ -98,10 +99,7 @@
 	}
 
 	.thread-title {
-		font-family: 'IM Fell English', serif;
-		font-size: 2rem;
-		font-weight: 400;
-		line-height: 1.3;
+		font-size: var(--text-2xl);
 		color: var(--ink);
 		margin: 0 0 0.75rem 0;
 	}
@@ -113,9 +111,7 @@
 	}
 
 	.thread-author {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-mid);
 	}
 
@@ -127,16 +123,12 @@
 	}
 
 	.thread-date {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.68rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-faint);
 	}
 
 	.thread-body {
-		font-family: 'Libre Baskerville', serif;
-		font-size: 1rem;
-		line-height: 1.65;
+		font-size: var(--text-read);
 		color: var(--ink);
 		white-space: pre-wrap;
 	}
@@ -146,17 +138,11 @@
 		background: var(--disc-bg);
 		padding: 2.5rem 3rem;
 		border-radius: var(--radius);
-		box-shadow:
-			0 2px 4px rgba(0,0,0,0.06),
-			0 8px 24px rgba(0,0,0,0.10),
-			0 24px 64px rgba(0,0,0,0.12),
-			0 48px 96px rgba(0,0,0,0.08);
+		box-shadow: var(--shadow-elevated);
 	}
 
 	.replies-title {
-		font-family: 'IM Fell English', serif;
-		font-size: 1.5rem;
-		font-weight: 400;
+		font-size: var(--text-xl);
 		color: var(--ink);
 		margin: 0 0 2rem 0;
 	}
@@ -172,9 +158,7 @@
 	}
 
 	.reply-form-label {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-mid);
 	}
 
@@ -185,15 +169,22 @@
 	}
 
 	.reply-form-note {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.62rem;
-		letter-spacing: 0.08em;
+		font-size: var(--text-xs);
 		color: var(--ink-faint);
 		margin: 0;
 		font-style: italic;
 	}
 
 	/* Replies List */
+	.no-replies {
+		font-size: var(--text-sm);
+		color: var(--ink-faint);
+		text-align: center;
+		padding: 2rem 0;
+		margin: 0;
+		font-style: italic;
+	}
+
 	.replies-list {
 		display: flex;
 		flex-direction: column;
@@ -213,23 +204,17 @@
 	}
 
 	.reply-author {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-mid);
 	}
 
 	.reply-date {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.68rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-faint);
 	}
 
 	.reply-body {
-		font-family: 'Libre Baskerville', serif;
-		font-size: 0.95rem;
-		line-height: 1.65;
+		font-size: var(--text-body);
 		color: var(--ink);
 		white-space: pre-wrap;
 	}

@@ -1,15 +1,24 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Button, EmptyState, PageHeader, Input, Textarea } from '@bfs/ui';
-	import type { ActionData, PageData } from './$types.js';
+	import type { PageData } from './$types.js';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	let showForm = $state(false);
 
 	function excerpt(text: string, maxLength = 120): string {
 		if (text.length <= maxLength) return text;
 		return text.slice(0, maxLength).trim() + '...';
+	}
+
+	function formatDate(dateString: string): string {
+		const date = new Date(dateString);
+		return date.toLocaleDateString('en-US', { 
+			year: 'numeric', 
+			month: 'short', 
+			day: 'numeric' 
+		});
 	}
 </script>
 
@@ -24,7 +33,7 @@
 
 	{#if showForm}
 		<form method="POST" use:enhance class="new-thread-form">
-			<div class="form-header">New Thread</div>
+			<div class="form-header t-label">New Thread</div>
 			<Input
 				name="title"
 				placeholder="What's on your mind?"
@@ -54,14 +63,14 @@
 			{#each data.posts as post}
 				<a href="/communications/bulletin/{post.uuid}" class="thread-row">
 					<div class="thread-main">
-						<h2 class="thread-title">{post.title}</h2>
-						<p class="thread-preview">{excerpt(post.body)}</p>
+						<h2 class="thread-title t-display">{post.title}</h2>
+						<p class="thread-preview t-prose-italic">{excerpt(post.body)}</p>
 						<div class="thread-meta">
-							<span class="thread-author">{post.given_name} {post.family_name}</span>
+							<span class="thread-author t-label">{post.given_name} {post.family_name}</span>
 							<span class="thread-separator"></span>
-							<span class="thread-date">{post.created_at.slice(0, 10)}</span>
+							<span class="thread-date t-label">{formatDate(post.created_at)}</span>
 							{#if post.comment_count > 0}
-								<span class="thread-replies">{post.comment_count} {post.comment_count === 1 ? 'reply' : 'replies'}</span>
+								<span class="thread-replies t-label">{post.comment_count} {post.comment_count === 1 ? 'reply' : 'replies'}</span>
 							{/if}
 						</div>
 					</div>
@@ -88,17 +97,11 @@
 		background: var(--paper);
 		padding: 1.5rem 2rem;
 		border-radius: var(--radius);
-		box-shadow:
-			0 2px 4px rgba(0,0,0,0.06),
-			0 8px 24px rgba(0,0,0,0.10),
-			0 24px 64px rgba(0,0,0,0.12),
-			0 48px 96px rgba(0,0,0,0.08);
+		box-shadow: var(--shadow-elevated);
 	}
 
 	.form-header {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-mid);
 		text-transform: uppercase;
 	}
@@ -113,11 +116,7 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--paper);
-		box-shadow:
-			0 2px 4px rgba(0,0,0,0.06),
-			0 8px 24px rgba(0,0,0,0.10),
-			0 24px 64px rgba(0,0,0,0.12),
-			0 48px 96px rgba(0,0,0,0.08);
+		box-shadow: var(--shadow-elevated);
 	}
 
 	.thread-row {
@@ -151,11 +150,8 @@
 	}
 
 	.thread-title {
-		font-family: 'IM Fell English', serif;
-		font-size: 1.2rem;
-		font-weight: 400;
+		font-size: var(--text-lg);
 		color: var(--ink);
-		line-height: 1.3;
 		margin: 0;
 	}
 
@@ -164,10 +160,8 @@
 	}
 
 	.thread-preview {
-		font-family: 'Libre Baskerville', serif;
-		font-size: 0.95rem;
+		font-size: var(--text-body);
 		color: var(--ink-faint);
-		line-height: 1.55;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -181,9 +175,7 @@
 	}
 
 	.thread-author {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-mid);
 	}
 
@@ -195,16 +187,12 @@
 	}
 
 	.thread-date {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.68rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-faint);
 	}
 
 	.thread-replies {
-		font-family: 'IM Fell English SC', serif;
-		font-size: 0.68rem;
-		letter-spacing: 0.1em;
+		font-size: var(--text-sm);
 		color: var(--ink-faint);
 		margin-left: auto;
 	}
