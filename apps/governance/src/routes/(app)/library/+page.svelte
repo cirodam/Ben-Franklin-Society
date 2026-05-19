@@ -1,36 +1,17 @@
 <script lang="ts">
-	import { EmptyState, List, ListItem, PageHeader } from '@bfs/ui';
+	import { Button, EmptyState, PageHeader } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
 	import { documentTypes } from '$lib/documents';
-	import LibraryStats from './LibraryStats.svelte';
-	import LibraryFilters from './LibraryFilters.svelte';
 	import CreateDocumentDialog from './CreateDocumentDialog.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	let query = $state(data.filters.query);
 	let typeFilter = $state<string[]>(data.filters.types);
-	let statusFilter = $state<string>(data.filters.status);
-	let ownerFilter = $state<string>(data.filters.owner);
+	let myDocuments = $state(data.filters.owner !== 'all');
 	
 	let showCreateDialog = $state(false);
-	let deleteConfirm = $state<string | null>(null); // UUID of document to delete
-	
-	async function handleDelete(uuid: string) {
-		const formData = new FormData();
-		formData.append('uuid', uuid);
-		
-		const response = await fetch('?/delete', {
-			method: 'POST',
-			body: formData
-		});
-		
-		if (response.ok) {
-			// Reload the page to show updated list
-			window.location.reload();
-		}
-	}
 
 	const allTypes = documentTypes.getAllTypes();
 
@@ -40,103 +21,105 @@
 		if (typeFilter.length > 0 && typeFilter.length < allTypes.length) {
 			params.set('type', typeFilter.join(','));
 		}
-		if (statusFilter !== 'all') {
-			params.set('status', statusFilter);
-		}
 		if (query.trim()) {
 			params.set('q', query.trim());
 		}
-		if (ownerFilter !== 'mine') {
-			params.set('owner', ownerFilter);
+		if (!myDocuments) {
+			params.set('owner', 'all');
 		}
 		const url = params.toString() ? `?${params}` : '';
 		goto(`/library${url}`, { replaceState: true, keepFocus: true });
 	}
 
-	function toggleType(type: string) {
-		if (typeFilter.includes(type)) {
-			typeFilter = typeFilter.filter(t => t !== type);
+	function handleSearch() {
+		updateFilters();
+	}
+
+	function handleTypeChange(event: Event) {
+		const select = event.target as HTMLSelectElement;
+		if (select.value === 'all') {
+			typeFilter = [];
 		} else {
-			typeFilter = [...typeFilter, type];
+			typeFilter = [select.value];
 		}
 		updateFilters();
 	}
+
+	function formatDate(dateString: string): string {
+		const date = new Date(dateString);
+		return date.toLocaleDateString('en-US', { 
+			year: 'numeric', 
+			month: 'short', 
+			day: 'numeric' 
+		});
+	}
+
+	const selectedType = $derived(typeFilter.length === 1 ? typeFilter[0] : 'all');
 </script>
 
 <div class="page">
-	<PageHeader 
-		title="Library"
-		description="Browse the society's governing documents, motions, and other records"
-	/>
-	
-	<LibraryStats stats={data.stats} />
+	<PageHeader title="Library">
+		{#snippet actions()}
+			<Button onclick={() => showCreateDialog = true}>Create document</Button>
+		{/snippet}
+	</PageHeader>
 
-	<section class="browse-section">
-		<LibraryFilters
-			bind:query
-			{typeFilter}
-			{statusFilter}
-			{ownerFilter}
-			items={data.items}
-			stats={data.stats}
-			onQueryChange={updateFilters}
-			onTypeToggle={toggleType}
-			onStatusChange={(s) => { statusFilter = s; updateFilters(); }}
-			onOwnerChange={(o) => { ownerFilter = o; updateFilters(); }}
-			onCreateClick={() => showCreateDialog = true}
+	<div class="search-row">
+		<input
+			class="search-input"
+			type="search"
+			placeholder="Search documents..."
+			bind:value={query}
+			onchange={handleSearch}
 		/>
+		<select class="type-select" value={selectedType} onchange={handleTypeChange}>
+			<option value="all">All types</option>
+			{#each allTypes as type}
+				{@const typeConfig = documentTypes.get(type)}
+				<option value={type}>{typeConfig.label}</option>
+			{/each}
+		</select>
+		<div class="owner-toggle">
+			<button
+				class="owner-toggle-btn"
+				class:active={myDocuments}
+				onclick={() => { myDocuments = true; updateFilters(); }}
+			>
+				Mine
+			</button>
+			<button
+				class="owner-toggle-btn"
+				class:active={!myDocuments}
+				onclick={() => { myDocuments = false; updateFilters(); }}
+			>
+				Public
+			</button>
+		</div>
+	</div>
 
-		{#if data.items.length === 0}
-			<EmptyState 
-				icon="🔍"
-				title="No documents match your search"
-			/>
-		{:else}
-			<List>
-				{#each data.items as item}
-					<div class="list-item-wrapper">
-						<ListItem href={documentTypes.getDetailRoute(item)}>
-							<div class="doc-item__main">
-								<div class="doc-item__title-row">
-									<span class="doc-item__icon">{documentTypes.getIcon(item.type)}</span>
-									<span class="doc-item__title">{item.title}</span>
-								</div>
-								<code class="doc-item__slug">{item.slug}</code>
-							</div>
-							<div class="doc-item__meta">
-								<span class="type-badge">{documentTypes.getSubtitle(item)}</span>
-								{#if item.metadata.status}
-									<span class="status-badge {documentTypes.getStatusClass(item, item.metadata.status)}">{item.metadata.status}</span>
-								{/if}
-								<span class="doc-item__date">
-									{new Date(item.updated_at).toLocaleDateString()}
-								</span>
-							</div>
-						</ListItem>
-						{#if item.owner_uuid === data.person?.uuid && item.type === 'prose'}
-							<div class="item-actions">
-								<a href="/library/{item.slug}/edit" class="action-btn action-btn--edit" onclick={(e) => e.stopPropagation()}>
-									✎
-								</a>
-								{#if deleteConfirm === item.uuid}
-									<button class="action-btn action-btn--confirm" onclick={() => handleDelete(item.uuid)}>
-										✓
-									</button>
-									<button class="action-btn action-btn--cancel" onclick={() => deleteConfirm = null}>
-										×
-									</button>
-								{:else}
-									<button class="action-btn action-btn--delete" onclick={() => deleteConfirm = item.uuid}>
-										🗑
-									</button>
-								{/if}
-							</div>
-						{/if}
+	{#if data.items.length === 0}
+		<EmptyState 
+			icon="📚"
+			title="No documents found"
+			description="Try adjusting your search or filters"
+		/>
+	{:else}
+		<div class="document-list">
+			{#each data.items as item}
+				<a href={documentTypes.getDetailRoute(item)} class="document-row">
+					<div class="document-main">
+						<h2 class="document-title t-display">{item.title}</h2>
+						<div class="document-meta-line">
+							<span class="document-author t-label">{item.given_name} {item.family_name}</span>
+							<span class="meta-dot">•</span>
+							<span class="document-type t-label">{documentTypes.get(item.type).label}</span>
+						</div>
 					</div>
-				{/each}
-			</List>
-		{/if}
-	</section>
+					<span class="document-date t-label">{formatDate(item.updated_at)}</span>
+				</a>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <CreateDocumentDialog 
@@ -147,18 +130,121 @@
 
 <style>
 	.page {
+		max-width: 1200px;
+		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-8);
+		gap: var(--space-6);
 	}
 
-	.browse-section {
+	.search-row {
+		display: flex;
+		gap: var(--space-3);
+		align-items: center;
+	}
+
+	.search-input {
+		flex: 1;
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-base);
+		letter-spacing: 0.08em;
+		color: var(--ink);
+		background: var(--paper);
+	}
+
+	.search-input:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+
+	.search-input::placeholder {
+		color: var(--ink-faint);
+	}
+
+	.type-select {
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-base);
+		letter-spacing: 0.08em;
+		color: var(--ink);
+		background: var(--paper);
+		cursor: pointer;
+		min-width: 180px;
+	}
+
+	.type-select:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+
+	.owner-toggle {
+		display: flex;
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		overflow: hidden;
+	}
+
+	.owner-toggle-btn {
+		padding: 0.75rem 1.25rem;
+		border: none;
+		background: transparent;
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-sm);
+		letter-spacing: 0.08em;
+		color: var(--ink-mid);
+		cursor: pointer;
+		transition: all 0.15s;
+		border-right: 1px solid var(--rule);
+	}
+
+	.owner-toggle-btn:last-child {
+		border-right: none;
+	}
+
+	.owner-toggle-btn:hover {
+		background: var(--surface-dk);
+	}
+
+	.owner-toggle-btn.active {
+		background: var(--accent);
+		color: var(--paper);
+	}
+
+	.document-list {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
+		background: var(--paper);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow-elevated);
+		overflow: hidden;
 	}
 
-	.doc-item__main {
+	.document-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-6);
+		padding: 1.5rem 2rem;
+		border-bottom: 1px solid var(--rule);
+		text-decoration: none;
+		color: inherit;
+		transition: background 0.15s;
+	}
+
+	.document-row:last-child {
+		border-bottom: none;
+	}
+
+	.document-row:hover {
+		background: var(--surface-dk);
+	}
+
+	.document-main {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
@@ -166,250 +252,42 @@
 		min-width: 0;
 	}
 
-	.doc-item__title-row {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.doc-item__icon {
+	.document-title {
 		font-size: var(--text-lg);
-		flex-shrink: 0;
+		color: var(--ink);
+		margin: 0;
+		line-height: 1.3;
 	}
 
-	.doc-item__title {
-		font-weight: var(--weight-medium);
-		color: var(--color-text);
+	.document-row:hover .document-title {
+		color: var(--accent);
 	}
 
-	.doc-item__slug {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		font-family: var(--font-mono);
-	}
-
-	.doc-item__meta {
+	.document-meta-line {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		flex-wrap: wrap;
 	}
 
-	.doc-item__date {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-	}
-
-	.type-badge {
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		background: var(--color-surface);
-		border: 1px solid var(--color-border);
-		text-transform: capitalize;
-	}
-
-	.status-badge {
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		text-transform: capitalize;
-	}
-
-	.status--draft { background: #f3f4f6; color: #374151; }
-	.status--introduced { background: #dbeafe; color: #1e40af; }
-	.status--deliberation { background: #fef3c7; color: #92400e; }
-	.status--adopted,
-	.status--enacted { background: #d1fae5; color: #065f46; }
-	.status--rejected,
-	.status--withdrawn,
-	.status--repealed { background: #fee2e2; color: #991b1b; }
-
-	.seniority-badge {
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-	}
-
-	.seniority--1 { background: #fef3c7; color: #92400e; } /* Charter */
-	.seniority--2 { background: #dbeafe; color: #1e40af; } /* Constitution */
-	.seniority--3 { background: #e0e7ff; color: #3730a3; } /* Bylaw */
-	.seniority--4 { background: #f3e8ff; color: #6b21a8; } /* Ordinance */
-	.seniority--5 { background: #fce7f3; color: #9f1239; } /* Regulation */
-	.seniority--6 { background: #f3f4f6; color: #374151; } /* Policy */
-
-	/* List item actions */
-	.list-item-wrapper {
-		position: relative;
-	}
-
-	.item-actions {
-		position: absolute;
-		top: 50%;
-		right: var(--space-4);
-		transform: translateY(-50%);
-		display: flex;
-		gap: var(--space-2);
-		z-index: 10;
-	}
-
-	.action-btn {
-		padding: var(--space-2);
-		border-radius: var(--radius-sm);
-		border: 1px solid var(--color-border);
-		background: var(--color-surface);
-		color: var(--color-text);
+	.document-author {
 		font-size: var(--text-sm);
-		cursor: pointer;
-		transition: all 0.15s;
-		text-decoration: none;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
+		color: var(--ink-faint);
 	}
 
-	.action-btn:hover {
-		background: var(--color-background);
-	}
-
-	.action-btn--edit {
-		color: #3b82f6;
-		border-color: #3b82f6;
-	}
-
-	.action-btn--edit:hover {
-		background: #eff6ff;
-	}
-
-	.action-btn--delete {
-		color: #dc2626;
-		border-color: #fca5a5;
-	}
-
-	.action-btn--delete:hover {
-		background: #fee2e2;
-		border-color: #dc2626;
-	}
-
-	.action-btn--confirm {
-		color: #059669;
-		border-color: #059669;
-	}
-
-	.action-btn--confirm:hover {
-		background: #d1fae5;
-	}
-
-	.action-btn--cancel {
-		color: #6b7280;
-		border-color: #d1d5db;
-	}
-
-	.action-btn--cancel:hover {
-		background: #f3f4f6;
-	}
-
-	/* Modal styles */
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-		padding: var(--space-4);
-	}
-
-	.modal-backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		border: none;
-		cursor: pointer;
-		z-index: 1000;
-	}
-
-	.modal {
-		position: relative;
-		background: var(--color-surface);
-		border-radius: var(--radius-lg);
-		padding: var(--space-6);
-		max-width: 500px;
-		width: 100%;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-		z-index: 1001;
-	}
-
-	.modal h2 {
-		margin: 0 0 var(--space-4) 0;
-		font-size: var(--text-xl);
-		color: var(--color-text);
-	}
-
-	.form-group {
-		margin-bottom: var(--space-4);
-	}
-
-	.form-group label {
-		display: block;
-		margin-bottom: var(--space-2);
-		font-weight: var(--weight-medium);
-		color: var(--color-text);
-	}
-
-	.form-group input,
-	.form-group select {
-		width: 100%;
-		padding: var(--space-3);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background: var(--color-background);
-		color: var(--color-text);
-		font-size: var(--text-base);
-	}
-
-	.form-group input:focus,
-	.form-group select:focus {
-		outline: none;
-		border-color: var(--color-primary, #3b82f6);
-	}
-
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-3);
-		margin-top: var(--space-6);
-	}
-
-	.btn {
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--color-border);
-		background: var(--color-surface);
-		color: var(--color-text);
+	.document-type {
 		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		transition: all 0.15s;
+		color: var(--ink-faint);
 	}
 
-	.btn:hover {
-		background: var(--color-background);
+	.meta-dot {
+		font-size: var(--text-sm);
+		color: var(--ink-faint);
 	}
 
-	.btn--primary {
-		background: var(--color-primary, #3b82f6);
-		color: white;
-		border-color: var(--color-primary, #3b82f6);
-	}
-
-	.btn--primary:hover {
-		background: var(--color-primary-dark, #2563eb);
+	.document-date {
+		font-size: var(--text-sm);
+		color: var(--ink-faint);
+		white-space: nowrap;
 	}
 </style>
 

@@ -3,6 +3,7 @@ import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, delete
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';
 import type { ProseDocument, ContractDocument } from '$lib/server/documents/library-types.js';
+import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	// Get filter parameters from URL
@@ -14,31 +15,67 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	// Determine which types to show - default to all types
 	const types = typeParam ? typeParam.split(',') : ['governing', 'motion', 'prose', 'contract'];
 
-	// Determine owner filter
-	// 'all' = no filter (show everything)
-	// 'mine' or default = show only user's documents
-	let ownerFilter: string | string[] | undefined;
-	if (ownerParam === 'all') {
-		ownerFilter = undefined; // Show all documents
-	} else {
-		// Show only user's documents
-		ownerFilter = locals.person?.uuid;
+	// Build query with owner name JOIN
+	let query = `
+		SELECT 
+			li.*,
+			p.given_name,
+			p.family_name,
+			p.handle
+		FROM library_item li
+		JOIN person p ON li.owner_uuid = p.uuid
+		WHERE 1=1
+	`;
+	const params: any[] = [];
+
+	// Filter by type
+	if (types.length > 0) {
+		const placeholders = types.map(() => '?').join(', ');
+		query += ` AND li.type IN (${placeholders})`;
+		params.push(...types);
 	}
 
-	// Search library items
-	const items = searchLibrary({
-		type: types,
-		status: statusParam || undefined,
-		query: queryParam || undefined,
-		owner_uuid: ownerFilter,
-	});
+	// Filter by owner
+	if (ownerParam !== 'all' && locals.person?.uuid) {
+		query += ' AND li.owner_uuid = ?';
+		params.push(locals.person.uuid);
+	}
+
+	// Search query
+	if (queryParam) {
+		query += ' AND (li.title LIKE ? OR li.slug LIKE ?)';
+		const searchTerm = `%${queryParam}%`;
+		params.push(searchTerm, searchTerm);
+	}
+
+	query += ' ORDER BY li.updated_at DESC';
+
+	const items = db.prepare(query).all(...params) as Array<{
+		uuid: string;
+		type: string;
+		slug: string;
+		title: string;
+		owner_uuid: string;
+		created_at: string;
+		updated_at: string;
+		metadata_json: string;
+		given_name: string;
+		family_name: string;
+		handle: string;
+	}>;
+
+	// Parse metadata for each item
+	const itemsWithMetadata = items.map(item => ({
+		...item,
+		metadata: JSON.parse(item.metadata_json || '{}')
+	}));
 
 	// Get statistics
 	const stats = getLibraryStats();
 
 	return {
-		items,
-		stats,
+		items: itemsWithMetadata,
+		stats: getLibraryStats(),
 		filters: {
 			types,
 			status: statusParam || 'all',
