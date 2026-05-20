@@ -22,7 +22,8 @@ import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissio
 import { addEntry, getBodyRecord } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, getComments, createMotion } from '$lib/server/governance/motions.js';
-import { listDeliberationRules } from '$lib/server/governance/deliberation-rules.js';
+import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/governance/deliberation-rules.js';
+import { getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
 import { getDocumentBySlug } from '$lib/server/documents/library.js';
 import { listVoteSessions, getSessionTally } from '$lib/server/governance/vote-sessions.js';
 import { db } from '$lib/server/db.js';
@@ -173,9 +174,18 @@ export const actions: Actions = {
 		const body = String(data.get('body') ?? '').trim();
 		const reasoning = String(data.get('reasoning') ?? '').trim() || null;
 		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
+		const vote_rule_uuid = String(data.get('vote_rule_uuid') ?? '').trim() || null;
 
 		if (!title) return fail(400, { message: 'Title is required' });
 		if (!body) return fail(400, { message: 'Motion text is required' });
+
+		// Fetch rule names if UUIDs provided
+		const deliberation_rule_name = deliberation_rule_uuid
+			? getDeliberationRuleByUuid(deliberation_rule_uuid)?.name
+			: undefined;
+		const vote_rule_name = vote_rule_uuid
+			? getVoteRuleByUuid(vote_rule_uuid)?.name
+			: undefined;
 
 		const motion = createMotion({
 			title,
@@ -183,7 +193,11 @@ export const actions: Actions = {
 			reasoning,
 			introduced_by_uuid: actingAs,
 			body_uuid: association.uuid,
+			body_name: association.name,
 			deliberation_rule_uuid,
+			deliberation_rule_name,
+			vote_rule_uuid,
+			vote_rule_name,
 		});
 
 		return { created: motion.uuid };

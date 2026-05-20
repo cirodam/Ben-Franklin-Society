@@ -60,7 +60,11 @@ export function createMotion(input: {
 	reasoning?: string | null;
 	introduced_by_uuid: string;
 	body_uuid: string;
+	body_name?: string;
 	deliberation_rule_uuid?: string | null;
+	deliberation_rule_name?: string;
+	vote_rule_uuid?: string | null;
+	vote_rule_name?: string;
 	type?: string;
 	seniority?: number | null;
 	slug?: string;
@@ -87,16 +91,27 @@ export function createMotion(input: {
 	// Create discussion thread for this motion
 	const thread = discussions.createThread();
 	
+	// Convert body and reasoning into a single provision
+	const provisions: Array<{ number: string; text: string; reasoning?: string }> = [
+		{
+			number: '1',
+			text: input.body,
+			reasoning: input.reasoning ?? undefined
+		}
+	];
+	
 	const motion = library.createMotion({
 		slug,
 		title: input.title,
-		body: input.body,
-		reasoning: input.reasoning ?? undefined,
+		provisions,
 		introducer_uuid: input.introduced_by_uuid,
 		owner_uuid: input.body_uuid,
-		motion_number: motionNumberStr,
+		body_name: input.body_name,
 		deliberation_rule_uuid: input.deliberation_rule_uuid ?? undefined,
-		thread_uuid: thread.uuid,
+		deliberation_rule_name: input.deliberation_rule_name,
+		vote_rule_uuid: input.vote_rule_uuid ?? undefined,
+		vote_rule_name: input.vote_rule_name,
+		discussion_thread_uuid: thread.uuid,
 	});
 	
 	// Set status to introduced (library creates as draft)

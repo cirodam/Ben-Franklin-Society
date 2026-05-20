@@ -12,18 +12,11 @@
 		canEdit?: boolean;
 	} = $props();
 
-	const statusVariant: Record<string, string> = {
-		draft:        'status--draft',
-		introduced:   'status--introduced',
-		deliberation: 'status--deliberation',
-		enacted:      'status--enacted',
-		rejected:     'status--rejected',
-		withdrawn:    'status--withdrawn',
-	};
-
 	// Edit state
 	let isEditMode = $state(false);
 	let editedProvisions = $state([...doc.content.provisions]);
+	let editedClerkNotes = $state(doc.content.clerk_notes || '');
+	let editedParliamentarianNotes = $state(doc.content.parliamentarian_notes || '');
 	let isSaving = $state(false);
 
 	// Modal state
@@ -35,6 +28,8 @@
 		isEditMode = !isEditMode;
 		if (isEditMode) {
 			editedProvisions = [...doc.content.provisions];
+			editedClerkNotes = doc.content.clerk_notes || '';
+			editedParliamentarianNotes = doc.content.parliamentarian_notes || '';
 		}
 	}
 
@@ -76,6 +71,8 @@
 	function cancelEdit() {
 		isEditMode = false;
 		editedProvisions = [...doc.content.provisions];
+		editedClerkNotes = doc.content.clerk_notes || '';
+		editedParliamentarianNotes = doc.content.parliamentarian_notes || '';
 	}
 </script>
 
@@ -89,18 +86,36 @@
 				</div>
 			</div>
 			<h1 class="document-title">{doc.title}</h1>
-			<div class="document-meta">
-				<span class="type-badge">Motion</span>
-				<span class="status-badge {statusVariant[doc.content.status] ?? ''}">
-					{doc.content.status}
-				</span>
-			</div>
 		</div>
 		<div class="motion-meta">
 			<div class="meta-row">
-				<span class="meta-label">Introduced:</span>
-				<span class="meta-value">{new Date(doc.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+				<span class="meta-label">Status:</span>
+				<span class="meta-value status-{doc.content.status}">{doc.content.status}</span>
 			</div>
+			{#if doc.content.body_name}
+				<div class="meta-row">
+					<span class="meta-label">Body:</span>
+					<span class="meta-value">{doc.content.body_name}</span>
+				</div>
+			{/if}
+			{#if doc.content.status !== 'draft'}
+				<div class="meta-row">
+					<span class="meta-label">Introduced:</span>
+					<span class="meta-value">{new Date(doc.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+				</div>
+			{/if}
+			{#if doc.content.deliberation_rule_name || doc.content.status !== 'draft'}
+				<div class="meta-row">
+					<span class="meta-label">Deliberation:</span>
+					<span class="meta-value">{doc.content.deliberation_rule_name || '—'}</span>
+				</div>
+			{/if}
+			{#if doc.content.vote_rule_name || doc.content.status !== 'draft'}
+				<div class="meta-row">
+					<span class="meta-label">Voting:</span>
+					<span class="meta-value">{doc.content.vote_rule_name || '—'}</span>
+				</div>
+			{/if}
 		</div>
 		
 		{#if canEdit}
@@ -139,6 +154,8 @@
 			}}
 		>
 			<input type="hidden" name="provisions" value={JSON.stringify(editedProvisions)} />
+			<input type="hidden" name="clerk_notes" value={editedClerkNotes} />
+			<input type="hidden" name="parliamentarian_notes" value={editedParliamentarianNotes} />
 		</form>
 
 		<div class="motion-body">
@@ -195,25 +212,48 @@
 				</div>
 			{/if}
 
-			{#if !isEditMode && doc.content.clerk_notes}
-				<div class="clerk-annotation">
-					<div class="annotation-stamp">Clerk</div>
-					<div class="annotation-content">
-						<div class="annotation-heading">Administrative Notes</div>
-						<div class="annotation-text">{doc.content.clerk_notes}</div>
+			<!-- Official Notes Section (Preprinted Form Style) -->
+			<div class="official-notes-section">
+				<div class="form-box clerk-box">
+					<div class="form-box-header">
+						<span class="form-box-label">Clerk's Notes</span>
+					</div>
+					<div class="form-box-content">
+						{#if isEditMode}
+							<textarea 
+								bind:value={editedClerkNotes}
+								placeholder="Administrative notes, filing information, cross-references..."
+								class="form-textarea"
+								rows="4"
+							></textarea>
+						{:else if doc.content.clerk_notes}
+							<div class="form-box-text">{doc.content.clerk_notes}</div>
+						{:else}
+							<div class="form-box-empty">No notes recorded.</div>
+						{/if}
 					</div>
 				</div>
-			{/if}
 
-			{#if !isEditMode && doc.content.parliamentarian_notes}
-				<div class="parliamentarian-annotation">
-					<div class="annotation-stamp">Parliamentarian</div>
-					<div class="annotation-content">
-						<div class="annotation-heading">Procedural Notes</div>
-						<div class="annotation-text">{doc.content.parliamentarian_notes}</div>
+				<div class="form-box parliamentarian-box">
+					<div class="form-box-header">
+						<span class="form-box-label">Parliamentarian's Notes</span>
+					</div>
+					<div class="form-box-content">
+						{#if isEditMode}
+							<textarea 
+								bind:value={editedParliamentarianNotes}
+								placeholder="Procedural notes, rules applied, precedents..."
+								class="form-textarea"
+								rows="4"
+							></textarea>
+						{:else if doc.content.parliamentarian_notes}
+							<div class="form-box-text">{doc.content.parliamentarian_notes}</div>
+						{:else}
+							<div class="form-box-empty">No notes recorded.</div>
+						{/if}
 					</div>
 				</div>
-			{/if}
+			</div>
 		</div>
 	{/snippet}
 </DocumentView>
@@ -323,6 +363,43 @@
 
 	.meta-value {
 		font-variant-numeric: oldstyle-nums;
+		text-transform: capitalize;
+	}
+
+	/* Status-specific colors */
+	.meta-value.status-draft {
+		color: #7a5c1a;
+		font-style: italic;
+	}
+
+	.meta-value.status-introduced {
+		color: #1565c0;
+		font-weight: 600;
+	}
+
+	.meta-value.status-deliberation {
+		color: #e65100;
+		font-weight: 600;
+	}
+
+	.meta-value.status-enacted {
+		color: #2d5a4f;
+		font-weight: 600;
+	}
+
+	.meta-value.status-adopted {
+		color: #2d5a4f;
+		font-weight: 600;
+	}
+
+	.meta-value.status-rejected {
+		color: #7a2e2e;
+		font-weight: 600;
+	}
+
+	.meta-value.status-withdrawn {
+		color: #5a5a50;
+		font-style: italic;
 	}
 
 	/* Motion body */
@@ -466,80 +543,104 @@
 		white-space: pre-wrap;
 	}
 
-	/* Official Annotations */
-	.clerk-annotation,
-	.parliamentarian-annotation {
-		margin-top: var(--space-10);
-		position: relative;
+	/* Official Notes Section (Preprinted Form Style) */
+	.official-notes-section {
+		margin-top: var(--space-12);
+		padding-top: var(--space-8);
+		border-top: 2px solid rgba(45, 90, 79, 0.3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+
+	.form-box {
 		border: 2px solid;
-		border-radius: 3px;
-		padding: var(--space-6);
-		background: rgba(255, 255, 255, 0.6);
+		border-radius: 0;
+		padding: 0;
+		background: transparent;
 	}
 
-	.clerk-annotation {
-		border-color: #5b8cb8;
-		background: rgba(91, 140, 184, 0.05);
+	.clerk-box {
+		border-color: rgba(91, 140, 184, 0.4);
 	}
 
-	.parliamentarian-annotation {
-		border-color: #b86c8b;
-		background: rgba(184, 108, 139, 0.05);
+	.parliamentarian-box {
+		border-color: rgba(184, 108, 139, 0.4);
 	}
 
-	.annotation-stamp {
-		position: absolute;
-		top: -0.75rem;
-		left: var(--space-4);
-		padding: 0 var(--space-2);
-		background: var(--paper);
+	.form-box-header {
+		border-bottom: 1px solid currentColor;
+		padding: var(--space-2) var(--space-4);
+		background: rgba(0, 0, 0, 0.02);
+	}
+
+	.clerk-box .form-box-header {
+		border-bottom-color: rgba(91, 140, 184, 0.4);
+		background: rgba(91, 140, 184, 0.03);
+	}
+
+	.parliamentarian-box .form-box-header {
+		border-bottom-color: rgba(184, 108, 139, 0.4);
+		background: rgba(184, 108, 139, 0.03);
+	}
+
+	.form-box-label {
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-xs);
 		font-weight: 400;
 		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: inherit;
+		letter-spacing: 0.15em;
 	}
 
-	.clerk-annotation .annotation-stamp {
+	.clerk-box .form-box-label {
 		color: #1e3a5f;
 	}
 
-	.parliamentarian-annotation .annotation-stamp {
+	.parliamentarian-box .form-box-label {
 		color: #70284a;
 	}
 
-	.annotation-heading {
-		font-size: var(--text-sm);
-		font-weight: 600;
-		margin-bottom: var(--space-2);
-		color: inherit;
+	.form-box-content {
+		padding: var(--space-4);
+		min-height: 6rem;
 	}
 
-	.clerk-annotation .annotation-heading {
-		color: #1e3a5f;
-	}
-
-	.parliamentarian-annotation .annotation-heading {
-		color: #70284a;
-	}
-
-	.annotation-text {
+	.form-box-text {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		line-height: 1.6;
 		white-space: pre-wrap;
 		color: #151c1a;
 	}
 
-	/* Status variants for motions */
-	.status--introduced {
-		background: rgba(33, 150, 243, 0.15);
-		color: #1565c0;
+	.form-box-empty {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		font-style: italic;
+		color: #9a9a90;
 	}
 
-	.status--deliberation {
-		background: rgba(255, 152, 0, 0.15);
-		color: #e65100;
+	.form-textarea {
+		width: 100%;
+		padding: var(--space-2);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		line-height: 1.6;
+		color: #151c1a;
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		border-radius: 0;
+		background: var(--paper);
+		resize: vertical;
+	}
+
+	.form-textarea:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.4);
+	}
+
+	.form-textarea::placeholder {
+		color: #9a9a90;
+		font-style: italic;
 	}
 
 	/* Edit Mode */

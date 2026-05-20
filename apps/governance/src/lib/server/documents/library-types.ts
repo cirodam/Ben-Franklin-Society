@@ -92,6 +92,7 @@ export interface MotionContent {
 	provisions: Provision[];
 	introducer_uuid: string;
 	body_uuid?: string; // Association/body this motion belongs to
+	body_name?: string; // Human-readable name of the body (denormalized)
 
 	// Discussion and voting
 	discussion_thread_uuid?: string;
@@ -99,7 +100,9 @@ export interface MotionContent {
 
 	// Rules
 	vote_rule_uuid?: string;
+	vote_rule_name?: string;
 	deliberation_rule_uuid?: string;
+	deliberation_rule_name?: string;
 
 	// Notes
 	clerk_notes?: string;

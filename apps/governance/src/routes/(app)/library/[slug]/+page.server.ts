@@ -245,13 +245,17 @@ export const actions: Actions = {
 			return fail(403, { error: 'Permission denied' });
 		}
 
-		// Parse provisions from form data
+		// Parse provisions and notes from form data
 		const provisionsJson = data.get('provisions') as string;
+		const clerkNotes = data.get('clerk_notes') as string;
+		const parliamentarianNotes = data.get('parliamentarian_notes') as string;
 		
 		try {
 			const provisions = JSON.parse(provisionsJson);
 			updateMotion(params.slug, {
 				provisions,
+				clerk_notes: clerkNotes || undefined,
+				parliamentarian_notes: parliamentarianNotes || undefined,
 			});
 			return { success: true };
 		} catch (err) {

@@ -48,14 +48,14 @@
 				0deg,
 				transparent,
 				transparent 1.5rem,
-				rgba(45, 90, 79, 0.03) 1.5rem,
-				rgba(45, 90, 79, 0.03) calc(1.5rem + 1px)
+				rgba(45, 90, 79, 0.02) 1.5rem,
+				rgba(45, 90, 79, 0.02) calc(1.5rem + 1px)
 			);
 		pointer-events: none;
 	}
 
 	.document-header {
-		padding: var(--space-20) var(--space-10) var(--space-12);
+		padding: var(--space-10);
 		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
 		position: relative;
 		z-index: 1;
@@ -84,7 +84,7 @@
 	/* Typography */
 	:global(.document .document-title-block) {
 		margin-bottom: var(--space-6);
-		padding-top: var(--space-12);
+		padding-top: 0;
 	}
 
 	:global(.document .document-title) {

@@ -67,15 +67,15 @@ export function listMotions(opts: {
 } = {}): MotionDocument[] {
 	const motions: MotionDocument[] = [];
 
-	if (!existsSync(MOTIONS_DIR)) return motions;
+	if (!existsSync(LIBRARY_DIR)) return motions;
 
 	try {
-		const files = readdirSync(MOTIONS_DIR);
+		const files = readdirSync(LIBRARY_DIR);
 		for (const file of files) {
 			if (file.endsWith('.json')) {
 				const slug = file.replace('.json', '');
 				const motion = loadMotion(slug);
-				if (motion) {
+				if (motion && motion.type === 'motion') {
 					// Apply filters
 					if (opts.status && motion.content.status !== opts.status) continue;
 					if (opts.owner_uuid && motion.owner_uuid !== opts.owner_uuid) continue;
@@ -96,12 +96,14 @@ export function listMotions(opts: {
 export function createMotion(input: {
 	slug: string;
 	title: string;
-	provisions: Array<{ number: string; title?: string; text: string }>;
+	provisions: Array<{ number: string; title?: string; text: string; reasoning?: string }>;
 	introducer_uuid: string;
 	owner_uuid: string;
+	body_name?: string;
 	deliberation_rule_uuid?: string;
+	deliberation_rule_name?: string;
 	vote_rule_uuid?: string;
-	reasoning?: string;
+	vote_rule_name?: string;
 	discussion_thread_uuid?: string;
 	vote_session_uuid?: string;
 }): MotionDocument {
@@ -122,10 +124,12 @@ export function createMotion(input: {
 			status: 'draft',
 			provisions: input.provisions,
 			introducer_uuid: input.introducer_uuid,
-			deliberation_rule_uuid: input.deliberation_rule_uuid,
-			vote_rule_uuid: input.vote_rule_uuid,
-			reasoning: input.reasoning,
 			body_uuid: input.owner_uuid,
+			body_name: input.body_name,
+			deliberation_rule_uuid: input.deliberation_rule_uuid,
+			deliberation_rule_name: input.deliberation_rule_name,
+			vote_rule_uuid: input.vote_rule_uuid,
+			vote_rule_name: input.vote_rule_name,
 			discussion_thread_uuid: input.discussion_thread_uuid,
 			vote_session_uuid: input.vote_session_uuid,
 		}

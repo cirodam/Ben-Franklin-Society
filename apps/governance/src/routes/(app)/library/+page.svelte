@@ -278,7 +278,7 @@
 	}
 
 	.document-title {
-		font-family: 'IM Fell English', Georgia, serif;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-xl);
 		font-weight: 400;
 		color: var(--ink);
