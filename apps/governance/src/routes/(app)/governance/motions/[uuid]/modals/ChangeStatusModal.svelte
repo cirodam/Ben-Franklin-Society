@@ -16,6 +16,7 @@
 		{ value: 'draft', label: 'Draft' },
 		{ value: 'introduced', label: 'Introduced' },
 		{ value: 'deliberation', label: 'Deliberation' },
+		{ value: 'voting', label: 'Voting' },
 		{ value: 'adopted', label: 'Adopted' },
 		{ value: 'enacted', label: 'Enacted' },
 		{ value: 'rejected', label: 'Rejected' },

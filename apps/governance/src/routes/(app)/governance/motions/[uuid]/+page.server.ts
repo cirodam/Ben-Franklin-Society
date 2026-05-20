@@ -1,8 +1,9 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types.js';
 import {
 	getMotionByUuid,
+	getMotionBySlug,
 	advanceMotion,
 	setMotionStatus,
 	setMotionVoteRule,
@@ -25,16 +26,37 @@ import {
 	closeVoteSession,
 	finalizeVoteSession,
 	getSessionTally,
-	hasVoted
+	hasVoted,
+	canVote,
+	castVote,
+	type VoteChoice
 } from '$lib/server/governance/vote-sessions.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
 import { db } from '$lib/server/db.js';
+import { syncToDatabase } from '$lib/server/documents/library-core.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	const motion = getMotionByUuid(params.uuid);
+	// Try to load by UUID first, then by slug
+	let motion = getMotionByUuid(params.uuid);
+	let loadedByUuid = false;
+	
+	if (motion) {
+		loadedByUuid = true;
+	} else {
+		motion = getMotionBySlug(params.uuid);
+	}
+	
 	if (!motion) error(404, 'Motion not found');
+	
+	// Ensure motion is synced to database (fixes any stale UUIDs)
+	syncToDatabase(motion);
+	
+	// If loaded by UUID, redirect to slug-based URL
+	if (loadedByUuid && motion.slug !== params.uuid) {
+		throw redirect(302, `/governance/motions/${motion.slug}`);
+	}
 
 	const introducer = db
 		.prepare('SELECT given_name, family_name, handle FROM person WHERE uuid = ?')
@@ -58,16 +80,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	let canAdvance = false;
 	let canCreateVoteSession = false;
 	let actingAs: string | null = null;
+	let personUuid: string | null = null;
 
 	let alreadyVoted = false;
+	let userCanVote = false;
 	if (locals.session) {
 		actingAs = locals.session.acting_as_uuid;
+		personUuid = locals.session.person_uuid;
 		// For now, allow anyone logged in to advance motions and manage vote sessions
 		canAdvance = true;
 		canCreateVoteSession = true;
 		// Check if user has already voted in active session
-		if (activeSession) {
-			alreadyVoted = hasVoted(activeSession.uuid, actingAs);
+		// Use person_uuid for voting, not acting_as_uuid (people vote, not associations)
+		if (activeSession && personUuid) {
+			alreadyVoted = hasVoted(activeSession.uuid, personUuid);
+			userCanVote = canVote(activeSession.uuid, personUuid);
 		}
 	}
 
@@ -94,7 +121,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		canAdvance,
 		canCreateVoteSession,
 		alreadyVoted,
-		actingAs 
+		userCanVote,
+		actingAs
 	};
 };
 
@@ -103,20 +131,23 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
 		const to = data.get('to') as string;
-		const valid: MotionStatus[] = ['introduced', 'deliberation', 'enacted', 'withdrawn'];
+		const valid: MotionStatus[] = ['introduced', 'deliberation', 'voting', 'enacted', 'withdrawn'];
 		if (!valid.includes(to as MotionStatus)) {
 			return fail(400, { error: 'Invalid target status' });
 		}
 
-		advanceMotion(motion.uuid, to as MotionStatus);
+		advanceMotion(motion.slug, to as MotionStatus);
 
 		const label = to === 'introduced' ? 'introduced'
-			: to === 'deliberation' ? 'moved to deliberation and voting'
+			: to === 'deliberation' ? 'moved to deliberation'
+			: to === 'voting' ? 'moved to voting'
 			: to === 'enacted' ? 'enacted'
 			: 'withdrawn';
 		addEntry(motion.owner_uuid, actingAs, `motion_${to}`, 'motion', motion.uuid,
@@ -126,21 +157,51 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	// TODO: Restore voting via vote_sessions system
-	// castVote action removed - voting now happens through vote_sessions
+	vote: async ({ params, locals, request }) => {
+		if (!locals.session) error(401, 'Not authenticated');
+		const actingAs = locals.session.acting_as_uuid;
+		const personUuid = locals.session.person_uuid;
+
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
+		if (!motion) error(404, 'Motion not found');
+
+		const data = await request.formData();
+		const sessionUuid = String(data.get('session_uuid') ?? '');
+		const choice = data.get('choice') as string;
+		const validChoices: VoteChoice[] = ['aye', 'nay', 'abstain'];
+		
+		if (!validChoices.includes(choice as VoteChoice)) {
+			return fail(400, { error: 'Invalid vote choice' });
+		}
+
+		try {
+			// Use person_uuid for voting (people vote, not associations)
+			castVote(sessionUuid, personUuid, choice as VoteChoice);
+			audit(actingAs, 'vote_session.vote', 'vote_session', sessionUuid, 
+				`Voted on session for motion "${motion.title}"`);
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Vote failed' });
+		}
+
+		return { success: true };
+	},
 
 	setVoteRule: async ({ params, locals, request }) => {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
 		const vote_rule_uuid = String(data.get('vote_rule_uuid') ?? '').trim() || null;
 
 		try {
-			setMotionVoteRule(motion.uuid, vote_rule_uuid);
+			setMotionVoteRule(motion.slug, vote_rule_uuid);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set vote rule' });
 		}
@@ -160,14 +221,16 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
 		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
 
 		try {
-			setMotionDeliberationRule(motion.uuid, deliberation_rule_uuid);
+			setMotionDeliberationRule(motion.slug, deliberation_rule_uuid);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set deliberation rule' });
 		}
@@ -187,7 +250,9 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
@@ -195,8 +260,8 @@ export const actions: Actions = {
 		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
 
 		try {
-			setMotionVoteRule(motion.uuid, vote_rule_uuid);
-			setMotionDeliberationRule(motion.uuid, deliberation_rule_uuid);
+			setMotionVoteRule(motion.slug, vote_rule_uuid);
+			setMotionDeliberationRule(motion.slug, deliberation_rule_uuid);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set rules' });
 		}
@@ -224,14 +289,16 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
 		const clerk_notes = String(data.get('clerk_notes') ?? '').trim() || null;
 
 		try {
-			setMotionClerkNotes(motion.uuid, clerk_notes);
+			setMotionClerkNotes(motion.slug, clerk_notes);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set clerk notes' });
 		}
@@ -243,14 +310,16 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
 		const parliamentarian_notes = String(data.get('parliamentarian_notes') ?? '').trim() || null;
 
 		try {
-			setMotionParliamentarianNotes(motion.uuid, parliamentarian_notes);
+			setMotionParliamentarianNotes(motion.slug, parliamentarian_notes);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set parliamentarian notes' });
 		}
@@ -262,7 +331,9 @@ export const actions: Actions = {
 		if (!locals.session) return fail(401, { error: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
@@ -325,7 +396,9 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
@@ -370,7 +443,9 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
@@ -390,7 +465,9 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();
@@ -399,6 +476,12 @@ export const actions: Actions = {
 		try {
 			closeVoteSession(sessionUuid);
 			audit(actingAs, 'vote_session.close', 'vote_session', sessionUuid, `Closed vote session for motion "${motion.title}"`);
+			
+			// Automatically finalize the session to count votes and determine outcome
+			finalizeVoteSession(sessionUuid);
+			audit(actingAs, 'vote_session.finalize', 'vote_session', sessionUuid, `Finalized vote session for motion "${motion.title}"`);
+			addEntry(motion.owner_uuid, actingAs, 'vote_session_finalized', 'motion', motion.uuid,
+				`Vote session finalized for motion "${motion.title}"`);
 		} catch (err) {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to close session' });
 		}
@@ -410,7 +493,9 @@ export const actions: Actions = {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
 
-		const motion = getMotionByUuid(params.uuid);
+		// Try UUID first, then slug
+		let motion = getMotionByUuid(params.uuid);
+		if (!motion) motion = getMotionBySlug(params.uuid);
 		if (!motion) error(404, 'Motion not found');
 
 		const data = await request.formData();

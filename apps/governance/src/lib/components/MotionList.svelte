@@ -23,7 +23,7 @@
 	{#if canCreate && onCreateClick}
 		<div class="card-header">
 			<Button onclick={onCreateClick}>
-				{#snippet children()}New Motion{/snippet}
+				{#snippet children()}Introduce Motion{/snippet}
 			</Button>
 		</div>
 	{/if}
@@ -31,7 +31,7 @@
 	{#if motions.length > 0}
 		<div class="motion-list">
 			{#each motions as motion}
-				<a href="/governance/motions/{motion.uuid}" class="motion-item">
+				<a href="/governance/motions/{motion.slug}" class="motion-item">
 					<div class="motion-title">
 						<span class="motion-number">{motion.content.motion_number}</span>
 						<span class="separator">•</span>

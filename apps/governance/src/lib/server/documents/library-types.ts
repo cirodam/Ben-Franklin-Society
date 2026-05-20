@@ -30,7 +30,9 @@ export interface LibraryDocument<TContent = unknown> {
 // Governing Documents
 // ============================================================================
 
-export type GoverningStatus = 'draft' | 'adopted' | 'repealed';
+export type GoverningStatus = 'draft' | 'enacted' | 'repealed' | 'sunsetted';
+
+export type SeniorityLevel = 'charter' | 'constitution' | 'bylaw' | 'ordinance' | 'regulation' | 'policy';
 
 export interface Article {
 	number: string; // "I", "II", "III", etc.
@@ -46,14 +48,22 @@ export interface Section {
 
 export interface GoverningDocContent {
 	status: GoverningStatus;
-	seniority: number; // 1=charter, 2=constitution, 3=bylaw, 4=ordinance, 5=regulation, 6=policy
-
+	seniority: SeniorityLevel;
 	articles: Article[];
+	preamble?: string;
 
-	adopted_at?: string;
-	adopted_by_motion_uuid?: string;
+	// When status is 'enacted', 'repealed', or 'sunsetted'
+	enacted_at?: string;
+	enacted_by_motion_uuid?: string;
+	enacted_by_motion_title?: string;
+
+	// Optional sunset (automatic expiration)
+	sunset_at?: string;
+
+	// When status is 'repealed' (actively repealed by motion)
 	repealed_at?: string;
 	repealed_by_motion_uuid?: string;
+	repealed_by_motion_title?: string;
 }
 
 export type GoverningDocument = LibraryDocument<GoverningDocContent>;
@@ -66,6 +76,7 @@ export type MotionStatus =
 	| 'draft'
 	| 'introduced'
 	| 'deliberation'
+	| 'voting'
 	| 'adopted'
 	| 'enacted'
 	| 'rejected'

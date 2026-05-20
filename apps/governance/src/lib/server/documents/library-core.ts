@@ -39,9 +39,10 @@ export function syncToDatabase(doc: LibraryDocument): void {
 		// Update existing
 		db.prepare(
 			`UPDATE library_item 
-			 SET type = ?, document_id = ?, version = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?
+			 SET uuid = ?, type = ?, document_id = ?, version = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?
 			 WHERE slug = ?`
 		).run(
+			doc.uuid,
 			doc.type,
 			doc.document_id,
 			doc.version,

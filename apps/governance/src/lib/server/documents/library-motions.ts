@@ -154,16 +154,37 @@ export function updateMotion(slug: string, updates: Partial<MotionContent>): Mot
 }
 
 /**
+ * Update document-level properties (owner_uuid, title, etc.)
+ */
+export function updateMotionDocument(
+	slug: string, 
+	updates: Partial<Pick<MotionDocument, 'owner_uuid' | 'title' | 'document_id'>>
+): MotionDocument {
+	const doc = loadMotion(slug);
+	if (!doc) throw new Error(`Motion not found: ${slug}`);
+
+	// Merge updates into document
+	Object.assign(doc, updates);
+
+	saveMotion(doc);
+	return doc;
+}
+
+/**
  * Update motion status
  */
 export function updateMotionStatus(
 	slug: string,
-	status: string
+	status: string,
+	additionalUpdates: Partial<MotionContent> = {}
 ): MotionDocument {
 	const doc = loadMotion(slug);
 	if (!doc) throw new Error(`Motion not found: ${slug}`);
 
 	doc.content.status = status as any;
+	
+	// Apply any additional updates to content
+	Object.assign(doc.content, additionalUpdates);
 
 	saveMotion(doc);
 	return doc;

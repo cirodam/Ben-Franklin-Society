@@ -24,7 +24,8 @@ function now(): string {
 const ALLOWED_TRANSITIONS: Partial<Record<MotionStatus, MotionStatus[]>> = {
 	draft: ['introduced', 'withdrawn'],
 	introduced: ['deliberation', 'withdrawn'],
-	deliberation: ['withdrawn'], // deliberation → adopted/rejected goes through vote session finalization
+	deliberation: ['voting', 'withdrawn'],
+	voting: ['withdrawn'], // voting → adopted/rejected goes through vote session finalization
 	adopted: ['enacted', 'withdrawn'], // adopted → enacted when clerk confirms implementation
 };
 
@@ -120,9 +121,10 @@ export function createMotion(input: {
 	});
 }
 
-export function advanceMotion(uuid: string, to: MotionStatus): MotionDocument {
-	const motion = getMotionByUuid(uuid);
-	if (!motion) throw new Error(`Motion not found: ${uuid}`);
+export function advanceMotion(slugOrUuid: string, to: MotionStatus): MotionDocument {
+	let motion = getMotionBySlug(slugOrUuid);
+	if (!motion) motion = getMotionByUuid(slugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${slugOrUuid}`);
 
 	const allowed = ALLOWED_TRANSITIONS[motion.content.status] ?? [];
 	if (!allowed.includes(to)) {
@@ -132,11 +134,11 @@ export function advanceMotion(uuid: string, to: MotionStatus): MotionDocument {
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
 	const introducedAt = (to === 'introduced' && !motion.content.introduced_at) ? now() : null;
 	
-	// Note: Voting now happens during meetings, not automatically when advancing to deliberation
-	if (to === 'deliberation') {
+	// Require vote rule before entering voting phase
+	if (to === 'voting') {
 		// Check if vote rule is set
 		if (!motion.content.vote_rule_uuid) {
-			throw new Error('A vote rule must be assigned before deliberation can begin');
+			throw new Error('A vote rule must be assigned before voting can begin');
 		}
 	}
 	
@@ -151,9 +153,10 @@ export function advanceMotion(uuid: string, to: MotionStatus): MotionDocument {
  * Manually set motion status (admin override)
  * Bypasses normal transition validation - use with caution
  */
-export function setMotionStatus(uuid: string, to: MotionStatus): MotionDocument {
-	const motion = getMotionByUuid(uuid);
-	if (!motion) throw new Error(`Motion not found: ${uuid}`);
+export function setMotionStatus(slugOrUuid: string, to: MotionStatus): MotionDocument {
+	let motion = getMotionBySlug(slugOrUuid);
+	if (!motion) motion = getMotionByUuid(slugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${slugOrUuid}`);
 
 	// Set appropriate timestamps based on status
 	const updates: any = {};
@@ -178,33 +181,37 @@ export function setMotionStatus(uuid: string, to: MotionStatus): MotionDocument 
 	return library.updateMotionStatus(motion.slug, to, updates);
 }
 
-export function setMotionVoteRule(motionUuid: string, voteRuleUuid: string | null): MotionDocument {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
+export function setMotionVoteRule(motionSlugOrUuid: string, voteRuleUuid: string | null): MotionDocument {
+	let motion = getMotionBySlug(motionSlugOrUuid);
+	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
+	if (motion.content.status === 'voting' || motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
 		throw new Error(`Cannot change vote rule on a motion in status '${motion.content.status}'`);
 	}
 	return library.updateMotion(motion.slug, { vote_rule_uuid: voteRuleUuid ?? undefined });
 }
 
-export function setMotionDeliberationRule(motionUuid: string, deliberationRuleUuid: string | null): MotionDocument {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
-	if (motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
+export function setMotionDeliberationRule(motionSlugOrUuid: string, deliberationRuleUuid: string | null): MotionDocument {
+	let motion = getMotionBySlug(motionSlugOrUuid);
+	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
+	if (motion.content.status === 'voting' || motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
 		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.content.status}'`);
 	}
 	return library.updateMotion(motion.slug, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
 }
 
-export function setMotionClerkNotes(motionUuid: string, clerkNotes: string | null): MotionDocument {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+export function setMotionClerkNotes(motionSlugOrUuid: string, clerkNotes: string | null): MotionDocument {
+	let motion = getMotionBySlug(motionSlugOrUuid);
+	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
 	return library.updateMotion(motion.slug, { clerk_notes: clerkNotes ?? undefined });
 }
 
-export function setMotionParliamentarianNotes(motionUuid: string, parliamentarianNotes: string | null): MotionDocument {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+export function setMotionParliamentarianNotes(motionSlugOrUuid: string, parliamentarianNotes: string | null): MotionDocument {
+	let motion = getMotionBySlug(motionSlugOrUuid);
+	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
 	return library.updateMotion(motion.slug, { parliamentarian_notes: parliamentarianNotes ?? undefined });
 }
 
@@ -219,9 +226,10 @@ export function setMotionParliamentarianNotes(motionUuid: string, parliamentaria
  * Enact a motion based on a passed vote session
  * Called by vote_sessions system when outcome is 'passed'
  */
-export function enactMotion(motionUuid: string, voteSessionUuid: string): MotionDocument {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+export function enactMotion(motionSlugOrUuid: string, voteSessionUuid: string): MotionDocument {
+	let motion = getMotionBySlug(motionSlugOrUuid);
+	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
 	
 	if (motion.content.status === 'adopted' || motion.content.status === 'enacted') {
 		// Already adopted or enacted, no-op
@@ -240,9 +248,10 @@ export function enactMotion(motionUuid: string, voteSessionUuid: string): Motion
  * Reject a motion based on a failed vote session
  * Called by vote_sessions system when outcome is 'failed'
  */
-export function rejectMotion(motionUuid: string, voteSessionUuid: string): MotionDocument {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionUuid}`);
+export function rejectMotion(motionSlugOrUuid: string, voteSessionUuid: string): MotionDocument {
+	let motion = getMotionBySlug(motionSlugOrUuid);
+	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
+	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
 	
 	if (motion.content.status === 'rejected') {
 		// Already rejected, no-op

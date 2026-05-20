@@ -1,29 +1,29 @@
 import type { DocumentTypeConfig } from '../registry.js';
-import type { GoverningDocument } from '$lib/server/documents/library-types.js';
+import type { GoverningDocument, SeniorityLevel } from '$lib/server/documents/library-types.js';
 
 /**
- * Seniority levels for governing documents.
+ * Seniority level labels.
  */
-const SENIORITY_NAMES: Record<number, string> = {
-	1: 'Charter',
-	2: 'Constitution',
-	3: 'Bylaw',
-	4: 'Ordinance',
-	5: 'Regulation',
-	6: 'Policy',
+const SENIORITY_LABELS: Record<SeniorityLevel, string> = {
+	charter: 'Charter',
+	constitution: 'Constitution',
+	bylaw: 'Bylaw',
+	ordinance: 'Ordinance',
+	regulation: 'Regulation',
+	policy: 'Policy',
 };
 
 /**
- * Get the name of a seniority level.
+ * Get the display label for a seniority level.
  */
-export function getSeniorityName(seniority: number): string {
-	return SENIORITY_NAMES[seniority] || `Seniority ${seniority}`;
+export function getSeniorityLabel(seniority: SeniorityLevel): string {
+	return SENIORITY_LABELS[seniority];
 }
 
 /**
  * Get CSS class variant for seniority badge.
  */
-export function getSeniorityVariant(seniority: number): string {
+export function getSeniorityVariant(seniority: SeniorityLevel): string {
 	return `seniority--${seniority}`;
 }
 
@@ -37,7 +37,7 @@ export const governingDocType: DocumentTypeConfig<GoverningDocument['content']> 
 	icon: '📜',
 	directory: 'governing',
 
-	statuses: ['draft', 'adopted', 'repealed'] as const,
+	statuses: ['draft', 'enacted', 'repealed', 'sunsetted'] as const,
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
 
@@ -46,10 +46,10 @@ export const governingDocType: DocumentTypeConfig<GoverningDocument['content']> 
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)
 		if ('metadata' in doc && doc.metadata?.seniority) {
-			return getSeniorityName(doc.metadata.seniority);
+			return getSeniorityLabel(doc.metadata.seniority as SeniorityLevel);
 		}
 		if ('content' in doc && doc.content?.seniority) {
-			return getSeniorityName(doc.content.seniority);
+			return getSeniorityLabel(doc.content.seniority);
 		}
 		return 'Governing Document';
 	},

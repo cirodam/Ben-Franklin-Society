@@ -8,6 +8,12 @@
 <DocumentView>
 	{#snippet header()}
 		<div class="document-title-block">
+			<div class="document-letterhead">
+				<div class="letterhead-body">The Ben Franklin Society</div>
+				<div class="letterhead-doc-number">
+					{doc.document_id || `#${doc.uuid.slice(0, 8)}`}
+				</div>
+			</div>
 			<h1 class="document-title">{doc.title}</h1>
 			<div class="document-meta">
 				<span class="type-badge">📄 Document</span>
@@ -46,6 +52,31 @@
 </DocumentView>
 
 <style>
+	/* Document letterhead */
+	.document-letterhead {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: var(--space-4);
+		font-family: 'IM Fell English SC', serif;
+	}
+
+	.letterhead-body {
+		font-size: var(--text-xs);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: #7a5c1a;
+	}
+
+	.letterhead-doc-number {
+		font-size: var(--text-xs);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: #7a5c1a;
+	}
+
 	.document-summary {
 		font-size: var(--text-base);
 		font-style: italic;

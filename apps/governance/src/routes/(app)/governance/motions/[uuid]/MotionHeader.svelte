@@ -50,6 +50,8 @@
 		draft:        'status--draft',
 		introduced:   'status--introduced',
 		deliberation: 'status--deliberation',
+		voting:       'status--voting',
+		adopted:      'status--adopted',
 		enacted:      'status--enacted',
 		rejected:     'status--rejected',
 		withdrawn:    'status--withdrawn',
@@ -58,7 +60,9 @@
 	const statusLabel: Record<string, string> = {
 		draft:        'Draft',
 		introduced:   'Introduced',
-		deliberation: 'Deliberation & Voting',
+		deliberation: 'Deliberation',
+		voting:       'Voting',
+		adopted:      'Adopted',
 		enacted:      'Enacted',
 		rejected:     'Rejected',
 		withdrawn:    'Withdrawn',
@@ -206,6 +210,8 @@
 	.status--draft        { background: #f5f5f0; border-color: #a0a090; color: #5a5a50; }
 	.status--introduced   { background: #e8f0f8; border-color: #5b8cb8; color: #1e3a5f; }
 	.status--deliberation { background: #f0ebf8; border-color: #8b6cb8; color: #4a2870; }
+	.status--voting       { background: #fff3e0; border-color: #ff9800; color: #e65100; }
+	.status--adopted      { background: #e0f2f1; border-color: #4db6ac; color: #00695c; }
 	.status--enacted      { background: #e8f5eb; border-color: #6cb88b; color: #28704a; }
 	.status--rejected     { background: #f8e8eb; border-color: #b86c6c; color: #702828; }
 	.status--withdrawn    { background: #f5f5f0; border-color: #a0a090; color: #5a5a50; }

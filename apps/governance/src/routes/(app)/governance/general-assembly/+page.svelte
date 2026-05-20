@@ -3,7 +3,6 @@
 	import MotionCreationModal from '$lib/components/MotionCreationModal.svelte';
 	import InteractiveOrgChart from '$lib/components/InteractiveOrgChart.svelte';
 	import MotionList from '$lib/components/MotionList.svelte';
-	import VoteSessionList from '$lib/components/VoteSessionList.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: any } = $props();
@@ -13,7 +12,6 @@
 		config, 
 		termHolders,
 		allMotions,
-		voteSessions,
 		roles,
 		sections,
 		members,
@@ -21,15 +19,16 @@
 		canCreateMotion,
 		enactedMotions,
 		deliberationRules,
-		assemblyRules
+		assemblyRules,
+		draftMotions
 	} = $derived(data);
 
 	let showModal = $state(false);
-	let activeTab = $state<'docket' | 'votes' | 'organization'>('docket');
+	let activeTab = $state<'docket' | 'organization'>('docket');
 
 	$effect(() => {
-		if (form?.created) {
-			goto(`/governance/motions/${form.created}`);
+		if (form?.introduced) {
+			goto(`/governance/motions/${form.introduced}`);
 		}
 	});
 
@@ -53,12 +52,6 @@
 		</button>
 		<button 
 			class="tab-button" 
-			class:active={activeTab === 'votes'}
-			onclick={() => activeTab = 'votes'}>
-			Seats
-		</button>
-		<button 
-			class="tab-button" 
 			class:active={activeTab === 'organization'}
 			onclick={() => activeTab = 'organization'}>
 			Organizations
@@ -73,8 +66,6 @@
 				canCreate={canCreateMotion} 
 				onCreateClick={openCreateModal} 
 			/>
-		{:else if activeTab === 'votes'}
-			<VoteSessionList sessions={voteSessions} />
 		{:else if activeTab === 'organization'}
 			<InteractiveOrgChart
 				{sections}
@@ -90,9 +81,8 @@
 {#if showModal}
 	<MotionCreationModal 
 		bind:show={showModal} 
-		bodyUuid={association.uuid} 
 		bodyName="the General Assembly" 
-		deliberationRules={deliberationRules} 
+		draftMotions={draftMotions}
 	/>
 {/if}
 </div>

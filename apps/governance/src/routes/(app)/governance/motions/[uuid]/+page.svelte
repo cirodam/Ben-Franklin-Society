@@ -6,6 +6,7 @@
 	// Components
 	import MotionDocumentView from '../../../library/[slug]/views/MotionDocumentView.svelte';
 	import MotionVoteTally from './MotionVoteTally.svelte';
+	import VoteSessionControl from './VoteSessionControl.svelte';
 	import VoteSessionsList from './VoteSessionsList.svelte';
 	import MotionDiscussion from './MotionDiscussion.svelte';
 	
@@ -15,17 +16,19 @@
 	import RulesModal from './modals/RulesModal.svelte';
 	import VoteSessionModal from './modals/VoteSessionModal.svelte';
 	import ChangeStatusModal from './modals/ChangeStatusModal.svelte';
+	import CastVoteModal from './modals/CastVoteModal.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	// motion is flattened in page.server.ts for backward compatibility
-	const { motion, introducer, body, voteSessions, activeSession, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, comments, canAdvance, canCreateVoteSession, alreadyVoted, actingAs } = $derived(data);
+	const { motion, introducer, body, voteSessions, activeSession, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, comments, canAdvance, canCreateVoteSession, alreadyVoted, userCanVote, actingAs } = $derived(data);
 
 	let showClerkModal = $state(false);
 	let showParliamentarianModal = $state(false);
 	let showRulesModal = $state(false);
 	let showVoteSessionModal = $state(false);
 	let showChangeStatusModal = $state(false);
+	let showCastVoteModal = $state(false);
 </script>
 
 <div class="page">
@@ -44,19 +47,28 @@
 
 	<!-- SECTION 2: ACTIONS -->
 	<div class="section actions-section">
+		<!-- Active Vote Session Control -->
+		{#if activeSession}
+			<VoteSessionControl 
+				session={activeSession} 
+				canControl={canAdvance}
+				userCanVote={userCanVote}
+				userHasVoted={alreadyVoted}
+				motionTitle={motion.title}
+				onSessionChange={() => window.location.reload()}
+				onOpenVoteModal={() => showCastVoteModal = true}
+			/>
+		{/if}
+
 		<!-- Vote Tally -->
 		{#if tally}
 			<MotionVoteTally {tally} {currentRule} />
 		{/if}
 
-		<!-- Vote Sessions -->
-		{#if motion.status === 'deliberation' || voteSessions.length > 0}
+		<!-- Historical Vote Sessions - Only show if there are past sessions -->
+		{#if voteSessions.length > 1 || (voteSessions.length === 1 && !activeSession)}
 			<VoteSessionsList 
-				{voteSessions} 
-				{canCreateVoteSession} 
-				{canAdvance}
-				motionStatus={motion.status}
-				onCreateSession={() => showVoteSessionModal = true}
+				voteSessions={voteSessions.filter(s => !activeSession || s.uuid !== activeSession.uuid)} 
 			/>
 		{/if}
 
@@ -74,11 +86,13 @@
 									Change Status
 								{/snippet}
 							</Button>
-							<Button variant="ghost" size="sm" onclick={() => showRulesModal = true}>
-								{#snippet children()}
-									{currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
-								{/snippet}
-							</Button>
+							{#if !['voting', 'deliberation', 'enacted', 'rejected', 'withdrawn'].includes(motion.status)}
+								<Button variant="ghost" size="sm" onclick={() => showRulesModal = true}>
+									{#snippet children()}
+										{currentRule || currentDeliberationRule ? 'Edit' : 'Set'} Rules
+									{/snippet}
+								</Button>
+							{/if}
 							<Button variant="ghost" size="sm" onclick={() => showClerkModal = true}>
 								{#snippet children()}
 									{motion.clerk_notes ? 'Edit' : 'Add'} Clerk's Notes
@@ -105,7 +119,7 @@
 						<form method="POST" action="?/advance" use:enhance>
 							<input type="hidden" name="to" value="deliberation" />
 							<Button variant="primary" type="submit">
-								{#snippet children()}Begin Deliberation & Voting{/snippet}
+								{#snippet children()}Begin Deliberation{/snippet}
 							</Button>
 						</form>
 					{/if}
@@ -117,17 +131,25 @@
 							</div>
 						{/if}
 						
-						{#if activeSession}
-							<div class="meeting-notice">
-								<a href="/governance/vote-sessions/{activeSession.uuid}" class="meeting-link">
-									Vote session open - Click to vote - Closes {new Date(activeSession.closes_at).toLocaleString()}
-								</a>
-							</div>
-						{:else}
-							<div class="meeting-notice meeting-notice--waiting">
-								<span>Create a vote session to allow voting on this motion</span>
+						{#if !activeSession && canCreateVoteSession}
+							<div class="create-vote-prompt">
+								<p>This motion is open for discussion.</p>
+								<Button variant="primary" onclick={() => showVoteSessionModal = true}>
+									{#snippet children()}🗳️ Create Vote Session{/snippet}
+								</Button>
 							</div>
 						{/if}
+					{/if}
+					
+					{#if motion.status === 'voting' && !activeSession}
+						<div class="meeting-notice meeting-notice--waiting">
+							<span>Voting phase - waiting for vote session</span>
+							{#if canCreateVoteSession}
+								<Button variant="primary" size="sm" onclick={() => showVoteSessionModal = true}>
+									{#snippet children()}Create Vote Session{/snippet}
+								</Button>
+							{/if}
+						</div>
 					{/if}
 
 					{#if motion.status === 'adopted'}
@@ -147,7 +169,16 @@
 						{/if}
 					{/if}
 
-					{#if canAdvance}
+					{#if motion.status === 'rejected'}
+						<div class="rejected-notice">
+							<div class="notice-content">
+								<strong>Motion Rejected</strong>
+								<p>This motion did not pass the vote. No further action is required.</p>
+							</div>
+						</div>
+					{/if}
+
+					{#if canAdvance && !['adopted', 'rejected', 'enacted', 'withdrawn'].includes(motion.status)}
 						<form method="POST" action="?/advance" use:enhance>
 							<input type="hidden" name="to" value="withdrawn" />
 							<Button variant="danger" type="submit">
@@ -160,10 +191,12 @@
 		{/if}
 	</div>
 
-	<!-- 3. COMMENT THREAD -->
-	<div class="section deliberation-section">
-		<MotionDiscussion {comments} {actingAs} />
-	</div>
+	<!-- 3. DISCUSSION THREAD - Only show during deliberation and voting -->
+	{#if ['deliberation', 'voting'].includes(motion.status)}
+		<div class="section deliberation-section">
+			<MotionDiscussion {comments} {actingAs} />
+		</div>
+	{/if}
 </div>
 
 <!-- Modals -->
@@ -178,6 +211,13 @@
 	{deliberationRules}
 />
 <VoteSessionModal bind:open={showVoteSessionModal} />
+{#if activeSession}
+	<CastVoteModal 
+		bind:open={showCastVoteModal} 
+		sessionUuid={activeSession.uuid}
+		motionTitle={motion.title}
+	/>
+{/if}
 
 <style>
 	.page {
@@ -267,6 +307,25 @@
 		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
+	.create-vote-prompt {
+		padding: var(--space-5);
+		background: rgba(250, 250, 247, 0.8);
+		border: 2px dashed rgba(45, 90, 79, 0.3);
+		border-radius: var(--radius);
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.create-vote-prompt p {
+		margin: 0;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: #374340;
+	}
+
 	.rule-label {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
@@ -284,18 +343,10 @@
 	.meeting-notice--waiting {
 		background: #fff3e0;
 		border-color: #ffb74d;
-	}
-
-	.meeting-link {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #7a5c1a;
-		text-decoration: none;
-		font-weight: 500;
-	}
-
-	.meeting-link:hover {
-		color: #d4a24a;
-		text-decoration: underline;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-3);
 	}
 
 	.adopted-notice {
@@ -321,5 +372,30 @@
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		color: #3d6f4d;
+	}
+
+	.rejected-notice {
+		padding: var(--space-4);
+		background: #ffebee;
+		border: 1px solid #ef9a9a;
+	}
+
+	.rejected-notice .notice-content {
+		flex: 1;
+	}
+
+	.rejected-notice .notice-content strong {
+		display: block;
+		font-family: 'IM Fell English SC', serif;
+		letter-spacing: 0.1em;
+		color: #c62828;
+		margin-bottom: var(--space-1);
+	}
+
+	.rejected-notice .notice-content p {
+		margin: 0;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #8b3a3a;
 	}
 </style>

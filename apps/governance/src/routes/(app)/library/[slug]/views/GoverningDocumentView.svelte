@@ -6,30 +6,36 @@
 	import EditArticleModal from './EditArticleModal.svelte';
 	import AddArticleModal from './AddArticleModal.svelte';
 	import DocumentView from './DocumentView.svelte';
-	import type { GoverningDocument } from '$lib/server/documents/library-types.js';
+	import type { GoverningDocument, SeniorityLevel } from '$lib/server/documents/library-types.js';
 
 	let { document: doc, canEdit = false }: { document: GoverningDocument; canEdit?: boolean } = $props();
 
 	const statusVariant: Record<string, string> = {
-		draft:    'status--draft',
-		adopted:  'status--adopted',
-		repealed: 'status--repealed',
+		draft:     'status--draft',
+		enacted:   'status--enacted',
+		repealed:  'status--repealed',
+		sunsetted: 'status--sunsetted',
 	};
 
-	function getSeniorityName(seniority: number): string {
-		const names: Record<number, string> = {
-			1: 'Charter',
-			2: 'Constitution',
-			3: 'Bylaw',
-			4: 'Ordinance',
-			5: 'Regulation',
-			6: 'Policy'
-		};
-		return names[seniority] ?? 'Document';
-	}
+	const seniorityLabel: Record<SeniorityLevel, string> = {
+		charter: 'Charter',
+		constitution: 'Constitution',
+		bylaw: 'Bylaw',
+		ordinance: 'Ordinance',
+		regulation: 'Regulation',
+		policy: 'Policy'
+	};
 
-	function getSeniorityVariant(seniority: number): string {
-		return `seniority--${seniority}`;
+	function getSeniorityNumber(seniority: SeniorityLevel): number {
+		const order: Record<SeniorityLevel, number> = {
+			charter: 1,
+			constitution: 2,
+			bylaw: 3,
+			ordinance: 4,
+			regulation: 5,
+			policy: 6
+		};
+		return order[seniority];
 	}
 
 	let copiedId = $state<string | null>(null);
@@ -68,9 +74,15 @@
 
 <DocumentView>
 	{#snippet header()}
-		<div class="document-title-block" class:document-title-block--charter={doc.content.seniority === 1}>
-			<h1 class="document-title" class:document-title--charter={doc.content.seniority === 1}>{doc.title}</h1>
-			{#if doc.content.preamble && doc.content.seniority === 1}
+		<div class="document-title-block" class:document-title-block--charter={doc.content.seniority === 'charter'}>
+			<div class="document-letterhead">
+				<div class="letterhead-body">The Ben Franklin Society</div>
+				<div class="letterhead-doc-number">
+					{doc.document_id || `#${doc.uuid.slice(0, 8)}`}
+				</div>
+			</div>
+			<h1 class="document-title" class:document-title--charter={doc.content.seniority === 'charter'}>{doc.title}</h1>
+			{#if doc.content.preamble && doc.content.seniority === 'charter'}
 				<div class="preamble">
 					{doc.content.preamble}
 				</div>
@@ -215,6 +227,31 @@
 {/if}
 
 <style>
+	/* Document letterhead */
+	.document-letterhead {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: var(--space-4);
+		font-family: 'IM Fell English SC', serif;
+	}
+
+	.letterhead-body {
+		font-size: var(--text-xs);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: #7a5c1a;
+	}
+
+	.letterhead-doc-number {
+		font-size: var(--text-xs);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		color: #7a5c1a;
+	}
+
 	/* Preamble styling */
 	.preamble {
 		font-family: 'Libre Baskerville', Georgia, serif;
@@ -263,7 +300,7 @@
 	}
 
 	/* Seniority badge variants */
-	.seniority--1 { 
+	.seniority--charter { 
 		background: linear-gradient(135deg, #fef7e0 0%, #f9edc8 100%);
 		border-color: #c89542;
 		border-width: 2px;
@@ -271,11 +308,11 @@
 		font-weight: 600;
 		box-shadow: 0 1px 3px rgba(122, 92, 26, 0.15);
 	}
-	.seniority--2 { background: #e8f0f8; border-color: #5b8cb8; color: #1e3a5f; }
-	.seniority--3 { background: #f0ebf8; border-color: #8b6cb8; color: #4a2870; }
-	.seniority--4 { background: #f8ebf0; border-color: #b86c8b; color: #70284a; }
-	.seniority--5 { background: #ebf5f8; border-color: #5ba2b8; color: #1e5270; }
-	.seniority--6 { background: #ebf8f0; border-color: #6cb88b; color: #28704a; }
+	.seniority--constitution { background: #e8f0f8; border-color: #5b8cb8; color: #1e3a5f; }
+	.seniority--bylaw { background: #f0ebf8; border-color: #8b6cb8; color: #4a2870; }
+	.seniority--ordinance { background: #f8ebf0; border-color: #b86c8b; color: #70284a; }
+	.seniority--regulation { background: #ebf5f8; border-color: #5ba2b8; color: #1e5270; }
+	.seniority--policy { background: #ebf8f0; border-color: #6cb88b; color: #28704a; }
 
 	.article {
 		margin-bottom: var(--space-16);

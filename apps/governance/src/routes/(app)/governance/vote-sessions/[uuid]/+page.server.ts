@@ -39,8 +39,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (locals.session) {
 		actingAs = locals.session.acting_as_uuid;
-		userCanVote = canVote(session.uuid, actingAs);
-		userHasVoted = hasVoted(session.uuid, actingAs);
+		const personUuid = locals.session.person_uuid;
+		// Use person_uuid for voting (people vote, not associations)
+		userCanVote = canVote(session.uuid, personUuid);
+		userHasVoted = hasVoted(session.uuid, personUuid);
 		canClose = hasPermission(actingAs, PERMISSIONS.VOTE_SESSIONS_CLOSE, motion.body_uuid);
 		canFinalize = hasPermission(actingAs, PERMISSIONS.VOTE_SESSIONS_FINALIZE, motion.body_uuid);
 	}
@@ -63,6 +65,7 @@ export const actions: Actions = {
 	vote: async ({ params, locals, request }) => {
 		if (!locals.session) error(401, 'Not authenticated');
 		const actingAs = locals.session.acting_as_uuid;
+		const personUuid = locals.session.person_uuid;
 
 		const session = getVoteSession(params.uuid);
 		if (!session) error(404, 'Vote session not found');
@@ -75,7 +78,8 @@ export const actions: Actions = {
 		}
 
 		try {
-			castVote(session.uuid, actingAs, choice as VoteChoice);
+			// Use person_uuid for voting (people vote, not associations)
+			castVote(session.uuid, personUuid, choice as VoteChoice);
 			
 			const motion = getMotionByUuid(session.motion_uuid);
 			if (motion) {

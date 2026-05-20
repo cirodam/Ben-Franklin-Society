@@ -13,7 +13,7 @@ documentTypes.register(contractDocType);
 // Export registry and types
 export { documentTypes } from './registry.js';
 export type { DocumentTypeConfig } from './registry.js';
-export { governingDocType, getSeniorityName, getSeniorityVariant } from './types/governing.js';
+export { governingDocType, getSeniorityLabel, getSeniorityVariant } from './types/governing.js';
 export { motionDocType } from './types/motion.js';
 export { proseDocType } from './types/prose.js';
 export { contractDocType } from './types/contract.js';

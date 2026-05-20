@@ -218,7 +218,7 @@
 				<div class="info-grid">
 					<div class="info-item">
 						<span class="info-label">Motion</span>
-						<a href="/governance/motions/{data.motion.uuid}" class="info-value link">
+						<a href="/governance/motions/{data.motion.slug}" class="info-value link">
 							{data.motion.title}
 						</a>
 					</div>

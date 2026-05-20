@@ -31,22 +31,35 @@
 
 	let selectedVotingRuleUuid = $state<string>(voteRuleUuid || '');
 	let selectedDeliberationRuleUuid = $state<string>(deliberationRuleUuid || '');
+	let errorMessage = $state<string>('');
 
 	// Update local values when props change
 	$effect(() => {
 		selectedVotingRuleUuid = voteRuleUuid || '';
 		selectedDeliberationRuleUuid = deliberationRuleUuid || '';
+		errorMessage = '';
 	});
 </script>
 
 <Modal {open} title="Set Motion Rules">
 	<form id="rules-form" method="POST" action="?/setMotionRules" use:enhance={() => {
-		return async ({ update }) => {
-			await update();
-			open = false;
+		errorMessage = '';
+		return async ({ result, update }) => {
+			if (result.type === 'failure') {
+				errorMessage = result.data?.error || 'Failed to set rules';
+			} else if (result.type === 'success') {
+				await update();
+				open = false;
+			} else {
+				await update();
+			}
 		};
 	}}>
 		<p class="modal-hint">These rules determine how this motion will be voted on and how long the deliberation period lasts.</p>
+		
+		{#if errorMessage}
+			<div class="error-message">{errorMessage}</div>
+		{/if}
 		
 		<Select 
 			id="vote-rule" 
@@ -92,5 +105,15 @@
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
 		font-style: italic;
+	}
+	
+	.error-message {
+		margin: 0 0 var(--space-3);
+		padding: var(--space-2) var(--space-3);
+		background-color: rgba(220, 38, 38, 0.1);
+		border: 1px solid rgba(220, 38, 38, 0.3);
+		border-radius: var(--radius-md);
+		color: #991b1b;
+		font-size: var(--text-sm);
 	}
 </style>

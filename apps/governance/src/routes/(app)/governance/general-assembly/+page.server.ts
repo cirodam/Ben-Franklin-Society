@@ -21,11 +21,10 @@ import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/serv
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry, getBodyRecord } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
-import { listEnactedMotions, getMotionByUuid, listMotions, getComments, createMotion } from '$lib/server/governance/motions.js';
+import { listEnactedMotions, getMotionByUuid, getMotionBySlug, listMotions, createMotion } from '$lib/server/governance/motions.js';
 import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/governance/deliberation-rules.js';
 import { getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
 import { getDocumentBySlug } from '$lib/server/documents/library.js';
-import { listVoteSessions, getSessionTally } from '$lib/server/governance/vote-sessions.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -101,27 +100,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Get all motions for this body (docket)
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
-	// Get all vote sessions for motions in this body
-	const motionUuids = allMotions.map(m => m.uuid);
-	const allVoteSessions = motionUuids.length > 0
-		? db.prepare(`
-			SELECT 
-				vs.*,
-				li.title as motion_title,
-				li.slug as motion_slug
-			FROM vote_session vs
-			JOIN library_item li ON li.uuid = vs.motion_uuid
-			WHERE vs.motion_uuid IN (${motionUuids.map(() => '?').join(',')})
-			ORDER BY vs.opens_at DESC
-		`).all(...motionUuids) as any[]
-		: [];
-
-	// Enrich vote sessions with tally data
-	const voteSessions = allVoteSessions.map(vs => {
-		const tally = getSessionTally(vs.uuid);
-		return { ...vs, tally };
-	});
-
 	const canCreateMotion = !!actingAs; // Anyone logged in can create motions
 
 	const canVacate = locals.session
@@ -140,13 +118,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const deliberationRules = listDeliberationRules(association.uuid);
 	const assemblyRules = getDocumentBySlug('assembly-rules');
 
+	// Get user's draft motions that can be introduced
+	const draftMotions = actingAs ? listMotions({ owner_uuid: actingAs, status: 'draft' }) : [];
+
 	return {
 		association,
 		config,
 		termHolders,
 		draws,
 		allMotions,
-		voteSessions,
 		roles: enrichedRoles,
 		roleHierarchy: roots,
 		sections,
@@ -157,12 +137,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		canVacate,
 		record,
 		deliberationRules,
-		assemblyRules
+		assemblyRules,
+		draftMotions
 	};
 };
 
 export const actions: Actions = {
-	create: async ({ request, locals }) => {
+	introduceMotion: async ({ request, locals }) => {
 		if (!locals.session) return fail(401, { message: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;
 
@@ -170,37 +151,37 @@ export const actions: Actions = {
 		if (!association) return fail(404, { message: 'General Assembly not found' });
 
 		const data = await request.formData();
-		const title = String(data.get('title') ?? '').trim();
-		const body = String(data.get('body') ?? '').trim();
-		const reasoning = String(data.get('reasoning') ?? '').trim() || null;
-		const deliberation_rule_uuid = String(data.get('deliberation_rule_uuid') ?? '').trim() || null;
-		const vote_rule_uuid = String(data.get('vote_rule_uuid') ?? '').trim() || null;
+		const motion_slug = String(data.get('motion_slug') ?? '').trim();
 
-		if (!title) return fail(400, { message: 'Title is required' });
-		if (!body) return fail(400, { message: 'Motion text is required' });
+		if (!motion_slug) return fail(400, { message: 'Motion must be selected' });
 
-		// Fetch rule names if UUIDs provided
-		const deliberation_rule_name = deliberation_rule_uuid
-			? getDeliberationRuleByUuid(deliberation_rule_uuid)?.name
-			: undefined;
-		const vote_rule_name = vote_rule_uuid
-			? getVoteRuleByUuid(vote_rule_uuid)?.name
-			: undefined;
+		// Load the motion and verify ownership
+		const motion = getMotionBySlug(motion_slug);
+		if (!motion) return fail(404, { message: 'Motion not found' });
+		if (motion.owner_uuid !== actingAs) return fail(403, { message: 'You can only introduce your own motions' });
+		if (motion.content.status !== 'draft') return fail(400, { message: 'Only draft motions can be introduced' });
 
-		const motion = createMotion({
-			title,
-			body,
-			reasoning,
-			introduced_by_uuid: actingAs,
+		// Update motion with body info and transfer ownership to the General Assembly
+		const library = await import('$lib/server/documents/library-motions.js');
+		
+		// Transfer ownership to the General Assembly
+		library.updateMotionDocument(motion.slug, {
+			owner_uuid: association.uuid
+		});
+		
+		// Update content with body info
+		library.updateMotion(motion.slug, {
 			body_uuid: association.uuid,
 			body_name: association.name,
-			deliberation_rule_uuid,
-			deliberation_rule_name,
-			vote_rule_uuid,
-			vote_rule_name,
+			introducer_uuid: actingAs,
 		});
 
-		return { created: motion.uuid };
+		// Change status to introduced
+		const introduced = library.updateMotionStatus(motion.slug, 'introduced', {
+			introduced_at: new Date().toISOString(),
+		});
+
+		return { introduced: introduced.slug };
 	},
 
 	vacateTerm: async ({ locals, request }) => {

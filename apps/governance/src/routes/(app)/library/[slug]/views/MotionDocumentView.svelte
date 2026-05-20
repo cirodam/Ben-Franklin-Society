@@ -79,9 +79,9 @@
 <DocumentView>
 	{#snippet header()}
 		<div class="document-title-block">
-			<div class="motion-letterhead">
+			<div class="document-letterhead">
 				<div class="letterhead-body">The Ben Franklin Society</div>
-				<div class="letterhead-motion-number">
+				<div class="letterhead-doc-number">
 					{doc.document_id || `#${doc.uuid.slice(0, 8)}`}
 				</div>
 			</div>
@@ -317,7 +317,8 @@
 </Modal>
 
 <style>
-	.motion-letterhead {
+	/* Document letterhead */
+	.document-letterhead {
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
@@ -333,7 +334,7 @@
 		color: #7a5c1a;
 	}
 
-	.letterhead-motion-number {
+	.letterhead-doc-number {
 		font-size: var(--text-xs);
 		font-weight: 400;
 		text-transform: uppercase;

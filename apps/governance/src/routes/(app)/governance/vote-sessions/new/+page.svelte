@@ -32,7 +32,7 @@
 
 <div class="page">
 	<div class="breadcrumb">
-		<a href="/governance/motions/{data.motion.uuid}">← Back to Motion</a>
+		<a href="/governance/motions/{data.motion.slug}">← Back to Motion</a>
 	</div>
 
 	<PageHeader 

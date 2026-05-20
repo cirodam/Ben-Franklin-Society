@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { Button, Card } from '@bfs/ui';
-	import Badge from '@bfs/ui/src/Badge.svelte';
 
 	type VoteSession = {
 		uuid: string;
@@ -15,34 +13,21 @@
 	};
 
 	let {
-		voteSessions = [],
-		canCreateVoteSession = false,
-		canAdvance = false,
-		motionStatus,
-		onCreateSession
+		voteSessions = []
 	}: {
 		voteSessions?: VoteSession[];
-		canCreateVoteSession?: boolean;
-		canAdvance?: boolean;
-		motionStatus: string;
-		onCreateSession?: () => void;
 	} = $props();
 </script>
 
 <Card padding="lg">
 	<div class="card-header">
-		<h3 class="card-title">Vote Sessions</h3>
-		{#if canCreateVoteSession && motionStatus === 'deliberation'}
-			<Button variant="primary" size="sm" onclick={onCreateSession}>
-				{#snippet children()}+ Create Vote Session{/snippet}
-			</Button>
-		{/if}
+		<h3 class="card-title">Vote History</h3>
 	</div>
 
 	{#if voteSessions.length > 0}
 		<div class="vote-sessions-list">
 			{#each voteSessions as session}
-				<div class="vote-session-item" class:is-active={session.status === 'open'}>
+				<div class="vote-session-item">
 					<div class="session-status">
 						{#if session.status === 'scheduled'}
 							<span class="badge badge--scheduled">📅 Scheduled</span>
@@ -61,8 +46,8 @@
 					
 					<div class="session-info">
 						<div class="session-dates">
-							<span class="session-date">Opens: {new Date(session.opens_at).toLocaleString()}</span>
-							<span class="session-date">Closes: {new Date(session.closes_at).toLocaleString()}</span>
+							<span class="session-date">Opened: {new Date(session.opens_at).toLocaleString()}</span>
+							<span class="session-date">Closed: {new Date(session.closes_at).toLocaleString()}</span>
 						</div>
 						<div class="session-threshold">
 							Passing: {(session.passing_threshold * 100).toFixed(0)}%
@@ -72,40 +57,16 @@
 						</div>
 					</div>
 					
-					{#if canAdvance}
-						<div class="session-actions">
-							{#if session.status === 'scheduled'}
-								<form method="POST" action="?/openVoteSession" use:enhance>
-									<input type="hidden" name="session_uuid" value={session.uuid} />
-									<Button variant="primary" size="sm" type="submit">
-										{#snippet children()}Open Now{/snippet}
-									</Button>
-								</form>
-							{:else if session.status === 'open'}
-								<form method="POST" action="?/closeVoteSession" use:enhance>
-									<input type="hidden" name="session_uuid" value={session.uuid} />
-									<Button variant="secondary" size="sm" type="submit">
-										{#snippet children()}Close Session{/snippet}
-									</Button>
-								</form>
-							{:else if session.status === 'closed'}
-								<form method="POST" action="?/finalizeVoteSession" use:enhance>
-									<input type="hidden" name="session_uuid" value={session.uuid} />
-									<Button variant="primary" size="sm" type="submit">
-										{#snippet children()}Finalize{/snippet}
-									</Button>
-								</form>
-							{/if}
-							<Button variant="ghost" size="sm" onclick={() => window.location.href = `/governance/vote-sessions/${session.uuid}`}>
-								{#snippet children()}View Details{/snippet}
-							</Button>
-						</div>
-					{/if}
+					<div class="session-actions">
+						<Button variant="ghost" size="sm" onclick={() => window.location.href = `/governance/vote-sessions/${session.uuid}`}>
+							{#snippet children()}View Details{/snippet}
+						</Button>
+					</div>
 				</div>
 			{/each}
 		</div>
-	{:else if motionStatus === 'deliberation'}
-		<p class="empty-state">No vote sessions scheduled yet. Create one to allow voting on this motion.</p>
+	{:else}
+		<p class="empty-state">No previous vote sessions.</p>
 	{/if}
 </Card>
 

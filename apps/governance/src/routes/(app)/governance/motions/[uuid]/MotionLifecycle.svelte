@@ -22,16 +22,23 @@
 	<div class="lifecycle-connector {motion.status !== 'draft' ? 'active' : ''}"></div>
 	
 	<!-- Introduced -->
-	<div class="lifecycle-step {motion.status === 'introduced' ? 'active' : ['deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
+	<div class="lifecycle-step {motion.status === 'introduced' ? 'active' : ['deliberation', 'voting', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
 		<div class="lifecycle-step__dot"></div>
 		<div class="lifecycle-step__label">Introduced</div>
 	</div>
-	<div class="lifecycle-connector {['deliberation', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'active' : ''}"></div>
+	<div class="lifecycle-connector {['deliberation', 'voting', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'active' : ''}"></div>
 	
 	<!-- Deliberation -->
-	<div class="lifecycle-step {motion.status === 'deliberation' ? 'active' : ['adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
+	<div class="lifecycle-step {motion.status === 'deliberation' ? 'active' : ['voting', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
 		<div class="lifecycle-step__dot"></div>
 		<div class="lifecycle-step__label">Deliberation</div>
+	</div>
+	<div class="lifecycle-connector {['voting', 'adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'active' : ''}"></div>
+	
+	<!-- Voting -->
+	<div class="lifecycle-step {motion.status === 'voting' ? 'active' : ['adopted', 'enacted', 'rejected', 'withdrawn'].includes(motion.status) ? 'completed' : ''}">
+		<div class="lifecycle-step__dot"></div>
+		<div class="lifecycle-step__label">Voting</div>
 	</div>
 
 	{#if isConcluded}

@@ -48,6 +48,8 @@
 			case 'draft': return 'badge-draft';
 			case 'introduced': return 'badge-introduced';
 			case 'deliberation': return 'badge-deliberation';
+			case 'voting': return 'badge-voting';
+			case 'adopted': return 'badge-adopted';
 			case 'enacted': return 'badge-enacted';
 			case 'rejected': return 'badge-rejected';
 			case 'withdrawn': return 'badge-withdrawn';
@@ -59,7 +61,9 @@
 		switch (status) {
 			case 'draft': return 'Draft';
 			case 'introduced': return 'Introduced';
-			case 'deliberation': return 'Deliberation & Voting';
+			case 'deliberation': return 'Deliberation';
+			case 'voting': return 'Voting';
+			case 'adopted': return 'Adopted';
 			case 'enacted': return 'Enacted';
 			case 'rejected': return 'Rejected';
 			case 'withdrawn': return 'Withdrawn';
@@ -92,7 +96,7 @@
 	});
 </script>
 
-<a href="/governance/motions/{motion.uuid}" class={cardClass()}>
+<a href="/governance/motions/{motion.slug}" class={cardClass()}>
 	<div class="card__header">
 		<div class="card__title-row">
 			<span class="motion-id">{motionId()}</span>

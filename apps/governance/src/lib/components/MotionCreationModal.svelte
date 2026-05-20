@@ -1,22 +1,24 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import type { MotionDocument } from '$lib/server/documents/library-types.js';
 	
 	let { 
 		show = $bindable(false),
-		bodyUuid,
 		bodyName = 'this body',
-		action = '?/create',
-		deliberationRules = []
+		action = '?/introduceMotion',
+		draftMotions = []
 	}: {
 		show?: boolean;
-		bodyUuid: string;
 		bodyName?: string;
 		action?: string;
-		deliberationRules?: Array<{ uuid: string; name: string; minimum_days: number }>;
+		draftMotions?: MotionDocument[];
 	} = $props();
+
+	let selectedMotion = $state<string>('');
 
 	function closeModal() {
 		show = false;
+		selectedMotion = '';
 	}
 
 	function handleOverlayClick(e: MouseEvent) {
@@ -30,47 +32,51 @@
 	<div class="modal-overlay" onclick={handleOverlayClick}>
 		<div class="modal">
 			<div class="modal__header">
-				<h2>New Motion Before {bodyName}</h2>
+				<h2>Introduce Motion to {bodyName}</h2>
 				<button type="button" class="modal__close" onclick={closeModal}>×</button>
 			</div>
-			<form method="POST" {action} use:enhance>
-				<input type="hidden" name="body_uuid" value={bodyUuid} />
-				
-				<div class="form-group">
-					<label for="title">Motion Title</label>
-					<input type="text" id="title" name="title" required />
-				</div>
-				
-				<div class="form-group">
-					<label for="body">Motion Text</label>
-					<textarea id="body" name="body" rows="8" required></textarea>
-					<small>The formal text of the motion to be considered</small>
-				</div>
-				
-				<div class="form-group">
-					<label for="reasoning">Reasoning (optional)</label>
-					<textarea id="reasoning" name="reasoning" rows="4"></textarea>
-					<small>Why should this motion be considered?</small>
-				</div>
-				
-				{#if deliberationRules.length > 0}
-					<div class="form-group">
-						<label for="deliberation_rule_uuid">Deliberation Period (optional)</label>
-						<select id="deliberation_rule_uuid" name="deliberation_rule_uuid">
-							<option value="">— no deliberation period —</option>
-							{#each deliberationRules as rule}
-								<option value={rule.uuid}>{rule.name}</option>
-							{/each}
-						</select>
-						<small>Minimum time for discussion before voting can begin</small>
+
+			{#if draftMotions.length === 0}
+				<div class="empty-state">
+					<p>You don't have any draft motions to introduce.</p>
+					<p class="empty-state__hint">Create a motion document in the library first, then return here to introduce it.</p>
+					<div class="modal__actions">
+						<button type="button" class="btn btn--secondary" onclick={closeModal}>Close</button>
+						<a href="/library" class="btn btn--primary">Go to Library</a>
 					</div>
-				{/if}
-				
-				<div class="modal__actions">
-					<button type="button" class="btn btn--secondary" onclick={closeModal}>Cancel</button>
-					<button type="submit" class="btn btn--primary">Submit Motion</button>
 				</div>
-			</form>
+			{:else}
+				<form method="POST" {action} use:enhance>
+					<div class="motion-list">
+						{#each draftMotions as motion}
+							<label class="motion-card">
+								<input 
+									type="radio" 
+									name="motion_slug" 
+									value={motion.slug}
+									bind:group={selectedMotion}
+								/>
+								<div class="motion-card__content">
+									<div class="motion-card__title">{motion.title}</div>
+									{#if motion.content.provisions.length > 0}
+										<div class="motion-card__preview">
+											{motion.content.provisions[0].text.slice(0, 150)}{motion.content.provisions[0].text.length > 150 ? '...' : ''}
+										</div>
+									{/if}
+									<div class="motion-card__meta">
+										Created {new Date(motion.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+									</div>
+								</div>
+							</label>
+						{/each}
+					</div>
+					
+					<div class="modal__actions">
+						<button type="button" class="btn btn--secondary" onclick={closeModal}>Cancel</button>
+						<button type="submit" class="btn btn--primary" disabled={!selectedMotion}>Introduce Motion</button>
+					</div>
+				</form>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -88,9 +94,9 @@
 	}
 
 	.modal {
-		background: var(--color-background, #ffffff);
+		background: var(--paper, #fafaf7);
 		border-radius: var(--radius-lg);
-		max-width: 600px;
+		max-width: 700px;
 		width: 100%;
 		max-height: 90vh;
 		overflow-y: auto;
@@ -102,12 +108,14 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: var(--space-5);
-		border-bottom: 1px solid var(--color-border);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
 	}
 
 	.modal__header h2 {
 		margin: 0;
 		font-size: var(--text-xl);
+		font-family: 'IM Fell English', serif;
+		color: var(--ink);
 	}
 
 	.modal__close {
@@ -115,7 +123,7 @@
 		border: none;
 		font-size: var(--text-2xl);
 		cursor: pointer;
-		color: var(--color-text-muted);
+		color: var(--ink-mid);
 		padding: 0;
 		width: 32px;
 		height: 32px;
@@ -125,40 +133,94 @@
 	}
 
 	.modal__close:hover {
-		color: var(--color-text);
+		color: var(--ink);
 	}
 
 	form {
 		padding: var(--space-5);
 	}
 
-	.form-group {
-		margin-bottom: var(--space-4);
+	.motion-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		max-height: 60vh;
+		overflow-y: auto;
+		padding: var(--space-1);
 	}
 
-	.form-group label {
-		display: block;
-		font-weight: var(--weight-medium);
+	.motion-card {
+		display: flex;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		border: 2px solid rgba(45, 90, 79, 0.15);
+		border-radius: var(--radius-md);
+		background: white;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.motion-card:hover {
+		border-color: rgba(122, 92, 26, 0.4);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	}
+
+	.motion-card:has(input:checked) {
+		border-color: var(--gold);
+		background: rgba(122, 92, 26, 0.03);
+		box-shadow: 0 2px 8px rgba(122, 92, 26, 0.1);
+	}
+
+	.motion-card input[type="radio"] {
+		flex-shrink: 0;
+		margin-top: 0.25rem;
+		width: 1.25rem;
+		height: 1.25rem;
+		cursor: pointer;
+	}
+
+	.motion-card__content {
+		flex: 1;
+	}
+
+	.motion-card__title {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-lg);
+		font-weight: 600;
+		color: var(--ink);
 		margin-bottom: var(--space-2);
 	}
 
-	.form-group input,
-	.form-group textarea,
-	.form-group select {
-		width: 100%;
-		padding: var(--space-2);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius);
-		font-family: inherit;
-		font-size: var(--text-base);
-		background: var(--color-background, #fff);
+	.motion-card__preview {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: var(--ink-mid);
+		line-height: 1.6;
+		margin-bottom: var(--space-2);
 	}
 
-	.form-group small {
-		display: block;
-		margin-top: var(--space-1);
+	.motion-card__meta {
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--gold);
+	}
+
+	.empty-state {
+		padding: var(--space-8) var(--space-5);
+		text-align: center;
+	}
+
+	.empty-state p {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: var(--ink-mid);
+		margin-bottom: var(--space-2);
+	}
+
+	.empty-state__hint {
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		font-style: italic;
 	}
 
 	.modal__actions {
@@ -166,31 +228,44 @@
 		gap: var(--space-3);
 		justify-content: flex-end;
 		margin-top: var(--space-5);
+		padding-top: var(--space-4);
+		border-top: 1px solid rgba(45, 90, 79, 0.1);
 	}
 
 	.btn {
 		padding: var(--space-3) var(--space-5);
-		font-size: var(--text-base);
-		font-weight: var(--weight-medium);
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-sm);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 		border-radius: var(--radius);
 		border: none;
 		cursor: pointer;
 		transition: all 0.2s;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.btn--primary {
-		background: var(--color-accent);
+		background: var(--gold);
 		color: white;
 	}
 
-	.btn--primary:hover {
-		background: var(--color-accent-hover);
+	.btn--primary:hover:not(:disabled) {
+		background: #8d6b1f;
+	}
+
+	.btn--primary:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.btn--secondary {
-		background: var(--color-surface);
-		color: var(--color-text);
-		border: 1px solid var(--color-border);
+		background: transparent;
+		color: var(--ink);
+		border: 1px solid rgba(45, 90, 79, 0.2);
 	}
 
 	.btn--secondary:hover {

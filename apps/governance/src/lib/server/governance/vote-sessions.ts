@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
-import { enactMotion, rejectMotion } from './motions.js';
+import { enactMotion, rejectMotion, advanceMotion } from './motions.js';
 
 // --- Types ---
 
@@ -86,6 +86,16 @@ export function createVoteSession(input: {
 		created_at
 	);
 	
+	// If session is immediately open, advance motion to voting status
+	if (status === 'open') {
+		try {
+			advanceMotion(input.motion_uuid, 'voting');
+		} catch (err) {
+			// If motion can't transition to voting, that's okay
+			console.warn(`Could not advance motion ${input.motion_uuid} to voting:`, err);
+		}
+	}
+	
 	return getVoteSession(uuid)!;
 }
 
@@ -151,6 +161,7 @@ export function getActiveVoteSessions(): VoteSession[] {
 
 /**
  * Open a scheduled vote session (scheduled → open)
+ * Also advances the motion to 'voting' status
  */
 export function openVoteSession(uuid: string): void {
 	const session = getVoteSession(uuid);
@@ -161,6 +172,15 @@ export function openVoteSession(uuid: string): void {
 	}
 	
 	db.prepare('UPDATE vote_session SET status = ? WHERE uuid = ?').run('open', uuid);
+	
+	// Advance motion to voting status
+	try {
+		advanceMotion(session.motion_uuid, 'voting');
+	} catch (err) {
+		// If motion can't transition to voting (e.g., already in voting or later status), that's okay
+		// Log but don't fail the session opening
+		console.warn(`Could not advance motion ${session.motion_uuid} to voting:`, err);
+	}
 }
 
 /**
@@ -388,12 +408,4 @@ function determineOutcome(sessionUuid: string): VoteOutcome {
 	const aye_ratio = tally.aye_count / decisive_votes;
 	
 	return aye_ratio >= session.passing_threshold ? 'passed' : 'failed';
-}
-
-/**
- * Get outcome of a finalized session
- */
-export function getSessionOutcome(sessionUuid: string): VoteOutcome | null {
-	const session = getVoteSession(sessionUuid);
-	return session?.outcome ?? null;
 }
