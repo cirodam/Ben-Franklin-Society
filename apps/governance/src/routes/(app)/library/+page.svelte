@@ -100,7 +100,6 @@
 
 	{#if data.items.length === 0}
 		<EmptyState 
-			icon="📚"
 			title="No documents found"
 			description="Try adjusting your search or filters"
 		/>
@@ -145,12 +144,12 @@
 	}
 
 	.page-title {
-		font-family: 'IM Fell English', Georgia, serif;
-		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		color: var(--ink);
 		margin: 0 0 var(--space-6) 0;
-		line-height: 1.2;
+		line-height: 1.3;
 	}
 
 	.header-actions {

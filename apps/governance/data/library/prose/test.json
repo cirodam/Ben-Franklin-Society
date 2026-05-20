@@ -1,0 +1,17 @@
+{
+  "uuid": "5ff33a22-6874-44b1-9520-4a7122e53044",
+  "type": "prose",
+  "slug": "test",
+  "document_id": null,
+  "version": 1,
+  "title": "test",
+  "owner_uuid": "ceff4051-bf4f-4a12-979d-8fa3413b2d98",
+  "created_at": "2026-05-20T01:53:52.804Z",
+  "updated_at": "2026-05-20T01:53:55.971Z",
+  "content": {
+    "status": "draft",
+    "paragraphs": [
+      ""
+    ]
+  }
+}

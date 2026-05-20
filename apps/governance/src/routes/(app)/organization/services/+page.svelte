@@ -53,12 +53,12 @@
 	}
 
 	.page-title {
-		font-family: 'IM Fell English', Georgia, serif;
-		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		color: #151c1a;
 		margin: 0 0 var(--space-4) 0;
-		line-height: 1.2;
+		line-height: 1.3;
 	}
 
 	.page-description {

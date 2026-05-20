@@ -77,13 +77,19 @@ body {
 	--text-lg:   1.375rem;    /* 22px - section titles, thread titles */
 	--text-xl:   1.625rem;    /* 26px - article titles small */
 	--text-2xl:  2rem;        /* 32px - article titles large */
-	--text-3xl:  clamp(2.25rem, 4vw, 3rem);      /* 36-48px - page titles */
-	--text-4xl:  clamp(2.5rem, 5vw, 3.75rem);    /* 40-60px - document titles */
+	--text-3xl:  clamp(2.25rem, 4vw, 3rem);      /* 36-48px - page titles (Libre Baskerville) */
+	--text-4xl:  clamp(2.5rem, 5vw, 3.75rem);    /* 40-60px - document titles (IM Fell English) */
 }
 
 /* ── TYPOGRAPHY TOKENS ── */
+/*
+ * Font Hierarchy:
+ * - IM Fell English: Formal document titles (Charter, Constitution, articles)
+ * - Libre Baskerville: Page titles, body text, readable prose
+ * - IM Fell English SC: Small caps labels, buttons, navigation
+ */
 
-/* Display — document titles, page titles, article headings */
+/* Display — document titles (Charter, Constitution), article headings */
 .t-display {
 	font-family: 'IM Fell English', serif;
 	font-weight: 400;

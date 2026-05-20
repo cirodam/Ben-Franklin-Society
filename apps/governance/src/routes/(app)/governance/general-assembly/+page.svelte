@@ -109,10 +109,11 @@
 	}
 
 	.page-title {
-		font-family: 'IM Fell English', serif;
-		font-size: clamp(2.5rem, 5vw, 4rem);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		text-align: center;
+		line-height: 1.3;
 		margin: 0;
 		color: #151c1a;
 		letter-spacing: -0.02em;
