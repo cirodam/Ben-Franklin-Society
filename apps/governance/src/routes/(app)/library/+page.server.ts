@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument } from '$lib/server/documents/library.js';
+import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument, saveMotion, saveGoverningDocument } from '$lib/server/documents/library.js';
 import { createMotion } from '$lib/server/documents/library-motions.js';
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';
@@ -87,6 +87,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	return {
 		items: itemsWithOwner,
 		stats: getLibraryStats(),
+		person: locals.person,
 		filters: {
 			types,
 			status: statusParam || 'all',
@@ -203,5 +204,88 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	upload: async ({ request, locals }) => {
+		if (!locals.person) {
+			return fail(401, { error: 'Not authenticated' });
+		}
+
+		const data = await request.formData();
+		const file = data.get('file') as File;
+
+		if (!file) {
+			return fail(400, { error: 'File is required' });
+		}
+
+		if (!file.name.endsWith('.json')) {
+			return fail(400, { error: 'Only JSON files are supported' });
+		}
+
+		try {
+			// Read and parse the file
+			const text = await file.text();
+			const uploadedDoc = JSON.parse(text);
+
+			// Validate required fields
+			if (!uploadedDoc.type || !uploadedDoc.title || !uploadedDoc.content) {
+				return fail(400, { error: 'Invalid document structure - missing type, title, or content' });
+			}
+
+			// Generate fresh identity
+			const now = new Date().toISOString();
+			const slug = uploadedDoc.title
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/^-|-$/g, '');
+
+			// Check if slug already exists
+			const existing = db
+				.prepare('SELECT uuid FROM library_item WHERE slug = ?')
+				.get(slug);
+
+			if (existing) {
+				return fail(400, { error: `A document with slug "${slug}" already exists` });
+			}
+
+			// Build the new document with fresh identity but preserved content
+			const newDoc = {
+				uuid: randomUUID(),
+				type: uploadedDoc.type,
+				slug,
+				document_id: uploadedDoc.document_id || null, // Preserve document_id
+				version: 1,
+				title: uploadedDoc.title,
+				owner_uuid: locals.person.uuid,
+				created_at: now,
+				updated_at: now,
+				content: uploadedDoc.content,
+			};
+
+			// Save based on type
+			if (newDoc.type === 'prose') {
+				saveProseDocument(newDoc as ProseDocument);
+			} else if (newDoc.type === 'contract') {
+				saveContract(newDoc as ContractDocument);
+			} else if (newDoc.type === 'motion') {
+				saveMotion(newDoc);
+			} else if (newDoc.type === 'governing') {
+				saveGoverningDocument(newDoc);
+			} else {
+				return fail(400, { error: `Unsupported document type: ${newDoc.type}` });
+			}
+
+			throw redirect(303, `/library/${slug}`);
+		} catch (err) {
+			if (err instanceof SyntaxError) {
+				return fail(400, { error: 'Invalid JSON file' });
+			}
+			// Re-throw redirects
+			if (err && typeof err === 'object' && 'status' in err) {
+				throw err;
+			}
+			console.error('Upload error:', err);
+			return fail(500, { error: 'Failed to upload document' });
+		}
 	},
 };

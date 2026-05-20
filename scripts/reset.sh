@@ -17,11 +17,7 @@ rm -f apps/marketplace/marketplace.sqlite apps/marketplace/marketplace.sqlite-wa
 
 # Remove user-generated library content
 echo "  Clearing library documents..."
-rm -rf apps/governance/data/library/motions/*
-rm -rf apps/governance/data/library/contracts/*
-rm -rf apps/governance/data/library/org-charts/*
-rm -rf apps/governance/data/library/prose/*
-rm -rf apps/governance/data/library/governing/*
+rm -f apps/governance/data/library/*.json
 
 # Ensure filesystem sync
 sync

@@ -247,13 +247,11 @@ export const actions: Actions = {
 
 		// Parse provisions from form data
 		const provisionsJson = data.get('provisions') as string;
-		const reasoning = data.get('reasoning') as string;
 		
 		try {
 			const provisions = JSON.parse(provisionsJson);
 			updateMotion(params.slug, {
 				provisions,
-				reasoning: reasoning || undefined,
 			});
 			return { success: true };
 		} catch (err) {

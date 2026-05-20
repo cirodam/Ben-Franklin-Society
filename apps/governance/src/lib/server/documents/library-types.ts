@@ -75,6 +75,7 @@ export interface Provision {
 	number: string; // "1", "1.a", "Section A", etc.
 	title?: string; // Optional section heading
 	text: string; // The provision content
+	reasoning?: string; // Rationale for this provision
 }
 
 export interface MotionSignature {
@@ -90,7 +91,6 @@ export interface MotionContent {
 	// Core content
 	provisions: Provision[];
 	introducer_uuid: string;
-	reasoning?: string;
 	body_uuid?: string; // Association/body this motion belongs to
 
 	// Discussion and voting

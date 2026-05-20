@@ -4,7 +4,7 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ProseDocument, ContractDocument, OrgChartDocument } from './library-types.js';
-import { PROSE_DIR, CONTRACTS_DIR, ORG_CHARTS_DIR, syncToDatabase } from './library-core.js';
+import { LIBRARY_DIR, syncToDatabase } from './library-core.js';
 
 // ============================================================================
 // Prose Documents
@@ -15,7 +15,7 @@ import { PROSE_DIR, CONTRACTS_DIR, ORG_CHARTS_DIR, syncToDatabase } from './libr
  */
 export function loadProseDocument(slug: string): ProseDocument | null {
 	try {
-		const filePath = join(PROSE_DIR, `${slug}.json`);
+		const filePath = join(LIBRARY_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -33,7 +33,7 @@ export function loadProseDocument(slug: string): ProseDocument | null {
  * Save a prose document to file and sync to database
  */
 export function saveProseDocument(doc: ProseDocument): void {
-	const filePath = join(PROSE_DIR, `${doc.slug}.json`);
+	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
 	doc.updated_at = new Date().toISOString();
 	
 	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
@@ -49,7 +49,7 @@ export function saveProseDocument(doc: ProseDocument): void {
  */
 export function loadContract(slug: string): ContractDocument | null {
 	try {
-		const filePath = join(CONTRACTS_DIR, `${slug}.json`);
+		const filePath = join(LIBRARY_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -67,7 +67,7 @@ export function loadContract(slug: string): ContractDocument | null {
  * Save a contract document to file and sync to database
  */
 export function saveContract(doc: ContractDocument): void {
-	const filePath = join(CONTRACTS_DIR, `${doc.slug}.json`);
+	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
 	doc.updated_at = new Date().toISOString();
 	
 	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
@@ -83,7 +83,7 @@ export function saveContract(doc: ContractDocument): void {
  */
 export function loadOrgChartDocument(slug: string): OrgChartDocument | null {
 	try {
-		const filePath = join(ORG_CHARTS_DIR, `${slug}.json`);
+		const filePath = join(LIBRARY_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -103,16 +103,16 @@ export function loadOrgChartDocument(slug: string): OrgChartDocument | null {
 export function listOrgChartDocuments(): OrgChartDocument[] {
 	const documents: OrgChartDocument[] = [];
 
-	if (!existsSync(ORG_CHARTS_DIR)) {
+	if (!existsSync(LIBRARY_DIR)) {
 		return documents;
 	}
 
-	const files = readdirSync(ORG_CHARTS_DIR);
+	const files = readdirSync(LIBRARY_DIR);
 	for (const file of files) {
 		if (file.endsWith('.json')) {
 			const slug = file.replace('.json', '');
 			const doc = loadOrgChartDocument(slug);
-			if (doc) {
+			if (doc && doc.type === 'org-chart') {
 				documents.push(doc);
 			}
 		}

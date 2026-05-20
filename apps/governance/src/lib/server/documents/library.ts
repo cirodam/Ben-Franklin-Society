@@ -18,6 +18,7 @@ export {
 // Re-export governing documents
 export {
 	loadGoverningDocument,
+	saveGoverningDocument,
 	getDocumentBySlug,
 	updateSection,
 	addSection,
@@ -33,6 +34,7 @@ export {
 // Re-export motions
 export {
 	loadMotion,
+	saveMotion,
 	getMotionBySlug,
 	getMotionByUuid,
 	listMotions,

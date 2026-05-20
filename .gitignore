@@ -11,3 +11,7 @@ dist/
 *.db
 *.db-wal
 *.db-shm
+
+# User-generated library documents (use upload feature to import)
+apps/governance/data/library/*.json
+!apps/governance/data/library/.gitkeep

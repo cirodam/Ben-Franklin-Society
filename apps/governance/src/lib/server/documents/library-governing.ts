@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { GoverningDocument, Article, Section } from './library-types.js';
-import { LIBRARY_DIR, GOVERNING_DIR, getSocietyUuid, syncToDatabase } from './library-core.js';
+import { LIBRARY_DIR, getSocietyUuid, syncToDatabase } from './library-core.js';
 
 // Legacy type aliases for backward compatibility
 export type DocumentStatus = 'draft' | 'adopted' | 'repealed';
@@ -81,7 +81,7 @@ function fromLegacyDocument(legacy: LegacyDocument): GoverningDocument {
 export function loadGoverningDocument(slug: string): GoverningDocument | null {
 	try {
 		// Try new location first
-		let filePath = join(GOVERNING_DIR, `${slug}.json`);
+		let filePath = join(LIBRARY_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			// Fall back to old location
 			filePath = join(LIBRARY_DIR, `${slug}.json`);
@@ -130,8 +130,8 @@ export function loadGoverningDocument(slug: string): GoverningDocument | null {
 /**
  * Save a governing document to file and sync to database
  */
-function saveGoverningDocument(doc: GoverningDocument): void {
-	const filePath = join(GOVERNING_DIR, `${doc.slug}.json`);
+export function saveGoverningDocument(doc: GoverningDocument): void {
+	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
 
 	// Create a clean copy for saving
 	const toSave = { ...doc };

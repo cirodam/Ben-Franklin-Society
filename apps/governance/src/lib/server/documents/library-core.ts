@@ -9,30 +9,10 @@ import type { LibraryDocument } from './library-types.js';
 // --- Constants ---
 
 export const LIBRARY_DIR = join(process.cwd(), 'data', 'library');
-export const GOVERNING_DIR = join(LIBRARY_DIR, 'governing');
-export const MOTIONS_DIR = join(LIBRARY_DIR, 'motions');
-export const PROSE_DIR = join(LIBRARY_DIR, 'prose');
-export const CONTRACTS_DIR = join(LIBRARY_DIR, 'contracts');
-export const ORG_CHARTS_DIR = join(LIBRARY_DIR, 'org-charts');
 
-// Ensure directories exist
+// Ensure directory exists
 if (!existsSync(LIBRARY_DIR)) {
 	mkdirSync(LIBRARY_DIR, { recursive: true });
-}
-if (!existsSync(GOVERNING_DIR)) {
-	mkdirSync(GOVERNING_DIR, { recursive: true });
-}
-if (!existsSync(MOTIONS_DIR)) {
-	mkdirSync(MOTIONS_DIR, { recursive: true });
-}
-if (!existsSync(PROSE_DIR)) {
-	mkdirSync(PROSE_DIR, { recursive: true });
-}
-if (!existsSync(CONTRACTS_DIR)) {
-	mkdirSync(CONTRACTS_DIR, { recursive: true });
-}
-if (!existsSync(ORG_CHARTS_DIR)) {
-	mkdirSync(ORG_CHARTS_DIR, { recursive: true });
 }
 
 // --- Utilities ---
@@ -68,7 +48,7 @@ export function syncToDatabase(doc: LibraryDocument): void {
 			doc.title,
 			doc.owner_uuid,
 			doc.updated_at,
-			doc.type + '/' + doc.slug + '.json',
+			doc.slug + '.json',
 			doc.slug
 		);
 	} else {
@@ -86,7 +66,7 @@ export function syncToDatabase(doc: LibraryDocument): void {
 			doc.owner_uuid,
 			doc.created_at,
 			doc.updated_at,
-			doc.type + '/' + doc.slug + '.json'
+			doc.slug + '.json'
 		);
 	}
 }

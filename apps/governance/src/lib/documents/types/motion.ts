@@ -21,7 +21,7 @@ export const motionDocType: DocumentTypeConfig<MotionDocument['content']> = {
 		'withdrawn',
 	] as const,
 
-	detailRoute: (doc) => `/motions/${doc.uuid}`,
+	detailRoute: (doc) => `/library/${doc.slug}`,
 
 	// loadBySlug removed - use library.ts loaders directly on server
 

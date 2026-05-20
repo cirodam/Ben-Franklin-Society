@@ -24,6 +24,7 @@
 	.document {
 		max-width: 1000px;
 		margin: 0 auto;
+		padding: var(--space-8);
 		background: var(--paper);
 		box-shadow: 
 			0 2px 4px rgba(0, 0, 0, 0.06),
@@ -67,6 +68,10 @@
 	}
 
 	@media (max-width: 768px) {
+		.document {
+			padding: var(--space-4);
+		}
+
 		.document-header {
 			padding: var(--space-8) var(--space-6) var(--space-6);
 		}

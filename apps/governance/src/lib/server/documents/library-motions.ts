@@ -6,14 +6,14 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import type { MotionDocument, MotionContent } from './library-types.js';
-import { MOTIONS_DIR, syncToDatabase } from './library-core.js';
+import { LIBRARY_DIR, syncToDatabase } from './library-core.js';
 
 /**
  * Load a motion from file
  */
 export function loadMotion(slug: string): MotionDocument | null {
 	try {
-		const filePath = join(MOTIONS_DIR, `${slug}.json`);
+		const filePath = join(LIBRARY_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -30,8 +30,8 @@ export function loadMotion(slug: string): MotionDocument | null {
 /**
  * Save a motion to file and sync to database
  */
-function saveMotion(doc: MotionDocument): void {
-	const filePath = join(MOTIONS_DIR, `${doc.slug}.json`);
+export function saveMotion(doc: MotionDocument): void {
+	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
 	doc.updated_at = new Date().toISOString();
 	
 	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
