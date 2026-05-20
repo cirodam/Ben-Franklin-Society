@@ -15,15 +15,18 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	// Determine which types to show - default to all types
 	const types = typeParam ? typeParam.split(',') : ['governing', 'motion', 'prose', 'contract'];
 
-	// Build query with owner name JOIN
+	// Build query with owner name JOIN (supports both person and association owners)
 	let query = `
 		SELECT 
 			li.*,
 			p.given_name,
 			p.family_name,
-			p.handle
+			p.handle,
+			a.name as association_name,
+			a.handle as association_handle
 		FROM library_item li
-		JOIN person p ON li.owner_uuid = p.uuid
+		LEFT JOIN person p ON li.owner_uuid = p.uuid
+		LEFT JOIN association a ON li.owner_uuid = a.uuid
 		WHERE 1=1
 	`;
 	const params: any[] = [];
@@ -35,7 +38,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		params.push(...types);
 	}
 
-	// Filter by owner
+	// Filter by owner (only filter by person ownership)
 	if (ownerParam !== 'all' && locals.person?.uuid) {
 		query += ' AND li.owner_uuid = ?';
 		params.push(locals.person.uuid);
@@ -59,15 +62,21 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		created_at: string;
 		updated_at: string;
 		metadata_json: string;
-		given_name: string;
-		family_name: string;
-		handle: string;
+		given_name: string | null;
+		family_name: string | null;
+		handle: string | null;
+		association_name: string | null;
+		association_handle: string | null;
 	}>;
 
-	// Parse metadata for each item
+	// Parse metadata and determine owner display name
 	const itemsWithMetadata = items.map(item => ({
 		...item,
-		metadata: JSON.parse(item.metadata_json || '{}')
+		metadata: JSON.parse(item.metadata_json || '{}'),
+		owner_name: item.given_name 
+			? `${item.given_name} ${item.family_name}`
+			: (item.association_name || 'Unknown'),
+		owner_handle: item.handle || item.association_handle || 'unknown'
 	}));
 
 	// Get statistics

@@ -1,6 +1,6 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract, loadMotion } from '$lib/server/documents/library.js';
+import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract, loadMotion, loadGoverningDocument } from '$lib/server/documents/library.js';
 import { hasPermission } from '$lib/server/infrastructure/permissions.js';
 import { db } from '$lib/server/db.js';
 
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		const canEdit = document.content.status === 'draft';
 		return { document, canEdit, documentType: 'contract' };
 	} else if (item.type === 'governing') {
-		const document = getDocumentBySlug(params.slug);
+		const document = loadGoverningDocument(params.slug);
 		if (!document) error(404, 'Document not found');
 
 		const canEdit = hasPermission(locals.person.uuid, 'documents:edit');

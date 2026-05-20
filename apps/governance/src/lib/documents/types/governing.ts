@@ -1,5 +1,6 @@
 import type { DocumentTypeConfig } from '../registry.js';
 import type { GoverningDocument } from '$lib/server/documents/library-types.js';
+import { loadGoverningDocument } from '$lib/server/documents/library.js';
 
 /**
  * Seniority levels for governing documents.
@@ -40,6 +41,8 @@ export const governingDocType: DocumentTypeConfig<GoverningDocument['content']> 
 	statuses: ['draft', 'adopted', 'repealed'] as const,
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
+
+	loadBySlug: (slug) => loadGoverningDocument(slug),
 
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)

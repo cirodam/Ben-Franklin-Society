@@ -43,9 +43,9 @@
 	code {
 		font-family: 'Courier New', monospace;
 		font-size: var(--text-xs);
-		color: #374340;
+		color: var(--ink-mid);
 		padding: var(--space-1) var(--space-2);
-		background: rgba(45, 90, 79, 0.05);
-		border: 1px solid rgba(45, 90, 79, 0.15);
+		background: var(--tint-green-mid);
+		border: 1px solid var(--border-subtle);
 	}
 </style>

@@ -53,17 +53,17 @@
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.1em;
-		color: #374340;
+		color: var(--ink-mid);
 		text-decoration: none;
 		background: transparent;
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		transition: all 0.2s;
 	}
 
 	.back:hover {
 		background: var(--paper);
-		color: #151c1a;
-		border-color: #d4a24a;
+		color: var(--ink);
+		border-color: var(--gold-hover);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
@@ -75,17 +75,17 @@
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.1em;
-		color: #7a5c1a;
+		color: var(--gold);
 		text-decoration: none;
 		background: transparent;
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		transition: all 0.2s;
 	}
 
 	.edit-link:hover {
 		background: var(--paper);
-		color: #7a5c1a;
-		border-color: #d4a24a;
+		color: var(--gold);
+		border-color: var(--gold-hover);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 </style>

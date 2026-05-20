@@ -1,5 +1,6 @@
 import type { DocumentTypeConfig } from '../registry.js';
 import type { ContractDocument } from '$lib/server/documents/library-types.js';
+import { loadContract } from '$lib/server/documents/library.js';
 
 /**
  * Document type configuration for contracts.
@@ -15,6 +16,8 @@ export const contractDocType: DocumentTypeConfig<ContractDocument['content']> = 
 	statuses: ['draft', 'active', 'completed', 'terminated'] as const,
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
+
+	loadBySlug: (slug) => loadContract(slug),
 
 	getSubtitle: (doc) => {
 		// Show the two parties

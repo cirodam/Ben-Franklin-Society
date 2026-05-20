@@ -68,28 +68,11 @@
 
 <DocumentView>
 	{#snippet header()}
-		<div class="document-title-block">
-			<h1 class="document-title">{doc.title}</h1>
-			<div class="document-meta">
-				<span class="seniority-badge {getSeniorityVariant(doc.content.seniority)}">
-					{getSeniorityName(doc.content.seniority)}
-				</span>
-				<span class="status-badge {statusVariant[doc.content.status] ?? ''}">
-					{doc.content.status}
-				</span>
-			</div>
-		</div>
-		<div class="document-dates">
-			{#if doc.content.adopted_at}
-				<div class="date-line">
-					<span class="date-label">Adopted:</span>
-					<span class="date-value">{doc.content.adopted_at.slice(0, 10)}</span>
-				</div>
-			{/if}
-			{#if doc.content.repealed_at}
-				<div class="date-line date-line--warn">
-					<span class="date-label">Repealed:</span>
-					<span class="date-value">{doc.content.repealed_at.slice(0, 10)}</span>
+		<div class="document-title-block" class:document-title-block--charter={doc.content.seniority === 1}>
+			<h1 class="document-title" class:document-title--charter={doc.content.seniority === 1}>{doc.title}</h1>
+			{#if doc.content.preamble && doc.content.seniority === 1}
+				<div class="preamble">
+					{doc.content.preamble}
 				</div>
 			{/if}
 		</div>
@@ -232,8 +215,62 @@
 {/if}
 
 <style>
+	/* Preamble styling */
+	.preamble {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: 1.25rem;
+		line-height: 2;
+		color: var(--ink);
+		margin-top: var(--space-8);
+		padding: 0 var(--space-8);
+		text-align: center;
+		max-width: 800px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.preamble::first-letter {
+		font-size: 3.5em;
+		line-height: 0.85;
+		float: left;
+		font-family: 'IM Fell English', serif;
+		margin-right: 0.1em;
+		margin-top: 0.1em;
+		color: var(--ink);
+	}
+
+	/* Charter special styling */
+	.document-title-block--charter {
+		padding-top: var(--space-16) !important;
+	}
+
+	.document-title--charter {
+		font-size: clamp(3rem, 6vw, 4.5rem) !important;
+		letter-spacing: 0.02em;
+		margin-top: 0 !important;
+		margin-bottom: var(--space-8) !important;
+	}
+
+	.document-subtitle {
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-sm);
+		text-align: center;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--ink-mid);
+		margin-bottom: var(--space-6);
+		font-weight: 400;
+	}
+
 	/* Seniority badge variants */
-	.seniority--1 { background: #fef7e0; border-color: #d4a24a; color: #7a5c1a; }
+	.seniority--1 { 
+		background: linear-gradient(135deg, #fef7e0 0%, #f9edc8 100%);
+		border-color: #c89542;
+		border-width: 2px;
+		color: #6b4d15;
+		font-weight: 600;
+		box-shadow: 0 1px 3px rgba(122, 92, 26, 0.15);
+	}
 	.seniority--2 { background: #e8f0f8; border-color: #5b8cb8; color: #1e3a5f; }
 	.seniority--3 { background: #f0ebf8; border-color: #8b6cb8; color: #4a2870; }
 	.seniority--4 { background: #f8ebf0; border-color: #b86c8b; color: #70284a; }
@@ -241,7 +278,12 @@
 	.seniority--6 { background: #ebf8f0; border-color: #6cb88b; color: #28704a; }
 
 	.article {
-		margin-bottom: var(--space-12);
+		margin-bottom: var(--space-16);
+		padding-top: var(--space-8);
+	}
+
+	.article:first-child {
+		padding-top: var(--space-12);
 	}
 
 	.article:last-child {
@@ -250,7 +292,7 @@
 
 	.article-heading {
 		text-align: center;
-		margin: 0;
+		margin: 0 0 var(--space-10) 0;
 		padding: 0;
 		border: none;
 		flex: 1;
@@ -258,36 +300,48 @@
 
 	.article-number {
 		display: block;
-		font-size: var(--text-sm);
+		font-size: var(--text-base);
 		font-weight: 600;
 		text-transform: uppercase;
-		letter-spacing: 0.15em;
-		color: #7a5c1a;
-		margin-bottom: var(--space-2);
+		letter-spacing: 0.2em;
+		color: var(--ink-mid);
+		margin-bottom: var(--space-3);
+		font-family: 'IM Fell English SC', serif;
 	}
 
 	.article-title {
 		display: block;
-		font-size: 1.75rem;
-		font-weight: 700;
+		font-size: 2rem;
+		font-weight: 400;
 		line-height: 1.3;
-		color: #151c1a;
+		color: var(--ink);
+		font-family: 'IM Fell English', serif;
+		letter-spacing: 0.01em;
 	}
 
 	.article-heading-container {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
+		align-items: flex-start;
+		justify-content: center;
 		gap: var(--space-4);
-		margin-bottom: var(--space-8);
-		padding-bottom: var(--space-4);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+		margin-bottom: var(--space-10);
+		position: relative;
+	}
+
+	.article-heading-container .article-heading {
+		flex: 0 1 auto;
 	}
 
 	.article-actions, .section-actions {
 		display: flex;
 		gap: var(--space-1);
 		align-items: center;
+	}
+
+	.article-actions {
+		position: absolute;
+		right: 0;
+		top: 0;
 	}
 
 	.section {
@@ -302,7 +356,7 @@
 		margin-left: calc(-1 * var(--space-4));
 		margin-right: calc(-1 * var(--space-4));
 		padding: var(--space-4);
-		border-left: 3px solid #d4a24a;
+		border-left: 3px solid var(--gold-hover);
 		border-radius: 2px;
 	}
 
@@ -317,7 +371,7 @@
 	.section-number {
 		font-size: var(--text-base);
 		font-weight: 700;
-		color: #7a5c1a;
+		color: var(--gold);
 		font-variant-numeric: oldstyle-nums;
 		min-width: 2.5rem;
 	}
@@ -325,14 +379,14 @@
 	.section-title {
 		font-weight: 700;
 		font-size: var(--text-base);
-		color: #151c1a;
+		color: var(--ink);
 		flex: 1;
 		font-style: italic;
 	}
 
 	.copy-link-btn, .edit-btn, .delete-btn {
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		border-radius: 2px;
 		background: rgba(255, 255, 255, 0.5);
 		cursor: pointer;
@@ -352,8 +406,8 @@
 	.copy-link-btn:hover {
 		opacity: 1;
 		background: rgba(212, 162, 74, 0.15);
-		border-color: #d4a24a;
-		color: #7a5c1a;
+		border-color: var(--gold-hover);
+		color: var(--gold);
 	}
 
 	.edit-btn:hover {
@@ -371,7 +425,7 @@
 	.section-body {
 		font-size: 1.0625rem;
 		line-height: 1.75;
-		color: #151c1a;
+		color: var(--ink);
 		text-align: justify;
 		hyphens: auto;
 		margin-left: 2.5rem;
@@ -381,15 +435,15 @@
 		margin-top: var(--space-5);
 		margin-left: 2.5rem;
 		padding: var(--space-4) var(--space-5);
-		background: rgba(122, 92, 26, 0.04);
-		border-left: 3px solid #d4a24a;
+		background: var(--tint-gold);
+		border-left: 3px solid var(--gold-hover);
 		border-radius: 2px;
 	}
 
 	.section-rationale summary {
 		font-size: var(--text-sm);
 		font-weight: 700;
-		color: #7a5c1a;
+		color: var(--gold);
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
 		cursor: pointer;
@@ -400,7 +454,7 @@
 		margin: var(--space-3) 0 0;
 		font-size: 1.0625rem;
 		line-height: 1.75;
-		color: #3c2f16;
+		color: var(--ink);
 		text-align: justify;
 		hyphens: auto;
 	}
@@ -408,7 +462,7 @@
 	.add-article-container {
 		margin-top: var(--space-12);
 		padding-top: var(--space-8);
-		border-top: 2px solid rgba(45, 90, 79, 0.2);
+		border-top: 2px solid var(--border);
 		text-align: center;
 	}
 

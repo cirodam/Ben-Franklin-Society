@@ -1,5 +1,6 @@
 import type { DocumentTypeConfig } from '../registry.js';
 import type { MotionDocument } from '$lib/server/documents/library-types.js';
+import { loadMotion } from '$lib/server/documents/library.js';
 
 /**
  * Document type configuration for motions.
@@ -23,6 +24,8 @@ export const motionDocType: DocumentTypeConfig<MotionDocument['content']> = {
 	] as const,
 
 	detailRoute: (doc) => `/motions/${doc.uuid}`,
+
+	loadBySlug: (slug) => loadMotion(slug),
 
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)

@@ -25,20 +25,40 @@ body {
 	--rule-strong: rgba(0, 0, 0, 0.15);
 	--rule:        rgba(0, 0, 0, 0.08);
 	
+	/* Green palette - primary institutional colors */
 	--accent:     #2d5a4f;
 	--accent-mid: #4a8070;
 	--accent-lt:  #e8f0ee;
 	
-	--ink:        #151c1a;
-	--ink-mid:    #374340;
-	--ink-faint:  #7a8c89;
+	/* Ink colors - text hierarchy */
+	--ink:        #151c1a;  /* Primary text */
+	--ink-mid:    #374340;  /* Secondary text, labels */
+	--ink-faint:  #7a8c89;  /* Tertiary text, placeholders */
 	
+	/* Gold palette - links, accents, interactive elements */
+	--gold:       #7a5c1a;  /* Links, accents, button text */
+	--gold-hover: #d4a24a;  /* Hover states */
+	
+	/* Danger/error states */
 	--danger:     #7a2e2e;
 	--danger-lt:  #f7efef;
 	
-	--paper:      #fafaf7;
-	--surface-dk: #f2f2ef;
-	--disc-bg:    #f2f4f3;
+	/* Surface colors */
+	--paper:      #fafaf7;  /* Primary surface, cards */
+	--surface-dk: #f2f2ef;  /* Secondary surface */
+	--disc-bg:    #f2f4f3;  /* Discussion background */
+	
+	/* Border colors - standardized opacities */
+	--border-strong:  rgba(45, 90, 79, 0.3);  /* Emphasis borders, focus states */
+	--border:         rgba(45, 90, 79, 0.2);  /* Standard borders */
+	--border-subtle:  rgba(45, 90, 79, 0.15); /* Dividers, subtle separators */
+	--border-faint:   rgba(45, 90, 79, 0.1);  /* Very subtle dividers */
+	
+	/* Background tints - for subtle highlighting */
+	--tint-gold:      rgba(122, 92, 26, 0.03); /* Hover states, selected items */
+	--tint-gold-mid:  rgba(122, 92, 26, 0.05); /* Credentials, code backgrounds */
+	--tint-green:     rgba(45, 90, 79, 0.03);  /* Table headers, subtle emphasis */
+	--tint-green-mid: rgba(45, 90, 79, 0.05);  /* Code blocks, readonly fields */
 	
 	/* Shadows */
 	--shadow-elevated: 
@@ -171,13 +191,99 @@ body {
 	cursor: not-allowed !important;
 }
 
+/* ── UI UTILITIES ── */
+
+/* Links */
+a, .link {
+	color: var(--gold);
+	text-decoration: none;
+	transition: color 0.2s;
+}
+
+a:hover, .link:hover {
+	color: var(--gold-hover);
+}
+
+/* Code blocks and inline code */
+code, .code {
+	font-family: 'Courier New', monospace;
+	font-size: var(--text-xs);
+	color: var(--ink-mid);
+	padding: var(--space-1) var(--space-2);
+	background: var(--tint-green-mid);
+	border: 1px solid var(--border-subtle);
+}
+
+/* Card borders - use for any bordered container */
+.card-border {
+	border: 1px solid var(--border);
+	background: var(--paper);
+}
+
+.card-border-accent {
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--border-strong);
+	background: var(--paper);
+}
+
+/* Form labels - small caps style */
+.form-label {
+	font-family: 'IM Fell English SC', serif;
+	letter-spacing: 0.1em;
+	text-transform: lowercase;
+	color: var(--ink-mid);
+	font-size: var(--text-xs);
+}
+
+/* Section headings - used in cards */
+h2, .heading-section {
+	font-family: 'IM Fell English', serif;
+	font-size: var(--text-lg);
+	font-weight: 400;
+	color: var(--ink);
+	margin: 0 0 var(--space-3) 0;
+}
+
+h3, .heading-subsection {
+	font-family: 'Libre Baskerville', Georgia, serif;
+	font-size: var(--text-base);
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+}
+
+/* Description text - used for help text, metadata */
+.text-secondary {
+	font-family: 'Libre Baskerville', Georgia, serif;
+	font-size: var(--text-sm);
+	color: var(--ink-mid);
+	line-height: 1.6;
+}
+
+/* Dividers */
+.divider {
+	border-top: 1px solid var(--border-subtle);
+}
+
+.divider-strong {
+	border-top: 1px solid var(--border);
+}
+
+/* ── COMPONENT OVERRIDES ── */
+
 /* Page Headers */
 .page-header h1 {
 	font-family: 'IM Fell English', serif !important;
 	font-size: var(--text-3xl) !important;
 	font-weight: 400 !important;
-	color: #151c1a !important;
+	color: var(--ink) !important;
 	text-shadow: none !important;
+}
+
+.page-header-description {
+	font-family: 'Libre Baskerville', Georgia, serif !important;
+	color: var(--ink-mid) !important;
+	line-height: 1.6 !important;
 }
 
 /* Content Container */

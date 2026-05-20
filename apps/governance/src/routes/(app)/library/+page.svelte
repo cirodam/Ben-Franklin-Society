@@ -111,7 +111,7 @@
 					<div class="document-main">
 						<h2 class="document-title">{item.title}</h2>
 						<div class="document-meta-line">
-							<span class="document-author">{item.given_name} {item.family_name}</span>
+							<span class="document-author">{item.owner_name}</span>
 							<span class="meta-dot">•</span>
 							<span class="document-type">{documentTypes.get(item.type).label}</span>
 						</div>
@@ -148,7 +148,7 @@
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: clamp(2.5rem, 5vw, 4rem);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0 0 var(--space-6) 0;
 		line-height: 1.2;
 	}
@@ -168,32 +168,32 @@
 	.search-input {
 		flex: 1;
 		padding: 0.75rem 1rem;
-		border: 1px solid rgba(45, 90, 79, 0.3);
+		border: 1px solid var(--border-strong);
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-base);
 		letter-spacing: 0.08em;
-		color: #151c1a;
+		color: var(--ink);
 		background: var(--paper);
 		transition: border-color 0.2s;
 	}
 
 	.search-input:focus {
 		outline: none;
-		border-color: #d4a24a;
+		border-color: var(--gold-hover);
 	}
 
 	.search-input::placeholder {
-		color: #374340;
+		color: var(--ink-mid);
 		opacity: 0.6;
 	}
 
 	.type-select {
 		padding: 0.75rem 1rem;
-		border: 1px solid rgba(45, 90, 79, 0.3);
+		border: 1px solid var(--border-strong);
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-base);
 		letter-spacing: 0.08em;
-		color: #151c1a;
+		color: var(--ink);
 		background: var(--paper);
 		cursor: pointer;
 		min-width: 180px;
@@ -202,12 +202,12 @@
 
 	.type-select:focus {
 		outline: none;
-		border-color: #d4a24a;
+		border-color: var(--gold-hover);
 	}
 
 	.owner-toggle {
 		display: flex;
-		border: 1px solid rgba(45, 90, 79, 0.3);
+		border: 1px solid var(--border-strong);
 		overflow: hidden;
 	}
 
@@ -218,10 +218,10 @@
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.08em;
-		color: #374340;
+		color: var(--ink-mid);
 		cursor: pointer;
 		transition: all 0.2s;
-		border-right: 1px solid rgba(45, 90, 79, 0.3);
+		border-right: 1px solid var(--border-strong);
 	}
 
 	.owner-toggle-btn:last-child {
@@ -229,21 +229,21 @@
 	}
 
 	.owner-toggle-btn:hover {
-		background: rgba(45, 90, 79, 0.05);
-		color: #151c1a;
+		background: var(--tint-green-mid);
+		color: var(--ink);
 	}
 
 	.owner-toggle-btn.active {
 		background: rgba(212, 162, 74, 0.15);
-		color: #7a5c1a;
-		border-color: #d4a24a;
+		color: var(--gold);
+		border-color: var(--gold-hover);
 	}
 
 	.document-list {
 		display: flex;
 		flex-direction: column;
 		background: var(--paper);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		overflow: hidden;
 	}
 
@@ -253,7 +253,7 @@
 		justify-content: space-between;
 		gap: var(--space-6);
 		padding: var(--space-5) var(--space-6);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+		border-bottom: 1px solid var(--border-subtle);
 		text-decoration: none;
 		color: inherit;
 		transition: all 0.2s;
@@ -264,7 +264,7 @@
 	}
 
 	.document-row:hover {
-		border-color: #d4a24a;
+		border-color: var(--gold-hover);
 		box-shadow: 
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 8px rgba(0, 0, 0, 0.08);
@@ -282,13 +282,13 @@
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0;
 		line-height: 1.3;
 	}
 
 	.document-row:hover .document-title {
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.document-meta-line {
@@ -300,24 +300,24 @@
 	.document-author {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-faint);
 	}
 
 	.document-type {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-faint);
 	}
 
 	.meta-dot {
 		font-size: var(--text-sm);
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.document-date {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-faint);
 		white-space: nowrap;
 		font-variant-numeric: oldstyle-nums;
 	}

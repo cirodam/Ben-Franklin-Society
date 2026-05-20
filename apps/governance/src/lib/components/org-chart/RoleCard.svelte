@@ -76,28 +76,28 @@
 		align-items: center;
 		gap: var(--space-3);
 		padding: var(--space-3);
-		border: 1px solid rgba(45, 90, 79, 0.2);
-		border-left: 3px solid rgba(45, 90, 79, 0.3);
-		background: white;
+		border: 1px solid var(--border);
+		border-left: 3px solid var(--border-strong);
+		background: var(--paper);
 		text-decoration: none;
 		color: inherit;
 		transition: all 0.2s;
 	}
 
 	.role-item:hover {
-		background-color: rgba(122, 92, 26, 0.03);
-		border-color: rgba(122, 92, 26, 0.3);
+		background-color: var(--tint-gold);
+		border-color: var(--gold);
 	}
 
 	.role-item:hover .role-title {
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.role-title {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		font-weight: 600;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0;
 		transition: color 0.2s;
 		flex-shrink: 0;
@@ -115,7 +115,7 @@
 	.role-holders {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-xs);
-		color: #374340;
+		color: var(--ink-mid);
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-1);
@@ -124,7 +124,7 @@
 	}
 
 	.holder-name {
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	.holder-name:not(:last-child)::after {
@@ -139,20 +139,20 @@
 
 	.btn-add {
 		background: none;
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		cursor: pointer;
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		padding: var(--space-1) var(--space-2);
-		color: #7a5c1a;
+		color: var(--gold);
 		min-width: 2rem;
 		transition: all 0.2s;
 		flex-shrink: 0;
 	}
 
 	.btn-add:hover {
-		background: #7a5c1a;
-		border-color: #7a5c1a;
+		background: var(--gold);
+		border-color: var(--gold);
 		color: white;
 	}
 

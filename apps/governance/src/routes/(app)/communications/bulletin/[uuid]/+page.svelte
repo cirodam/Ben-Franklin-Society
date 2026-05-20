@@ -84,18 +84,18 @@
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.1em;
-		color: #374340;
+		color: var(--ink-mid);
 		text-decoration: none;
 		background: transparent;
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		transition: all 0.2s;
 		align-self: flex-start;
 	}
 
 	.back-link:hover {
 		background: var(--paper);
-		color: #151c1a;
-		border-color: #d4a24a;
+		color: var(--ink);
+		border-color: var(--gold-hover);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
@@ -103,7 +103,7 @@
 	.thread {
 		background: var(--paper);
 		padding: var(--space-8);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		box-shadow: 
 			0 2px 4px rgba(0,0,0,0.06),
 			0 8px 24px rgba(0,0,0,0.10);
@@ -112,14 +112,14 @@
 	.thread-header {
 		margin-bottom: var(--space-6);
 		padding-bottom: var(--space-4);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.thread-title {
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-3xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0 0 var(--space-3) 0;
 		line-height: 1.2;
 	}
@@ -134,18 +134,18 @@
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.15em;
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	.thread-separator {
-		color: #7a5c1a;
+		color: var(--gold);
 		font-size: var(--text-xs);
 	}
 
 	.thread-date {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #7a5c1a;
+		color: var(--gold);
 		font-variant-numeric: oldstyle-nums;
 	}
 
@@ -153,7 +153,7 @@
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-read);
 		line-height: 1.8;
-		color: #151c1a;
+		color: var(--ink);
 		white-space: pre-wrap;
 	}
 
@@ -161,7 +161,7 @@
 	.replies {
 		background: var(--paper);
 		padding: var(--space-8);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		box-shadow: 
 			0 2px 4px rgba(0,0,0,0.06),
 			0 8px 24px rgba(0,0,0,0.10);
@@ -171,7 +171,7 @@
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0 0 var(--space-6) 0;
 	}
 
@@ -182,14 +182,14 @@
 		gap: var(--space-3);
 		margin-bottom: var(--space-8);
 		padding-bottom: var(--space-6);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.reply-form-label {
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.15em;
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	.reply-form-footer {
@@ -203,7 +203,7 @@
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
 		font-style: italic;
-		color: #374340;
+		color: var(--ink-mid);
 		text-align: center;
 		padding: var(--space-6) 0;
 		margin: 0;
@@ -220,7 +220,7 @@
 		flex-direction: column;
 		gap: var(--space-3);
 		padding-bottom: var(--space-6);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
+		border-bottom: 1px solid var(--border-faint);
 	}
 
 	.reply:last-child {
@@ -238,18 +238,18 @@
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.15em;
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	.reply-separator {
-		color: #7a5c1a;
+		color: var(--gold);
 		font-size: var(--text-xs);
 	}
 
 	.reply-date {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #7a5c1a;
+		color: var(--gold);
 		font-variant-numeric: oldstyle-nums;
 	}
 
@@ -257,7 +257,7 @@
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-body);
 		line-height: 1.75;
-		color: #151c1a;
+		color: var(--ink);
 		white-space: pre-wrap;
 	}
 </style>

@@ -76,7 +76,7 @@
 <style>
 	.form-card {
 		background: var(--paper);
-		border: 1px solid rgba(45, 90, 79, 0.3);
+		border: 1px solid var(--border-strong);
 		padding: var(--space-4);
 		margin-bottom: var(--space-4);
 	}
@@ -86,7 +86,7 @@
 		font-size: var(--text-sm);
 		font-weight: 400;
 		letter-spacing: 0.1em;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0 0 var(--space-3) 0;
 	}
 
@@ -102,25 +102,25 @@
 		font-size: var(--text-xs);
 		font-weight: 400;
 		letter-spacing: 0.1em;
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	input[type='text'],
 	textarea,
 	select {
 		padding: var(--space-2);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		font-size: var(--text-sm);
 		font-family: 'Libre Baskerville', Georgia, serif;
-		background: #fafaf7;
-		color: #151c1a;
+		background: var(--paper);
+		color: var(--ink);
 	}
 
 	input:focus,
 	textarea:focus,
 	select:focus {
 		outline: none;
-		border-color: #7a5c1a;
+		border-color: var(--gold);
 	}
 
 	.form-actions {
@@ -131,24 +131,24 @@
 
 	.btn-primary {
 		padding: var(--space-2) var(--space-3);
-		background: #7a5c1a;
+		background: var(--gold);
 		color: white;
-		border: 1px solid #7a5c1a;
+		border: 1px solid var(--gold);
 		cursor: pointer;
 		font-size: var(--text-sm);
 		font-family: 'Libre Baskerville', Georgia, serif;
 	}
 
 	.btn-primary:hover {
-		background: #d4a24a;
-		border-color: #d4a24a;
+		background: var(--gold-hover);
+		border-color: var(--gold-hover);
 	}
 
 	.btn-secondary {
 		padding: var(--space-2) var(--space-3);
 		background: var(--color-surface);
 		color: var(--color-text);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		cursor: pointer;
 		font-size: var(--text-sm);
 		font-family: 'Libre Baskerville', Georgia, serif;
@@ -156,6 +156,6 @@
 
 	.btn-secondary:hover {
 		background: var(--paper);
-		border-color: #7a5c1a;
+		border-color: var(--gold);
 	}
 </style>

@@ -49,8 +49,8 @@
 	.table-wrap {
 		width: 100%;
 		overflow-x: auto;
-		border: 1px solid rgba(45, 90, 79, 0.2);
-		background: white;
+		border: 1px solid var(--border);
+		background: var(--paper);
 	}
 
 	table {
@@ -61,15 +61,15 @@
 	}
 
 	thead {
-		background: rgba(45, 90, 79, 0.03);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+		background: var(--tint-green);
+		border-bottom: 1px solid var(--border);
 	}
 
 	th {
 		text-align: left;
 		font-family: 'IM Fell English SC', serif;
 		font-weight: 400;
-		color: #374340;
+		color: var(--ink-mid);
 		font-size: var(--text-xs);
 		text-transform: lowercase;
 		letter-spacing: 0.1em;
@@ -78,7 +78,7 @@
 	}
 
 	:global(tbody tr) {
-		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
+		border-bottom: 1px solid var(--border-faint);
 	}
 
 	:global(tbody tr:last-child) {
@@ -86,13 +86,13 @@
 	}
 
 	:global(tbody tr:hover) {
-		background: rgba(122, 92, 26, 0.03);
+		background: var(--tint-gold);
 	}
 
 	:global(tbody td) {
 		padding: var(--space-3) var(--space-4);
 		vertical-align: middle;
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.empty {

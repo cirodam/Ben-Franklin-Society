@@ -1,0 +1,53 @@
+{
+  "uuid": "3a1bd640-0ec5-42b4-8aeb-ba478ff979ef",
+  "type": "governing",
+  "slug": "assembly-rules",
+  "title": "Rules of the Assembly",
+  "owner_uuid": "SOCIETY",
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-01-01T00:00:00Z",
+  "content": {
+    "status": "adopted",
+    "seniority": 3,
+    "articles": [
+      {
+        "number": "I",
+        "title": "General Provisions",
+        "sections": [
+          {
+            "title": "Authority",
+            "body": "These rules govern the procedures and voting thresholds of the Assembly. They may be amended only by referendum of the full membership. The Assembly may not alter its own rules.",
+            "rationale": "Preventing the Assembly from changing its own voting rules eliminates a common path to institutional capture. If a majority wants to change how decisions are made, they must convince the broader membership."
+          },
+          {
+            "title": "Quorum",
+            "body": "A quorum of two-thirds (2/3) of seated Assembly members must be present for any vote to proceed. Votes taken without quorum are void.",
+            "rationale": "High quorum requirements prevent small factions from making decisions when most members are absent."
+          }
+        ]
+      },
+      {
+        "number": "II",
+        "title": "Voting Thresholds",
+        "sections": [
+          {
+            "title": "Simple Majority",
+            "body": "The following motions require a simple majority (more than half of votes cast) to pass: (1) routine administrative decisions, (2) policy recommendations, (3) committee appointments, (4) procedural motions.",
+            "rationale": "Most day-to-day Assembly business should not require supermajorities, which can create gridlock."
+          },
+          {
+            "title": "Two-Thirds Majority",
+            "body": "The following motions require a two-thirds (2/3) majority of votes cast to pass: (1) budget appropriations, (2) amendments to the Charter, (3) creation or dissolution of Services, (4) changes to membership dues, (5) referral of questions to referendum.",
+            "rationale": "Decisions with significant fiscal or structural impact require broader consensus than routine matters."
+          },
+          {
+            "title": "Three-Quarters Majority",
+            "body": "The following motions require a three-quarters (3/4) majority of votes cast to pass: (1) amendments to the Constitution, (2) emergency actions that bypass normal procedures.",
+            "rationale": "The highest threshold is reserved for fundamental changes to the community's structure or emergency measures that could be abused."
+          }
+        ]
+      }
+    ],
+    "adopted_at": "2026-01-01T00:00:00Z"
+  }
+}

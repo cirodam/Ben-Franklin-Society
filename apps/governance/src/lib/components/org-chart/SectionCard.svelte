@@ -70,7 +70,7 @@
 <style>
 	.section-card {
 		background: var(--paper);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		padding: var(--space-4);
 		margin-bottom: var(--space-4);
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -79,7 +79,7 @@
 	.section-header {
 		margin-bottom: var(--space-4);
 		padding-bottom: var(--space-3);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.section-title-row {
@@ -94,7 +94,7 @@
 		font-family: 'IM Fell English', serif;
 		font-size: var(--text-lg);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0;
 	}
 
@@ -108,13 +108,13 @@
 	}
 
 	.stat {
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	.section-description {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #374340;
+		color: var(--ink-mid);
 		margin: 0;
 		line-height: 1.6;
 	}

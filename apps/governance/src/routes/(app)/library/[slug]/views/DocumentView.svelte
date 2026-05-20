@@ -54,8 +54,8 @@
 	}
 
 	.document-header {
-		padding: var(--space-12) var(--space-10) var(--space-8);
-		border-bottom: 2px solid rgba(45, 90, 79, 0.2);
+		padding: var(--space-20) var(--space-10) var(--space-12);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
 		position: relative;
 		z-index: 1;
 	}
@@ -79,17 +79,18 @@
 	/* Typography */
 	:global(.document .document-title-block) {
 		margin-bottom: var(--space-6);
+		padding-top: var(--space-12);
 	}
 
 	:global(.document .document-title) {
 		font-family: 'IM Fell English', serif;
-		font-size: 2.5rem;
+		font-size: clamp(2rem, 5vw, 3rem);
 		font-weight: 400;
-		line-height: 1.2;
+		line-height: 1.15;
 		color: #151c1a;
-		margin: 0 0 var(--space-4);
+		margin: var(--space-8) 0 var(--space-5);
 		text-align: center;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.01em;
 	}
 
 	:global(.document .document-meta) {

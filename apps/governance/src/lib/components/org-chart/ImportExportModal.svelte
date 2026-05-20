@@ -86,7 +86,7 @@
 		width: 90%;
 		max-height: 80vh;
 		overflow-y: auto;
-		border: 1px solid rgba(45, 90, 79, 0.3);
+		border: 1px solid var(--border-strong);
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
@@ -95,7 +95,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: var(--space-4);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.modal-header h3 {
@@ -103,7 +103,7 @@
 		margin: 0;
 		font-size: var(--text-lg);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.btn-close {
@@ -117,11 +117,11 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.btn-close:hover {
-		color: #d4a24a;
+		color: var(--gold-hover);
 	}
 
 	.modal-body {
@@ -130,7 +130,7 @@
 
 	.modal-description {
 		margin: 0 0 var(--space-3) 0;
-		color: #374340;
+		color: var(--ink-mid);
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 	}
@@ -138,10 +138,10 @@
 	.import-textarea {
 		width: 100%;
 		padding: var(--space-2);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		font-family: monospace;
 		font-size: var(--text-xs);
-		background: #fafaf7;
+		background: var(--paper);
 		resize: vertical;
 	}
 
@@ -164,27 +164,27 @@
 
 	.btn {
 		padding: var(--space-2) var(--space-3);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		background: rgba(250, 250, 247, 0.5);
 		cursor: pointer;
 		font-size: var(--text-sm);
 		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.btn:hover {
 		background: var(--paper);
-		border-color: #7a5c1a;
+		border-color: var(--gold);
 	}
 
 	.btn-primary {
-		background: #7a5c1a;
+		background: var(--gold);
 		color: white;
-		border-color: #7a5c1a;
+		border-color: var(--gold);
 	}
 
 	.btn-primary:hover {
-		background: #d4a24a;
-		border-color: #d4a24a;
+		background: var(--gold-hover);
+		border-color: var(--gold-hover);
 	}
 </style>

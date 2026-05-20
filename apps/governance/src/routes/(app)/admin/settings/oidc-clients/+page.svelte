@@ -205,14 +205,14 @@
 		font-family: 'IM Fell English', serif;
 		font-size: var(--text-lg);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0 0 var(--space-3) 0;
 	}
 
 	.section-description {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #374340;
+		color: var(--ink-mid);
 		margin-bottom: var(--space-4);
 		line-height: 1.6;
 	}
@@ -220,8 +220,8 @@
 	.credentials {
 		margin: var(--space-3) 0;
 		padding: var(--space-3);
-		background: rgba(122, 92, 26, 0.05);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		background: var(--tint-gold-mid);
+		border: 1px solid var(--border);
 	}
 
 	.credential-row {
@@ -242,17 +242,17 @@
 		letter-spacing: 0.1em;
 		text-transform: lowercase;
 		min-width: 120px;
-		color: #374340;
+		color: var(--ink-mid);
 	}
 
 	.credential-value {
 		font-family: 'Courier New', monospace;
 		font-size: var(--text-sm);
-		background: white;
+		background: var(--paper);
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		user-select: all;
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.warning-text {
@@ -260,7 +260,7 @@
 		margin-bottom: 0;
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.quick-setup-buttons {
@@ -285,8 +285,8 @@
 
 	.create-form {
 		padding: var(--space-5);
-		background: rgba(122, 92, 26, 0.03);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		background: var(--tint-gold);
+		border: 1px solid var(--border);
 		margin-top: var(--space-4);
 	}
 
@@ -297,9 +297,9 @@
 	}
 
 	.client-card {
-		border: 1px solid rgba(45, 90, 79, 0.2);
-		border-left: 3px solid rgba(45, 90, 79, 0.3);
-		background: white;
+		border: 1px solid var(--border);
+		border-left: 3px solid var(--border-strong);
+		background: var(--paper);
 		padding: var(--space-4);
 	}
 
@@ -309,7 +309,7 @@
 		align-items: flex-start;
 		margin-bottom: var(--space-3);
 		padding-bottom: var(--space-3);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
+		border-bottom: 1px solid var(--border-faint);
 	}
 
 	.client-info {
@@ -321,16 +321,16 @@
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
 		font-weight: 600;
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.client-id {
 		font-family: 'Courier New', monospace;
 		font-size: var(--text-xs);
-		color: #374340;
+		color: var(--ink-mid);
 		padding: var(--space-1) var(--space-2);
-		background: rgba(45, 90, 79, 0.05);
-		border: 1px solid rgba(45, 90, 79, 0.15);
+		background: var(--tint-green-mid);
+		border: 1px solid var(--border-subtle);
 	}
 
 	.client-badges {
@@ -356,7 +356,7 @@
 		font-family: 'IM Fell English SC', serif;
 		letter-spacing: 0.1em;
 		text-transform: lowercase;
-		color: #374340;
+		color: var(--ink-mid);
 		display: block;
 		margin-bottom: var(--space-1);
 	}
@@ -364,7 +364,7 @@
 	.detail-value {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.uri-list {
@@ -380,15 +380,15 @@
 	.uri-list code {
 		font-family: 'Courier New', monospace;
 		font-size: var(--text-xs);
-		color: #374340;
+		color: var(--ink-mid);
 		padding: var(--space-1) var(--space-2);
-		background: rgba(45, 90, 79, 0.05);
-		border: 1px solid rgba(45, 90, 79, 0.15);
+		background: var(--tint-green-mid);
+		border: 1px solid var(--border-subtle);
 		display: inline-block;
 	}
 
 	.delete-form {
-		border-top: 1px solid rgba(45, 90, 79, 0.15);
+		border-top: 1px solid var(--border-subtle);
 		padding-top: var(--space-3);
 		margin-top: var(--space-3);
 	}
@@ -396,7 +396,7 @@
 	.info-content {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #374340;
+		color: var(--ink-mid);
 		line-height: 1.6;
 	}
 
@@ -406,7 +406,7 @@
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
 		font-weight: 600;
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.info-content ul {
@@ -421,9 +421,9 @@
 	.info-content code {
 		font-family: 'Courier New', monospace;
 		font-size: var(--text-xs);
-		background: rgba(45, 90, 79, 0.05);
+		background: var(--tint-green-mid);
 		padding: 2px var(--space-2);
-		border: 1px solid rgba(45, 90, 79, 0.15);
-		color: #374340;
+		border: 1px solid var(--border-subtle);
+		color: var(--ink-mid);
 	}
 </style>

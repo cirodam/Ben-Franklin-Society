@@ -100,7 +100,7 @@
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: clamp(2.5rem, 5vw, 4rem);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0 0 var(--space-6) 0;
 		line-height: 1.2;
 	}
@@ -116,7 +116,7 @@
 		gap: var(--space-4);
 		background: var(--paper);
 		padding: var(--space-6);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 		margin-bottom: var(--space-4);
 	}
 
@@ -124,7 +124,7 @@
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0;
 	}
 
@@ -138,7 +138,7 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--paper);
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid var(--border);
 	}
 
 	.thread-row {
@@ -147,7 +147,7 @@
 		justify-content: space-between;
 		gap: var(--space-6);
 		padding: var(--space-5) var(--space-6);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+		border-bottom: 1px solid var(--border-subtle);
 		background: transparent;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -160,7 +160,7 @@
 	}
 
 	.thread-row:hover {
-		border-color: #d4a24a;
+		border-color: var(--gold-hover);
 		box-shadow: 
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 8px rgba(0, 0, 0, 0.08);
@@ -178,20 +178,20 @@
 		font-family: 'IM Fell English', Georgia, serif;
 		font-size: var(--text-xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0;
 		line-height: 1.3;
 	}
 
 	.thread-row:hover .thread-title {
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.thread-preview {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-base);
 		font-style: italic;
-		color: #5a5a50;
+		color: var(--ink-faint);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -209,25 +209,25 @@
 	.thread-author {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-faint);
 	}
 
 	.thread-separator {
 		font-size: var(--text-sm);
-		color: #7a5c1a;
+		color: var(--gold);
 	}
 
 	.thread-date {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-faint);
 		font-variant-numeric: oldstyle-nums;
 	}
 
 	.thread-replies {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
-		color: #7a5c1a;
+		color: var(--gold);
 		margin-left: auto;
 	}
 </style>
