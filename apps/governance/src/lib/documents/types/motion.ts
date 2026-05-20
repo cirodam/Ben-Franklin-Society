@@ -19,7 +19,6 @@ export const motionDocType: DocumentTypeConfig<MotionDocument['content']> = {
 		'enacted',
 		'rejected',
 		'withdrawn',
-		'repealed',
 	] as const,
 
 	detailRoute: (doc) => `/motions/${doc.uuid}`,
@@ -27,16 +26,17 @@ export const motionDocType: DocumentTypeConfig<MotionDocument['content']> = {
 	// loadBySlug removed - use library.ts loaders directly on server
 
 	getSubtitle: (doc) => {
-		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)
-		let motionNumber: string | undefined;
+		// Check if it's a LibraryItemSummary or LibraryDocument
+		let provisionCount = 0;
 		
-		if ('metadata' in doc && doc.metadata?.motion_number) {
-			motionNumber = doc.metadata.motion_number;
-		} else if ('content' in doc && doc.content?.motion_number) {
-			motionNumber = doc.content.motion_number;
+		if ('content' in doc && Array.isArray(doc.content?.provisions)) {
+			provisionCount = doc.content.provisions.length;
 		}
 
-		return motionNumber || 'Motion';
+		if (provisionCount === 0) {
+			return 'Motion';
+		}
+		return provisionCount === 1 ? '1 provision' : `${provisionCount} provisions`;
 	},
 
 	getStatusClass: (status) => `status--${status}`,

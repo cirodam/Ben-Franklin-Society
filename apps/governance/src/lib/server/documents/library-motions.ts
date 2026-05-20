@@ -96,14 +96,14 @@ export function listMotions(opts: {
 export function createMotion(input: {
 	slug: string;
 	title: string;
-	body: string;
+	provisions: Array<{ number: string; title?: string; text: string }>;
 	introducer_uuid: string;
 	owner_uuid: string;
-	motion_number: string;
 	deliberation_rule_uuid?: string;
 	vote_rule_uuid?: string;
 	reasoning?: string;
-	thread_uuid?: string;
+	discussion_thread_uuid?: string;
+	vote_session_uuid?: string;
 }): MotionDocument {
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
@@ -120,14 +120,14 @@ export function createMotion(input: {
 		updated_at: now,
 		content: {
 			status: 'draft',
-			body: input.body,
+			provisions: input.provisions,
 			introducer_uuid: input.introducer_uuid,
-			motion_number: input.motion_number,
 			deliberation_rule_uuid: input.deliberation_rule_uuid,
 			vote_rule_uuid: input.vote_rule_uuid,
 			reasoning: input.reasoning,
 			body_uuid: input.owner_uuid,
-			thread_uuid: input.thread_uuid,
+			discussion_thread_uuid: input.discussion_thread_uuid,
+			vote_session_uuid: input.vote_session_uuid,
 		}
 	};
 
@@ -150,25 +150,16 @@ export function updateMotion(slug: string, updates: Partial<MotionContent>): Mot
 }
 
 /**
- * Update motion status and related timestamps
+ * Update motion status
  */
 export function updateMotionStatus(
 	slug: string,
-	status: string,
-	metadata?: {
-		introduced_at?: string;
-		vote_opened_at?: string;
-		vote_closed_at?: string;
-		enacted_at?: string;
-	}
+	status: string
 ): MotionDocument {
 	const doc = loadMotion(slug);
 	if (!doc) throw new Error(`Motion not found: ${slug}`);
 
 	doc.content.status = status as any;
-	if (metadata) {
-		Object.assign(doc.content, metadata);
-	}
 
 	saveMotion(doc);
 	return doc;

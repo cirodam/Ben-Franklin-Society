@@ -41,7 +41,7 @@
 {:else if documentType === 'contract'}
 	<ContractDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ContractDocument} />
 {:else if documentType === 'motion'}
-	<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} />
+	<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} {canEdit} />
 {:else}
 	<GoverningDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').GoverningDocument} {canEdit} />
 {/if}

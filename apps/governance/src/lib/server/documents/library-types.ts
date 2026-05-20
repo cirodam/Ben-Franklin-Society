@@ -71,40 +71,42 @@ export type MotionStatus =
 	| 'rejected'
 	| 'withdrawn';
 
+export interface Provision {
+	number: string; // "1", "1.a", "Section A", etc.
+	title?: string; // Optional section heading
+	text: string; // The provision content
+}
+
+export interface MotionSignature {
+	signer_uuid: string;
+	signature_text: string;
+	font?: string;
+	signed_at: string;
+}
+
 export interface MotionContent {
 	status: MotionStatus;
 
 	// Core content
-	body: string;
+	provisions: Provision[];
 	introducer_uuid: string;
 	reasoning?: string;
 	body_uuid?: string; // Association/body this motion belongs to
 
-	// Discussion
-	thread_uuid?: string; // Reference to discussion thread
-
-	// Lifecycle timestamps
-	introduced_at?: string;
-	deliberation_ends_at?: string;
-	vote_opened_at?: string;
-	vote_closed_at?: string;
-	adopted_at?: string;
-	enacted_at?: string;
-
-	// Adoption/repeal tracking for amendment chains
-	adopted_by_motion_uuid?: string;
-	repealed_by_motion_uuid?: string;
+	// Discussion and voting
+	discussion_thread_uuid?: string;
+	vote_session_uuid?: string;
 
 	// Rules
 	vote_rule_uuid?: string;
 	deliberation_rule_uuid?: string;
 
-	// Motion metadata
-	motion_number?: string; // "M-2026-001"
-
-	// Notes (might move to separate documents later)
+	// Notes
 	clerk_notes?: string;
 	parliamentarian_notes?: string;
+
+	// Signatures
+	signatures?: MotionSignature[];
 }
 
 export type MotionDocument = LibraryDocument<MotionContent>;

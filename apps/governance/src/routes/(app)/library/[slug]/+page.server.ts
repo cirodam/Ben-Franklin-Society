@@ -1,6 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract, loadMotion, loadGoverningDocument, changeDocumentOwner } from '$lib/server/documents/library.js';
+import { updateMotion } from '$lib/server/documents/library-motions.js';
 import { hasPermission } from '$lib/server/infrastructure/permissions.js';
 import { db } from '$lib/server/db.js';
 
@@ -223,6 +224,37 @@ export const actions: Actions = {
 			if (!success) {
 				return fail(500, { error: 'Failed to change document owner' });
 			}
+			return { success: true };
+		} catch (err) {
+			return fail(500, { error: (err as Error).message });
+		}
+	},
+
+	updateMotion: async ({ params, request, locals }) => {
+		const data = await request.formData();
+		
+		// Get the motion to check permissions
+		const motion = loadMotion(params.slug);
+		if (!motion) {
+			return fail(404, { error: 'Motion not found' });
+		}
+
+		// Check permissions: must be owner/introducer and motion must be in draft
+		const canEdit = motion.content.status === 'draft' && locals.person?.uuid === motion.content.introducer_uuid;
+		if (!canEdit) {
+			return fail(403, { error: 'Permission denied' });
+		}
+
+		// Parse provisions from form data
+		const provisionsJson = data.get('provisions') as string;
+		const reasoning = data.get('reasoning') as string;
+		
+		try {
+			const provisions = JSON.parse(provisionsJson);
+			updateMotion(params.slug, {
+				provisions,
+				reasoning: reasoning || undefined,
+			});
 			return { success: true };
 		} catch (err) {
 			return fail(500, { error: (err as Error).message });
