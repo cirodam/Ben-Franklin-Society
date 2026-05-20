@@ -1,7 +1,9 @@
 {
-  "uuid": "fd2ceea3-be46-414f-9559-e038a9b2ed22",
+  "uuid": "444ba499-f9ea-49e9-86a5-ff923d5681e1",
   "type": "governing",
   "slug": "committee-rules",
+  "document_id": null,
+  "version": 1,
   "title": "Standard Committee Rules",
   "owner_uuid": "SOCIETY",
   "created_at": "2026-01-01T00:00:00Z",
@@ -89,7 +91,6 @@
           }
         ]
       }
-    ],
-    "adopted_at": "2026-01-01T00:00:00Z"
+    ]
   }
 }

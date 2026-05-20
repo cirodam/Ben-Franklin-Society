@@ -1,7 +1,9 @@
 {
-  "uuid": "273846d2-53d2-45b4-a9cf-eab42c410b52",
+  "uuid": "861e5cd0-3483-4888-b826-bce45ed76263",
   "type": "governing",
   "slug": "manufacturing-service",
+  "document_id": null,
+  "version": 1,
   "title": "Foundational Document on the Manufacturing Service",
   "owner_uuid": "SOCIETY",
   "created_at": "2026-01-01T00:00:00Z",
@@ -197,7 +199,6 @@
           }
         ]
       }
-    ],
-    "adopted_at": "2026-01-01T00:00:00Z"
+    ]
   }
 }

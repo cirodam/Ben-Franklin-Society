@@ -1,6 +1,5 @@
 import type { DocumentTypeConfig } from '../registry.js';
 import type { ProseDocument } from '$lib/server/documents/library-types.js';
-import { loadProseDocument } from '$lib/server/documents/library.js';
 
 /**
  * Document type configuration for prose documents.
@@ -17,7 +16,7 @@ export const proseDocType: DocumentTypeConfig<ProseDocument['content']> = {
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
 
-	loadBySlug: (slug) => loadProseDocument(slug),
+	// loadBySlug removed - use library.ts loaders directly on server
 
 	getSubtitle: (doc) => {
 		// Check if it's a LibraryItemSummary (has metadata) or LibraryDocument (has content)

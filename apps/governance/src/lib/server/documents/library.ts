@@ -111,6 +111,8 @@ function fromLegacyDocument(legacy: LegacyDocument): GoverningDocument {
 		uuid: randomUUID(),
 		type: 'governing',
 		slug: legacy.slug,
+		document_id: null,
+		version: 1,
 		title: legacy.title,
 		owner_uuid: legacy.owner_uuid,
 		created_at: legacy.created_at,
@@ -132,8 +134,6 @@ function fromLegacyDocument(legacy: LegacyDocument): GoverningDocument {
  * Sync a library document to the database index
  */
 function syncToDatabase(doc: LibraryDocument): void {
-	const metadata = extractMetadata(doc);
-
 	const existing = db
 		.prepare('SELECT uuid FROM library_item WHERE slug = ?')
 		.get(doc.slug) as { uuid: string } | undefined;
@@ -142,86 +142,36 @@ function syncToDatabase(doc: LibraryDocument): void {
 		// Update existing
 		db.prepare(
 			`UPDATE library_item 
-			 SET type = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?, metadata_json = ?
+			 SET type = ?, document_id = ?, version = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?
 			 WHERE slug = ?`
-		).run(doc.type, doc.title, doc.owner_uuid, doc.updated_at, doc.type + '/' + doc.slug + '.json', metadata, doc.slug);
+		).run(
+			doc.type,
+			doc.document_id,
+			doc.version,
+			doc.title,
+			doc.owner_uuid,
+			doc.updated_at,
+			doc.type + '/' + doc.slug + '.json',
+			doc.slug
+		);
 	} else {
 		// Insert new
 		db.prepare(
-			`INSERT INTO library_item (uuid, type, slug, title, owner_uuid, created_at, updated_at, file_path, metadata_json)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			`INSERT INTO library_item (uuid, type, slug, document_id, version, title, owner_uuid, created_at, updated_at, file_path)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		).run(
 			doc.uuid,
 			doc.type,
 			doc.slug,
+			doc.document_id,
+			doc.version,
 			doc.title,
 			doc.owner_uuid,
 			doc.created_at,
 			doc.updated_at,
-			doc.type + '/' + doc.slug + '.json',
-			metadata
+			doc.type + '/' + doc.slug + '.json'
 		);
 	}
-}
-
-/**
- * Extract searchable metadata from document content
- */
-function extractMetadata(doc: LibraryDocument): string {
-	if (doc.type === 'governing') {
-		const content = doc.content as GoverningDocContent;
-		return JSON.stringify({
-			status: content.status,
-			seniority: content.seniority,
-			repealed_at: content.repealed_at
-		});
-	}
-	
-	if (doc.type === 'motion') {
-		const content = doc.content as MotionContent;
-		return JSON.stringify({
-			status: content.status,
-			motion_number: content.motion_number,
-			introduced_at: content.introduced_at,
-			enacted_at: content.enacted_at
-		});
-	}
-	
-	if (doc.type === 'prose') {
-		const content = doc.content as ProseDocContent;
-		return JSON.stringify({
-			status: content.status,
-			paragraph_count: content.paragraphs.length,
-			tags: content.tags || [],
-			published_at: content.published_at
-		});
-	}
-	
-	if (doc.type === 'contract') {
-		const content = doc.content as ContractContent;
-		return JSON.stringify({
-			status: content.status,
-			party_a_name: content.party_a.principal_name,
-			party_b_name: content.party_b.principal_name,
-			effective_date: content.effective_date,
-			acknowledged_at: content.acknowledged_at
-		});
-	}
-	
-	if (doc.type === 'org_chart') {
-		const content = doc.content as OrgChartContent;
-		return JSON.stringify({
-			status: content.status,
-			version: content.version,
-			role_count: content.roles.length,
-			section_count: content.sections.length,
-			template_count: content.templates.length,
-			published_at: content.published_at
-		});
-	}
-	
-	// Default for unknown types
-	return JSON.stringify({});
 }
 
 // --- File I/O ---
@@ -572,11 +522,12 @@ export interface LibraryItemSummary {
 	uuid: string;
 	type: string;
 	slug: string;
+	document_id: string | null;
+	version: number;
 	title: string;
 	owner_uuid: string;
 	created_at: string;
 	updated_at: string;
-	metadata: any; // Parsed metadata_json
 }
 
 /**
@@ -634,56 +585,43 @@ export function searchLibrary(options: LibrarySearchOptions = {}): LibraryItemSu
 		uuid: string;
 		type: string;
 		slug: string;
+		document_id: string | null;
+		version: number;
 		title: string;
 		owner_uuid: string;
 		created_at: string;
 		updated_at: string;
 		file_path: string;
-		metadata_json: string | null;
 	}>;
 
 	return rows.map(row => ({
 		uuid: row.uuid,
 		type: row.type,
 		slug: row.slug,
+		document_id: row.document_id,
+		version: row.version,
 		title: row.title,
 		owner_uuid: row.owner_uuid,
 		created_at: row.created_at,
 		updated_at: row.updated_at,
-		metadata: row.metadata_json ? JSON.parse(row.metadata_json) : {},
 	}));
 }
 
 /**
  * Get library statistics by type
  */
-export function getLibraryStats(): Record<string, { total: number; by_status?: Record<string, number> }> {
-	const items = db.prepare('SELECT type, metadata_json FROM library_item').all() as Array<{
+export function getLibraryStats(): Record<string, { total: number }> {
+	const items = db.prepare('SELECT type FROM library_item').all() as Array<{
 		type: string;
-		metadata_json: string | null;
 	}>;
 
-	const stats: Record<string, { total: number; by_status?: Record<string, number> }> = {};
+	const stats: Record<string, { total: number }> = {};
 
 	for (const item of items) {
 		if (!stats[item.type]) {
-			stats[item.type] = { total: 0, by_status: {} };
+			stats[item.type] = { total: 0 };
 		}
 		stats[item.type].total++;
-
-		if (item.metadata_json) {
-			try {
-				const metadata = JSON.parse(item.metadata_json);
-				if (metadata.status) {
-					if (!stats[item.type].by_status) {
-						stats[item.type].by_status = {};
-					}
-					stats[item.type].by_status![metadata.status] = (stats[item.type].by_status![metadata.status] || 0) + 1;
-				}
-			} catch (err) {
-				// Ignore parse errors
-			}
-		}
 	}
 
 	return stats;
@@ -692,7 +630,7 @@ export function getLibraryStats(): Record<string, { total: number; by_status?: R
 /**
  * Load full document by UUID (any type)
  */
-export function getDocumentByUuid(uuid: string): LibraryDocument | LegacyMotion | LegacyDocument | null {
+export function getDocumentByUuid(uuid: string): LibraryDocument | LegacyDocument | null {
 	const row = db.prepare(
 		'SELECT type, slug FROM library_item WHERE uuid = ?'
 	).get(uuid) as { type: string; slug: string } | undefined;
@@ -993,6 +931,8 @@ export function createMotion(input: {
 		uuid,
 		type: 'motion',
 		slug: input.slug,
+		document_id: null,
+		version: 1,
 		title: input.title,
 		owner_uuid: input.owner_uuid,
 		created_at: now,

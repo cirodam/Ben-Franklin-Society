@@ -93,27 +93,6 @@
 				{/each}
 			</div>
 		</div>
-
-		<div class="filter-group">
-			<span class="filter-label">Status:</span>
-			<div class="filters">
-				{#each ['all', ...availableStatuses] as s}
-					{@const matchingCount = items.filter(item => s === 'all' || item.metadata.status === s).length}
-					{#if s === 'all' || matchingCount > 0}
-						<button
-							class="filter-chip"
-							class:filter-chip--active={statusFilter === s}
-							onclick={() => onStatusChange(s)}
-						>
-							{s === 'all' ? 'All' : s}
-							{#if s !== 'all'}
-								<span class="filter-chip__count">{matchingCount}</span>
-							{/if}
-						</button>
-					{/if}
-				{/each}
-			</div>
-		</div>
 	</div>
 </div>
 

@@ -1,6 +1,5 @@
 import type { DocumentTypeConfig } from '../registry.js';
 import type { ContractDocument } from '$lib/server/documents/library-types.js';
-import { loadContract } from '$lib/server/documents/library.js';
 
 /**
  * Document type configuration for contracts.
@@ -17,7 +16,7 @@ export const contractDocType: DocumentTypeConfig<ContractDocument['content']> = 
 
 	detailRoute: (doc) => `/library/${doc.slug}`,
 
-	loadBySlug: (slug) => loadContract(slug),
+	// loadBySlug removed - use library.ts loaders directly on server
 
 	getSubtitle: (doc) => {
 		// Show the two parties

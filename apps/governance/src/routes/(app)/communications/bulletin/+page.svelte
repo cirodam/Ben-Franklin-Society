@@ -55,7 +55,6 @@
 
 	{#if data.posts.length === 0}
 		<EmptyState
-			icon="📌"
 			title="No notices yet"
 			description="Be the first to post!"
 		/>

@@ -1,15 +1,16 @@
 {
-  "uuid": "4d3c4de1-d96f-478d-98bd-86276d7be30e",
+  "uuid": "d170d214-cabb-4b67-93dd-d2fa3637867d",
   "type": "governing",
   "slug": "charter",
-  "title": "Charter of the Benjamin Franklin Societies",
+  "document_id": null,
+  "version": 1,
+  "title": "Charter",
   "owner_uuid": "SOCIETY",
   "created_at": "2026-01-01T00:00:00Z",
   "updated_at": "2026-01-01T00:00:00Z",
   "content": {
     "status": "adopted",
     "seniority": 1,
-    "preamble": "We, the member societies of the Ben Franklin Society movement, establish this Charter as the common standard by which all societies shall be constituted.",
     "articles": [
       {
         "number": "I",
@@ -159,7 +160,6 @@
           }
         ]
       }
-    ],
-    "adopted_at": "2026-01-01T00:00:00Z"
+    ]
   }
 }

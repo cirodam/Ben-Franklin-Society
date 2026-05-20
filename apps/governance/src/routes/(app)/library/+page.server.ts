@@ -57,11 +57,13 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		uuid: string;
 		type: string;
 		slug: string;
+		document_id: string | null;
+		version: number;
 		title: string;
 		owner_uuid: string;
 		created_at: string;
 		updated_at: string;
-		metadata_json: string;
+		file_path: string;
 		given_name: string | null;
 		family_name: string | null;
 		handle: string | null;
@@ -69,10 +71,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		association_handle: string | null;
 	}>;
 
-	// Parse metadata and determine owner display name
-	const itemsWithMetadata = items.map(item => ({
+	// Determine owner display name
+	const itemsWithOwner = items.map(item => ({
 		...item,
-		metadata: JSON.parse(item.metadata_json || '{}'),
 		owner_name: item.given_name 
 			? `${item.given_name} ${item.family_name}`
 			: (item.association_name || 'Unknown'),
@@ -83,7 +84,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const stats = getLibraryStats();
 
 	return {
-		items: itemsWithMetadata,
+		items: itemsWithOwner,
 		stats: getLibraryStats(),
 		filters: {
 			types,
@@ -120,6 +121,8 @@ export const actions: Actions = {
 				uuid: randomUUID(),
 				type: 'prose',
 				slug,
+				document_id: null,
+				version: 1,
 				title,
 				owner_uuid: locals.person.uuid,
 				created_at: new Date().toISOString(),
@@ -139,6 +142,8 @@ export const actions: Actions = {
 				uuid: randomUUID(),
 				type: 'contract',
 				slug,
+				document_id: null,
+				version: 1,
 				title,
 				owner_uuid: 'SOCIETY', // Contracts are owned by the society
 				created_at: new Date().toISOString(),

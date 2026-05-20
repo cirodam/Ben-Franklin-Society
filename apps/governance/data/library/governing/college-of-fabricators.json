@@ -1,7 +1,9 @@
 {
-  "uuid": "c760a36f-8fde-4205-a1b7-38d3219715d3",
+  "uuid": "844c7371-6dce-4f23-905d-d05788e64274",
   "type": "governing",
   "slug": "college-of-fabricators",
+  "document_id": null,
+  "version": 1,
   "title": "Foundational Document on the College of Fabricators",
   "owner_uuid": "SOCIETY",
   "created_at": "2026-01-01T00:00:00Z",
@@ -135,7 +137,6 @@
           }
         ]
       }
-    ],
-    "adopted_at": "2026-01-01T00:00:00Z"
+    ]
   }
 }

@@ -1,7 +1,9 @@
 {
-  "uuid": "7b88db63-4c73-4355-8e41-0873532c4332",
+  "uuid": "ff428814-0c3a-4c29-9cab-e90c12da45e4",
   "type": "governing",
   "slug": "constitution",
+  "document_id": null,
+  "version": 1,
   "title": "Community Constitution",
   "owner_uuid": "SOCIETY",
   "created_at": "2026-01-01T00:00:00Z",
@@ -134,7 +136,6 @@
           }
         ]
       }
-    ],
-    "adopted_at": "2026-01-01T00:00:00Z"
+    ]
   }
 }

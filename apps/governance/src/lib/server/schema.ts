@@ -366,12 +366,13 @@ CREATE TABLE IF NOT EXISTS library_item (
   uuid          TEXT PRIMARY KEY,
   type          TEXT NOT NULL,
   slug          TEXT NOT NULL UNIQUE,
+  document_id   TEXT NULL,
+  version       INTEGER NOT NULL DEFAULT 1,
   title         TEXT NOT NULL,
   owner_uuid    TEXT NOT NULL,
   created_at    TEXT NOT NULL,
   updated_at    TEXT NOT NULL,
-  file_path     TEXT NOT NULL,
-  metadata_json TEXT NULL
+  file_path     TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_library_item_type ON library_item(type);
 CREATE INDEX IF NOT EXISTS idx_library_item_owner ON library_item(owner_uuid);

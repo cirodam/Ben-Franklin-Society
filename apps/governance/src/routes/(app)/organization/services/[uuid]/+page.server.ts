@@ -122,15 +122,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	});
 
 	// Get recent motions for this service (motions are now documents in library)
-	const motionRows = db
-		.prepare('SELECT uuid, title, created_at, metadata_json FROM library_item WHERE type = ? AND owner_uuid = ? ORDER BY created_at DESC LIMIT 10')
-		.all('motion', association.uuid) as { uuid: string; title: string; created_at: string; metadata_json: string | null }[];
-	const motions = motionRows.map(row => ({
-		uuid: row.uuid,
-		title: row.title,
-		created_at: row.created_at,
-		status: row.metadata_json ? JSON.parse(row.metadata_json).status : 'draft'
-	}));
+	const motions = db
+		.prepare('SELECT uuid, title, created_at FROM library_item WHERE type = ? AND owner_uuid = ? ORDER BY created_at DESC LIMIT 10')
+		.all('motion', association.uuid) as { uuid: string; title: string; created_at: string }[];
 
 	const enactedMotions = canAssign ? listEnactedMotions() : [];
 
@@ -205,7 +199,7 @@ export const actions: Actions = {
 
 		if (!motion_uuid) return fail(400, { message: 'A passed motion must be selected.' });
 		const motion = getMotionByUuid(motion_uuid);
-		if (!motion || motion.status !== 'enacted') return fail(400, { message: 'Selected motion is not enacted.' });
+		if (!motion || motion.content.status !== 'enacted') return fail(400, { message: 'Selected motion is not enacted.' });
 		if (!person_uuid || !role_uuid) return fail(400, { message: 'Missing fields' });
 		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
 			return fail(403, { message: 'Forbidden' });
@@ -243,7 +237,7 @@ assignRoleToMember(role_uuid, person_uuid);
 
 		if (!motion_uuid) return fail(400, { message: 'A passed motion must be selected.' });
 		const revokeMotion = getMotionByUuid(motion_uuid);
-		if (!revokeMotion || revokeMotion.status !== 'enacted') return fail(400, { message: 'Selected motion is not enacted.' });
+		if (!revokeMotion || revokeMotion.content.status !== 'enacted') return fail(400, { message: 'Selected motion is not enacted.' });
 		if (!person_uuid || !role_uuid) return fail(400, { message: 'Missing fields' });
 		if (!hasPermission(actingAs, PERMISSIONS.ROLES_ASSIGN, params.uuid)) {
 			return fail(403, { message: 'Forbidden' });

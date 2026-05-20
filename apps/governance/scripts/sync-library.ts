@@ -18,6 +18,8 @@ interface BaseDocument {
 	uuid: string;
 	type: string;
 	slug: string;
+	document_id: string | null;
+	version: number;
 	title: string;
 	owner_uuid: string;
 	created_at: string;
@@ -26,32 +28,6 @@ interface BaseDocument {
 }
 
 function syncToDatabase(doc: BaseDocument): void {
-	// Extract metadata based on document type
-	let metadata: any = {};
-	if (doc.type === 'governing' && doc.content) {
-		metadata = {
-			status: doc.content.status,
-			seniority: doc.content.seniority,
-		};
-	} else if (doc.type === 'motion' && doc.content) {
-		metadata = {
-			status: doc.content.status,
-			motion_number: doc.content.motion_number,
-		};
-	} else if (doc.type === 'prose' && doc.content) {
-		metadata = {
-			status: doc.content.status,
-			paragraph_count: doc.content.paragraphs?.length || 0,
-		};
-	} else if (doc.type === 'contract' && doc.content) {
-		metadata = {
-			status: doc.content.status,
-			party_a_name: doc.content.party_a?.principal_name,
-			party_b_name: doc.content.party_b?.principal_name,
-		};
-	}
-
-	const metadataJson = JSON.stringify(metadata);
 	const dirName = doc.type === 'governing' ? 'governing' : doc.type === 'motion' ? 'motions' : doc.type === 'contract' ? 'contracts' : 'prose';
 	const filePath = `${dirName}/${doc.slug}.json`;
 
@@ -63,24 +39,25 @@ function syncToDatabase(doc: BaseDocument): void {
 		console.log(`  Updating ${doc.slug}...`);
 		db.prepare(
 			`UPDATE library_item 
-			 SET type = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?, metadata_json = ?
+			 SET type = ?, document_id = ?, version = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?
 			 WHERE slug = ?`
-		).run(doc.type, doc.title, doc.owner_uuid, doc.updated_at, filePath, metadataJson, doc.slug);
+		).run(doc.type, doc.document_id, doc.version, doc.title, doc.owner_uuid, doc.updated_at, filePath, doc.slug);
 	} else {
 		console.log(`  Inserting ${doc.slug}...`);
 		db.prepare(
-			`INSERT INTO library_item (uuid, type, slug, title, owner_uuid, created_at, updated_at, file_path, metadata_json)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			`INSERT INTO library_item (uuid, type, slug, document_id, version, title, owner_uuid, created_at, updated_at, file_path)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		).run(
 			doc.uuid,
 			doc.type,
 			doc.slug,
+			doc.document_id,
+			doc.version,
 			doc.title,
 			doc.owner_uuid,
 			doc.created_at,
 			doc.updated_at,
-			filePath,
-			metadataJson
+			filePath
 		);
 	}
 }

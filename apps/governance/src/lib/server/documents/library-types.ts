@@ -11,6 +11,8 @@ export interface LibraryDocument<TContent = unknown> {
 	uuid: string;
 	type: string; // 'governing', 'motion', 'budget', 'report', etc.
 	slug: string; // URL-safe unique identifier
+	document_id: string | null; // User-assignable identifier (optional)
+	version: number; // Version number (integer)
 
 	// Basic metadata
 	title: string;
@@ -280,10 +282,11 @@ export interface LibraryItemRow {
 	uuid: string;
 	type: string;
 	slug: string;
+	document_id: string | null; // User-assignable identifier (optional)
+	version: number; // Version number
 	title: string;
 	owner_uuid: string;
 	created_at: string;
 	updated_at: string;
 	file_path: string; // relative path: 'governing/charter.json'
-	metadata_json: string; // JSON string with searchable fields
 }

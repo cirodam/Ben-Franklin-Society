@@ -28,8 +28,8 @@ export interface DocumentTypeConfig<TContent = any> {
 	/** Generate the detail route URL for a document */
 	detailRoute: (doc: LibraryItemSummary | LibraryDocument<TContent>) => string;
 
-	/** Load a full document by slug */
-	loadBySlug: (slug: string) => LibraryDocument<TContent> | null | Promise<LibraryDocument<TContent> | null>;
+	/** Load a full document by slug (server-side only, removed from client bundles) */
+	loadBySlug?: (slug: string) => LibraryDocument<TContent> | null | Promise<LibraryDocument<TContent> | null>;
 
 	/** Load a full document by UUID */
 	loadByUuid?: (uuid: string) => LibraryDocument<TContent> | null | Promise<LibraryDocument<TContent> | null>;
@@ -135,9 +135,14 @@ class DocumentTypeRegistry {
 
 	/**
 	 * Load a document by slug using type-specific loader.
+	 * Note: This is server-side only. The loaders have been removed from client bundles.
 	 */
 	loadBySlug(type: string, slug: string): LibraryDocument<any> | null | Promise<LibraryDocument<any> | null> {
-		return this.get(type).loadBySlug(slug);
+		const config = this.get(type);
+		if (!config.loadBySlug) {
+			throw new Error(`Document type ${type} does not have a loadBySlug function`);
+		}
+		return config.loadBySlug(slug);
 	}
 
 	/**
