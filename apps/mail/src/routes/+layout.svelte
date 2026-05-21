@@ -25,7 +25,7 @@
 
 			{#snippet nav()}
 				<div class="compose-wrapper">
-					<Button href="/compose" fullWidth>✍ Compose</Button>
+					<Button href="/compose" fullWidth class="compose-btn">✍ Compose</Button>
 				</div>
 
 				<SidebarLink href="/" badge={(unreadCount && unreadCount > 0) ? unreadCount : undefined}>
@@ -122,19 +122,22 @@
 		padding-bottom: var(--space-3);
 	}
 
-	.compose-wrapper :global(button) {
-		background: rgba(255, 255, 255, 0.95);
-		color: var(--postal-blue-dark);
-		font-weight: 600;
-		font-size: 0.9375rem;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-		transition: all 0.2s ease;
+	.compose-wrapper :global(.compose-btn) {
+		background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+		color: white !important;
+		font-weight: 600 !important;
+		font-size: 0.9375rem !important;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+		transition: all 0.2s ease !important;
+		border: none !important;
+		padding: var(--space-3) var(--space-4) !important;
+		justify-content: center !important;
 	}
 
-	.compose-wrapper :global(button:hover) {
-		background: white;
-		box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-		transform: translateY(-1px);
+	.compose-wrapper :global(.compose-btn:hover) {
+		background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+		box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+		transform: translateY(-1px) !important;
 	}
 
 	:global(.sidebar__footer) {

@@ -173,4 +173,14 @@ CREATE TRIGGER IF NOT EXISTS message_au AFTER UPDATE ON message BEGIN
   WHERE rowid = new.rowid;
 END;
 
+-- Migrations: Add columns that may be missing from earlier schema versions
+-- These are safe to run multiple times (will fail silently if column exists)
 `;
+
+export const migrations = [
+	// Add archived_at to message_recipient if it doesn't exist
+	`ALTER TABLE message_recipient ADD COLUMN archived_at TEXT NULL`,
+	
+	// Add content_type to message if it doesn't exist (for markdown support)
+	`ALTER TABLE message ADD COLUMN content_type TEXT NOT NULL DEFAULT 'text/plain' CHECK(content_type IN ('text/plain', 'text/markdown'))`,
+];
