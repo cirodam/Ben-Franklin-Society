@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { db } from './core/db.js';
 
 /**
  * Get a configuration value from the database

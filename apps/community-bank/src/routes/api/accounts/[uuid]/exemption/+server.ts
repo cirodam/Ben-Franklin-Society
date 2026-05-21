@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getAccountByUuid } from '$lib/server/accounts.js';
-import { getOidcClient } from '$lib/server/oidc.js';
-import { hasAppWideAdmin } from '$lib/server/authorization.js';
-import { db } from '$lib/server/db.js';
+import { getAccountByUuid } from '$lib/server/domain/accounts.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
+import { hasAppWideAdmin } from '$lib/server/auth/authorization.js';
+import { db } from '$lib/server/core/db.js';
 
 /**
  * PUT /api/accounts/:uuid/exemption

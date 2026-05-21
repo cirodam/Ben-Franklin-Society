@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
-import { getAccountByUuid, getAccountsForContext } from '$lib/server/accounts.js';
-import { canAccessAccount } from '$lib/server/authorization.js';
-import { getTransactionsForAccount } from '$lib/server/ledger.js';
+import { getAccountByUuid, getAccountsForContext } from '$lib/server/domain/accounts.js';
+import { canAccessAccount } from '$lib/server/auth/authorization.js';
+import { getTransactionsForAccount } from '$lib/server/core/ledger.js';
 
 const RECENT_TRANSACTIONS_LIMIT = 20;
 

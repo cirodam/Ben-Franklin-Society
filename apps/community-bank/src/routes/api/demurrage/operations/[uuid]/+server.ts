@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDemurrageOperationByUuid } from '$lib/server/demurrage.js';
+import { getDemurrageOperationByUuid } from '$lib/server/domain/demurrage.js';
 
 /**
  * GET /api/demurrage/operations/:uuid

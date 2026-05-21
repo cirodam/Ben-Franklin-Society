@@ -1,9 +1,8 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchAccounts } from '$lib/server/admin.js';
-import { createAccount } from '$lib/server/accounts.js';
+import { searchAccounts, createAccount } from '$lib/server/domain/accounts.js';
 import { logAdminAction } from '$lib/server/admin.js';
-import { hasAppWideAdmin } from '$lib/server/authorization.js';
+import { hasAppWideAdmin } from '$lib/server/auth/authorization.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session;
@@ -18,7 +17,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 	
 	const q = url.searchParams.get('q')?.trim() ?? '';
-	const accounts = searchAccounts(q);
+	const accounts = searchAccounts(q, 200);
 	return { q, accounts, session };
 };
 

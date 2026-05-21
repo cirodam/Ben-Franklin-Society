@@ -1,6 +1,6 @@
 import type { Session } from '@bfs/oidc-client';
 import { PERMISSIONS } from './permissions.js';
-import type { Account } from './accounts.js';
+import type { Account } from '../domain/accounts.js';
 
 /**
  * Check if a session has app-wide admin permission for banking

@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountsForContext, createAccount, getAccountByOwnerAndName } from '$lib/server/accounts.js';
+import { getAccountsForContext, createAccount, getAccountByOwnerAndName } from '$lib/server/domain/accounts.js';
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const session = locals.session;

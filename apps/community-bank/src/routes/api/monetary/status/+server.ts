@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getMonetaryStatus } from '$lib/server/monetary.js';
+import { getMonetaryStatus } from '$lib/server/domain/monetary.js';
 
 /**
  * GET /api/monetary/status

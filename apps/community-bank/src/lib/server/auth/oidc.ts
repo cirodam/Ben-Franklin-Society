@@ -1,5 +1,5 @@
 import { OidcClient } from '@bfs/oidc-client';
-import { getOidcConfig } from './config.js';
+import { getOidcConfig } from '../config.js';
 
 let _oidcClient: OidcClient | null = null;
 let _lastConfigHash: string | null = null;

@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { collectDemurrage } from '$lib/server/demurrage.js';
-import { getOidcClient } from '$lib/server/oidc.js';
-import { canCollectDemurrage } from '$lib/server/authorization.js';
+import { collectDemurrage } from '$lib/server/domain/demurrage.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
+import { canCollectDemurrage } from '$lib/server/auth/authorization.js';
 
 /**
  * POST /api/demurrage/collect

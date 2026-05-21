@@ -1,6 +1,6 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { getOidcClient } from '$lib/server/oidc.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	const code = url.searchParams.get('code');

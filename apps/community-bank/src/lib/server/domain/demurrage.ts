@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { db } from './db.js';
-import { getConfig, setConfig } from './config.js';
+import { db } from '../core/db.js';
+import { getConfig, setConfig } from '../config.js';
 import { getAccountByUuid } from './accounts.js';
 import type { Account } from './accounts.js';
+import { TransactionType, TransactionSource } from '../transaction-types.js';
 
 // --- Types ---
 
@@ -157,12 +158,14 @@ export function collectDemurrage(opts: {
 			db.prepare(
 				`INSERT INTO "transaction" 
 				(uuid, from_uuid, to_uuid, amount, type, source, memo, created_at)
-				VALUES (?, ?, ?, ?, 'demurrage', 'system', ?, ?)`
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 			).run(
 				transactionUuid,
 				account.uuid,
 				config.destination_account_uuid,
 				amount,
+				TransactionType.DEMURRAGE,
+				TransactionSource.SYSTEM,
 				'Demurrage collection',
 				now
 			);

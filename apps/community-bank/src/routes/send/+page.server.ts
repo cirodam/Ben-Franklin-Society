@@ -1,8 +1,8 @@
 	import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountsForContext, getAccountByUuid, searchAccounts } from '$lib/server/accounts.js';
-import { canTransferFrom } from '$lib/server/authorization.js';
-import { postTransaction } from '$lib/server/ledger.js';
+import { getAccountsForContext, getAccountByUuid, searchAccounts } from '$lib/server/domain/accounts.js';
+import { canTransferFrom } from '$lib/server/auth/authorization.js';
+import { postTransaction } from '$lib/server/core/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {

@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchAccounts, getAccountByUuid } from '$lib/server/accounts.js';
-import { postTransaction, getSlipsForTellerToday } from '$lib/server/ledger.js';
+import { searchAccounts, getAccountByUuid } from '$lib/server/domain/accounts.js';
+import { postTransaction, getSlipsForTellerToday } from '$lib/server/core/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
 
 export const load: PageServerLoad = async ({ locals }) => {

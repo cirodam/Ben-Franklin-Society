@@ -1,6 +1,6 @@
 import { json, error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getOidcClient } from '$lib/server/oidc.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	const body = await request.json();

@@ -1,9 +1,9 @@
 import { fail, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountByUuid, freezeAccount, unfreezeAccount } from '$lib/server/accounts.js';
-import { getTransactionsForAccount } from '$lib/server/ledger.js';
+import { getAccountByUuid, freezeAccount, unfreezeAccount } from '$lib/server/domain/accounts.js';
+import { getTransactionsForAccount } from '$lib/server/core/ledger.js';
 import { logAdminAction, getAdminActionsForTarget } from '$lib/server/admin.js';
-import { db } from '$lib/server/db.js';
+import { db } from '$lib/server/core/db.js';
 
 const PAGE_SIZE = 50;
 

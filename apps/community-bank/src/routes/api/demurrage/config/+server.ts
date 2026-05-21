@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDemurrageConfig, updateDemurrageConfig } from '$lib/server/demurrage.js';
-import { getOidcClient } from '$lib/server/oidc.js';
-import { hasAppWideAdmin } from '$lib/server/authorization.js';
-import { getAccountByUuid } from '$lib/server/accounts.js';
+import { getDemurrageConfig, updateDemurrageConfig } from '$lib/server/domain/demurrage.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
+import { hasAppWideAdmin } from '$lib/server/auth/authorization.js';
+import { getAccountByUuid } from '$lib/server/domain/accounts.js';
 
 /**
  * GET /api/demurrage/config

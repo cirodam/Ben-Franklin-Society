@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getMonetaryPolicy, updateMonetaryPolicy } from '$lib/server/monetary.js';
-import { getOidcClient } from '$lib/server/oidc.js';
-import { canManageMonetary } from '$lib/server/authorization.js';
+import { getMonetaryPolicy, updateMonetaryPolicy } from '$lib/server/domain/monetary.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
+import { canManageMonetary } from '$lib/server/auth/authorization.js';
 
 /**
  * GET /api/monetary/policy

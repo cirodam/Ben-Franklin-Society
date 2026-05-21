@@ -1,4 +1,4 @@
-import { getDemurrageConfig, getDemurrageOperations } from '$lib/server/demurrage.js';
+import { getDemurrageConfig, getDemurrageOperations } from '$lib/server/domain/demurrage.js';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async () => {

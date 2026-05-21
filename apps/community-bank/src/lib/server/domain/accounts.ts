@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { db } from './db.js';
+import { db } from '../core/db.js';
 import type { Session } from '@bfs/oidc-client';
-import { hasAppWideAdmin } from './authorization.js';
+import { hasAppWideAdmin } from '../auth/authorization.js';
 
 export interface Account {
 	uuid: string;
@@ -77,7 +77,7 @@ export function unfreezeAccount(uuid: string): void {
 	db.prepare('UPDATE account SET is_frozen = 0 WHERE uuid = ?').run(uuid);
 }
 
-export function searchAccounts(query: string): Account[] {
+export function searchAccounts(query: string, limit: number = 50): Account[] {
 	const pattern = `%${query}%`;
 	return db
 		.prepare(
@@ -85,7 +85,7 @@ export function searchAccounts(query: string): Account[] {
        WHERE name LIKE ? 
           OR uuid LIKE ?
        ORDER BY created_at DESC
-       LIMIT 50`
+       LIMIT ?`
 		)
-		.all(pattern, pattern) as Account[];
+		.all(pattern, pattern, limit) as Account[];
 }

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { db } from './db.js';
-import { getConfig, setConfig } from './config.js';
+import { db } from '../core/db.js';
+import { getConfig, setConfig } from '../config.js';
 
 // --- Types ---
 

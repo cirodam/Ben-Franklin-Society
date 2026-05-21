@@ -1,4 +1,4 @@
-import { getMonetaryStatus, getMonetaryOperations } from '$lib/server/monetary.js';
+import { getMonetaryStatus, getMonetaryOperations } from '$lib/server/domain/monetary.js';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async () => {

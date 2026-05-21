@@ -115,14 +115,3 @@ export function getSlipsForTellerToday(entered_by_uuid: string): EnrichedTransac
 		)
 		.all(entered_by_uuid) as EnrichedTransaction[];
 }
-
-export function getTransactionsForNamedAccount(
-	name: string,
-	opts: { limit?: number; offset?: number } = {}
-): EnrichedTransaction[] {
-	const limit  = opts.limit  ?? 50;
-	const offset = opts.offset ?? 0;
-	const row = db.prepare(`SELECT uuid FROM account WHERE name = ?`).get(name) as { uuid: string } | undefined;
-	if (!row) return [];
-	return getTransactionsForAccount(row.uuid, { limit, offset });
-}

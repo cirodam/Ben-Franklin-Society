@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getOidcClient } from '$lib/server/oidc.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
 
 export const POST: RequestHandler = async ({ cookies }) => {
 	// Clear the OIDC session cookie to force re-authentication

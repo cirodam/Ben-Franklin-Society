@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { mintFranks } from '$lib/server/monetary.js';
-import { getOidcClient } from '$lib/server/oidc.js';
-import { canManageMonetary } from '$lib/server/authorization.js';
+import { mintFranks } from '$lib/server/domain/monetary.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
+import { canManageMonetary } from '$lib/server/auth/authorization.js';
 
 /**
  * POST /api/monetary/mint

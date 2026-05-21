@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchAccounts, getAccountsByOwner } from '$lib/server/accounts.js';
-import { getTransactionsForAccount } from '$lib/server/ledger.js';
+import { searchAccounts, getAccountsByOwner } from '$lib/server/domain/accounts.js';
+import { getTransactionsForAccount } from '$lib/server/core/ledger.js';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const q = url.searchParams.get('q')?.trim().toLowerCase() ?? '';

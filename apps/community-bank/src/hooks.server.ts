@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { getOidcClient } from '$lib/server/oidc.js';
+import { getOidcClient } from '$lib/server/auth/oidc.js';
 import { isOidcConfigured } from '$lib/server/config.js';
 
 export const handle: Handle = async ({ event, resolve }) => {

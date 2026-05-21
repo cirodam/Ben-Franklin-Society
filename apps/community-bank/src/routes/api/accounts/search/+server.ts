@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { searchAccounts } from '$lib/server/accounts.js';
+import { searchAccounts } from '$lib/server/domain/accounts.js';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	if (!locals.session) {
@@ -14,8 +14,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	let accounts = searchAccounts(query);
 
 	// Apply filters
-	if (accountType) {
-	}
 	if (status) {
 		accounts = accounts.filter(a => a.is_frozen === (status === 'frozen' ? 1 : 0));
 	}
