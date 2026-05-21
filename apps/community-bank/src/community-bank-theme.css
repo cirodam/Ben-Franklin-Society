@@ -37,6 +37,14 @@ body {
 	--olive:       #5a6b4a;
 	--olive-light: #e8ede5;
 	
+	/* Supporting Colors */
+	--sage:        #7a8c6f;
+	--rust:        #a65d3c;
+	--slate:       #5a6370;
+	
+	/* Paper/Surface variations */
+	--parchment:   #fffcf7;
+	
 	/* Alert States */
 	--alert-red:        #8b3a3a;
 	--alert-red-light:  #f7efef;

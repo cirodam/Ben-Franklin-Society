@@ -82,14 +82,14 @@ export const actions: Actions = {
 			{ handle: 'central-bank',        name: 'Central Bank',           type: 'central_bank',         abbreviation: 'CB'   },
 			{ handle: 'treasury',            name: 'Treasury',               type: 'association',          abbreviation: 'TRES' },
 			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund', abbreviation: 'SIF' },
-			{ handle: 'community-bank',      name: 'Community Bank',         type: 'community_bank',       abbreviation: 'CMB'  },
+			{ handle: 'community-bank',      name: 'Community Bank Association', type: 'service',         abbreviation: 'CBA', governs_app: 'bank' },
 			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college',              abbreviation: 'AGCOL', governing_document_slug: 'agricultural-college' },
 			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college',              abbreviation: 'CACOL' },
 			{ handle: 'food-service',        name: 'Food Service',           type: 'service',              abbreviation: 'FOOD'  },
 			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service',              abbreviation: 'AGSVC' },
 			{ handle: 'energy-service',      name: 'Energy Service',         type: 'service',              abbreviation: 'ENRG'  },
-			{ handle: 'communications-service', name: 'Communications Service', type: 'service',           abbreviation: 'COMM'  },
-			{ handle: 'commerce-service',    name: 'Commerce Service',       type: 'service',              abbreviation: 'CMRC'  },
+			{ handle: 'communications-service', name: 'Communications Service Association', type: 'service', abbreviation: 'CSA', governs_app: 'mail' },
+			{ handle: 'commerce-service',    name: 'Commerce Service Association', type: 'service',       abbreviation: 'CMSA', governs_app: 'marketplace' },
 			{ handle: 'agricultural-committee', name: 'Agricultural Committee', type: 'committee',        abbreviation: 'AGCOM', governing_document_slug: 'committee-rules' },
 			{ handle: 'food-committee',      name: 'Food Committee',         type: 'committee',            abbreviation: 'FDCOM', governing_document_slug: 'committee-rules' },
 		] as const;
@@ -158,6 +158,37 @@ export const actions: Actions = {
 			const a = getAssociationByHandle(assoc.handle)!;
 			assignRole(founderRoleUuid, person.uuid);
 		}
+
+		// Create Administrator roles in special associations with app-specific permissions
+		const communityBank = getAssociationByHandle('community-bank')!;
+		const bankAdminRoleUuid = randomUUID();
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, title, description, created_at)
+			 VALUES (?, ?, 'Administrator', 'Bank administrators with full system access', ?)`
+		).run(bankAdminRoleUuid, communityBank.uuid, createdAt);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'bank', 'admin')`).run(bankAdminRoleUuid);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(bankAdminRoleUuid);
+		assignRole(bankAdminRoleUuid, person.uuid);
+
+		const commService = getAssociationByHandle('communications-service')!;
+		const mailModRoleUuid = randomUUID();
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, title, description, created_at)
+			 VALUES (?, ?, 'Moderator', 'Mail moderators with system oversight access', ?)`
+		).run(mailModRoleUuid, commService.uuid, createdAt);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'mail', 'moderator')`).run(mailModRoleUuid);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(mailModRoleUuid);
+		assignRole(mailModRoleUuid, person.uuid);
+
+		const commerceService = getAssociationByHandle('commerce-service')!;
+		const marketAdminRoleUuid = randomUUID();
+		db.prepare(
+			`INSERT INTO role (uuid, association_uuid, title, description, created_at)
+			 VALUES (?, ?, 'Administrator', 'Marketplace administrators with full system access', ?)`
+		).run(marketAdminRoleUuid, commerceService.uuid, createdAt);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'marketplace', 'administrator')`).run(marketAdminRoleUuid);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(marketAdminRoleUuid);
+		assignRole(marketAdminRoleUuid, person.uuid);
 
 		// Seed Food Service with ICS structure
 		const foodService = getAssociationByHandle('food-service')!;
@@ -281,7 +312,7 @@ export const actions: Actions = {
 		);
 
 		// Seed Community Bank with organizational structure
-		const communityBank = getAssociationByHandle('community-bank')!;
+		// (communityBank already declared above)
 		
 		// Create organizational sections for Community Bank
 		const mainBranchSection = randomUUID();
@@ -460,7 +491,7 @@ export const actions: Actions = {
 		);
 
 		// Seed Commerce Service with organizational structure
-		const commerceService = getAssociationByHandle('commerce-service')!;
+		// (commerceService already declared above)
 		
 		// Create organizational sections for Commerce Service
 		const ecommerceSection = randomUUID();

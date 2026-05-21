@@ -102,11 +102,11 @@ CREATE TABLE IF NOT EXISTS moderation_log (
 );
 
 CREATE TABLE IF NOT EXISTS seller_suspension (
-  principal_uuid TEXT PRIMARY KEY,
-  actor_uuid     TEXT NOT NULL,
-  reason         TEXT NOT NULL,
-  suspended_at   TEXT NOT NULL,
-  lifted_at      TEXT NULL
+  owner_uuid   TEXT PRIMARY KEY,
+  actor_uuid   TEXT NOT NULL,
+  reason       TEXT NOT NULL,
+  suspended_at TEXT NOT NULL,
+  lifted_at    TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS outbox (

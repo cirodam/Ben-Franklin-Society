@@ -28,14 +28,14 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         m.subject,
         m.from_handle_cache,
         m.sent_at,
-        COUNT(CASE WHEN mr.read_at IS NULL AND mr.recipient_principal_uuid = ? THEN 1 END) as unread_count
+        COUNT(CASE WHEN mr.read_at IS NULL AND mr.recipient_owner_uuid = ? THEN 1 END) as unread_count
       FROM message m
       JOIN thread_label tl ON m.thread_id = tl.thread_id
       LEFT JOIN message_recipient mr ON m.uuid = mr.message_uuid
       WHERE tl.label_uuid = ? 
         AND tl.mailbox_uuid = ?
-        AND (m.from_principal_uuid = ? OR mr.recipient_principal_uuid = ?)
-        AND (mr.trashed_at IS NULL OR m.from_principal_uuid = ?)
+        AND (m.from_owner_uuid = ? OR mr.recipient_owner_uuid = ?)
+        AND (mr.trashed_at IS NULL OR m.from_owner_uuid = ?)
       GROUP BY m.thread_id
       ORDER BY m.sent_at DESC`
 		)

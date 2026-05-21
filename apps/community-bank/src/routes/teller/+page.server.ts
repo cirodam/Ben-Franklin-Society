@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountByHandle, getAccountsByPrincipal } from '$lib/server/accounts.js';
+import { getAccountByHandle, getAccountsByOwner } from '$lib/server/accounts.js';
 import { getTransactionsForAccount } from '$lib/server/ledger.js';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -10,8 +10,8 @@ export const load: PageServerLoad = async ({ url }) => {
 	const account = getAccountByHandle(q);
 	if (!account) return { q, result: null, recentTxs: [] };
 
-	// Get all accounts for this principal
-	const accounts = getAccountsByPrincipal(account.principal_uuid);
+	// Get all accounts for this owner
+	const accounts = getAccountsByOwner(account.owner_uuid);
 
 	// Show recent transactions for the Primary account
 	const recentTxs = getTransactionsForAccount(account.uuid, { limit: 10 });

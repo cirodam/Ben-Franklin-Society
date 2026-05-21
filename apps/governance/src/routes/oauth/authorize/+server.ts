@@ -28,6 +28,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		clientId,
 		redirectUri,
 		personUuid: locals.person.uuid,
+		sessionUuid: locals.session.uuid,
 		actingAsUuid: locals.session.acting_as_uuid,
 		scope,
 		codeChallenge,

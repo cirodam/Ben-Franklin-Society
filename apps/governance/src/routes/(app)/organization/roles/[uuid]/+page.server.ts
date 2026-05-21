@@ -1,6 +1,6 @@
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types.js';
-import { getRoleByUuid, getPermissionsForRole } from '$lib/server/organization/roles.js';
+import { error, fail } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types.js';
+import { getRoleByUuid, getPermissionsForRole, setRolePermissions } from '$lib/server/organization/roles.js';
 import { getAssociationByUuid } from '$lib/server/organization/associations.js';
 import { getSectionByUuid } from '$lib/server/organization/org-sections.js';
 import { db } from '$lib/server/db.js';
@@ -73,6 +73,58 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const actingAs = locals.session?.acting_as_uuid ?? null;
 	const canManage = !!actingAs;
 
+	// Define all available permissions across all apps
+	const availablePermissions = [
+		{
+			app: 'governance',
+			label: 'Governance',
+			permissions: [
+				{ value: 'motions:create', label: 'Create motions' },
+				{ value: 'motions:advance', label: 'Advance motions' },
+				{ value: 'vote_sessions:create', label: 'Create vote sessions' },
+				{ value: 'vote_sessions:close', label: 'Close vote sessions' },
+				{ value: 'vote_sessions:finalize', label: 'Finalize vote sessions' },
+				{ value: 'sortition:record', label: 'Record sortition' },
+				{ value: 'seat_terms:vacate', label: 'Vacate seat terms' },
+				{ value: 'members:add', label: 'Add members' },
+				{ value: 'members:remove', label: 'Remove members' },
+				{ value: 'library:create', label: 'Create library documents' },
+				{ value: 'library:edit', label: 'Edit library documents' },
+				{ value: 'library:adopt', label: 'Adopt library documents' },
+				{ value: 'library:repeal', label: 'Repeal library documents' },
+				{ value: 'roles:assign', label: 'Assign roles' },
+				{ value: 'record:write', label: 'Write to record' },
+				{ value: 'people:add', label: 'Add people' },
+				{ value: 'people:edit', label: 'Edit people' },
+				{ value: 'people:remove', label: 'Remove people' },
+				{ value: 'calendar:write', label: 'Write to calendar' },
+				{ value: 'governance:admin', label: 'Governance admin' }
+			]
+		},
+		{
+			app: 'mail',
+			label: 'Mail',
+			permissions: [
+				{ value: 'moderator', label: 'Moderator' }
+			]
+		},
+		{
+			app: 'bank',
+			label: 'Community Bank',
+			permissions: [
+				{ value: 'teller', label: 'Teller' },
+				{ value: 'admin', label: 'Admin' }
+			]
+		},
+		{
+			app: 'marketplace',
+			label: 'Marketplace',
+			permissions: [
+				{ value: 'administrator', label: 'Administrator' }
+			]
+		}
+	];
+
 	return {
 		role,
 		association,
@@ -82,6 +134,46 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		childRoles,
 		permissions: rolePermissions,
 		history,
-		canManage
+		canManage,
+		availablePermissions
 	};
+};
+
+export const actions: Actions = {
+	update_permissions: async ({ request, params, locals }) => {
+		const actingAs = locals.session?.acting_as_uuid;
+		if (!actingAs) {
+			return fail(403, { error: 'Not authorized' });
+		}
+
+		const role = getRoleByUuid(params.uuid);
+		if (!role) {
+			return fail(404, { error: 'Role not found' });
+		}
+
+		const formData = await request.formData();
+		const permissionsJson = formData.get('permissions');
+		
+		if (typeof permissionsJson !== 'string') {
+			return fail(400, { error: 'Invalid permissions data' });
+		}
+
+		try {
+			const permissions = JSON.parse(permissionsJson) as Array<{ app: string; permission: string }>;
+			
+			// Validate permissions
+			for (const perm of permissions) {
+				if (!perm.app || !perm.permission) {
+					return fail(400, { error: 'Invalid permission format' });
+				}
+			}
+
+			setRolePermissions(role.uuid, permissions);
+
+			return { success: true };
+		} catch (err) {
+			console.error('Error updating permissions:', err);
+			return fail(500, { error: 'Failed to update permissions' });
+		}
+	}
 };

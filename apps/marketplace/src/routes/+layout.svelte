@@ -2,12 +2,14 @@
 	import '@bfs/ui/src/theme.css';
 	import '../marketplace-theme.css';
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider } from '@bfs/ui';
+	import ContextSwitcher from '$lib/components/ContextSwitcher.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	const { isAdministrator } = $derived(data);
+	const { isAdministrator, session, availableContexts, governanceUrl } = $derived(data);
+	const hasContexts = $derived(availableContexts && availableContexts.length > 0);
 </script>
 
 <AppShell>
@@ -38,8 +40,15 @@
 			{/snippet}
 
 			{#snippet footer()}
-				{#if data.session}
-					<span class="sidebar__handle">@{data.session.handle}</span>
+				{#if session && hasContexts}
+					<div class="sidebar-footer-content">
+						<ContextSwitcher 
+							currentContext={session.acting_as_uuid}
+							availableContexts={availableContexts}
+							personUuid={session.person_uuid}						governanceUrl={governanceUrl}						/>
+					</div>
+				{:else if session}
+					<span class="sidebar__handle">@{session.handle}</span>
 				{/if}
 			{/snippet}
 		</Sidebar>

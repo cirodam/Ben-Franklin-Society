@@ -28,7 +28,7 @@ const PAGE_SIZE = 25;
  * Only returns messages the user has access to (sent by them or received by them).
  */
 export function searchMessages(
-	principal_uuid: string,
+	owner_uuid: string,
 	query: string,
 	filters: SearchFilters = {},
 	opts: { limit?: number; offset?: number } = {}
@@ -42,7 +42,7 @@ export function searchMessages(
 
 	// Build WHERE clauses
 	const conditions: string[] = [];
-	const params: unknown[] = [query, principal_uuid, principal_uuid];
+	const params: unknown[] = [query, owner_uuid, owner_uuid];
 
 	if (filters.from_date) {
 		conditions.push('m.sent_at >= ?');
@@ -60,11 +60,11 @@ export function searchMessages(
 	}
 
 	if (filters.sent_only) {
-		conditions.push('m.from_principal_uuid = ?');
-		params.push(principal_uuid);
+		conditions.push('m.from_owner_uuid = ?');
+		params.push(owner_uuid);
 	} else if (filters.received_only) {
-		conditions.push('mr.recipient_principal_uuid = ?');
-		params.push(principal_uuid);
+		conditions.push('mr.recipient_owner_uuid = ?');
+		params.push(owner_uuid);
 	}
 
 	const whereClause = conditions.length > 0 
@@ -85,8 +85,8 @@ export function searchMessages(
 			AND m.status = 'sent'
 			AND m.deleted_at IS NULL
 			AND (
-				m.from_principal_uuid = ?
-				OR mr.recipient_principal_uuid = ?
+				m.from_owner_uuid = ?
+				OR mr.recipient_owner_uuid = ?
 			)
 			${whereClause}
 		ORDER BY message_fts.rank
@@ -100,7 +100,7 @@ export function searchMessages(
  * Get count of search results (for pagination).
  */
 export function countSearchResults(
-	principal_uuid: string,
+	owner_uuid: string,
 	query: string,
 	filters: SearchFilters = {}
 ): number {
@@ -109,7 +109,7 @@ export function countSearchResults(
 	}
 
 	const conditions: string[] = [];
-	const params: unknown[] = [query, principal_uuid, principal_uuid];
+	const params: unknown[] = [query, owner_uuid, owner_uuid];
 
 	if (filters.from_date) {
 		conditions.push('m.sent_at >= ?');
@@ -127,11 +127,11 @@ export function countSearchResults(
 	}
 
 	if (filters.sent_only) {
-		conditions.push('m.from_principal_uuid = ?');
-		params.push(principal_uuid);
+		conditions.push('m.from_owner_uuid = ?');
+		params.push(owner_uuid);
 	} else if (filters.received_only) {
-		conditions.push('mr.recipient_principal_uuid = ?');
-		params.push(principal_uuid);
+		conditions.push('mr.recipient_owner_uuid = ?');
+		params.push(owner_uuid);
 	}
 
 	const whereClause = conditions.length > 0 
@@ -147,8 +147,8 @@ export function countSearchResults(
 			AND m.status = 'sent'
 			AND m.deleted_at IS NULL
 			AND (
-				m.from_principal_uuid = ?
-				OR mr.recipient_principal_uuid = ?
+				m.from_owner_uuid = ?
+				OR mr.recipient_owner_uuid = ?
 			)
 			${whereClause}
 	`;

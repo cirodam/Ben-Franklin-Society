@@ -188,7 +188,7 @@ export function getMyServices(provider_uuid: string): ServiceListing[] {
 // Public profile — all active listings by a principal
 // ---------------------------------------------------------------------------
 
-export function getListingsByPrincipal(principal_uuid: string): {
+export function getListingsByPrincipal(owner_uuid: string): {
 	classifieds: ClassifiedListing[];
 	services: ServiceListing[];
 } {
@@ -200,7 +200,7 @@ export function getListingsByPrincipal(principal_uuid: string): {
          AND (expires_at IS NULL OR expires_at > ?)
        ORDER BY created_at DESC`
 		)
-		.all(principal_uuid, now) as ClassifiedListing[];
+		.all(owner_uuid, now) as ClassifiedListing[];
 
 	const services = db
 		.prepare(
@@ -208,7 +208,7 @@ export function getListingsByPrincipal(principal_uuid: string): {
        WHERE provider_uuid = ? AND status = 'active'
        ORDER BY created_at DESC`
 		)
-		.all(principal_uuid) as ServiceListing[];
+		.all(owner_uuid) as ServiceListing[];
 
 	return { classifieds, services };
 }
@@ -244,10 +244,10 @@ export function getRecentServices(limit = 6): ServiceListing[] {
 // Seller suspension
 // ---------------------------------------------------------------------------
 
-export function isSellerSuspended(principal_uuid: string): boolean {
+export function isSellerSuspended(owner_uuid: string): boolean {
 	const row = db
-		.prepare(`SELECT 1 FROM seller_suspension WHERE principal_uuid = ? AND lifted_at IS NULL`)
-		.get(principal_uuid);
+		.prepare(`SELECT 1 FROM seller_suspension WHERE owner_uuid = ? AND lifted_at IS NULL`)
+		.get(owner_uuid);
 	return row !== undefined;
 }
 

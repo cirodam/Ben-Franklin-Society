@@ -1,15 +1,25 @@
 <script lang="ts">
 	import { PageHeader, Card, Button, Input, EmptyState } from '@bfs/ui';
+	import ContextBadge from '$lib/components/ContextBadge.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
-	const { q, accounts } = $derived(data);
+	const { q, accounts, session } = $derived(data);
 
 	function fmt(n: number) { return n.toLocaleString(); }
 </script>
 
 <div class="page">
-	<PageHeader title="Accounts" />
+	<div class="page-header-with-badge">
+		<PageHeader title="Bank Administration" />
+		{#if session}
+			<ContextBadge 
+				actingAsUuid={session.acting_as_uuid}
+				personUuid={session.person_uuid}
+				isAdmin={true}
+			/>
+		{/if}
+	</div>
 
 	<form method="GET" action="/admin" class="search-form">
 		<Input
@@ -67,6 +77,13 @@
 
 <style>
 	.page { display: flex; flex-direction: column; gap: var(--space-5); }
+	
+	.page-header-with-badge {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
 
 	.search-form { display: flex; gap: var(--space-3); max-width: 520px; align-items: flex-start; }
 	:global(.search-input) { flex: 1; }

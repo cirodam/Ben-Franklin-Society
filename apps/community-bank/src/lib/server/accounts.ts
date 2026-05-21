@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
+import type { Session } from '@bfs/oidc-client';
+import { hasAppWideAdmin } from './authorization.js';
 
 export type AccountType = 'standard' | 'official' | 'system';
 
 export interface Account {
 	uuid: string;
-	principal_uuid: string;
+	owner_uuid: string;
 	name: string;
 	handle_cache: string;
 	balance: number;
@@ -15,13 +17,13 @@ export interface Account {
 }
 
 export interface AccountOwnerPermissions {
-	principal_uuid: string;
+	owner_uuid: string;
 	can_auto_pull: number;
 	created_at: string;
 }
 
 export function createAccount(opts: {
-	principal_uuid: string;
+	owner_uuid: string;
 	name: string;
 	handle_cache?: string;
 	account_type?: AccountType;
@@ -29,11 +31,11 @@ export function createAccount(opts: {
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
 	db.prepare(
-		`INSERT INTO account (uuid, principal_uuid, name, handle_cache, balance, status, account_type, created_at)
+		`INSERT INTO account (uuid, owner_uuid, name, handle_cache, balance, status, account_type, created_at)
      VALUES (?, ?, ?, ?, 0, 'active', ?, ?)`
 	).run(
 		uuid,
-		opts.principal_uuid,
+		opts.owner_uuid,
 		opts.name,
 		opts.handle_cache ?? '',
 		opts.account_type ?? 'standard',
@@ -46,25 +48,42 @@ export function getAccountByUuid(uuid: string): Account | null {
 	return db.prepare('SELECT * FROM account WHERE uuid = ?').get(uuid) as Account | null;
 }
 
-export function getAccountsByPrincipal(principal_uuid: string): Account[] {
+export function getAccountsByOwner(owner_uuid: string): Account[] {
 	return db
-		.prepare('SELECT * FROM account WHERE principal_uuid = ? ORDER BY created_at')
-		.all(principal_uuid) as Account[];
+		.prepare('SELECT * FROM account WHERE owner_uuid = ? ORDER BY created_at')
+		.all(owner_uuid) as Account[];
 }
 
-export function getAccountByPrincipalAndName(
-	principal_uuid: string,
+/**
+ * Get accounts for the current session context
+ * - App-wide admins see all accounts
+ * - Others see only accounts they own (based on acting_as_uuid)
+ */
+export function getAccountsForContext(session: Session): Account[] {
+	// App-wide admin sees everything
+	if (hasAppWideAdmin(session)) {
+		return db
+			.prepare('SELECT * FROM account ORDER BY handle_cache, name')
+			.all() as Account[];
+	}
+	
+	// Everyone else sees only their context's accounts
+	return getAccountsByOwner(session.acting_as_uuid);
+}
+
+export function getAccountByOwnerAndName(
+	owner_uuid: string,
 	name: string
 ): Account | null {
 	return db
-		.prepare('SELECT * FROM account WHERE principal_uuid = ? AND name = ?')
-		.get(principal_uuid, name) as Account | null;
+		.prepare('SELECT * FROM account WHERE owner_uuid = ? AND name = ?')
+		.get(owner_uuid, name) as Account | null;
 }
 
-export function updateHandleCache(principal_uuid: string, handle: string): void {
-	db.prepare('UPDATE account SET handle_cache = ? WHERE principal_uuid = ?').run(
+export function updateHandleCache(owner_uuid: string, handle: string): void {
+	db.prepare('UPDATE account SET handle_cache = ? WHERE owner_uuid = ?').run(
 		handle,
-		principal_uuid
+		owner_uuid
 	);
 }
 
@@ -88,26 +107,26 @@ export function updateAccountMetadata(uuid: string, opts: {
 // Account Owner Permissions
 // ---------------------------------------------------------------------------
 
-export function getAccountOwnerPermissions(principal_uuid: string): AccountOwnerPermissions | null {
+export function getAccountOwnerPermissions(owner_uuid: string): AccountOwnerPermissions | null {
 	return db
-		.prepare('SELECT * FROM account_owner_permissions WHERE principal_uuid = ?')
-		.get(principal_uuid) as AccountOwnerPermissions | null;
+		.prepare('SELECT * FROM account_owner_permissions WHERE owner_uuid = ?')
+		.get(owner_uuid) as AccountOwnerPermissions | null;
 }
 
 export function setAccountOwnerPermissions(opts: {
-	principal_uuid: string;
+	owner_uuid: string;
 	can_auto_pull: boolean;
 }): void {
 	const now = new Date().toISOString();
 	db.prepare(
-		`INSERT INTO account_owner_permissions (principal_uuid, can_auto_pull, created_at)
+		`INSERT INTO account_owner_permissions (owner_uuid, can_auto_pull, created_at)
      VALUES (?, ?, ?)
-     ON CONFLICT(principal_uuid) DO UPDATE SET can_auto_pull = excluded.can_auto_pull`
-	).run(opts.principal_uuid, opts.can_auto_pull ? 1 : 0, now);
+     ON CONFLICT(owner_uuid) DO UPDATE SET can_auto_pull = excluded.can_auto_pull`
+	).run(opts.owner_uuid, opts.can_auto_pull ? 1 : 0, now);
 }
 
-export function principalCanAutoPull(principal_uuid: string): boolean {
-	const perms = getAccountOwnerPermissions(principal_uuid);
+export function ownerCanAutoPull(owner_uuid: string): boolean {
+	const perms = getAccountOwnerPermissions(owner_uuid);
 	return perms ? perms.can_auto_pull === 1 : false;
 }
 

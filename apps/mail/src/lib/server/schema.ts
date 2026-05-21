@@ -6,16 +6,16 @@ CREATE TABLE IF NOT EXISTS config (
 );
 
 CREATE TABLE IF NOT EXISTS mailbox (
-  principal_uuid TEXT PRIMARY KEY,
-  handle_cache   TEXT NOT NULL,
-  status         TEXT NOT NULL DEFAULT 'active',
-  signature      TEXT NULL,
-  created_at     TEXT NOT NULL
+  owner_uuid   TEXT PRIMARY KEY,
+  handle_cache TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'active',
+  signature    TEXT NULL,
+  created_at   TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS mail_template (
   uuid         TEXT PRIMARY KEY,
-  mailbox_uuid TEXT NOT NULL REFERENCES mailbox(principal_uuid),
+  mailbox_uuid TEXT NOT NULL REFERENCES mailbox(owner_uuid),
   name         TEXT NOT NULL,
   subject      TEXT NOT NULL,
   body         TEXT NOT NULL,
@@ -24,35 +24,35 @@ CREATE TABLE IF NOT EXISTS mail_template (
 );
 
 CREATE TABLE IF NOT EXISTS message (
-  uuid                TEXT PRIMARY KEY,
-  from_principal_uuid TEXT NOT NULL,
-  from_handle_cache   TEXT NOT NULL,
-  subject             TEXT NOT NULL,
-  body                TEXT NOT NULL,
-  content_type        TEXT NOT NULL DEFAULT 'text/plain' CHECK(content_type IN ('text/plain', 'text/markdown')),
-  thread_id           TEXT NOT NULL REFERENCES message(uuid) DEFERRABLE INITIALLY DEFERRED,
-  reply_to_id         TEXT NULL REFERENCES message(uuid),
-  origin              TEXT NOT NULL,
-  is_automated        INTEGER NOT NULL DEFAULT 0,
-  status              TEXT NOT NULL DEFAULT 'draft',
-  created_at          TEXT NOT NULL,
-  sent_at             TEXT NULL,
-  deleted_at          TEXT NULL
+  uuid              TEXT PRIMARY KEY,
+  from_owner_uuid   TEXT NOT NULL,
+  from_handle_cache TEXT NOT NULL,
+  subject           TEXT NOT NULL,
+  body              TEXT NOT NULL,
+  content_type      TEXT NOT NULL DEFAULT 'text/plain' CHECK(content_type IN ('text/plain', 'text/markdown')),
+  thread_id         TEXT NOT NULL REFERENCES message(uuid) DEFERRABLE INITIALLY DEFERRED,
+  reply_to_id       TEXT NULL REFERENCES message(uuid),
+  origin            TEXT NOT NULL,
+  is_automated      INTEGER NOT NULL DEFAULT 0,
+  status            TEXT NOT NULL DEFAULT 'draft',
+  created_at        TEXT NOT NULL,
+  sent_at           TEXT NULL,
+  deleted_at        TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS message_recipient (
-  uuid                      TEXT PRIMARY KEY,
-  message_uuid              TEXT NOT NULL REFERENCES message(uuid),
-  recipient_principal_uuid  TEXT NOT NULL,
-  recipient_handle_cache    TEXT NOT NULL,
-  recipient_society_handle  TEXT NULL,
-  type                      TEXT NOT NULL,
-  read_at                   TEXT NULL,
-  trashed_at                TEXT NULL,
-  archived_at               TEXT NULL,
-  delivery_status           TEXT NULL,
-  delivery_error            TEXT NULL,
-  UNIQUE (message_uuid, recipient_principal_uuid)
+  uuid                   TEXT PRIMARY KEY,
+  message_uuid           TEXT NOT NULL REFERENCES message(uuid),
+  recipient_owner_uuid   TEXT NOT NULL,
+  recipient_handle_cache TEXT NOT NULL,
+  recipient_society_handle TEXT NULL,
+  type                   TEXT NOT NULL,
+  read_at                TEXT NULL,
+  trashed_at             TEXT NULL,
+  archived_at            TEXT NULL,
+  delivery_status        TEXT NULL,
+  delivery_error         TEXT NULL,
+  UNIQUE (message_uuid, recipient_owner_uuid)
 );
 
 CREATE TABLE IF NOT EXISTS attachment (
@@ -69,7 +69,7 @@ CREATE INDEX IF NOT EXISTS idx_attachment_message ON attachment(message_uuid);
 
 CREATE TABLE IF NOT EXISTS label (
   uuid         TEXT PRIMARY KEY,
-  mailbox_uuid TEXT NOT NULL REFERENCES mailbox(principal_uuid),
+  mailbox_uuid TEXT NOT NULL REFERENCES mailbox(owner_uuid),
   name         TEXT NOT NULL,
   color        TEXT NULL,
   created_at   TEXT NOT NULL,
@@ -90,7 +90,7 @@ CREATE INDEX IF NOT EXISTS idx_thread_label_label ON thread_label(label_uuid);
 
 CREATE TABLE IF NOT EXISTS contact_group (
   uuid         TEXT PRIMARY KEY,
-  mailbox_uuid TEXT NOT NULL REFERENCES mailbox(principal_uuid),
+  mailbox_uuid TEXT NOT NULL REFERENCES mailbox(owner_uuid),
   name         TEXT NOT NULL,
   created_at   TEXT NOT NULL,
   UNIQUE (mailbox_uuid, name)

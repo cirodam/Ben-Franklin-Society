@@ -6,41 +6,41 @@ CREATE TABLE IF NOT EXISTS config (
 );
 
 CREATE TABLE IF NOT EXISTS account (
-  uuid           TEXT PRIMARY KEY,
-  principal_uuid TEXT NOT NULL,
-  name           TEXT NOT NULL,
-  handle_cache   TEXT NOT NULL,
-  balance        INTEGER NOT NULL DEFAULT 0,
-  status         TEXT NOT NULL DEFAULT 'active',
-  account_type   TEXT NOT NULL DEFAULT 'standard',
-  created_at     TEXT NOT NULL,
-  UNIQUE (principal_uuid, name)
+  uuid         TEXT PRIMARY KEY,
+  owner_uuid   TEXT NOT NULL,
+  name         TEXT NOT NULL,
+  handle_cache TEXT NOT NULL,
+  balance      INTEGER NOT NULL DEFAULT 0,
+  status       TEXT NOT NULL DEFAULT 'active',
+  account_type TEXT NOT NULL DEFAULT 'standard',
+  created_at   TEXT NOT NULL,
+  UNIQUE (owner_uuid, name)
 );
 
 CREATE TABLE IF NOT EXISTS account_owner_permissions (
-  principal_uuid TEXT PRIMARY KEY,
-  can_auto_pull  INTEGER NOT NULL DEFAULT 0,
-  created_at     TEXT NOT NULL
+  owner_uuid    TEXT PRIMARY KEY,
+  can_auto_pull INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS scheduled_transfer (
-  uuid                        TEXT PRIMARY KEY,
-  name                        TEXT NOT NULL,
-  from_uuid                   TEXT NULL REFERENCES account(uuid),
-  to_uuid                     TEXT NOT NULL REFERENCES account(uuid),
-  amount                      INTEGER NULL,
-  transfer_mode               TEXT NOT NULL DEFAULT 'flat',
-  target_filter               TEXT NOT NULL DEFAULT 'specific',
-  rate_percentage             REAL NULL,
-  threshold                   INTEGER NULL,
-  type                        TEXT NOT NULL,
-  schedule                    TEXT NOT NULL,
-  status                      TEXT NOT NULL DEFAULT 'active',
-  requested_by_principal_uuid TEXT NOT NULL,
-  authorized_by_principal_uuid TEXT NULL,
-  created_by_motion_uuid      TEXT NULL,
-  created_at                  TEXT NOT NULL,
-  cancelled_at                TEXT NULL
+  uuid                     TEXT PRIMARY KEY,
+  name                     TEXT NOT NULL,
+  from_uuid                TEXT NULL REFERENCES account(uuid),
+  to_uuid                  TEXT NOT NULL REFERENCES account(uuid),
+  amount                   INTEGER NULL,
+  transfer_mode            TEXT NOT NULL DEFAULT 'flat',
+  target_filter            TEXT NOT NULL DEFAULT 'specific',
+  rate_percentage          REAL NULL,
+  threshold                INTEGER NULL,
+  type                     TEXT NOT NULL,
+  schedule                 TEXT NOT NULL,
+  status                   TEXT NOT NULL DEFAULT 'active',
+  requested_by_owner_uuid  TEXT NOT NULL,
+  authorized_by_owner_uuid TEXT NULL,
+  created_by_motion_uuid   TEXT NULL,
+  created_at               TEXT NOT NULL,
+  cancelled_at             TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "transaction" (

@@ -136,14 +136,14 @@ export function deleteMessage(
 // ---------------------------------------------------------------------------
 
 export function suspendMailboxByMod(
-	principal_uuid: string,
+	owner_uuid: string,
 	actor_uuid: string,
 	reason: string,
 	report_uuid?: string
 ): void {
 	const now = new Date().toISOString();
 	db.transaction(() => {
-		suspendMailbox(principal_uuid);
+		suspendMailbox(owner_uuid);
 
 		if (report_uuid) {
 			db.prepare(
@@ -155,7 +155,7 @@ export function suspendMailboxByMod(
 
 		logModerationAction({
 			action:      'suspend_mailbox',
-			target_uuid: principal_uuid,
+			target_uuid: owner_uuid,
 			target_type: 'mailbox',
 			actor_uuid,
 			reason,
@@ -165,16 +165,16 @@ export function suspendMailboxByMod(
 }
 
 export function reinstateMailboxByMod(
-	principal_uuid: string,
+	owner_uuid: string,
 	actor_uuid: string,
 	reason: string
 ): void {
 	db.transaction(() => {
-		reinstateMailboxRecord(principal_uuid);
+		reinstateMailboxRecord(owner_uuid);
 
 		logModerationAction({
 			action:      'reinstate_mailbox',
-			target_uuid: principal_uuid,
+			target_uuid: owner_uuid,
 			target_type: 'mailbox',
 			actor_uuid,
 			reason,
@@ -188,7 +188,7 @@ export function reinstateMailboxByMod(
 // ---------------------------------------------------------------------------
 
 export interface MailboxRow {
-	principal_uuid: string;
+	owner_uuid: string;
 	handle_cache: string;
 	status: string;
 	created_at: string;

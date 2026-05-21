@@ -13,9 +13,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	// Only allow forwarding sent messages or messages you received
 	const isRecipient = original.recipients?.some(
-		(r) => r.recipient_principal_uuid === session.acting_as_uuid
+		(r) => r.recipient_owner_uuid === session.acting_as_uuid
 	);
-	const isSender = original.from_principal_uuid === session.acting_as_uuid;
+	const isSender = original.from_owner_uuid === session.acting_as_uuid;
 
 	if (!isRecipient && !isSender) {
 		error(403, 'Cannot forward this message');
@@ -97,7 +97,7 @@ export const actions: Actions = {
 			: `Fwd: ${original.subject}`;
 
 		forwardMessage({
-			from_principal_uuid: session.acting_as_uuid,
+			from_owner_uuid: session.acting_as_uuid,
 			from_handle_cache,
 			to,
 			cc: cc.length > 0 ? cc : undefined,

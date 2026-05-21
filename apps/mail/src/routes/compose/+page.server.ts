@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	let draft: Awaited<ReturnType<typeof getMessage>> = null;
 	if (draft_uuid) {
 		const msg = getMessage(draft_uuid);
-		if (msg && msg.from_principal_uuid === session.acting_as_uuid && msg.status === 'draft') {
+		if (msg && msg.from_owner_uuid === session.acting_as_uuid && msg.status === 'draft') {
 			draft = msg;
 			attachments = getAttachments(draft.uuid);
 		}
@@ -153,7 +153,7 @@ export const actions: Actions = {
 
 		const draft = saveDraft({
 			draft_uuid,
-			from_principal_uuid: session.acting_as_uuid,
+			from_owner_uuid: session.acting_as_uuid,
 			from_handle_cache,
 			to:  toResolved,
 			cc:  ccResolved,
@@ -233,7 +233,7 @@ export const actions: Actions = {
 
 		const message = sendMessage({
 			draft_uuid,
-			from_principal_uuid: session.acting_as_uuid,
+			from_owner_uuid: session.acting_as_uuid,
 			from_handle_cache,
 			to:  toResolved,
 			cc:  ccResolved,
@@ -314,7 +314,7 @@ export const actions: Actions = {
 
 		const draft = saveDraft({
 			draft_uuid,
-			from_principal_uuid: session.acting_as_uuid,
+			from_owner_uuid: session.acting_as_uuid,
 			from_handle_cache,
 			to: toResolved,
 			cc: ccResolved,

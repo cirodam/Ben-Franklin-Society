@@ -113,6 +113,7 @@ export function createAssociation(input: {
 	type: Association['type'];
 	established_by_motion_uuid?: string;
 	governing_document_slug?: string;
+	governs_app?: string;
 }): Association {
 	const handleTaken =
 		db.prepare('SELECT 1 FROM person WHERE handle = ?').get(input.handle) ??
@@ -123,9 +124,9 @@ export function createAssociation(input: {
 	const createdAt = now();
 
 	db.prepare(
-		`INSERT INTO association (uuid, handle, name, abbreviation, type, status, governing_document_slug, established_by_motion_uuid, created_at)
-		 VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`
-	).run(uuid, input.handle, input.name, input.abbreviation ?? null, input.type, input.governing_document_slug ?? null, input.established_by_motion_uuid ?? null, createdAt);
+		`INSERT INTO association (uuid, handle, name, abbreviation, type, status, governing_document_slug, established_by_motion_uuid, governs_app, created_at)
+		 VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`
+	).run(uuid, input.handle, input.name, input.abbreviation ?? null, input.type, input.governing_document_slug ?? null, input.established_by_motion_uuid ?? null, input.governs_app ?? null, createdAt);
 
 	return getAssociationByUuid(uuid)!;
 }

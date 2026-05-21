@@ -30,26 +30,26 @@ function now(): string {
 }
 
 function ensureAccount(
-	principal_uuid: string,
+	owner_uuid: string,
 	name: string,
 	handle_cache: string,
 	account_type: 'standard' | 'official' | 'system' = 'standard'
 ): void {
 	const existing = bankDb
-		.prepare('SELECT 1 FROM account WHERE principal_uuid = ? AND name = ?')
-		.get(principal_uuid, name);
+		.prepare('SELECT 1 FROM account WHERE owner_uuid = ? AND name = ?')
+		.get(owner_uuid, name);
 	if (existing) {
 		console.log(`  skip  [${handle_cache}] ${name} — already exists`);
 		return;
 	}
 	bankDb
 		.prepare(
-			`INSERT INTO account (uuid, principal_uuid, name, handle_cache, balance, status, account_type, created_at)
+			`INSERT INTO account (uuid, owner_uuid, name, handle_cache, balance, status, account_type, created_at)
        VALUES (?, ?, ?, ?, 0, 'active', ?, ?)`
 		)
 		.run(
 			randomUUID(),
-			principal_uuid,
+			owner_uuid,
 			name,
 			handle_cache,
 			account_type,
@@ -58,21 +58,21 @@ function ensureAccount(
 	console.log(`  +     [${handle_cache}] ${name} (${account_type})`);
 }
 
-function ensureAccountOwnerPermissions(principal_uuid: string, can_auto_pull: boolean): void {
+function ensureAccountOwnerPermissions(owner_uuid: string, can_auto_pull: boolean): void {
 	const existing = bankDb
-		.prepare('SELECT 1 FROM account_owner_permissions WHERE principal_uuid = ?')
-		.get(principal_uuid);
+		.prepare('SELECT 1 FROM account_owner_permissions WHERE owner_uuid = ?')
+		.get(owner_uuid);
 	if (existing) {
-		console.log(`  skip  permissions for ${principal_uuid.slice(0, 8)}… — already exist`);
+		console.log(`  skip  permissions for ${owner_uuid.slice(0, 8)}… — already exist`);
 		return;
 	}
 	bankDb
 		.prepare(
-			`INSERT INTO account_owner_permissions (principal_uuid, can_auto_pull, created_at)
+			`INSERT INTO account_owner_permissions (owner_uuid, can_auto_pull, created_at)
        VALUES (?, ?, ?)`
 		)
-		.run(principal_uuid, can_auto_pull ? 1 : 0, now());
-	console.log(`  +     permissions for ${principal_uuid.slice(0, 8)}… (can_auto_pull=${can_auto_pull})`);
+		.run(owner_uuid, can_auto_pull ? 1 : 0, now());
+	console.log(`  +     permissions for ${owner_uuid.slice(0, 8)}… (can_auto_pull=${can_auto_pull})`);
 }
 
 console.log('Seeding Community Bank special accounts…');

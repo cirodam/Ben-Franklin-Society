@@ -2,12 +2,15 @@
 	import '@bfs/ui/src/theme.css';
 	import '../community-bank-theme.css';
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider } from '@bfs/ui';
+	import ContextSwitcher from '$lib/components/ContextSwitcher.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	const { isTeller, isAdmin } = $derived(data);
+	const { isTeller, isAdmin, session, availableContexts, governanceUrl } = $derived(data);
+	
+	const hasContexts = $derived(availableContexts && availableContexts.length > 0);
 </script>
 
 <AppShell maxWidth="md">
@@ -21,7 +24,7 @@
 			{/snippet}
 
 			{#snippet nav()}
-				<SidebarLink href="/">My Account</SidebarLink>
+				<SidebarLink href="/">My Accounts</SidebarLink>
 				<SidebarLink href="/history">Transaction History</SidebarLink>
 				<SidebarLink href="/send">Send Franks</SidebarLink>
 
@@ -36,9 +39,18 @@
 			{/snippet}
 
 			{#snippet footer()}
-				{#if data.session}
+				{#if session && hasContexts}
+					<div class="sidebar-footer-content">
+						<ContextSwitcher 
+							currentContext={session.acting_as_uuid}
+							availableContexts={availableContexts}
+							personUuid={session.person_uuid}
+							governanceUrl={governanceUrl}
+						/>
+					</div>
+				{:else if session}
 					<div class="sidebar-identity">
-						<span class="handle">@{data.session.handle}</span>
+						<span class="handle">@{session.handle}</span>
 					</div>
 				{/if}
 			{/snippet}
@@ -63,7 +75,7 @@
 	.brand-primary {
 		font-family: var(--font-sans);
 		font-weight: 600;
-		font-size: var(--text-base);
+		font-size: 1.375rem;
 		color: var(--copper);
 		letter-spacing: -0.01em;
 	}
@@ -71,9 +83,8 @@
 	.brand-secondary {
 		font-family: var(--font-sans);
 		font-size: var(--text-xs);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		font-weight: 400;
+		letter-spacing: 0.03em;
 		color: var(--ink-mid);
 	}
 
@@ -133,7 +144,10 @@
 		background: var(--ledger-lined) !important;
 		color: var(--ink) !important;
 	}
-
+	.sidebar-footer-content {
+		padding: var(--space-3);
+	}
+	
 	.sidebar-identity {
 		display: flex;
 		flex-direction: column;

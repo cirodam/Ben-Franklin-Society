@@ -19,7 +19,7 @@ export interface SyncResult {
 	errors:    string[];
 }
 
-type MailboxRow = { principal_uuid: string; handle_cache: string; status: string };
+type MailboxRow = { owner_uuid: string; handle_cache: string; status: string };
 
 export async function syncMailboxes(): Promise<SyncResult> {
 	const result: SyncResult = { created: 0, updated: 0, suspended: 0, errors: [] };
@@ -32,7 +32,7 @@ export async function syncMailboxes(): Promise<SyncResult> {
 
 	const mailboxIndex = new Map<string, MailboxRow>();
 	for (const row of db.prepare('SELECT * FROM mailbox').all() as MailboxRow[]) {
-		mailboxIndex.set(row.principal_uuid, row);
+		mailboxIndex.set(row.owner_uuid, row);
 	}
 
 	const now = new Date().toISOString();
@@ -48,7 +48,7 @@ export async function syncMailboxes(): Promise<SyncResult> {
 			if (!existing) {
 				if (isActive) {
 					db.prepare(
-						`INSERT INTO mailbox (principal_uuid, handle_cache, status, created_at)
+						`INSERT INTO mailbox (owner_uuid, handle_cache, status, created_at)
              VALUES (?, ?, 'active', ?)`
 					).run(person.uuid, person.handle, now);
 					result.created++;
@@ -58,7 +58,7 @@ export async function syncMailboxes(): Promise<SyncResult> {
 				// Refresh handle_cache if changed
 				if (existing.handle_cache !== person.handle) {
 					db.prepare(
-						`UPDATE mailbox SET handle_cache = ? WHERE principal_uuid = ?`
+						`UPDATE mailbox SET handle_cache = ? WHERE owner_uuid = ?`
 					).run(person.handle, person.uuid);
 					result.updated++;
 				}
@@ -66,7 +66,7 @@ export async function syncMailboxes(): Promise<SyncResult> {
 				// Suspend active mailbox for revoked person
 				if (!isActive && existing.status === 'active') {
 					db.prepare(
-						`UPDATE mailbox SET status = 'suspended' WHERE principal_uuid = ?`
+						`UPDATE mailbox SET status = 'suspended' WHERE owner_uuid = ?`
 					).run(person.uuid);
 					result.suspended++;
 				}
@@ -74,7 +74,7 @@ export async function syncMailboxes(): Promise<SyncResult> {
 				// Optionally reinstate if person became active again (status restored in governance)
 				if (isActive && existing.status === 'suspended') {
 					db.prepare(
-						`UPDATE mailbox SET status = 'active' WHERE principal_uuid = ?`
+						`UPDATE mailbox SET status = 'active' WHERE owner_uuid = ?`
 					).run(person.uuid);
 					result.updated++;
 				}
@@ -95,7 +95,7 @@ export async function syncMailboxes(): Promise<SyncResult> {
 			if (!existing) {
 				if (isActive) {
 					db.prepare(
-						`INSERT INTO mailbox (principal_uuid, handle_cache, status, created_at)
+						`INSERT INTO mailbox (owner_uuid, handle_cache, status, created_at)
              VALUES (?, ?, 'active', ?)`
 					).run(assoc.uuid, assoc.handle, now);
 					result.created++;
@@ -103,21 +103,21 @@ export async function syncMailboxes(): Promise<SyncResult> {
 			} else {
 				if (existing.handle_cache !== assoc.handle) {
 					db.prepare(
-						`UPDATE mailbox SET handle_cache = ? WHERE principal_uuid = ?`
+						`UPDATE mailbox SET handle_cache = ? WHERE owner_uuid = ?`
 					).run(assoc.handle, assoc.uuid);
 					result.updated++;
 				}
 
 				if (!isActive && existing.status === 'active') {
 					db.prepare(
-						`UPDATE mailbox SET status = 'suspended' WHERE principal_uuid = ?`
+						`UPDATE mailbox SET status = 'suspended' WHERE owner_uuid = ?`
 					).run(assoc.uuid);
 					result.suspended++;
 				}
 
 				if (isActive && existing.status === 'suspended') {
 					db.prepare(
-						`UPDATE mailbox SET status = 'active' WHERE principal_uuid = ?`
+						`UPDATE mailbox SET status = 'active' WHERE owner_uuid = ?`
 					).run(assoc.uuid);
 					result.updated++;
 				}

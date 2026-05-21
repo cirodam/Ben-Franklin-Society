@@ -5,7 +5,7 @@ import { PERMISSIONS } from '$lib/server/permissions.js';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
 	const session = locals.session!;
-	if (!getOidcClient().hasPermission(session, 'community-bank', PERMISSIONS.TELLER)) {
+	if (!getOidcClient().hasPermission(session, 'bank', PERMISSIONS.TELLER)) {
 		error(403, 'Teller access required.');
 	}
 	return {};

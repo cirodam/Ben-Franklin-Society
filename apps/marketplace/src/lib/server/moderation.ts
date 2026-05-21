@@ -26,7 +26,7 @@ export interface EnrichedReport extends ListingReport {
 }
 
 export interface SellerRow {
-	principal_uuid:   string;
+	owner_uuid:   string;
 	handle:           string;
 	listing_count:    number;
 	suspended:        number; // 0 | 1
@@ -177,35 +177,35 @@ export function reinstateListing(
 }
 
 export function suspendSeller(
-	principal_uuid: string,
+	owner_uuid: string,
 	actor_uuid:     string,
 	reason:         string,
 	report_uuid:    string | null = null
 ): void {
 	const now = new Date().toISOString();
 	db.prepare(
-		`INSERT INTO seller_suspension (principal_uuid, actor_uuid, reason, suspended_at)
+		`INSERT INTO seller_suspension (owner_uuid, actor_uuid, reason, suspended_at)
      VALUES (?, ?, ?, ?)
-     ON CONFLICT(principal_uuid) DO UPDATE SET
+     ON CONFLICT(owner_uuid) DO UPDATE SET
        actor_uuid   = excluded.actor_uuid,
        reason       = excluded.reason,
        suspended_at = excluded.suspended_at,
        lifted_at    = NULL`
-	).run(principal_uuid, actor_uuid, reason, now);
+	).run(owner_uuid, actor_uuid, reason, now);
 	if (report_uuid) resolveReport(report_uuid, actor_uuid);
-	writeLog('suspend_seller', principal_uuid, 'seller', actor_uuid, reason, report_uuid);
+	writeLog('suspend_seller', owner_uuid, 'seller', actor_uuid, reason, report_uuid);
 }
 
 export function reinstateSeller(
-	principal_uuid: string,
+	owner_uuid: string,
 	actor_uuid:     string,
 	reason:         string
 ): void {
 	const now = new Date().toISOString();
 	db.prepare(
-		`UPDATE seller_suspension SET lifted_at = ? WHERE principal_uuid = ?`
-	).run(now, principal_uuid);
-	writeLog('reinstate_seller', principal_uuid, 'seller', actor_uuid, reason);
+		`UPDATE seller_suspension SET lifted_at = ? WHERE owner_uuid = ?`
+	).run(now, owner_uuid);
+	writeLog('reinstate_seller', owner_uuid, 'seller', actor_uuid, reason);
 }
 
 // ---------------------------------------------------------------------------
@@ -217,22 +217,22 @@ export function getAllSellers(opts: { q?: string } = {}): SellerRow[] {
 	const rows = db
 		.prepare(
 			`SELECT
-         principal_uuid,
+         owner_uuid,
          handle,
          listing_count,
          CASE WHEN lifted_at IS NULL AND suspended_at IS NOT NULL THEN 1 ELSE 0 END AS suspended,
          ss.reason      AS suspended_reason,
          ss.suspended_at AS suspended_at
        FROM (
-         SELECT seller_uuid AS principal_uuid, seller_handle_cache AS handle, COUNT(*) AS listing_count
+         SELECT seller_uuid AS owner_uuid, seller_handle_cache AS handle, COUNT(*) AS listing_count
          FROM classified_listing
          GROUP BY seller_uuid
          UNION
-         SELECT provider_uuid AS principal_uuid, provider_handle_cache AS handle, COUNT(*) AS listing_count
+         SELECT provider_uuid AS owner_uuid, provider_handle_cache AS handle, COUNT(*) AS listing_count
          FROM service_listing
          GROUP BY provider_uuid
        ) AS sellers
-       LEFT JOIN seller_suspension ss ON ss.principal_uuid = sellers.principal_uuid
+       LEFT JOIN seller_suspension ss ON ss.owner_uuid = sellers.owner_uuid
        WHERE handle LIKE ?
        ORDER BY handle ASC`
 		)

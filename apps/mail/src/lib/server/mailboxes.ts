@@ -1,47 +1,47 @@
 import { db } from './db.js';
 
 export interface Mailbox {
-	principal_uuid: string;
+	owner_uuid: string;
 	handle_cache: string;
 	status: 'active' | 'suspended';
 	signature: string | null;
 	created_at: string;
 }
 
-export function getMailbox(principal_uuid: string): Mailbox | null {
+export function getMailbox(owner_uuid: string): Mailbox | null {
 	return db
-		.prepare('SELECT * FROM mailbox WHERE principal_uuid = ?')
-		.get(principal_uuid) as Mailbox | null;
+		.prepare('SELECT * FROM mailbox WHERE owner_uuid = ?')
+		.get(owner_uuid) as Mailbox | null;
 }
 
-export function ensureMailbox(principal_uuid: string, handle_cache: string): Mailbox {
-	const existing = getMailbox(principal_uuid);
+export function ensureMailbox(owner_uuid: string, handle_cache: string): Mailbox {
+	const existing = getMailbox(owner_uuid);
 	if (existing) return existing;
 
 	const now = new Date().toISOString();
 	db.prepare(
-		`INSERT INTO mailbox (principal_uuid, handle_cache, status, created_at)
+		`INSERT INTO mailbox (owner_uuid, handle_cache, status, created_at)
      VALUES (?, ?, 'active', ?)`
-	).run(principal_uuid, handle_cache, now);
+	).run(owner_uuid, handle_cache, now);
 
-	return getMailbox(principal_uuid)!;
+	return getMailbox(owner_uuid)!;
 }
 
-export function updateHandleCache(principal_uuid: string, handle_cache: string): void {
-	db.prepare('UPDATE mailbox SET handle_cache = ? WHERE principal_uuid = ?').run(
+export function updateHandleCache(owner_uuid: string, handle_cache: string): void {
+	db.prepare('UPDATE mailbox SET handle_cache = ? WHERE owner_uuid = ?').run(
 		handle_cache,
-		principal_uuid
+		owner_uuid
 	);
 }
 
-export function suspendMailbox(principal_uuid: string): void {
-	db.prepare(`UPDATE mailbox SET status = 'suspended' WHERE principal_uuid = ?`).run(
-		principal_uuid
+export function suspendMailbox(owner_uuid: string): void {
+	db.prepare(`UPDATE mailbox SET status = 'suspended' WHERE owner_uuid = ?`).run(
+		owner_uuid
 	);
 }
 
-export function reinstateMailbox(principal_uuid: string): void {
-	db.prepare(`UPDATE mailbox SET status = 'active' WHERE principal_uuid = ?`).run(
-		principal_uuid
+export function reinstateMailbox(owner_uuid: string): void {
+	db.prepare(`UPDATE mailbox SET status = 'active' WHERE owner_uuid = ?`).run(
+		owner_uuid
 	);
 }

@@ -72,16 +72,16 @@ export const actions: Actions = {
 		// Determine reply recipients: the sender of the replied-to message,
 		// unless they're the user — in which case reply to that message's recipients.
 		const recipients: Array<{ principal_uuid: string; handle_cache: string }> = [];
-		if (replyMsg.from_principal_uuid !== session.acting_as_uuid) {
+		if (replyMsg.from_owner_uuid !== session.acting_as_uuid) {
 			recipients.push({
-				principal_uuid: replyMsg.from_principal_uuid,
+				principal_uuid: replyMsg.from_owner_uuid,
 				handle_cache:   replyMsg.from_handle_cache,
 			});
 		} else {
 			for (const r of replyMsg.recipients) {
-				if (r.recipient_principal_uuid !== session.acting_as_uuid) {
+				if (r.recipient_owner_uuid !== session.acting_as_uuid) {
 					recipients.push({
-						principal_uuid: r.recipient_principal_uuid,
+						principal_uuid: r.recipient_owner_uuid,
 						handle_cache:   r.recipient_handle_cache,
 					});
 				}
@@ -97,7 +97,7 @@ export const actions: Actions = {
 		replyToMessage({
 			thread_id: params.thread_id,
 			reply_to_id,
-			from_principal_uuid: session.acting_as_uuid,
+			from_owner_uuid: session.acting_as_uuid,
 			from_handle_cache,
 			subject,
 			body,
@@ -142,7 +142,7 @@ export const actions: Actions = {
 		}
 
 		// Cannot report your own messages.
-		if (msg.from_principal_uuid === session.acting_as_uuid) {
+		if (msg.from_owner_uuid === session.acting_as_uuid) {
 			return fail(400, { report_error: 'You cannot report your own message.' });
 		}
 

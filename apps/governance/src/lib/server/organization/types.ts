@@ -13,6 +13,7 @@ export interface Association {
 	governing_document_slug: string | null;
 	org_chart_slug: string | null;
 	established_by_motion_uuid: string | null;
+	governs_app: string | null;
 	created_at: string;
 	dissolved_at: string | null;
 }
@@ -65,6 +66,7 @@ export interface RolePermission {
 	role_uuid: string;
 	app: string;
 	permission: string;
+	association_uuid?: string; // Optional for backwards compatibility
 }
 
 export interface RoleAssignment {

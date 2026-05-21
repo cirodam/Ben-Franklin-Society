@@ -10,7 +10,7 @@ export interface ContactGroup {
 
 export interface ContactGroupMember {
 	group_uuid: string;
-	principal_uuid: string;
+	owner_uuid: string;
 	handle_cache: string;
 }
 
@@ -51,7 +51,7 @@ export function getGroupMembers(group_uuid: string): ContactGroupMember[] {
 export function createContactGroup(params: {
 	mailbox_uuid: string;
 	name: string;
-	members: Array<{ principal_uuid: string; handle_cache: string }>;
+	members: Array<{ owner_uuid: string; handle_cache: string }>;
 }): ContactGroupWithMembers {
 	const uuid = randomUUID();
 	const created_at = new Date().toISOString();
@@ -64,9 +64,9 @@ export function createContactGroup(params: {
 
 		for (const member of params.members) {
 			db.prepare(
-				`INSERT INTO contact_group_member (group_uuid, principal_uuid, handle_cache)
+				`INSERT INTO contact_group_member (group_uuid, owner_uuid, handle_cache)
          VALUES (?, ?, ?)`
-			).run(uuid, member.principal_uuid, member.handle_cache);
+			).run(uuid, member.owner_uuid, member.handle_cache);
 		}
 	})();
 
@@ -77,7 +77,7 @@ export function updateContactGroup(params: {
 	uuid: string;
 	mailbox_uuid: string;
 	name: string;
-	members: Array<{ principal_uuid: string; handle_cache: string }>;
+	members: Array<{ owner_uuid: string; handle_cache: string }>;
 }): void {
 	db.transaction(() => {
 		db.prepare(
@@ -92,9 +92,9 @@ export function updateContactGroup(params: {
 		// Add new members
 		for (const member of params.members) {
 			db.prepare(
-				`INSERT INTO contact_group_member (group_uuid, principal_uuid, handle_cache)
+				`INSERT INTO contact_group_member (group_uuid, owner_uuid, handle_cache)
          VALUES (?, ?, ?)`
-			).run(params.uuid, member.principal_uuid, member.handle_cache);
+			).run(params.uuid, member.owner_uuid, member.handle_cache);
 		}
 	})();
 }
@@ -111,8 +111,8 @@ export function deleteContactGroup(uuid: string, mailbox_uuid: string): void {
 export function expandGroupsInHandles(
 	handles: string[],
 	mailbox_uuid: string
-): Array<{ principal_uuid: string; handle_cache: string; from_group?: string }> {
-	const result: Array<{ principal_uuid: string; handle_cache: string; from_group?: string }> = [];
+): Array<{ owner_uuid: string; handle_cache: string; from_group?: string }> {
+	const result: Array<{ owner_uuid: string; handle_cache: string; from_group?: string }> = [];
 	const groups = getContactGroups(mailbox_uuid);
 
 	for (const handle of handles) {
@@ -124,7 +124,7 @@ export function expandGroupsInHandles(
 			// Expand group to members
 			for (const member of group.members) {
 				result.push({
-					principal_uuid: member.principal_uuid,
+					owner_uuid: member.owner_uuid,
 					handle_cache: member.handle_cache,
 					from_group: group.name,
 				});

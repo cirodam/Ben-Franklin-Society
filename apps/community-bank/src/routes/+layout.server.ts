@@ -3,7 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { getOidcClient } from '$lib/server/oidc.js';
 import { PERMISSIONS } from '$lib/server/permissions.js';
 
-export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
+export const load: LayoutServerLoad = async ({ locals, url, cookies, fetch }) => {
 	// Skip authentication for setup page
 	if (url.pathname === '/oidc-setup') {
 		return {};
@@ -20,8 +20,32 @@ export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
 	
 	// Check permissions from session (embedded in JWT access token)
 	const client = getOidcClient();
-	const isTeller = client.hasPermission(session, 'community-bank', PERMISSIONS.TELLER);
-	const isAdmin = client.hasPermission(session, 'community-bank', PERMISSIONS.ADMIN);
+	const isTeller = client.hasPermission(session, 'bank', PERMISSIONS.TELLER);
+	const isAdmin = client.hasPermission(session, 'bank', PERMISSIONS.ADMIN);
+	const governanceUrl = client['config'].issuerUrl;
+	
+	// Fetch available contexts from governance server
+	let availableContexts = [];
+	try {
+		const contextResponse = await fetch(`${governanceUrl}/api/session/contexts`, {
+			headers: {
+				'Cookie': cookies.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+			}
+		});
+		
+		if (contextResponse.ok) {
+			const data = await contextResponse.json();
+			availableContexts = data.contexts ?? [];
+		}
+	} catch (err) {
+		console.error('[community-bank/layout] Failed to fetch contexts:', err);
+	}
 
-	return { session, isTeller, isAdmin };
+	return { 
+		session, 
+		isTeller, 
+		isAdmin,
+		availableContexts,
+		governanceUrl
+	};
 };

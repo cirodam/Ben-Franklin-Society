@@ -2,12 +2,14 @@
 	import '@bfs/ui/src/theme.css';
 	import '../mail-theme.css';
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider, Button } from '@bfs/ui';
+	import ContextSwitcher from '$lib/components/ContextSwitcher.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	const { isModerator, unreadCount } = $derived(data);
+	const { isModerator, unreadCount, session, availableContexts, governanceUrl } = $derived(data);
+	const hasContexts = $derived(availableContexts && availableContexts.length > 0);
 </script>
 
 <AppShell maxWidth="lg">
@@ -52,9 +54,16 @@
 			{/snippet}
 
 			{#snippet footer()}
-				{#if data.session}
+				{#if session && hasContexts}
+					<div class="sidebar-footer-content">
+						<ContextSwitcher 
+							currentContext={session.acting_as_uuid}
+							availableContexts={availableContexts}
+							personUuid={session.person_uuid}						governanceUrl={governanceUrl}						/>
+					</div>
+				{:else if session}
 					<span style="font-size: var(--text-xs); color: var(--color-text-muted); font-family: var(--font-mono);">
-						@{data.session.handle}
+						@{session.handle}
 					</span>
 				{/if}
 			{/snippet}

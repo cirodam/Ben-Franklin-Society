@@ -1,12 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountsByPrincipal, getAccountByUuid, getAccountByHandle } from '$lib/server/accounts.js';
+import { getAccountsForContext, getAccountByUuid, getAccountByHandle } from '$lib/server/accounts.js';
+import { canTransferFrom } from '$lib/server/authorization.js';
 import { postTransaction } from '$lib/server/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session!;
-	const accounts = getAccountsByPrincipal(session.acting_as_uuid).filter(
+	const accounts = getAccountsForContext(session).filter(
 		(a) => a.status === 'active'
 	);
 	const preselect = url.searchParams.get('from') ?? '';
@@ -30,10 +31,14 @@ export const actions: Actions = {
 		if (isNaN(amount) || amount <= 0)
 			return fail(400, { error: 'Amount must be a positive whole number.' });
 
-		// Verify the source account belongs to the acting principal.
+		// Verify the source account belongs to the acting principal and we have permission
 		const fromAccount = getAccountByUuid(from_uuid);
-		if (!fromAccount || fromAccount.principal_uuid !== session.acting_as_uuid)
-			return fail(403, { error: 'Not your account.' });
+		if (!fromAccount)
+			return fail(404, { error: 'Account not found.' });
+		
+		if (!canTransferFrom(session, fromAccount))
+			return fail(403, { error: 'Not authorized to transfer from this account.' });
+		
 		if (fromAccount.status === 'frozen')
 			return fail(403, { error: 'That account is frozen.' });
 

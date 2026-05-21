@@ -55,11 +55,11 @@ export const actions: Actions = {
 
 		// Resolve the message sender's principal_uuid from the mailbox table.
 		const msgRow = db
-			.prepare('SELECT from_principal_uuid FROM message WHERE uuid = ?')
-			.get(report.message_uuid) as { from_principal_uuid: string } | undefined;
+			.prepare('SELECT from_owner_uuid FROM message WHERE uuid = ?')
+			.get(report.message_uuid) as { from_owner_uuid: string } | undefined;
 		if (!msgRow) return fail(400, { error: 'Message not found.' });
 
-		suspendMailboxByMod(msgRow.from_principal_uuid, session.acting_as_uuid, reason, params.uuid);
+		suspendMailboxByMod(msgRow.from_owner_uuid, session.acting_as_uuid, reason, params.uuid);
 		redirect(302, '/moderator');
 	},
 };

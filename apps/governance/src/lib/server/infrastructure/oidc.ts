@@ -128,6 +128,7 @@ function issuerUrl(): string {
 
 export function issueTokens(params: {
 	personUuid: string;
+	sessionUuid: string;
 	actingAsUuid: string;
 	clientId: string;
 	scope: string;
@@ -183,12 +184,13 @@ export function issueTokens(params: {
 
 	// Store refresh token in database
 	db.prepare(
-		`INSERT INTO oidc_refresh_token (token_hash, client_id, person_uuid, acting_as_uuid, scope, issued_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+		`INSERT INTO oidc_refresh_token (token_hash, client_id, person_uuid, session_uuid, acting_as_uuid, scope, issued_at, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	).run(
 		refreshTokenHash,
 		params.clientId,
 		params.personUuid,
+		params.sessionUuid,
 		params.actingAsUuid,
 		params.scope,
 		new Date().toISOString(),
@@ -212,6 +214,7 @@ interface AuthCode {
 	clientId: string;
 	redirectUri: string;
 	personUuid: string;
+	sessionUuid: string;
 	actingAsUuid: string;
 	scope: string;
 	codeChallenge: string; // S256 PKCE
@@ -231,6 +234,7 @@ export function createAuthCode(params: {
 	clientId: string;
 	redirectUri: string;
 	personUuid: string;
+	sessionUuid: string;
 	actingAsUuid: string;
 	scope: string;
 	codeChallenge: string;
@@ -264,6 +268,7 @@ export function exchangeAuthCode(params: {
 
 	return issueTokens({
 		personUuid: entry.personUuid,
+		sessionUuid: entry.sessionUuid,
 		actingAsUuid: entry.actingAsUuid,
 		clientId: entry.clientId,
 		scope: entry.scope,
@@ -278,20 +283,29 @@ export function exchangeRefreshToken(params: {
 	const tokenHash = crypto.createHash('sha256').update(params.refreshToken).digest('hex');
 	const now = new Date().toISOString();
 
-	// Look up the refresh token
+	// Look up the refresh token and join with session to get current acting_as
 	const tokenRow = db
 		.prepare(
-			`SELECT client_id, person_uuid, acting_as_uuid, scope
-       FROM oidc_refresh_token
-       WHERE token_hash = ?
-         AND client_id = ?
-         AND expires_at > ?
-         AND revoked_at IS NULL`
+			`SELECT 
+				rt.client_id, 
+				rt.person_uuid, 
+				rt.session_uuid,
+				rt.scope,
+				s.acting_as_uuid
+       FROM oidc_refresh_token rt
+       JOIN session s ON s.uuid = rt.session_uuid
+       WHERE rt.token_hash = ?
+         AND rt.client_id = ?
+         AND rt.expires_at > ?
+         AND rt.revoked_at IS NULL
+         AND s.revoked_at IS NULL
+         AND s.expires_at > ?`
 		)
-		.get(tokenHash, params.clientId, now) as
+		.get(tokenHash, params.clientId, now, now) as
 		| {
 				client_id: string;
 				person_uuid: string;
+				session_uuid: string;
 				acting_as_uuid: string;
 				scope: string;
 		  }
@@ -308,8 +322,10 @@ export function exchangeRefreshToken(params: {
 	);
 
 	// Issue new tokens (including a new refresh token)
+	// Use the current acting_as_uuid from the session, not the stored one
 	return issueTokens({
 		personUuid: tokenRow.person_uuid,
+		sessionUuid: tokenRow.session_uuid,
 		actingAsUuid: tokenRow.acting_as_uuid,
 		clientId: tokenRow.client_id,
 		scope: tokenRow.scope,

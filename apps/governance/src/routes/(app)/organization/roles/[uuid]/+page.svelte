@@ -1,10 +1,37 @@
 <script lang="ts">
-	import { Button, Card } from '@bfs/ui';
-	import type { PageData } from './$types.js';
+	import { Button, Card, Modal, Input, Checkbox } from '@bfs/ui';
+	import { enhance } from '$app/forms';
+	import type { PageData, ActionData } from './$types.js';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const { role, association, section, parentRole, holders, childRoles, permissions, history, canManage } = $derived(data);
+	const { role, association, section, parentRole, holders, childRoles, permissions, history, canManage, availablePermissions } = $derived(data);
+
+	let showPermissionsModal = $state(false);
+	let selectedPermissions = $state<Set<string>>(new Set());
+
+	function openPermissionsModal() {
+		// Initialize selected permissions from current role permissions
+		selectedPermissions = new Set(permissions.map(p => `${p.app}:${p.permission}`));
+		showPermissionsModal = true;
+	}
+
+	function togglePermission(app: string, permission: string) {
+		const key = `${app}:${permission}`;
+		if (selectedPermissions.has(key)) {
+			selectedPermissions.delete(key);
+		} else {
+			selectedPermissions.add(key);
+		}
+		selectedPermissions = selectedPermissions; // Trigger reactivity
+	}
+
+	function getPermissionsArray() {
+		return Array.from(selectedPermissions).map(key => {
+			const [app, permission] = key.split(':');
+			return { app, permission };
+		});
+	}
 
 	function formatDate(dateStr: string) {
 		return new Date(dateStr).toLocaleDateString('en-US', {
@@ -94,6 +121,29 @@
 				</section>
 			{/if}
 
+			<!-- Permissions -->
+		<section class="role-section">
+			<div class="section-header-with-action">
+				<h2>Permissions</h2>
+				{#if canManage}
+					<Button size="sm" variant="secondary" onclick={openPermissionsModal}>
+						Edit Permissions
+					</Button>
+				{/if}
+			</div>
+			{#if permissions.length === 0}
+				<p class="empty-state">This role has no permissions assigned.</p>
+			{:else}
+				<div class="permissions-grid">
+					{#each permissions as perm}
+						<div class="permission-card">
+							<div class="permission-app">{perm.app}</div>
+							<div class="permission-name">{perm.permission}</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</section>
 			<!-- History -->
 			{#if history.length > 0}
 				<section class="role-section">
@@ -144,15 +194,7 @@
 					{#if permissions.length > 0}
 						<div class="detail-item">
 							<dt>Permissions</dt>
-							<dd>
-								<ul class="permissions-list">
-									{#each permissions as perm}
-										<li class="permission-item">
-											<code>{perm.app}:{perm.permission}</code>
-										</li>
-									{/each}
-								</ul>
-							</dd>
+							<dd class="permission-count">{permissions.length} permission{permissions.length !== 1 ? 's' : ''}</dd>
 						</div>
 					{/if}
 				</dl>
@@ -160,6 +202,54 @@
 		</div>
 	</div>
 </div>
+
+<!-- Permissions Modal -->
+<Modal bind:open={showPermissionsModal} title="Edit Permissions" size="lg">
+	<form method="POST" action="?/update_permissions" use:enhance={() => {
+		return async ({ result }) => {
+			if (result.type === 'success') {
+				showPermissionsModal = false;
+			}
+		};
+	}}>
+		<input type="hidden" name="permissions" value={JSON.stringify(getPermissionsArray())} />
+		
+		<div class="permissions-selector">
+			<p class="selector-description">
+				Select the permissions this role should have. Permissions are organized by application.
+			</p>
+			
+			{#each availablePermissions as appGroup}
+				<div class="app-group">
+					<h4 class="app-group-title">{appGroup.label}</h4>
+					<div class="permissions-checkboxes">
+						{#each appGroup.permissions as perm}
+							<Checkbox
+								checked={selectedPermissions.has(`${appGroup.app}:${perm.value}`)}
+								onchange={() => togglePermission(appGroup.app, perm.value)}
+							>
+								{perm.label}
+							</Checkbox>
+						{/each}
+					</div>
+				</div>
+			{/each}
+
+			<div class="selected-summary">
+				<strong>{selectedPermissions.size}</strong> permission{selectedPermissions.size !== 1 ? 's' : ''} selected
+			</div>
+		</div>
+
+		{#snippet footer()}
+			<div class="modal-actions">
+				<Button type="submit">Save Changes</Button>
+				<Button type="button" variant="secondary" onclick={() => showPermissionsModal = false}>
+					Cancel
+				</Button>
+			</div>
+		{/snippet}
+	</form>
+</Modal>
 
 <style>
 	.page {
@@ -191,9 +281,9 @@
 	}
 
 	.page-header h1 {
-		font-family: 'IM Fell English', serif;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-3xl);
-		font-weight: 400;
+		font-weight: 600;
 		color: #151c1a;
 		margin: 0 0 var(--space-2) 0;
 		line-height: 1.2;
@@ -460,5 +550,139 @@
 		background: rgba(45, 90, 79, 0.05);
 		padding: 2px var(--space-1);
 		border: 1px solid rgba(45, 90, 79, 0.1);
+	}
+
+	.permission-count {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #7a5c1a;
+		font-weight: 600;
+	}
+
+	/* Permissions Grid */
+	.permissions-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+		gap: var(--space-3);
+	}
+
+	.permission-card {
+		background: rgba(250, 250, 247, 0.7);
+		border: 1px solid rgba(45, 90, 79, 0.2);
+		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		transition: all 0.2s;
+	}
+
+	.permission-card:hover {
+		border-color: #7a5c1a;
+		box-shadow: 0 2px 8px rgba(122, 92, 26, 0.15);
+	}
+
+	.permission-app {
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-xs);
+		letter-spacing: 0.1em;
+		color: #7a5c1a;
+		text-transform: uppercase;
+	}
+
+	.permission-name {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: #151c1a;
+		font-weight: 600;
+	}
+
+	/* Section header with action */
+	.section-header-with-action {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-4);
+		padding-bottom: var(--space-3);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+	}
+
+	.section-header-with-action h2 {
+		margin: 0;
+		padding: 0;
+		border: none;
+	}
+
+	/* Permissions Editor Modal */
+	.permissions-selector {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+	}
+
+	.selector-description {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #374340;
+		margin: 0;
+		padding-bottom: var(--space-3);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+	}
+
+	.app-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.app-group-title {
+		font-family: 'IM Fell English', serif;
+		font-size: var(--text-lg);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0;
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.1);
+	}
+
+	.permissions-checkboxes {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+		gap: var(--space-2);
+	}
+
+	.permissions-checkboxes :global(.checkbox-wrapper) {
+		padding: var(--space-2);
+		transition: background 0.2s;
+	}
+
+	.permissions-checkboxes :global(.checkbox-wrapper:hover) {
+		background: rgba(250, 250, 247, 0.7);
+	}
+
+	.permissions-checkboxes :global(.checkbox-label) {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: #151c1a;
+	}
+
+	.selected-summary {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: #7a5c1a;
+		padding: var(--space-3);
+		background: rgba(122, 92, 26, 0.05);
+		border: 1px solid rgba(122, 92, 26, 0.2);
+		text-align: center;
+	}
+
+	.selected-summary strong {
+		font-weight: 600;
+		font-size: var(--text-lg);
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: flex-end;
 	}
 </style>

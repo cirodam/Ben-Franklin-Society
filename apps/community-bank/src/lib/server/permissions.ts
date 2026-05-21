@@ -8,4 +8,5 @@
 export const PERMISSIONS = {
 	TELLER: 'teller',
 	ADMIN: 'admin',
+	ACT_AS: 'act_as',
 } as const;

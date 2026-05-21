@@ -7,4 +7,5 @@
 
 export const PERMISSIONS = {
 	MODERATOR: 'moderator',
+	ACT_AS: 'act_as',
 } as const;

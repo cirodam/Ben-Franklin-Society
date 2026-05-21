@@ -5,7 +5,7 @@ import { PERMISSIONS } from '$lib/server/permissions.js';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
 	const session = locals.session!;
-	if (!getOidcClient().hasPermission(session, 'community-bank', PERMISSIONS.ADMIN)) {
+	if (!getOidcClient().hasPermission(session, 'bank', PERMISSIONS.ADMIN)) {
 		error(403, 'Admin access required.');
 	}
 	return {};
