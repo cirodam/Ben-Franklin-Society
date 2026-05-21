@@ -109,6 +109,7 @@ export function listAssociations(opts: {
 export function createAssociation(input: {
 	handle: string;
 	name: string;
+	description?: string;
 	abbreviation?: string;
 	type: Association['type'];
 	established_by_motion_uuid?: string;
@@ -124,9 +125,9 @@ export function createAssociation(input: {
 	const createdAt = now();
 
 	db.prepare(
-		`INSERT INTO association (uuid, handle, name, abbreviation, type, status, governing_document_slug, established_by_motion_uuid, governs_app, created_at)
-		 VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`
-	).run(uuid, input.handle, input.name, input.abbreviation ?? null, input.type, input.governing_document_slug ?? null, input.established_by_motion_uuid ?? null, input.governs_app ?? null, createdAt);
+		`INSERT INTO association (uuid, handle, name, description, abbreviation, type, status, governing_document_slug, established_by_motion_uuid, governs_app, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`
+	).run(uuid, input.handle, input.name, input.description ?? null, input.abbreviation ?? null, input.type, input.governing_document_slug ?? null, input.established_by_motion_uuid ?? null, input.governs_app ?? null, createdAt);
 
 	return getAssociationByUuid(uuid)!;
 }
@@ -139,6 +140,7 @@ export function dissolveAssociation(uuid: string): void {
 
 export function updateAssociation(uuid: string, input: {
 	name?: string;
+	description?: string | null;
 	governing_document_slug?: string | null;
 	org_chart_slug?: string | null;
 	status?: 'active' | 'inactive' | 'dissolved';
@@ -149,6 +151,10 @@ export function updateAssociation(uuid: string, input: {
 	if (input.name !== undefined) {
 		updates.push('name = ?');
 		params.push(input.name);
+	}
+	if (input.description !== undefined) {
+		updates.push('description = ?');
+		params.push(input.description);
 	}
 	if (input.governing_document_slug !== undefined) {
 		updates.push('governing_document_slug = ?');

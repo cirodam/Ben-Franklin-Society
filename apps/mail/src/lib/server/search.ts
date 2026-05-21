@@ -1,5 +1,5 @@
 import { db } from './db.js';
-import type { Message } from './messages.js';
+import type { Message } from './messages/types.js';
 
 export interface SearchResult extends Message {
 	/** Snippet showing search term context */

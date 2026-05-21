@@ -26,6 +26,7 @@ export const actions: Actions = {
 
 		const fd = await request.formData();
 		const name = String(fd.get('name') ?? '').trim();
+		const description = String(fd.get('description') ?? '').trim() || null;
 		const governingDocumentSlug = String(fd.get('governing_document_slug') ?? '').trim() || null;
 		const status = String(fd.get('status') ?? 'active') as 'active' | 'inactive' | 'dissolved';
 
@@ -38,27 +39,28 @@ export const actions: Actions = {
 		if (!name) {
 			return fail(400, { 
 				error: 'Name is required.',
-				name, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
+				name, description, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
 			});
 		}
 
 		if (enableSortition && (!seatCount || seatCount < 1)) {
 			return fail(400, {
 				error: 'Seat count must be at least 1 when sortition is enabled.',
-				name, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
+				name, description, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
 			});
 		}
 
 		if (enableSortition && (!termDays || termDays < 1)) {
 			return fail(400, {
 				error: 'Term length must be at least 1 day when sortition is enabled.',
-				name, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
+				name, description, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
 			});
 		}
 
 		try {
 			updateAssociation(params.uuid, {
 				name,
+				description,
 				governing_document_slug: governingDocumentSlug,
 				status
 			});
@@ -77,7 +79,7 @@ export const actions: Actions = {
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to update committee.',
-				name, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
+				name, description, governingDocumentSlug, status, enableSortition, seatCount, termDays, sourceCollegeUuid
 			});
 		}
 	}

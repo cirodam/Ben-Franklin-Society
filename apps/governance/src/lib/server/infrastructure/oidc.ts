@@ -493,6 +493,8 @@ export function updateClientRedirectUris(clientId: string, redirectUris: string[
 }
 
 export function deleteClient(clientId: string): void {
+	// Delete associated refresh tokens first to avoid foreign key constraint violation
+	db.prepare('DELETE FROM oidc_refresh_token WHERE client_id = ?').run(clientId);
 	db.prepare('DELETE FROM oidc_client WHERE client_id = ?').run(clientId);
 }
 

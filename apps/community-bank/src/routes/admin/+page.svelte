@@ -66,7 +66,7 @@
 						label="Owner UUID"
 						required
 						placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
-						pattern="[0-9a-f]{{8}}-[0-9a-f]{{4}}-[0-9a-f]{{4}}-[0-9a-f]{{4}}-[0-9a-f]{{12}}"
+						pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 						class="field-wide"
 					/>
 

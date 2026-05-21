@@ -1,8 +1,9 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getRoleByUuid, getPermissionsForRole, setRolePermissions } from '$lib/server/organization/roles.js';
+import { getRoleByUuid, getPermissionsForRole, setRolePermissions, assignRole, unassignRole } from '$lib/server/organization/roles.js';
 import { getAssociationByUuid } from '$lib/server/organization/associations.js';
 import { getSectionByUuid } from '$lib/server/organization/org-sections.js';
+import { listPeople } from '$lib/server/organization/people.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -73,6 +74,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const actingAs = locals.session?.acting_as_uuid ?? null;
 	const canManage = !!actingAs;
 
+	// Get all people for assignment selector
+	const allPeople = listPeople({ status: 'active' });
+
 	// Define all available permissions across all apps
 	const availablePermissions = [
 		{
@@ -135,7 +139,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		permissions: rolePermissions,
 		history,
 		canManage,
-		availablePermissions
+		availablePermissions,
+		allPeople
 	};
 };
 
@@ -174,6 +179,60 @@ export const actions: Actions = {
 		} catch (err) {
 			console.error('Error updating permissions:', err);
 			return fail(500, { error: 'Failed to update permissions' });
+		}
+	},
+
+	assign_role: async ({ request, params, locals }) => {
+		const actingAs = locals.session?.acting_as_uuid;
+		if (!actingAs) {
+			return fail(403, { error: 'Not authorized' });
+		}
+
+		const role = getRoleByUuid(params.uuid);
+		if (!role) {
+			return fail(404, { error: 'Role not found' });
+		}
+
+		const formData = await request.formData();
+		const personUuid = formData.get('person_uuid');
+		
+		if (typeof personUuid !== 'string' || !personUuid) {
+			return fail(400, { error: 'Person UUID required' });
+		}
+
+		try {
+			assignRole(role.uuid, personUuid);
+			return { success: true };
+		} catch (err: any) {
+			console.error('Error assigning role:', err);
+			return fail(500, { error: err.message || 'Failed to assign role' });
+		}
+	},
+
+	remove_role: async ({ request, params, locals }) => {
+		const actingAs = locals.session?.acting_as_uuid;
+		if (!actingAs) {
+			return fail(403, { error: 'Not authorized' });
+		}
+
+		const role = getRoleByUuid(params.uuid);
+		if (!role) {
+			return fail(404, { error: 'Role not found' });
+		}
+
+		const formData = await request.formData();
+		const personUuid = formData.get('person_uuid');
+		
+		if (typeof personUuid !== 'string' || !personUuid) {
+			return fail(400, { error: 'Person UUID required' });
+		}
+
+		try {
+			unassignRole(role.uuid, personUuid);
+			return { success: true };
+		} catch (err: any) {
+			console.error('Error removing role:', err);
+			return fail(500, { error: err.message || 'Failed to remove role' });
 		}
 	}
 };

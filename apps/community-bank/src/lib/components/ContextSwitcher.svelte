@@ -132,47 +132,51 @@
 		width: 100%;
 	}
 	
+	/* Light sidebar optimized button - uses dark colors for contrast */
 	.switcher-button {
 		width: 100%;
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
-		padding: 0.75rem 1rem;
-		background: var(--surface);
-		border: 1px solid var(--border);
+		padding: 0.625rem 0.875rem;
+		background: var(--ledger-lined, #f9f6f0);
+		border: 1px solid var(--border, rgba(139, 90, 60, 0.2));
 		border-radius: var(--radius-md);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		font-weight: 500;
-		color: var(--ink);
+		color: var(--ink, #2a1f1a);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition: all 0.2s ease;
 		text-align: left;
 	}
 	
 	.switcher-button:hover:not(:disabled) {
-		background: var(--surface-hover);
-		border-color: var(--border-strong);
+		background: var(--copper-light, #f4ede8);
+		border-color: var(--border-strong, rgba(139, 90, 60, 0.3));
 	}
 	
 	.switcher-button:disabled {
-		opacity: 0.6;
+		opacity: 0.5;
 		cursor: not-allowed;
 	}
 	
 	.switcher-button.association {
-		background: var(--highlight-faint);
-		border-color: var(--highlight-border);
+		background: var(--olive-light, #e8ede5);
+		border-color: var(--olive, #5a6b4a);
+		font-weight: 600;
 	}
 	
 	.switcher-button.association:hover:not(:disabled) {
-		background: var(--highlight-hover);
+		background: #dde6d9;
+		border-color: #4a5b3a;
 	}
 	
 	.context-icon {
 		display: flex;
 		align-items: center;
-		color: var(--ink-mid);
+		color: var(--ink-mid, #4d3d32);
+		flex-shrink: 0;
 	}
 	
 	.context-label {
@@ -184,24 +188,26 @@
 	
 	.dropdown-arrow {
 		font-size: 0.625rem;
-		color: var(--ink-mid);
+		color: var(--ink-faint, #897669);
 		transition: transform 0.2s;
+		flex-shrink: 0;
 	}
 	
 	.dropdown-arrow.open {
 		transform: rotate(180deg);
 	}
 	
+	/* Dropdown */
 	.dropdown-menu {
 		position: absolute;
 		bottom: 100%;
 		left: 0;
 		right: 0;
 		margin-bottom: 0.5rem;
-		background: var(--surface);
-		border: 1px solid var(--border);
+		background: var(--ledger, #fffcf7);
+		border: 1px solid var(--border, rgba(139, 90, 60, 0.2));
 		border-radius: var(--radius-md);
-		box-shadow: var(--shadow-lg);
+		box-shadow: 0 4px 12px rgba(42, 31, 26, 0.12);
 		max-height: 300px;
 		overflow-y: auto;
 		z-index: 1000;
@@ -212,30 +218,32 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: 0.5rem;
 		padding: 0.75rem 1rem;
 		background: transparent;
 		border: none;
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		font-weight: 500;
-		color: var(--ink);
+		color: var(--ink, #2a1f1a);
 		cursor: pointer;
 		transition: background 0.15s;
 		text-align: left;
 	}
 	
 	.context-option:hover:not(:disabled) {
-		background: var(--surface-hover);
+		background: var(--ledger-lined, #f9f6f0);
 	}
 	
 	.context-option:disabled {
-		opacity: 0.6;
+		opacity: 0.5;
 		cursor: not-allowed;
 	}
 	
 	.context-option.active {
-		background: var(--highlight-faint);
-		color: var(--highlight);
+		background: var(--copper-light, #f4ede8);
+		color: var(--copper, #8b5a3c);
+		font-weight: 600;
 	}
 	
 	.context-option.association {
@@ -250,8 +258,10 @@
 	}
 	
 	.checkmark {
-		color: var(--highlight);
-		font-weight: 600;
+		color: var(--copper, #8b5a3c);
+		font-weight: 700;
+		font-size: 1rem;
+		flex-shrink: 0;
 	}
 	
 	.loading-overlay {
@@ -260,7 +270,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(255, 255, 255, 0.8);
+		background: rgba(255, 252, 247, 0.9);
+		backdrop-filter: blur(2px);
 		border-radius: var(--radius-md);
 		z-index: 1001;
 	}
@@ -268,8 +279,8 @@
 	.spinner {
 		width: 20px;
 		height: 20px;
-		border: 2px solid var(--border);
-		border-top-color: var(--highlight);
+		border: 2px solid var(--border-subtle, rgba(139, 90, 60, 0.12));
+		border-top-color: var(--copper, #8b5a3c);
 		border-radius: 50%;
 		animation: spin 0.6s linear infinite;
 	}

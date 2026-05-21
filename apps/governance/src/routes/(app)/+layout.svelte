@@ -93,12 +93,25 @@
 	
 	.footer-context-switcher {
 		padding: var(--space-3);
-		padding-bottom: var(--space-2);
 	}
 	
 	.footer-identity {
 		padding: var(--space-3);
-		padding-bottom: var(--space-2);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+	
+	.footer-name {
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: rgba(255, 255, 255, 0.95);
+	}
+	
+	.footer-handle {
+		font-size: var(--text-xs);
+		font-family: var(--font-mono);
+		color: rgba(255, 255, 255, 0.7);
 	}
 	
 	.footer-signout-form {
@@ -107,22 +120,22 @@
 	
 	.footer-signout-button {
 		width: 100%;
-		padding: var(--space-2);
-		background: var(--surface);
-		border: 1px solid var(--border);
+		padding: var(--space-2) var(--space-3);
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.15);
 		border-radius: var(--radius-md);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		font-weight: 500;
-		color: var(--ink-mid);
+		color: rgba(255, 255, 255, 0.85);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition: all 0.2s;
 	}
 	
 	.footer-signout-button:hover {
-		background: var(--surface-hover);
-		border-color: var(--border-strong);
-		color: var(--ink);
+		background: rgba(255, 255, 255, 0.12);
+		border-color: rgba(255, 255, 255, 0.25);
+		color: rgba(255, 255, 255, 0.95);
 	}
 </style>
 

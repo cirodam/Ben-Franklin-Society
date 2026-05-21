@@ -48,7 +48,9 @@
 							personUuid={session.person_uuid}						governanceUrl={governanceUrl}						/>
 					</div>
 				{:else if session}
-					<span class="sidebar__handle">@{session.handle}</span>
+				<div class="sidebar-handle">
+					@{session.handle}
+				</div>
 				{/if}
 			{/snippet}
 		</Sidebar>
@@ -163,10 +165,22 @@
 		color: white;
 	}
 
-	.sidebar__handle {
+	:global(.sidebar__footer) {
+		border-top-color: rgba(255, 255, 255, 0.15);
+		padding: 0;
+	}
+
+	.sidebar-footer-content {
+		padding: var(--space-3);
+	}
+
+	.sidebar-handle {
+		padding: var(--space-3);
 		font-size: var(--text-xs);
-		color: rgba(255, 255, 255, 0.7);
-		font-family: var(--font-sans);
+		font-family: var(--font-mono);
+		font-weight: 500;
+		color: rgba(255, 255, 255, 0.75);
+		text-align: center;
 	}
 
 	.motto {

@@ -26,6 +26,9 @@
 				</a>
 			{/if}
 		</div>
+		{#if association.description}
+			<p class="description">{association.description}</p>
+		{/if}
 	</div>
 
 	<nav class="tabs">
@@ -178,6 +181,16 @@
 
 	.founding-doc-link:hover {
 		color: #d4a24a;
+	}
+
+	.description {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: #374340;
+		max-width: 680px;
+		margin: var(--space-4) auto 0;
+		line-height: 1.6;
+		white-space: pre-wrap;
 	}
 
 	.tabs {

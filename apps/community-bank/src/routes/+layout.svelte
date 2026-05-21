@@ -100,6 +100,7 @@
 
 	:global(.sidebar__footer) {
 		border-top: 1px solid var(--border-faint);
+		padding: 0;
 	}
 
 	/* Default sidebar link styling */
@@ -159,6 +160,7 @@
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		color: var(--ink-faint);
+		text-align: center;
 	}
 
 	.motto {

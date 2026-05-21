@@ -50,6 +50,9 @@
 			</div>
 		</div>
 		<p class="header__handle">@{association.handle}</p>
+	{#if association.description}
+		<p class="description">{association.description}</p>
+	{/if}
 	{#if governingDocument}
 		<a href="/library/{governingDocument.slug}" class="rules-link">{governingDocument.title}</a>
 	{/if}
@@ -211,5 +214,14 @@
 		.header__meta {
 			flex-wrap: wrap;
 		}
+	}
+
+	.description {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: #374340;
+		margin: var(--space-3) 0;
+		line-height: 1.6;
+		white-space: pre-wrap;
 	}
 </style>

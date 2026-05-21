@@ -77,20 +77,20 @@ export const actions: Actions = {
 
 		// Seed the system associations and add the founding member
 		const systemAssociations = [
-			{ handle: 'society',             name: 'The Society',            type: 'society',              abbreviation: 'SOC'  },
-			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly',     abbreviation: 'GA'   },
-			{ handle: 'treasury',            name: 'Treasury',               type: 'association',          abbreviation: 'TRES' },
-			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund', abbreviation: 'SIF' },
-			{ handle: 'community-bank',      name: 'Community Bank Association', type: 'service',         abbreviation: 'CBA', governs_app: 'bank' },
-			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college',              abbreviation: 'AGCOL', governing_document_slug: 'agricultural-college' },
-			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college',              abbreviation: 'CACOL' },
-			{ handle: 'food-service',        name: 'Food Service',           type: 'service',              abbreviation: 'FOOD'  },
-			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service',              abbreviation: 'AGSVC' },
-			{ handle: 'energy-service',      name: 'Energy Service',         type: 'service',              abbreviation: 'ENRG'  },
-			{ handle: 'communications-service', name: 'Communications Service Association', type: 'service', abbreviation: 'CSA', governs_app: 'mail' },
-			{ handle: 'commerce-service',    name: 'Commerce Service Association', type: 'service',       abbreviation: 'CMSA', governs_app: 'marketplace' },
-			{ handle: 'agricultural-committee', name: 'Agricultural Committee', type: 'committee',        abbreviation: 'AGCOM', governing_document_slug: 'committee-rules' },
-			{ handle: 'food-committee',      name: 'Food Committee',         type: 'committee',            abbreviation: 'FDCOM', governing_document_slug: 'committee-rules' },
+			{ handle: 'society',             name: 'The Society',            type: 'society',              abbreviation: 'SOC', description: 'The root association representing all members of this local society' },
+			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly',     abbreviation: 'GA', description: 'The primary legislative body, populated by sortition from all members' },
+			{ handle: 'treasury',            name: 'Treasury',               type: 'association',          abbreviation: 'TRES', description: 'Manages society-wide revenue collection and expenditure distribution' },
+			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund', abbreviation: 'SIF', description: 'Provides mutual aid and insurance to members during times of need' },
+			{ handle: 'community-bank',      name: 'Community Bank Association', type: 'service',         abbreviation: 'CBA', governs_app: 'bank', description: 'Governs the operation of the community banking system and monetary policy' },
+			{ handle: 'agricultural-college',name: 'Agricultural College',   type: 'college',              abbreviation: 'AGCOL', governing_document_slug: 'agricultural-college', description: 'Professional association for farmers, gardeners, and agricultural workers' },
+			{ handle: 'culinary-arts',       name: 'Culinary Arts College',  type: 'college',              abbreviation: 'CACOL', description: 'Professional association for chefs, bakers, and culinary professionals' },
+			{ handle: 'food-service',        name: 'Food Service',           type: 'service',              abbreviation: 'FOOD', description: 'Operates community kitchens, cafeterias, and food distribution' },
+			{ handle: 'agricultural-service',name: 'Agricultural Service',   type: 'service',              abbreviation: 'AGSVC', description: 'Coordinates farming operations, seed libraries, and agricultural resources' },
+			{ handle: 'energy-service',      name: 'Energy Service',         type: 'service',              abbreviation: 'ENRG', description: 'Maintains power generation, distribution, and energy infrastructure' },
+			{ handle: 'communications-service', name: 'Communications Service Association', type: 'service', abbreviation: 'CSA', governs_app: 'mail', description: 'Operates the inter-society mail system and communications infrastructure' },
+			{ handle: 'commerce-service',    name: 'Commerce Service Association', type: 'service',       abbreviation: 'CMSA', governs_app: 'marketplace', description: 'Governs the marketplace and facilitates exchange between members and societies' },
+			{ handle: 'agricultural-committee', name: 'Agricultural Committee', type: 'committee',        abbreviation: 'AGCOM', governing_document_slug: 'committee-rules', description: 'Standing committee for agricultural policy and resource allocation' },
+			{ handle: 'food-committee',      name: 'Food Committee',         type: 'committee',            abbreviation: 'FDCOM', governing_document_slug: 'committee-rules', description: 'Standing committee for food policy and nutrition programs' },
 		] as const;
 
 		for (const assoc of systemAssociations) {
@@ -189,16 +189,6 @@ export const actions: Actions = {
 		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'marketplace', 'administrator')`).run(marketAdminRoleUuid);
 		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(marketAdminRoleUuid);
 		assignRole(marketAdminRoleUuid, person.uuid);
-
-	const treasuryAssoc = getAssociationByHandle('treasury')!;
-	const treasurerRoleUuid = randomUUID();
-	db.prepare(
-		`INSERT INTO role (uuid, association_uuid, title, description, created_at)
-		 VALUES (?, ?, 'Treasurer', 'Treasury officials who manage demurrage collection and public funds', ?)`
-	).run(treasurerRoleUuid, treasuryAssoc.uuid, createdAt);
-	db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'bank', 'collect_demurrage')`).run(treasurerRoleUuid);
-	db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(treasurerRoleUuid);
-	assignRole(treasurerRoleUuid, person.uuid);
 
 	// Seed Food Service with ICS structure
 	const foodService = getAssociationByHandle('food-service')!;
@@ -408,6 +398,11 @@ export const actions: Actions = {
 			3000,
 			createdAt
 		);
+
+		// Add permissions to Treasurer role
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'bank', 'collect_demurrage')`).run(treasurerUuid);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(treasurerUuid);
+		assignRole(treasurerUuid, person.uuid);
 
 		// Revenue Section Chief (Level 2)
 		db.prepare(

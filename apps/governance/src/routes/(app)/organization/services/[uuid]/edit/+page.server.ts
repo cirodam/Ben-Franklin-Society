@@ -23,19 +23,21 @@ export const actions: Actions = {
 
 		const fd = await request.formData();
 		const name = String(fd.get('name') ?? '').trim();
+		const description = String(fd.get('description') ?? '').trim() || null;
 		const governingDocumentSlug = String(fd.get('governing_document_slug') ?? '').trim() || null;
 		const status = String(fd.get('status') ?? 'active') as 'active' | 'inactive' | 'dissolved';
 
 		if (!name) {
 			return fail(400, { 
 				error: 'Name is required.',
-				name, governingDocumentSlug, status
+				name, description, governingDocumentSlug, status
 			});
 		}
 
 		try {
 			updateAssociation(params.uuid, {
 				name,
+				description,
 				governing_document_slug: governingDocumentSlug,
 				status
 			});
@@ -44,7 +46,7 @@ export const actions: Actions = {
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to update service.',
-				name, governingDocumentSlug, status
+				name, description, governingDocumentSlug, status
 			});
 		}
 	}

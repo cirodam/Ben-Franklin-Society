@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Alert, Breadcrumb, Button, Card, Checkbox, Input, PageHeader, Select } from '@bfs/ui';
+	import { Alert, Breadcrumb, Button, Card, Checkbox, Input, PageHeader, Select, Textarea } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -38,6 +38,15 @@
 					type="text"
 					required
 					value={form?.name ?? data.association.name}
+				/>
+
+				<Textarea
+					id="description"
+					name="description"
+					label="Description"
+					value={form?.description ?? data.association.description ?? ''}
+					hint="Optional brief description of this committee"
+					rows={3}
 				/>
 
 				<Select

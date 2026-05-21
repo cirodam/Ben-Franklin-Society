@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS association (
   uuid                       TEXT PRIMARY KEY,
   handle                     TEXT NOT NULL UNIQUE,
   name                       TEXT NOT NULL,
+  description                TEXT NULL,
   abbreviation               TEXT NULL,
   type                       TEXT NOT NULL,
   status                     TEXT NOT NULL DEFAULT 'active',

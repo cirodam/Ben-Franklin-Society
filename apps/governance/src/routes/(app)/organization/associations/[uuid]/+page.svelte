@@ -32,6 +32,9 @@
 				<Badge label={association.status} variant={statusVariant(association.status)} />
 			</div>
 			<p class="handle">@{association.handle}</p>
+			{#if association.description}
+				<p class="description">{association.description}</p>
+			{/if}
 		</div>
 	</PageHeader>
 
@@ -119,6 +122,14 @@
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		color: var(--color-text-muted);
+		margin: 0;
+	}
+
+	.description {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		line-height: 1.6;
+		white-space: pre-wrap;
 		margin: 0;
 	}
 
