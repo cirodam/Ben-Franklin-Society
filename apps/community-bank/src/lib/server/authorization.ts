@@ -68,3 +68,19 @@ export function canTransferFrom(session: Session, account: Account): boolean {
 export function isTeller(session: Session): boolean {
 	return hasPermission(session, PERMISSIONS.TELLER) || hasAppWideAdmin(session);
 }
+
+/**
+ * Check if the session can manage monetary policy
+ * Required for minting, burning, and configuring monetary policy
+ */
+export function canManageMonetary(session: Session): boolean {
+	return hasPermission(session, PERMISSIONS.MANAGE_MONETARY) || hasAppWideAdmin(session);
+}
+
+/**
+ * Check if the session can collect demurrage
+ * Required for running demurrage collection operations
+ */
+export function canCollectDemurrage(session: Session): boolean {
+	return hasPermission(session, PERMISSIONS.COLLECT_DEMURRAGE) || hasAppWideAdmin(session);
+}

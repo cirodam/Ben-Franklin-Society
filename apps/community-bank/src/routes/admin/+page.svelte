@@ -1,12 +1,24 @@
 <script lang="ts">
-	import { PageHeader, Card, Button, Input, EmptyState } from '@bfs/ui';
+	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { PageHeader, Card, Button, Input, EmptyState, Alert } from '@bfs/ui';
 	import ContextBadge from '$lib/components/ContextBadge.svelte';
-	import type { PageData } from './$types.js';
+	import type { PageData, ActionData } from './$types.js';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { q, accounts, session } = $derived(data);
 
+	let showCreateForm = $state(false);
+
 	function fmt(n: number) { return n.toLocaleString(); }
+
+	// Success handling - redirect to new account
+	$effect(() => {
+		if (form?.success && form?.created) {
+			showCreateForm = false;
+			goto(`/admin/accounts/${form.created}`);
+		}
+	});
 </script>
 
 <div class="page">
@@ -21,17 +33,64 @@
 		{/if}
 	</div>
 
-	<form method="GET" action="/admin" class="search-form">
-		<Input
-			name="q"
-			type="text"
-			placeholder="Search by handle or account name…"
-			value={q}
-			class="search-input"
-		/>
-		<Button type="submit" variant="primary">Search</Button>
-		{#if q}<Button href="/admin" variant="ghost">Clear</Button>{/if}
-	</form>
+	<div class="actions-bar">
+		<form method="GET" action="/admin" class="search-form">
+			<Input
+				name="q"
+				type="text"
+				placeholder="Search by handle or account name…"
+				value={q}
+				class="search-input"
+			/>
+			<Button type="submit" variant="primary">Search</Button>
+			{#if q}<Button href="/admin" variant="ghost">Clear</Button>{/if}
+		</form>
+		<Button onclick={() => showCreateForm = !showCreateForm} variant="primary">
+			{showCreateForm ? 'Cancel' : '+ Create Account'}
+		</Button>
+	</div>
+
+	{#if form?.error}
+		<Alert variant="danger">{form.error}</Alert>
+	{/if}
+
+	<!-- Create Account Form -->
+	{#if showCreateForm}
+		<Card class="form-card">
+			<h2 class="form-title">Create New Account</h2>
+			<form method="POST" action="?/create" use:enhance>
+				<div class="form-grid">
+					<Input
+						name="owner_uuid"
+						type="text"
+						label="Owner UUID"
+						required
+						placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000"
+						pattern="[0-9a-f]{{8}}-[0-9a-f]{{4}}-[0-9a-f]{{4}}-[0-9a-f]{{4}}-[0-9a-f]{{12}}"
+						class="field-wide"
+					/>
+
+					<Input
+						name="name"
+						type="text"
+						label="Account Name"
+						required
+						placeholder="Primary"
+					/>
+
+					<label class="checkbox-label">
+						<input type="checkbox" name="demurrage_exempt" value="true" />
+						Exempt from demurrage
+					</label>
+				</div>
+
+				<div class="form-actions">
+					<Button type="submit" variant="primary">Create Account</Button>
+					<Button type="button" variant="secondary" onclick={() => showCreateForm = false}>Cancel</Button>
+				</div>
+			</form>
+		</Card>
+	{/if}
 
 	<Card class="table-card">
 		<div class="card__label">
@@ -44,7 +103,7 @@
 			<table class="table">
 				<thead>
 					<tr>
-						<th>Handle</th>
+						<th>UUID</th>
 						<th>Account Name</th>
 						<th class="num">Balance (ƒ)</th>
 						<th>Status</th>
@@ -53,12 +112,12 @@
 				</thead>
 				<tbody>
 					{#each accounts as acct}
-						<tr class={acct.status === 'frozen' ? 'row--frozen' : ''}>
-							<td class="mono">@{acct.handle_cache}</td>
+						<tr class={acct.is_frozen === 1 ? 'row--frozen' : ''}>
+							<td class="mono">{acct.uuid.slice(0, 8)}</td>
 							<td>{acct.name}</td>
 							<td class="num {acct.balance < 0 ? 'negative' : ''}">{fmt(acct.balance)}</td>
 							<td>
-								{#if acct.status === 'frozen'}
+								{#if acct.is_frozen === 1}
 									<span class="badge badge--frozen">Frozen</span>
 								{:else}
 									<span class="badge badge--active">Active</span>
@@ -85,8 +144,50 @@
 		flex-wrap: wrap;
 	}
 
-	.search-form { display: flex; gap: var(--space-3); max-width: 520px; align-items: flex-start; }
+	.actions-bar {
+		display: flex;
+		gap: var(--space-3);
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.search-form { display: flex; gap: var(--space-3); flex: 1; max-width: 520px; align-items: flex-start; }
 	:global(.search-input) { flex: 1; }
+
+	.form-card {
+		padding: var(--space-5);
+	}
+
+	.form-title {
+		margin: 0 0 var(--space-4);
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+	}
+
+	.form-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-4);
+		margin-bottom: var(--space-4);
+	}
+
+	:global(.field-wide) {
+		grid-column: 1 / -1;
+	}
+
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		grid-column: 1 / -1;
+		cursor: pointer;
+	}
+
+	.form-actions {
+		display: flex;
+		gap: var(--space-3);
+		padding-top: var(--space-2);
+	}
 
 	.table-card { overflow-x: auto; }
 	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }

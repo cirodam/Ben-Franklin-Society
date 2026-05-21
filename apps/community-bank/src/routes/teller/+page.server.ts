@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountByHandle, getAccountsByOwner } from '$lib/server/accounts.js';
+import { searchAccounts, getAccountsByOwner } from '$lib/server/accounts.js';
 import { getTransactionsForAccount } from '$lib/server/ledger.js';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -7,18 +7,19 @@ export const load: PageServerLoad = async ({ url }) => {
 	if (!q) return { q: '', result: null, recentTxs: [] };
 
 	// Look up account by handle (searches bank accounts only)
-	const account = getAccountByHandle(q);
+	const searchResults = searchAccounts(q, 5);
+	const account = searchResults[0];
 	if (!account) return { q, result: null, recentTxs: [] };
 
 	// Get all accounts for this owner
 	const accounts = getAccountsByOwner(account.owner_uuid);
 
-	// Show recent transactions for the Primary account
+	// Show recent transactions for the account
 	const recentTxs = getTransactionsForAccount(account.uuid, { limit: 10 });
 
 	const result = {
 		kind: 'account' as const,
-		label: `@${account.handle_cache}`,
+		label: account.name,
 		accounts,
 	};
 

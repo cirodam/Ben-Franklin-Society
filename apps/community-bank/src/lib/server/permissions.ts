@@ -9,4 +9,6 @@ export const PERMISSIONS = {
 	TELLER: 'teller',
 	ADMIN: 'admin',
 	ACT_AS: 'act_as',
+	MANAGE_MONETARY: 'manage_monetary',
+	COLLECT_DEMURRAGE: 'collect_demurrage',
 } as const;

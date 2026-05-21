@@ -10,19 +10,10 @@ export const TransactionType = {
 	/** Standard person-to-person or entity transfer */
 	TRANSFER: 'transfer',
 
-	/** New money creation (CB → Treasury on member birthdays) */
-	ISSUANCE: 'issuance',
-
-	/** Wealth tax on excess balances → Treasury */
+	/** Demurrage collection from account to treasury */
 	DEMURRAGE: 'demurrage',
 
-	/** Percentage-based collection from multiple accounts (Treasury dues, CB money destruction) */
-	COLLECTION: 'collection',
-
-	/** Money destruction (account → CB, removing from circulation) */
-	DESTRUCTION: 'destruction',
-
-	/** Manual correction or adjustment by admin */
+	/** Manual correction by admin */
 	CORRECTION: 'correction',
 
 	/** Manual adjustment by admin */
@@ -42,16 +33,10 @@ export const TransactionSource = {
 	/** Teller-initiated transfer (in-branch) */
 	TELLER: 'teller',
 
-	/** Scheduled transfer executed automatically */
-	SCHEDULED: 'scheduled',
+	/** Automated system process (demurrage collection) */
+	SYSTEM: 'system',
 
-	/** Birthday issuance */
-	BIRTHDAY: 'birthday',
-
-	/** Automated system process (demurrage, collection) */
-	AUTO: 'auto',
-
-	/** Admin-initiated transaction (CB operations, corrections) */
+	/** Admin-initiated transaction (corrections, adjustments) */
 	ADMIN: 'admin',
 } as const;
 
@@ -65,12 +50,12 @@ export function getTransactionTypeLabel(type: string): string {
 	switch (type) {
 		case TransactionType.TRANSFER:
 			return 'Transfer';
-		case TransactionType.ISSUANCE:
-			return 'Issuance';
 		case TransactionType.DEMURRAGE:
 			return 'Demurrage';
-		case TransactionType.COLLECTION:
-			return 'Collection';
+		case TransactionType.CORRECTION:
+			return 'Correction';
+		case TransactionType.ADJUSTMENT:
+			return 'Adjustment';
 		default:
 			return type;
 	}
@@ -82,12 +67,10 @@ export function getTransactionSourceLabel(source: string): string {
 			return 'Online';
 		case TransactionSource.TELLER:
 			return 'Teller';
-		case TransactionSource.SCHEDULED:
-			return 'Scheduled';
-		case TransactionSource.BIRTHDAY:
-			return 'Birthday';
-		case TransactionSource.AUTO:
-			return 'Automated';
+		case TransactionSource.SYSTEM:
+			return 'System';
+		case TransactionSource.ADMIN:
+			return 'Admin';
 		default:
 			return source;
 	}

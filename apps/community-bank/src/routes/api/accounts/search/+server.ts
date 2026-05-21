@@ -8,7 +8,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	}
 
 	const query = url.searchParams.get('q') || '';
-	const accountType = url.searchParams.get('account_type');
 	const status = url.searchParams.get('status');
 
 	// Get all matching accounts
@@ -16,10 +15,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	// Apply filters
 	if (accountType) {
-		accounts = accounts.filter(a => a.account_type === accountType);
 	}
 	if (status) {
-		accounts = accounts.filter(a => a.status === status);
+		accounts = accounts.filter(a => a.is_frozen === (status === 'frozen' ? 1 : 0));
 	}
 
 	// Return results (limit to 50 already in searchAccounts)

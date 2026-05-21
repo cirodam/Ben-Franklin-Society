@@ -51,12 +51,11 @@
 					{#if fromAccount}
 						<div class="selected-account">
 							<div>
-								<strong>@{fromAccount.handle_cache}</strong> — {fromAccount.name}
-								<span class="badge badge--{fromAccount.account_type}">{fromAccount.account_type}</span>
+								<strong>{fromAccount.name}</strong> — {fromAccount.name}
 							</div>
 							<button type="button" class="btn-sm" onclick={() => fromAccount = null}>Change</button>
 						</div>
-						<input type="hidden" name="from_handle" value={fromAccount.handle_cache} />
+						<input type="hidden" name="from_handle" value={fromAccount.name} />
 					{:else if showFromFinder}
 						<AccountFinder onselect={(acc) => { fromAccount = acc; showFromFinder = false; }} showFilters={false} autoFocus={true} />
 						<button type="button" class="btn-text" onclick={() => showFromFinder = false}>
@@ -86,12 +85,11 @@
 					{#if toAccount}
 						<div class="selected-account">
 							<div>
-								<strong>@{toAccount.handle_cache}</strong> — {toAccount.name}
-								<span class="badge badge--{toAccount.account_type}">{toAccount.account_type}</span>
+								<strong>{toAccount.name}</strong> — {toAccount.name}
 							</div>
 							<button type="button" class="btn-sm" onclick={() => toAccount = null}>Change</button>
 						</div>
-						<input type="hidden" name="to_handle" value={toAccount.handle_cache} />
+						<input type="hidden" name="to_handle" value={toAccount.name} />
 					{:else if showToFinder}
 						<AccountFinder onselect={(acc) => { toAccount = acc; showToFinder = false; }} showFilters={false} />
 						<button type="button" class="btn-text" onclick={() => showToFinder = false}>

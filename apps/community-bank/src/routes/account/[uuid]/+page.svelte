@@ -32,10 +32,10 @@
 	</div>
 
 	<!-- Account Summary Card -->
-	<Card class="summary-card {account.status === 'frozen' ? 'summary-card--frozen' : ''}">
+	<Card class="summary-card {account.is_frozen === 1 ? 'summary-card--frozen' : ''}">
 		<div class="summary-header">
 			<div class="summary-label">Current Balance</div>
-			{#if account.status === 'frozen'}
+			{#if account.is_frozen === 1}
 				<div class="status-badge frozen">Frozen</div>
 			{:else}
 				<div class="status-badge active">Active</div>
@@ -45,14 +45,12 @@
 			{fmt(account.balance)} ƒ
 		</div>
 		<div class="summary-meta">
-			<span class="meta-item">@{account.handle_cache}</span>
-			<span class="meta-separator">·</span>
-			<span class="meta-item">{account.account_type}</span>
+			<span class="meta-item">{account.uuid.slice(0, 8)}</span>
 		</div>
 	</Card>
 
 	<!-- Action Buttons -->
-	{#if account.status === 'active'}
+	{#if account.is_frozen === 0}
 		<div class="action-buttons">
 			<Button href="/send?from={account.uuid}">Send Franks</Button>
 			{#if allAccounts.length > 1}

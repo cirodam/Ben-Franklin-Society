@@ -8,7 +8,7 @@ import { TransactionType, TransactionSource } from '$lib/server/transaction-type
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session!;
 	const accounts = getAccountsForContext(session).filter(
-		(a) => a.status === 'active'
+		(a) => a.is_frozen === 0
 	);
 	
 	// Require at least 2 accounts for internal transfers
@@ -55,10 +55,10 @@ export const actions: Actions = {
 		if (toAccount.owner_uuid !== session.acting_as_uuid)
 			return fail(403, { error: 'Destination account not yours.' });
 
-		if (fromAccount.status === 'frozen')
+		if (fromAccount.is_frozen === 1)
 			return fail(403, { error: 'Source account is frozen.' });
 
-		if (toAccount.status === 'frozen')
+		if (toAccount.is_frozen === 1)
 			return fail(403, { error: 'Destination account is frozen.' });
 
 		if (from_uuid === to_uuid)

@@ -15,7 +15,7 @@
 		<a href="/admin" class="back-link">← Accounts</a>
 		<h1>
 			{account.name}
-			<span class="handle">@{account.handle_cache}</span>
+			<span class="handle">{account.uuid.slice(0, 13)}</span>
 		</h1>
 		<div class="principal">{principalLabel}</div>
 	</div>
@@ -35,10 +35,10 @@
 		</div>
 		<div class="stat-card">
 			<div class="stat-card__label">Status</div>
-			<div class="stat-card__value">{account.status}</div>
+			<div class="stat-card__value">{account.is_frozen === 1 ? 'Frozen' : 'Active'}</div>
 		</div>
 		<div class="freeze-actions">
-			{#if account.status === 'active'}
+			{#if account.is_frozen === 0}
 				<form method="POST" action="?/freeze" use:enhance>
 					<Button type="submit" variant="danger">Freeze Account</Button>
 				</form>

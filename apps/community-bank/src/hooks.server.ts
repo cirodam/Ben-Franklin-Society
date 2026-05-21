@@ -1,7 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import { getOidcClient } from '$lib/server/oidc.js';
-import { updateHandleCache } from '$lib/server/accounts.js';
 import { isOidcConfigured } from '$lib/server/config.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -23,8 +22,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (session) {
 			console.log('[community-bank/hooks] Valid session for user:', session.handle);
 			event.locals.session = session;
-			// Keep handle_cache fresh for any accounts this principal holds
-			updateHandleCache(session.acting_as_uuid, session.handle);
 		} else {
 			console.log('[community-bank/hooks] No valid session');
 		}

@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountByHandle, getAccountByUuid } from '$lib/server/accounts.js';
+import { searchAccounts, getAccountByUuid } from '$lib/server/accounts.js';
 import { postTransaction, getSlipsForTellerToday } from '$lib/server/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
 
@@ -31,18 +31,20 @@ export const actions: Actions = {
 		if (from_handle === to_handle)
 			return fail(400, { error: 'From and to handles must be different.' });
 
-		const fromAccount = getAccountByHandle(from_handle);
+		const fromResults = searchAccounts(from_handle, 5);
+		const fromAccount = fromResults[0];
 		if (!fromAccount)
-			return fail(400, { error: `No account found for @${from_handle}.` });
+			return fail(400, { error: `No account found matching "${from_handle}".` });
 
-		const toAccount = getAccountByHandle(to_handle);
+		const toResults = searchAccounts(to_handle, 5);
+		const toAccount = toResults[0];
 		if (!toAccount)
-			return fail(400, { error: `No account found for @${to_handle}.` });
+			return fail(400, { error: `No account found matching "${to_handle}".` });
 
-		if (fromAccount.status === 'frozen')
-			return fail(400, { error: `Account for @${from_handle} is frozen.` });
-		if (toAccount.status === 'frozen')
-			return fail(400, { error: `Account for @${to_handle} is frozen.` });
+		if (fromAccount.is_frozen === 1)
+			return fail(400, { error: `Account for "${fromAccount.name}" is frozen.` });
+		if (toAccount.is_frozen === 1)
+			return fail(400, { error: `Account for "${toAccount.name}" is frozen.` });
 
 		postTransaction({
 			from_uuid: fromAccount.uuid,

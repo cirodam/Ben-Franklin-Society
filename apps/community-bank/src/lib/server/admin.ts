@@ -64,32 +64,16 @@ export function getAdminActionsForTarget(target_uuid: string): AdminActionLog[] 
 export function searchAccounts(q: string): Account[] {
 	if (!q) {
 		return db
-			.prepare(`SELECT * FROM account ORDER BY handle_cache, name LIMIT 200`)
+			.prepare(`SELECT * FROM account ORDER BY name LIMIT 200`)
 			.all() as Account[];
 	}
 	const like = `%${q}%`;
 	return db
 		.prepare(
 			`SELECT * FROM account
-       WHERE handle_cache LIKE ? OR name LIKE ?
-       ORDER BY handle_cache, name
+       WHERE name LIKE ? OR uuid LIKE ?
+       ORDER BY name
        LIMIT 200`
 		)
 		.all(like, like) as Account[];
 }
-
-// ---------------------------------------------------------------------------
-// Grouped transfers — re-export from dedicated module
-// ---------------------------------------------------------------------------
-
-export {
-	type GroupedTransfer,
-	type EnrichedGroupedTransfer,
-	type TransferMode,
-	type TargetFilter,
-	createGroupedTransfer,
-	getAllGroupedTransfers,
-	pauseGroupedTransfer,
-	unpauseGroupedTransfer,
-	cancelGroupedTransfer,
-} from './grouped-transfers.js';

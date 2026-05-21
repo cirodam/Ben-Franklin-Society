@@ -75,11 +75,10 @@ export const actions: Actions = {
 		setInitialCommunityConfig('society_longitude', '0.0', 'Decimal longitude of the society\'s primary location');
 		setInitialCommunityConfig('federation_radius_km', '50', 'Default radius in kilometers for browsing neighboring societies');
 
-		// Seed the four system associations and add the founding member
+		// Seed the system associations and add the founding member
 		const systemAssociations = [
 			{ handle: 'society',             name: 'The Society',            type: 'society',              abbreviation: 'SOC'  },
 			{ handle: 'general-assembly',    name: 'General Assembly',       type: 'general_assembly',     abbreviation: 'GA'   },
-			{ handle: 'central-bank',        name: 'Central Bank',           type: 'central_bank',         abbreviation: 'CB'   },
 			{ handle: 'treasury',            name: 'Treasury',               type: 'association',          abbreviation: 'TRES' },
 			{ handle: 'social-insurance',    name: 'Social Insurance Fund',  type: 'social_insurance_fund', abbreviation: 'SIF' },
 			{ handle: 'community-bank',      name: 'Community Bank Association', type: 'service',         abbreviation: 'CBA', governs_app: 'bank' },
@@ -167,6 +166,7 @@ export const actions: Actions = {
 			 VALUES (?, ?, 'Administrator', 'Bank administrators with full system access', ?)`
 		).run(bankAdminRoleUuid, communityBank.uuid, createdAt);
 		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'bank', 'admin')`).run(bankAdminRoleUuid);
+		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'bank', 'manage_monetary')`).run(bankAdminRoleUuid);
 		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(bankAdminRoleUuid);
 		assignRole(bankAdminRoleUuid, person.uuid);
 
@@ -190,35 +190,45 @@ export const actions: Actions = {
 		db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(marketAdminRoleUuid);
 		assignRole(marketAdminRoleUuid, person.uuid);
 
-		// Seed Food Service with ICS structure
-		const foodService = getAssociationByHandle('food-service')!;
-		
-		// Create organizational sections for Food Service
-		const supplySection = randomUUID();
-		const processingSection = randomUUID();
-		const distributionSection = randomUUID();
-		const qualitySection = randomUUID();
-		
-		db.prepare(
-			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
-		).run(supplySection, foodService.uuid, null, 'Supply', 'Procure and manage food supplies, storage, and inventory. Coordinate with Agricultural Service and Marketplace for sourcing.', createdAt);
-		
-		db.prepare(
-			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
-		).run(processingSection, foodService.uuid, null, 'Processing', 'Transform raw ingredients through communal kitchens, food preservation, and meal preparation. Maintain food safety standards.', createdAt);
-		
-		db.prepare(
-			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
-		).run(distributionSection, foodService.uuid, null, 'Distribution', 'Manage meal service, delivery routes, and emergency food provisions. Ensure equitable access to food for all households.', createdAt);
-		
-		db.prepare(
-			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
-		).run(qualitySection, foodService.uuid, null, 'Quality', 'Manage food safety inspections, nutrition standards, and compliance. Train staff on safety protocols.', createdAt);
-		
+	const treasuryAssoc = getAssociationByHandle('treasury')!;
+	const treasurerRoleUuid = randomUUID();
+	db.prepare(
+		`INSERT INTO role (uuid, association_uuid, title, description, created_at)
+		 VALUES (?, ?, 'Treasurer', 'Treasury officials who manage demurrage collection and public funds', ?)`
+	).run(treasurerRoleUuid, treasuryAssoc.uuid, createdAt);
+	db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'bank', 'collect_demurrage')`).run(treasurerRoleUuid);
+	db.prepare(`INSERT INTO role_permission (role_uuid, app, permission) VALUES (?, 'governance', 'act_as')`).run(treasurerRoleUuid);
+	assignRole(treasurerRoleUuid, person.uuid);
+
+	// Seed Food Service with ICS structure
+	const foodService = getAssociationByHandle('food-service')!;
+	
+	// Create organizational sections for Food Service
+	const supplySection = randomUUID();
+	const processingSection = randomUUID();
+	const distributionSection = randomUUID();
+	const qualitySection = randomUUID();
+	
+	db.prepare(
+		`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`
+	).run(supplySection, foodService.uuid, null, 'Supply', 'Procure and manage food supplies, storage, and inventory. Coordinate with Agricultural Service and Marketplace for sourcing.', createdAt);
+	
+	db.prepare(
+		`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`
+	).run(processingSection, foodService.uuid, null, 'Processing', 'Transform raw ingredients through communal kitchens, food preservation, and meal preparation. Maintain food safety standards.', createdAt);
+	
+	db.prepare(
+		`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`
+	).run(distributionSection, foodService.uuid, null, 'Distribution', 'Manage meal service, delivery routes, and emergency food provisions. Ensure equitable access to food for all households.', createdAt);
+	
+	db.prepare(
+		`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`
+	).run(qualitySection, foodService.uuid, null, 'Quality', 'Manage food safety inspections, nutrition standards, and compliance. Train staff on safety protocols.', createdAt);
+	
 		// Food Officer (Level 1 - top leadership)
 		const foodOfficerUuid = randomUUID();
 		db.prepare(
@@ -365,67 +375,6 @@ export const actions: Actions = {
 			branchOfficerUuid,
 			'Processes member transactions including deposits, withdrawals, and account inquiries. Maintains accurate cash drawer. Provides courteous service to members.',
 			1800,
-			createdAt
-		);
-
-		// Seed Central Bank with organizational structure
-		const centralBank = getAssociationByHandle('central-bank')!;
-		
-		// Create organizational sections for Central Bank
-		const economicsSection = randomUUID();
-		const demographicsSection = randomUUID();
-		db.prepare(
-			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
-		).run(economicsSection, centralBank.uuid, null, 'Economics', 'Manage monetary policy analysis, currency operations, and financial stability monitoring. Track economic indicators and recommend policy adjustments.', createdAt);
-		db.prepare(
-			`INSERT INTO org_section (uuid, association_uuid, parent_section_uuid, name, description, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?)`
-		).run(demographicsSection, centralBank.uuid, null, 'Demographics', 'Manage population data collection and analysis. Track births, deaths, migrations, and household formation. Provide demographic forecasts for planning.', createdAt);
-		
-		// Central Bank Officer (Level 1 - top leadership)
-		const centralBankOfficerUuid = randomUUID();
-		db.prepare(
-			`INSERT INTO role (uuid, association_uuid, section_uuid, title, reports_to_role_uuid, description, compensation_franks, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			centralBankOfficerUuid,
-			centralBank.uuid,
-			null,
-			'Central Bank Officer',
-			null,
-			'Chief executive of Central Bank. Sets monetary policy, manages currency issuance and demurrage, oversees economic planning. Reports to General Assembly. Coordinates Economics and Demographics sections.',
-			3200,
-			createdAt
-		);
-
-		// Economics Section Chief (Level 2)
-		db.prepare(
-			`INSERT INTO role (uuid, association_uuid, section_uuid, title, reports_to_role_uuid, description, compensation_franks, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			randomUUID(),
-			centralBank.uuid,
-			economicsSection,
-			'Economics Section Chief',
-			centralBankOfficerUuid,
-			'Manages monetary policy analysis, currency operations, and financial stability monitoring. Tracks inflation, employment, and economic indicators. Recommends policy adjustments.',
-			2400,
-			createdAt
-		);
-
-		// Demographics Section Chief (Level 2)
-		db.prepare(
-			`INSERT INTO role (uuid, association_uuid, section_uuid, title, reports_to_role_uuid, description, compensation_franks, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			randomUUID(),
-			centralBank.uuid,
-			demographicsSection,
-			'Demographics Section Chief',
-			centralBankOfficerUuid,
-			'Manages population data collection and analysis. Tracks births, deaths, migrations, household formation. Provides demographic forecasts for economic planning and resource allocation.',
-			2400,
 			createdAt
 		);
 

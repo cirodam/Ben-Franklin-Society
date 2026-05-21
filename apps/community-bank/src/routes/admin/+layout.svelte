@@ -9,8 +9,8 @@
 		<div class="admin-header__brand">Bank Administration</div>
 		<nav class="admin-header__nav">
 			<a href="/admin" class="admin-nav-link">Accounts</a>
-			<a href="/admin/grouped-transfers" class="admin-nav-link">Grouped Transfers</a>
-			<a href="/admin/cb-operations" class="admin-nav-link">CB Operations</a>
+			<a href="/admin/monetary" class="admin-nav-link">Monetary Policy</a>
+			<a href="/admin/demurrage" class="admin-nav-link">Demurrage</a>
 			<a href="/" class="admin-nav-link admin-nav-link--exit">← Member View</a>
 		</nav>
 	</header>

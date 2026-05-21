@@ -51,10 +51,10 @@
 	<div class="account-grid">
 		{#each accounts as acct}
 			<a href="/account/{acct.uuid}" class="account-link">
-				<Card class="account-card {acct.status === 'frozen' ? 'account-card--frozen' : ''}">
+				<Card class="account-card {acct.is_frozen === 1 ? 'account-card--frozen' : ''}">
 					<div class="account-card__header">
 						<div class="account-card__name t-label">{acct.name}</div>
-						{#if acct.status === 'frozen'}
+						{#if acct.is_frozen === 1}
 							<div class="account-card__badge frozen">Frozen</div>
 						{/if}
 					</div>

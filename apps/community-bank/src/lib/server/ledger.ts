@@ -10,15 +10,12 @@ export interface Transaction {
 	source: string;
 	slip_serial: string | null;
 	memo: string | null;
-	scheduled_transfer_uuid: string | null;
 	entered_by_uuid: string | null;
 	created_at: string;
 }
 
 export interface EnrichedTransaction extends Transaction {
-	from_handle: string;
 	from_name: string;
-	to_handle: string;
 	to_name: string;
 }
 
@@ -33,7 +30,6 @@ export function postTransaction(opts: {
 	source?: string;
 	slip_serial?: string | null;
 	memo?: string | null;
-	scheduled_transfer_uuid?: string | null;
 	entered_by_uuid?: string | null;
 }): Transaction {
 	if (opts.amount <= 0) throw new Error('Amount must be a positive integer.');
@@ -42,8 +38,8 @@ export function postTransaction(opts: {
 	const now = new Date().toISOString();
 
 	const insert = db.prepare(
-		`INSERT INTO "transaction" (uuid, from_uuid, to_uuid, amount, type, source, slip_serial, memo, scheduled_transfer_uuid, entered_by_uuid, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		`INSERT INTO "transaction" (uuid, from_uuid, to_uuid, amount, type, source, slip_serial, memo, entered_by_uuid, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	);
 	const debit  = db.prepare(`UPDATE account SET balance = balance - ? WHERE uuid = ?`);
 	const credit = db.prepare(`UPDATE account SET balance = balance + ? WHERE uuid = ?`);
@@ -58,7 +54,6 @@ export function postTransaction(opts: {
 			opts.source ?? 'online',
 			opts.slip_serial ?? null,
 			opts.memo ?? null,
-			opts.scheduled_transfer_uuid ?? null,
 			opts.entered_by_uuid ?? null,
 			now
 		);
@@ -88,8 +83,8 @@ export function getTransactionsForAccount(
 	return db
 		.prepare(
 			`SELECT t.*,
-              fa.handle_cache AS from_handle, fa.name AS from_name,
-              ta.handle_cache AS to_handle,   ta.name AS to_name
+              fa.name AS from_name,
+              ta.name AS to_name
        FROM "transaction" t
        JOIN account fa ON fa.uuid = t.from_uuid
        JOIN account ta ON ta.uuid = t.to_uuid
@@ -102,63 +97,18 @@ export function getTransactionsForAccount(
 }
 
 // ---------------------------------------------------------------------------
-// Public ledger stats.
-// ---------------------------------------------------------------------------
-export interface LedgerStats {
-	/** Absolute value of the Central Bank account balance = total supply. */
-	money_supply: number;
-	total_accounts: number;
-	total_issuance: number;
-	total_demurrage: number;
-	accounts_negative: number;
-}
-
-export function getLedgerStats(): LedgerStats {
-	const supplyRow = db
-		.prepare(
-			`SELECT ABS(MIN(balance, 0)) AS supply
-       FROM account
-       WHERE name = 'Central Bank'`
-		)
-		.get() as { supply: number } | undefined;
-
-	const countRow = db
-		.prepare(`SELECT COUNT(*) AS total, SUM(CASE WHEN balance < 0 THEN 1 ELSE 0 END) AS neg FROM account`)
-		.get() as { total: number; neg: number };
-
-	const issuanceRow = db
-		.prepare(`SELECT COALESCE(SUM(amount), 0) AS total FROM "transaction" WHERE type = 'issuance'`)
-		.get() as { total: number };
-
-	const demurrageRow = db
-		.prepare(`SELECT COALESCE(SUM(amount), 0) AS total FROM "transaction" WHERE type = 'demurrage'`)
-		.get() as { total: number };
-
-	return {
-		money_supply:      supplyRow?.supply ?? 0,
-		total_accounts:    countRow.total,
-		total_issuance:    issuanceRow.total,
-		total_demurrage:   demurrageRow.total,
-		accounts_negative: countRow.neg,
-	};
-}
-
-// ---------------------------------------------------------------------------
-// Get transactions for a named account (Treasury / SIF) — for transparency page.
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // Slip transactions entered by this teller today (session log).
 // ---------------------------------------------------------------------------
 export function getSlipsForTellerToday(entered_by_uuid: string): EnrichedTransaction[] {
 	return db
 		.prepare(
 			`SELECT t.*,
-              fa.handle_cache AS from_handle, fa.name AS from_name,
-              ta.handle_cache AS to_handle,   ta.name AS to_name
+              fa.name AS from_name,
+              ta.name AS to_name
        FROM "transaction" t
        JOIN account fa ON fa.uuid = t.from_uuid
        JOIN account ta ON ta.uuid = t.to_uuid
-       WHERE t.source = 'slip'
+       WHERE t.source = 'teller'
          AND t.entered_by_uuid = ?
          AND date(t.created_at) = date('now')
        ORDER BY t.created_at DESC`

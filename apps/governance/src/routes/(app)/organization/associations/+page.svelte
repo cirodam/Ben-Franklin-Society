@@ -53,7 +53,6 @@
 
 	const systemRoute: Record<string, string> = {
 		general_assembly:    '/general-assembly',
-		central_bank:        '/central-bank',
 		social_insurance_fund: '/social-insurance',
 		community_bank:      '/community-bank',
 	};

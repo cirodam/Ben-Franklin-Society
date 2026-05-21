@@ -19,7 +19,7 @@ export function setConfig(key: string, value: string): void {
  * Check if OIDC is fully configured
  */
 export function isOidcConfigured(): boolean {
-	return !!getConfig('oidc_client_secret');
+	return !!getConfig('oidc:client_secret');
 }
 
 /**
@@ -27,10 +27,10 @@ export function isOidcConfigured(): boolean {
  */
 export function getOidcConfig() {
 	return {
-		governanceUrl: getConfig('oidc_governance_url') ?? 'http://localhost:5173',
-		clientId: getConfig('oidc_client_id') ?? 'community-bank',
-		clientSecret: getConfig('oidc_client_secret'),
-		redirectUri: getConfig('oidc_redirect_uri') ?? 'http://localhost:5174/oauth/callback',
+		governanceUrl: getConfig('oidc:governance_url') ?? 'http://localhost:5173',
+		clientId: getConfig('oidc:client_id') ?? 'community-bank',
+		clientSecret: getConfig('oidc:client_secret'),
+		redirectUri: getConfig('oidc:redirect_uri') ?? 'http://localhost:5174/oauth/callback',
 	};
 }
 
@@ -43,8 +43,8 @@ export function setOidcConfig(config: {
 	clientSecret: string;
 	redirectUri: string;
 }): void {
-	setConfig('oidc_governance_url', config.governanceUrl);
-	setConfig('oidc_client_id', config.clientId);
-	setConfig('oidc_client_secret', config.clientSecret);
-	setConfig('oidc_redirect_uri', config.redirectUri);
+	setConfig('oidc:governance_url', config.governanceUrl);
+	setConfig('oidc:client_id', config.clientId);
+	setConfig('oidc:client_secret', config.clientSecret);
+	setConfig('oidc:redirect_uri', config.redirectUri);
 }

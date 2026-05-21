@@ -39,16 +39,14 @@
 
 			<div class="account-list">
 				{#each result.accounts as acct}
-					<div class="account-card {acct.status === 'frozen' ? 'account-card--frozen' : ''}">
-						<div class="account-info">
-							<span class="account-name t-label">{acct.name}</span>
-							<span class="account-balance t-balance" class:negative={acct.balance < 0} class:positive={acct.balance > 0}>
-								{fmt(acct.balance)} ƒ
-							</span>
-						</div>
-						{#if acct.status === 'frozen'}
-							<span class="badge-frozen">Frozen</span>
-						{/if}
+				<div class="account-card {acct.is_frozen === 1 ? 'account-card--frozen' : ''}">
+					<div class="account-info">
+						<span class="account-name t-label">{acct.name}</span>
+						<span class="account-balance t-balance" class:negative={acct.balance < 0} class:positive={acct.balance > 0}>
+							{fmt(acct.balance)} ƒ
+						</span>
+					</div>
+					{#if acct.is_frozen === 1}
 					</div>
 				{/each}
 			</div>

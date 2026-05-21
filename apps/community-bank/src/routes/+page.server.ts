@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 		createAccount({
 			owner_uuid: session.acting_as_uuid,
 			name: 'Primary',
-			handle_cache: session.handle,
+			demurrage_exempt: false
 		});
 		accounts = getAccountsForContext(session);
 	}
@@ -60,8 +60,7 @@ export const actions: Actions = {
 			createAccount({
 				owner_uuid: session.acting_as_uuid,
 				name,
-				handle_cache: session.handle,
-				account_type: 'standard',
+				demurrage_exempt: false
 			});
 
 			return { success: true };

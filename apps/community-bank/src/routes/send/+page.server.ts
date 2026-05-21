@@ -1,6 +1,6 @@
-import { fail } from '@sveltejs/kit';
+	import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountsForContext, getAccountByUuid, getAccountByHandle } from '$lib/server/accounts.js';
+import { getAccountsForContext, getAccountByUuid, searchAccounts } from '$lib/server/accounts.js';
 import { canTransferFrom } from '$lib/server/authorization.js';
 import { postTransaction } from '$lib/server/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
@@ -8,7 +8,7 @@ import { TransactionType, TransactionSource } from '$lib/server/transaction-type
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session!;
 	const accounts = getAccountsForContext(session).filter(
-		(a) => a.status === 'active'
+		(a) => a.is_frozen === 0
 	);
 	const preselect = url.searchParams.get('from') ?? '';
 	return { accounts, preselect };
@@ -39,18 +39,19 @@ export const actions: Actions = {
 		if (!canTransferFrom(session, fromAccount))
 			return fail(403, { error: 'Not authorized to transfer from this account.' });
 		
-		if (fromAccount.status === 'frozen')
+		if (fromAccount.is_frozen === 1)
 			return fail(403, { error: 'That account is frozen.' });
 
-		// Resolve recipient by handle (searches bank accounts only).
-		const toAccount = getAccountByHandle(to_handle);
+		// Resolve recipient by handle (search by name/uuid)
+		const searchResults = searchAccounts(to_handle, 5);
+		const toAccount = searchResults[0];
 		if (!toAccount)
-			return fail(400, { error: `No account found for @${to_handle}.` });
+			return fail(400, { error: `No account found matching "${to_handle}".` });
 
 		if (toAccount.uuid === from_uuid)
 			return fail(400, { error: 'Cannot send to yourself.' });
 
-		if (toAccount.status === 'frozen')
+		if (toAccount.is_frozen === 1)
 			return fail(400, { error: 'Recipient account is frozen.' });
 
 		postTransaction({

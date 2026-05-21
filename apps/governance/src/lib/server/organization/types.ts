@@ -8,7 +8,7 @@ export interface Association {
 	handle: string;
 	name: string;
 	abbreviation: string | null;
-	type: 'society' | 'association' | 'service' | 'college' | 'committee' | 'general_assembly' | 'central_bank' | 'social_insurance_fund' | 'community_bank';
+	type: 'society' | 'association' | 'service' | 'college' | 'committee' | 'general_assembly' | 'social_insurance_fund' | 'community_bank';
 	status: 'active' | 'dissolved';
 	governing_document_slug: string | null;
 	org_chart_slug: string | null;
