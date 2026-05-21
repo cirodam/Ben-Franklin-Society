@@ -50,7 +50,7 @@ export const actions: Actions = {
 				established_by_motion_uuid: establishedByMotionUuid
 			});
 
-			redirect(303, `/colleges/${college.uuid}`);
+			redirect(303, `/organization/colleges/${college.uuid}`);
 		} catch (err: any) {
 			return fail(400, { 
 				error: err.message || 'Failed to create college.',

@@ -62,34 +62,41 @@
 	{:else if transactions.length === 0}
 		<Card><EmptyState title="No transactions yet." /></Card>
 	{:else}
-		<Card class="table-wrap">
-			<table class="table">
-				<thead>
-					<tr>
-						<th>Date</th>
-						<th>Type</th>
-						<th>From</th>
-						<th>To</th>
-						<th class="num">Amount</th>
-						<th>Memo</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each transactions as tx}
-						<tr>
-							<td class="mono">{date(tx.created_at)}</td>
-							<td><span class="type-badge type-badge--{tx.type}">{typeLabel(tx.type)}</span></td>
-							<td class="mono">@{tx.from_handle} · {tx.from_name}</td>
-							<td class="mono">@{tx.to_handle} · {tx.to_name}</td>
-							<td class="num {tx.from_uuid === account.uuid ? 'out' : 'in'}">
-								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)} ƒ
-							</td>
-							<td>{tx.memo ?? ''}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</Card>
+		<div class="transaction-list">
+			{#each transactions as tx}
+				<div class="transaction-item">
+					<div class="transaction-header">
+						<span class="transaction-date t-mono">{date(tx.created_at)}</span>
+						<span class="transaction-type type-badge--{tx.type}">{typeLabel(tx.type)}</span>
+					</div>
+					
+					<div class="transaction-flow">
+						<div class="transaction-party">
+							<span class="party-label">From</span>
+							<span class="party-handle t-mono">@{tx.from_handle}</span>
+							<span class="party-name">{tx.from_name}</span>
+						</div>
+						
+						<div class="transaction-arrow">→</div>
+						
+						<div class="transaction-party">
+							<span class="party-label">To</span>
+							<span class="party-handle t-mono">@{tx.to_handle}</span>
+							<span class="party-name">{tx.to_name}</span>
+						</div>
+					</div>
+					
+					<div class="transaction-footer">
+						<div class="transaction-amount {tx.from_uuid === account.uuid ? 'out' : 'in'}">
+							{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)} ƒ
+						</div>
+						{#if tx.memo}
+							<div class="transaction-memo">{tx.memo}</div>
+						{/if}
+					</div>
+				</div>
+			{/each}
+		</div>
 
 		<div class="pagination">
 			{#if offset > 0}
@@ -103,42 +110,231 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-6); }
+	.page { 
+		display: flex; 
+		flex-direction: column; 
+		gap: var(--space-6);
+		max-width: 800px;
+	}
 
-	.filters { display: flex; flex-direction: column; gap: var(--space-3); }
-	.filter-group { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
-	.filter-label { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; min-width: 56px; }
+	.filters { 
+		display: flex; 
+		flex-direction: column; 
+		gap: var(--space-3); 
+	}
+	
+	.filter-group { 
+		display: flex; 
+		align-items: center; 
+		gap: var(--space-2); 
+		flex-wrap: wrap; 
+	}
+	
+	.filter-label { 
+		font-family: var(--font-sans);
+		font-size: var(--text-xs); 
+		font-weight: 600;
+		color: var(--ink-mid); 
+		text-transform: uppercase; 
+		letter-spacing: 0.08em; 
+		min-width: 64px; 
+	}
 
 	.filter-chip {
+		font-family: var(--font-sans);
 		font-size: var(--text-xs);
-		padding: 2px var(--space-2);
+		font-weight: 500;
+		padding: 0.375rem var(--space-3);
 		border-radius: var(--radius);
-		border: 1px solid var(--color-border);
+		border: 1.5px solid var(--border);
 		text-decoration: none;
-		color: var(--color-text);
-		background: var(--color-surface);
+		color: var(--ink);
+		background: var(--ledger);
+		transition: all 0.15s;
 	}
-	.filter-chip--active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+	
+	.filter-chip:hover {
+		border-color: var(--copper);
+		background: var(--copper-light);
+	}
+	
+	.filter-chip--active { 
+		background: var(--copper); 
+		color: white; 
+		border-color: var(--copper);
+		font-weight: 600;
+	}
 
-	:global(.table-wrap) { overflow-x: auto; }
+	/* Transaction list - receipt style */
+	.transaction-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
 
-	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-	.table th { text-align: left; padding: var(--space-3) var(--space-4); font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); }
-	.table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); vertical-align: top; }
-	.table tr:last-child td { border-bottom: none; }
-
-	.mono { font-family: var(--font-mono); font-size: var(--text-xs); }
-	.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
-	.in  { color: var(--color-success); }
-	.out { color: var(--color-danger); }
-
-	.type-badge {
-		font-size: var(--text-xs);
-		padding: 1px var(--space-2);
+	.transaction-item {
+		background: var(--ledger);
+		border: 1px solid var(--border);
+		border-top: 3px dashed var(--border-strong);
 		border-radius: var(--radius);
-		background: var(--color-bg-subtle);
-		color: var(--color-text-muted);
+		padding: var(--space-5);
+		position: relative;
+		transition: border-color 0.2s, box-shadow 0.2s;
 	}
 
-	.pagination { display: flex; gap: var(--space-3); }
+	.transaction-item:hover {
+		border-color: var(--copper);
+		box-shadow: 0 2px 8px rgba(139, 90, 60, 0.1);
+	}
+
+	/* Subtle ledger lines background */
+	.transaction-item::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background-image: repeating-linear-gradient(
+			transparent,
+			transparent 1.5rem,
+			rgba(139, 90, 60, 0.03) 1.5rem,
+			rgba(139, 90, 60, 0.03) calc(1.5rem + 1px)
+		);
+		pointer-events: none;
+		border-radius: inherit;
+	}
+
+	.transaction-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-4);
+		position: relative;
+		z-index: 1;
+	}
+
+	.transaction-date {
+		font-size: var(--text-xs);
+		color: var(--ink-faint);
+	}
+
+	.transaction-type {
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		padding: 0.25rem var(--space-3);
+		border-radius: var(--radius-sm);
+		background: var(--ledger-lined);
+		color: var(--ink-mid);
+	}
+
+	.type-badge--transfer { background: var(--copper-light); color: var(--copper); }
+	.type-badge--issuance { background: var(--olive-light); color: var(--olive); }
+	.type-badge--payroll { background: var(--olive-light); color: var(--olive); }
+	.type-badge--allowance { background: var(--olive-light); color: var(--olive); }
+	.type-badge--demurrage { background: var(--alert-amber-light); color: var(--alert-amber); }
+	.type-badge--dues { background: var(--alert-amber-light); color: var(--alert-amber); }
+
+	.transaction-flow {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		gap: var(--space-4);
+		align-items: center;
+		margin-bottom: var(--space-4);
+		position: relative;
+		z-index: 1;
+	}
+
+	.transaction-party {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.party-label {
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--ink-faint);
+	}
+
+	.party-handle {
+		font-size: var(--text-sm);
+		color: var(--copper);
+		font-weight: 500;
+	}
+
+	.party-name {
+		font-family: var(--font-serif);
+		font-size: var(--text-sm);
+		color: var(--ink-mid);
+	}
+
+	.transaction-arrow {
+		font-size: var(--text-xl);
+		color: var(--border-strong);
+		text-align: center;
+	}
+
+	.transaction-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: var(--space-4);
+		position: relative;
+		z-index: 1;
+	}
+
+	.transaction-amount {
+		font-family: var(--font-sans);
+		font-size: var(--text-2xl);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.01em;
+	}
+
+	.transaction-amount.in { color: var(--olive); }
+	.transaction-amount.out { color: var(--ink); }
+
+	.transaction-memo {
+		flex: 1;
+		font-family: var(--font-serif);
+		font-size: var(--text-sm);
+		font-style: italic;
+		color: var(--ink-mid);
+		padding-left: var(--space-4);
+		border-left: 2px solid var(--border-faint);
+		line-height: 1.6;
+	}
+
+	.pagination { 
+		display: flex; 
+		gap: var(--space-3); 
+		justify-content: center;
+	}
+
+	@media (max-width: 640px) {
+		.transaction-flow {
+			grid-template-columns: 1fr;
+			gap: var(--space-3);
+		}
+		
+		.transaction-arrow {
+			transform: rotate(90deg);
+		}
+		
+		.transaction-footer {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+		
+		.transaction-memo {
+			padding-left: 0;
+			padding-top: var(--space-2);
+			border-left: none;
+			border-top: 2px solid var(--border-faint);
+		}
+	}
 </style>

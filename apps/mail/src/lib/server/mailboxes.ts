@@ -4,6 +4,7 @@ export interface Mailbox {
 	principal_uuid: string;
 	handle_cache: string;
 	status: 'active' | 'suspended';
+	signature: string | null;
 	created_at: string;
 }
 

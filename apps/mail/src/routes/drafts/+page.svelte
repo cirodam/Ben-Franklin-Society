@@ -15,53 +15,126 @@
 			title="No drafts"
 		/>
 	{:else}
-		<List>
+		<div class="message-list">
 			{#each drafts as draft}
-				<ListItem href="/compose?draft={draft.uuid}">
-					<div class="msg-row-content">
-						<span class="msg-row__subject">{draft.subject || '(no subject)'}</span>
-						<span class="msg-row__date">{formatRelativeDate(draft.created_at)}</span>
+				<a href="/compose?draft={draft.uuid}" class="message-envelope message-envelope--draft">
+					<div class="envelope-content">
+						<span class="envelope-subject">{draft.subject || '(no subject)'}</span>
+						<span class="envelope-date t-meta">{formatRelativeDate(draft.created_at)}</span>
 					</div>
-				</ListItem>
+					<div class="stamp-badge stamp-badge--draft">Draft</div>
+				</a>
 			{/each}
-		</List>
+		</div>
 
 		<div class="pagination">
 			{#if page > 0}
-				<a href="?page={page - 1}" class="btn-inline">← Prev</a>
+				<a href="?page={page - 1}" class="btn-inline">← Newer</a>
 			{/if}
 			{#if hasMore}
-				<a href="?page={page + 1}" class="btn-inline">Next →</a>
+				<a href="?page={page + 1}" class="btn-inline">Older →</a>
 			{/if}
 		</div>
 	{/if}
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-6); }
+	.page {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
 
-	.msg-row-content {
+	.message-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.message-envelope {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-4) var(--space-5);
+		background: var(--envelope-cream);
+		border: 2px solid var(--border-strong);
+		border-radius: var(--radius);
+		text-decoration: none;
+		transition: all 0.2s;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+
+	.message-envelope:hover {
+		border-color: var(--postal-blue);
+		box-shadow: 0 2px 8px rgba(43, 76, 126, 0.12);
+		transform: translateY(-1px);
+	}
+
+	.message-envelope--draft {
+		opacity: 0.85;
+	}
+
+	.envelope-content {
+		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		color: var(--color-text-muted);
-		font-style: italic;
+		gap: var(--space-4);
+		min-width: 0;
 	}
 
-	.msg-row__subject {
+	.envelope-subject {
 		flex: 1;
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: 500;
+		font-style: italic;
+		color: var(--ink-mid);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	.msg-row__date {
-		font-size: var(--text-xs);
+	.envelope-date {
 		white-space: nowrap;
-		margin-left: var(--space-4);
 	}
 
-	.pagination { display: flex; gap: var(--space-4); }
-	.btn-inline { font-size: var(--text-sm); color: var(--color-accent); text-decoration: none; }
-	.btn-inline:hover { text-decoration: underline; }
+	.stamp-badge {
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		padding: 0.25rem var(--space-2);
+		border-radius: var(--radius-sm);
+		border: 1.5px dashed var(--border-strong);
+	}
+
+	.stamp-badge--draft {
+		background: var(--border-faint);
+		color: var(--ink-mid);
+		border-color: var(--border-strong);
+	}
+
+	.pagination {
+		display: flex;
+		gap: var(--space-4);
+		justify-content: center;
+		margin-top: var(--space-2);
+	}
+
+	.btn-inline {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: var(--postal-blue);
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+
+	.btn-inline:hover {
+		color: var(--postal-blue-mid);
+		text-decoration: underline;
+	}
 </style>

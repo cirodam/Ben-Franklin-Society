@@ -26,7 +26,7 @@
 					label="Handle"
 					type="text"
 					required
-					pattern="[a-z0-9_-]{'{2,32}'}"
+					pattern="[a-z0-9_-]{2,32}"
 					placeholder="jane-doe"
 					value={form?.handle ?? ''}
 					hint="2-32 lowercase letters, numbers, hyphens, or underscores"

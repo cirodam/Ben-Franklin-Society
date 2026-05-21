@@ -8,8 +8,12 @@ import {
 	restoreMessage,
 	replyToMessage,
 	insertReport,
+	archiveThread,
+	unarchiveThread,
 } from '$lib/server/messages.js';
 import { getMailbox } from '$lib/server/mailboxes.js';
+import { getAttachments } from '$lib/server/attachments.js';
+import { getLabels, getThreadLabels, addThreadLabel, removeThreadLabel } from '$lib/server/labels.js';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const session  = locals.session!;
@@ -23,7 +27,27 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		}
 	}
 
-	return { messages };
+	const mailbox = getMailbox(session.acting_as_uuid);
+	const signature = mailbox?.signature ? `\n\n-- \n${mailbox.signature}` : '';
+
+	// Get attachments for all messages in thread
+	const messageAttachments: Record<string, Awaited<ReturnType<typeof getAttachments>>> = {};
+	for (const msg of messages) {
+		messageAttachments[msg.uuid] = getAttachments(msg.uuid);
+	}
+
+	// Get labels and thread labels
+	const availableLabels = getLabels(session.acting_as_uuid);
+	const threadLabels = getThreadLabels(params.thread_id, session.acting_as_uuid);
+
+	return { 
+		messages, 
+		actingAs: session.acting_as_uuid,
+		signature,
+		messageAttachments,
+		availableLabels,
+		threadLabels,
+	};
 };
 
 export const actions: Actions = {
@@ -32,6 +56,7 @@ export const actions: Actions = {
 		const data    = await request.formData();
 		const body         = String(data.get('body')         ?? '').trim();
 		const reply_to_id  = String(data.get('reply_to_id') ?? '').trim();
+		const content_type = String(data.get('content_type') ?? 'text/plain') as 'text/plain' | 'text/markdown';
 
 		if (!body)        return fail(400, { reply_error: 'Reply cannot be empty.' });
 		if (!reply_to_id) return fail(400, { reply_error: 'Missing reply target.' });
@@ -77,6 +102,7 @@ export const actions: Actions = {
 			subject,
 			body,
 			recipients,
+			content_type,
 		});
 
 		return { replied: true };
@@ -122,5 +148,39 @@ export const actions: Actions = {
 
 		insertReport(message_uuid, session.acting_as_uuid, reason);
 		return { reported: true, reported_uuid: message_uuid };
+	},
+
+	archive: async ({ locals, params }) => {
+		const session = locals.session!;
+		archiveThread(params.thread_id, session.acting_as_uuid);
+		return { archived: true };
+	},
+
+	unarchive: async ({ locals, params }) => {
+		const session = locals.session!;
+		unarchiveThread(params.thread_id, session.acting_as_uuid);
+		return { unarchived: true };
+	},
+
+	add_label: async ({ locals, params, request }) => {
+		const session = locals.session!;
+		const data = await request.formData();
+		const label_uuid = String(data.get('label_uuid') ?? '').trim();
+
+		if (!label_uuid) return fail(400, { error: 'Label UUID required' });
+
+		addThreadLabel(params.thread_id, label_uuid, session.acting_as_uuid);
+		return { success: true };
+	},
+
+	remove_label: async ({ locals, params, request }) => {
+		const session = locals.session!;
+		const data = await request.formData();
+		const label_uuid = String(data.get('label_uuid') ?? '').trim();
+
+		if (!label_uuid) return fail(400, { error: 'Label UUID required' });
+
+		removeThreadLabel(params.thread_id, label_uuid, session.acting_as_uuid);
+		return { success: true };
 	},
 };

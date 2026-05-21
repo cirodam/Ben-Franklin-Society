@@ -46,7 +46,7 @@
 					name="handle"
 					type="text"
 					required
-					pattern="[a-z0-9_-]{'{2,64}'}"
+					pattern="[a-z0-9_-]{2,64}"
 					placeholder="manufacturing-service"
 					value={form?.handle ?? ''}
 					hint="2-64 lowercase letters, numbers, hyphens, or underscores. Used in URLs."

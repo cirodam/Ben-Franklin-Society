@@ -16,17 +16,18 @@
 	<div class="account-grid">
 		{#each accounts as acct}
 			<Card class="account-card {acct.status === 'frozen' ? 'account-card--frozen' : ''}">
-				<div class="account-card__name">{acct.name}</div>
-				<div class="account-card__balance" class:negative={acct.balance < 0}>
+				<div class="account-card__name t-label">{acct.name}</div>
+				<div class="account-card__balance t-balance" class:negative={acct.balance < 0} class:positive={acct.balance > 0}>
 					{fmt(acct.balance)} ƒ
 				</div>
 				{#if acct.status === 'frozen'}
 					<div class="account-card__badge frozen">Frozen</div>
 				{/if}
 				<div class="account-card__actions">
-					<a href="/history?account={acct.uuid}" class="btn-inline">History</a>
+					<a href="/history?account={acct.uuid}" class="btn-inline">View History</a>
 					{#if acct.status === 'active'}
-						<a href="/send?from={acct.uuid}" class="btn-inline">Send</a>
+						<span class="separator">·</span>
+						<a href="/send?from={acct.uuid}" class="btn-inline">Send Franks</a>
 					{/if}
 				</div>
 			</Card>
@@ -45,61 +46,85 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
-		max-width: 480px;
+		max-width: 520px;
 	}
 
-	.account-card--frozen {
-		border-color: var(--color-warn);
-		opacity: 0.8;
+	:global(.account-card) {
+		transition: border-color 0.2s, box-shadow 0.2s;
+	}
+
+	:global(.account-card:hover) {
+		border-color: var(--copper);
+		box-shadow: 0 2px 8px rgba(139, 90, 60, 0.1);
+	}
+
+	.account-card--frozen :global(.card) {
+		border-color: var(--color-danger);
+		background: var(--color-danger-subtle);
 	}
 
 	.account-card__name {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
 		margin-bottom: var(--space-2);
 	}
 
 	.account-card__balance {
-		font-size: 2.25rem;
-		font-weight: var(--weight-bold);
-		font-variant-numeric: tabular-nums;
-		letter-spacing: -0.01em;
+		font-size: var(--text-3xl);
+		margin-bottom: var(--space-3);
+		color: var(--ink);
 	}
+	
 	.account-card__balance.negative {
 		color: var(--color-danger);
+	}
+	
+	.account-card__balance.positive {
+		color: var(--olive);
 	}
 
 	.account-card__badge {
 		display: inline-block;
 		margin-top: var(--space-2);
 		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
+		font-weight: var(--weight-semibold);
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		padding: 2px var(--space-2);
+		letter-spacing: 0.08em;
+		padding: 0.25rem var(--space-3);
 		border-radius: var(--radius);
 	}
+	
 	.account-card__badge.frozen {
-		background: var(--color-warn-subtle);
-		color: var(--color-warn);
+		background: var(--color-danger);
+		color: white;
+		border: 1.5px solid var(--color-danger);
 	}
 
 	.account-card__actions {
-		margin-top: var(--space-4);
+		margin-top: var(--space-5);
 		display: flex;
-		gap: var(--space-3);
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.separator {
+		color: var(--color-text-subtle);
+		user-select: none;
 	}
 
 	.btn-inline {
+		font-family: var(--font-sans);
 		font-size: var(--text-sm);
+		font-weight: 500;
 		color: var(--color-accent);
 		text-decoration: none;
 		background: none;
 		border: none;
 		cursor: pointer;
 		padding: 0;
+		transition: color 0.2s;
 	}
-	.btn-inline:hover { text-decoration: underline; }
+	
+	.btn-inline:hover {
+		color: var(--color-accent-hover);
+		text-decoration: underline;
+	}
 </style>

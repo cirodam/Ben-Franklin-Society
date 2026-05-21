@@ -62,7 +62,7 @@
 	{/snippet}
 
 	{#snippet footer()}
-		<div class="motto">The Work Shall Not Be Lost</div>
+		<div class="motto">Human Flourishing Is The Point</div>
 	{/snippet}
 
 	{@render children()}

@@ -34,7 +34,6 @@ export const load: PageServerLoad = async ({ params }) => {
 			uuid,
 			title,
 			body,
-			color,
 			created_at,
 			(SELECT COUNT(*) FROM bulletin_comment WHERE post_uuid = bulletin_post.uuid AND deleted_at IS NULL) as comment_count
 		FROM bulletin_post

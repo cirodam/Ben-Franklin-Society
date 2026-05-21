@@ -1,0 +1,103 @@
+/* Epistle - Refined Postal Correspondence Theme */
+
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+	/* Refined Postal Blue palette */
+	--postal-blue: #3d5a80;
+	--postal-blue-dark: #2a4263;
+	--postal-blue-mid: #5b7fa8;
+	--postal-blue-light: #eef3f8;
+	
+	/* Rich ink colors */
+	--ink-navy: #1a1f2e;
+	--ink-charcoal: #374151;
+	--ink-slate: #64748b;
+	--ink-gray: #94a3b8;
+	--ink-faint: #cbd5e1;
+	
+	/* Semantic colors */
+	--wax-red: #be123c;
+	--wax-red-light: #fef2f3;
+	
+	--stamp-green: #15803d;
+	--stamp-green-light: #f0fdf4;
+	
+	/* Refined surfaces */
+	--letter-paper: #fefdfb;
+	--parchment: #faf9f7;
+	--envelope-cream: #f5f3ef;
+	--airmail-stripe: #f8fafc;
+	
+	/* Borders with more subtlety */
+	--border: #e2e8f0;
+	--border-strong: #cbd5e1;
+	--border-faint: #f1f5f9;
+	
+	/* Professional typography */
+	--font-serif: 'Spectral', 'Georgia', 'Times New Roman', serif;
+	--font-sans: 'DM Sans', 'Inter', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', 'Consolas', monospace;
+	
+	/* Map to shared component tokens */
+	--color-accent: var(--postal-blue);
+	--color-accent-subtle: var(--postal-blue-light);
+	--color-surface: var(--envelope-cream);
+	--color-bg: var(--letter-paper);
+	--color-text: var(--ink-navy);
+	--color-text-muted: var(--ink-gray);
+	--color-success: var(--stamp-green);
+	--color-success-subtle: var(--stamp-green-light);
+	--color-danger: var(--wax-red);
+	--color-danger-subtle: var(--wax-red-light);
+	--color-border: var(--border);
+	--color-border-faint: var(--border-faint);
+}
+
+/* Typography utility classes */
+.t-letter {
+	font-family: var(--font-serif);
+	font-size: var(--text-base);
+	line-height: 1.7;
+	color: var(--ink-navy);
+}
+
+.t-sender {
+	font-family: var(--font-sans);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: var(--ink-navy);
+}
+
+.t-subject {
+	font-family: var(--font-sans);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	color: var(--ink-navy);
+}
+
+.t-meta {
+	font-family: var(--font-sans);
+	font-size: var(--text-xs);
+	color: var(--ink-gray);
+}
+
+.t-address {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	color: var(--postal-blue);
+}
+
+.t-label {
+	font-family: var(--font-sans);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--ink-slate);
+}
+
+/* Global background */
+body {
+	background: var(--letter-paper);
+}

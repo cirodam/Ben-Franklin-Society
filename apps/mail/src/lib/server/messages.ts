@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { db } from './db.js';
 import { lookupPersonByHandle, lookupAssociationByHandle } from './governance-api.js';
+import { ensureMailbox } from './mailboxes.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -12,6 +13,7 @@ export interface Message {
 	from_handle_cache: string;
 	subject: string;
 	body: string;
+	content_type: 'text/plain' | 'text/markdown';
 	thread_id: string;
 	reply_to_id: string | null;
 	origin: string;
@@ -80,6 +82,7 @@ export function getInbox(
        JOIN message orig ON orig.uuid = m.thread_id
        WHERE mr.recipient_principal_uuid = ?
          AND mr.trashed_at IS NULL
+         AND mr.archived_at IS NULL
          AND m.status      = 'sent'
          AND m.deleted_at  IS NULL
        GROUP BY m.thread_id
@@ -247,6 +250,68 @@ export function permanentlyDelete(message_uuid: string, principal_uuid: string):
 }
 
 // ---------------------------------------------------------------------------
+// Archive / unarchive (inbox management)
+// ---------------------------------------------------------------------------
+
+/**
+ * Archive a thread (removes from inbox but keeps for search/archive view).
+ * Archives all messages in the thread for this recipient.
+ */
+export function archiveThread(thread_id: string, principal_uuid: string): void {
+	db.prepare(
+		`UPDATE message_recipient
+     SET archived_at = ?
+     WHERE message_uuid IN (SELECT uuid FROM message WHERE thread_id = ?)
+       AND recipient_principal_uuid = ?
+       AND archived_at IS NULL`
+	).run(new Date().toISOString(), thread_id, principal_uuid);
+}
+
+/**
+ * Unarchive a thread (return to inbox).
+ */
+export function unarchiveThread(thread_id: string, principal_uuid: string): void {
+	db.prepare(
+		`UPDATE message_recipient
+     SET archived_at = NULL
+     WHERE message_uuid IN (SELECT uuid FROM message WHERE thread_id = ?)
+       AND recipient_principal_uuid = ?`
+	).run(thread_id, principal_uuid);
+}
+
+/**
+ * Get archived threads (like inbox but filtered to archived).
+ */
+export function getArchived(
+	principal_uuid: string,
+	opts: { limit?: number; offset?: number } = {}
+): ThreadSummary[] {
+	const limit  = opts.limit  ?? PAGE_SIZE + 1;
+	const offset = opts.offset ?? 0;
+	return db
+		.prepare(
+			`SELECT
+         m.thread_id,
+         orig.subject,
+         orig.from_handle_cache,
+         MAX(m.sent_at)                                                AS latest_at,
+         SUM(CASE WHEN mr.read_at IS NULL THEN 1 ELSE 0 END)          AS unread_count
+       FROM message_recipient mr
+       JOIN message m    ON m.uuid    = mr.message_uuid
+       JOIN message orig ON orig.uuid = m.thread_id
+       WHERE mr.recipient_principal_uuid = ?
+         AND mr.archived_at IS NOT NULL
+         AND mr.trashed_at IS NULL
+         AND m.status      = 'sent'
+         AND m.deleted_at  IS NULL
+       GROUP BY m.thread_id
+       ORDER BY MAX(mr.archived_at) DESC
+       LIMIT ? OFFSET ?`
+		)
+		.all(principal_uuid, limit, offset) as ThreadSummary[];
+}
+
+// ---------------------------------------------------------------------------
 // Unread count (for sidebar badge)
 // ---------------------------------------------------------------------------
 
@@ -278,6 +343,9 @@ export async function resolveHandle(
 
 	const person = await lookupPersonByHandle(clean);
 	if (person && person.status !== 'revoked') {
+		// Auto-provision mailbox if it doesn't exist
+		ensureMailbox(person.uuid, person.handle);
+		
 		const box = db
 			.prepare(`SELECT 1 FROM mailbox WHERE principal_uuid = ? AND status = 'active'`)
 			.get(person.uuid);
@@ -286,6 +354,9 @@ export async function resolveHandle(
 
 	const assoc = await lookupAssociationByHandle(clean);
 	if (assoc && assoc.status !== 'dissolved') {
+		// Auto-provision mailbox if it doesn't exist
+		ensureMailbox(assoc.uuid, assoc.handle);
+		
 		const box = db
 			.prepare(`SELECT 1 FROM mailbox WHERE principal_uuid = ? AND status = 'active'`)
 			.get(assoc.uuid);
@@ -305,21 +376,25 @@ export function saveDraft(opts: {
 	from_handle_cache: string;
 	to: Array<{ principal_uuid: string; handle_cache: string }>;
 	cc?: Array<{ principal_uuid: string; handle_cache: string }>;
+	bcc?: Array<{ principal_uuid: string; handle_cache: string }>;
 	subject: string;
 	body: string;
+	content_type?: 'text/plain' | 'text/markdown';
 }): Message {
 	const now = new Date().toISOString();
+	const content_type = opts.content_type ?? 'text/plain';
 
 	if (opts.draft_uuid) {
 		db.transaction(() => {
 			db.prepare(
 				`UPDATE message
-         SET from_handle_cache = ?, subject = ?, body = ?, created_at = ?
+         SET from_handle_cache = ?, subject = ?, body = ?, content_type = ?, created_at = ?
          WHERE uuid = ? AND from_principal_uuid = ? AND status = 'draft'`
 			).run(
 				opts.from_handle_cache,
 				opts.subject,
 				opts.body,
+				content_type,
 				now,
 				opts.draft_uuid!,
 				opts.from_principal_uuid
@@ -327,6 +402,7 @@ export function saveDraft(opts: {
 			db.prepare('DELETE FROM message_recipient WHERE message_uuid = ?').run(opts.draft_uuid!);
 			insertRecipients(opts.draft_uuid!, opts.to, 'to');
 			insertRecipients(opts.draft_uuid!, opts.cc ?? [], 'cc');
+			insertRecipients(opts.draft_uuid!, opts.bcc ?? [], 'bcc');
 		})();
 		return db.prepare('SELECT * FROM message WHERE uuid = ?').get(opts.draft_uuid!) as Message;
 	}
@@ -335,20 +411,22 @@ export function saveDraft(opts: {
 	db.transaction(() => {
 		db.prepare(
 			`INSERT INTO message
-         (uuid, from_principal_uuid, from_handle_cache, subject, body,
+         (uuid, from_principal_uuid, from_handle_cache, subject, body, content_type,
           thread_id, reply_to_id, origin, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, 'local', 'draft', ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'local', 'draft', ?)`
 		).run(
 			uuid,
 			opts.from_principal_uuid,
 			opts.from_handle_cache,
 			opts.subject,
 			opts.body,
+			content_type,
 			uuid,
 			now
 		);
 		insertRecipients(uuid, opts.to, 'to');
 		insertRecipients(uuid, opts.cc ?? [], 'cc');
+		insertRecipients(uuid, opts.bcc ?? [], 'bcc');
 	})();
 	return db.prepare('SELECT * FROM message WHERE uuid = ?').get(uuid) as Message;
 }
@@ -363,22 +441,26 @@ export function sendMessage(opts: {
 	from_handle_cache: string;
 	to: Array<{ principal_uuid: string; handle_cache: string }>;
 	cc?: Array<{ principal_uuid: string; handle_cache: string }>;
+	bcc?: Array<{ principal_uuid: string; handle_cache: string }>;
 	subject: string;
 	body: string;
+	content_type?: 'text/plain' | 'text/markdown';
 }): Message {
 	const now  = new Date().toISOString();
 	const uuid = opts.draft_uuid ?? randomUUID();
+	const content_type = opts.content_type ?? 'text/plain';
 
 	db.transaction(() => {
 		if (opts.draft_uuid) {
 			db.prepare(
 				`UPDATE message
-         SET from_handle_cache = ?, subject = ?, body = ?, status = 'sent', sent_at = ?
+         SET from_handle_cache = ?, subject = ?, body = ?, content_type = ?, status = 'sent', sent_at = ?
          WHERE uuid = ? AND from_principal_uuid = ? AND status = 'draft'`
 			).run(
 				opts.from_handle_cache,
 				opts.subject,
 				opts.body,
+				content_type,
 				now,
 				uuid,
 				opts.from_principal_uuid
@@ -387,15 +469,16 @@ export function sendMessage(opts: {
 		} else {
 			db.prepare(
 				`INSERT INTO message
-           (uuid, from_principal_uuid, from_handle_cache, subject, body,
+           (uuid, from_principal_uuid, from_handle_cache, subject, body, content_type,
             thread_id, reply_to_id, origin, status, created_at, sent_at)
-         VALUES (?, ?, ?, ?, ?, ?, NULL, 'local', 'sent', ?, ?)`
+         VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'local', 'sent', ?, ?)`
 			).run(
 				uuid,
 				opts.from_principal_uuid,
 				opts.from_handle_cache,
 				opts.subject,
 				opts.body,
+				content_type,
 				uuid,
 				now,
 				now
@@ -403,6 +486,7 @@ export function sendMessage(opts: {
 		}
 		insertRecipients(uuid, opts.to, 'to');
 		insertRecipients(uuid, opts.cc ?? [], 'cc');
+		insertRecipients(uuid, opts.bcc ?? [], 'bcc');
 	})();
 
 	return db.prepare('SELECT * FROM message WHERE uuid = ?').get(uuid) as Message;
@@ -420,28 +504,74 @@ export function replyToMessage(opts: {
 	subject: string;
 	body: string;
 	recipients: Array<{ principal_uuid: string; handle_cache: string }>;
+	content_type?: 'text/plain' | 'text/markdown';
 }): Message {
 	const now  = new Date().toISOString();
 	const uuid = randomUUID();
+	const content_type = opts.content_type ?? 'text/plain';
 
 	db.transaction(() => {
 		db.prepare(
 			`INSERT INTO message
-         (uuid, from_principal_uuid, from_handle_cache, subject, body,
+         (uuid, from_principal_uuid, from_handle_cache, subject, body, content_type,
           thread_id, reply_to_id, origin, status, created_at, sent_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'local', 'sent', ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'local', 'sent', ?, ?)`
 		).run(
 			uuid,
 			opts.from_principal_uuid,
 			opts.from_handle_cache,
 			opts.subject,
 			opts.body,
+			content_type,
 			opts.thread_id,
 			opts.reply_to_id,
 			now,
 			now
 		);
 		insertRecipients(uuid, opts.recipients, 'to');
+	})();
+
+	return db.prepare('SELECT * FROM message WHERE uuid = ?').get(uuid) as Message;
+}
+
+// ---------------------------------------------------------------------------
+// Forward message (creates new thread with forwarded content)
+// ---------------------------------------------------------------------------
+
+export function forwardMessage(opts: {
+	from_principal_uuid: string;
+	from_handle_cache: string;
+	to: Array<{ principal_uuid: string; handle_cache: string }>;
+	cc?: Array<{ principal_uuid: string; handle_cache: string }>;
+	bcc?: Array<{ principal_uuid: string; handle_cache: string }>;
+	subject: string;
+	body: string;
+	content_type?: 'text/plain' | 'text/markdown';
+}): Message {
+	const now  = new Date().toISOString();
+	const uuid = randomUUID();
+	const content_type = opts.content_type ?? 'text/plain';
+
+	db.transaction(() => {
+		db.prepare(
+			`INSERT INTO message
+         (uuid, from_principal_uuid, from_handle_cache, subject, body, content_type,
+          thread_id, reply_to_id, origin, status, created_at, sent_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'local', 'sent', ?, ?)`
+		).run(
+			uuid,
+			opts.from_principal_uuid,
+			opts.from_handle_cache,
+			opts.subject,
+			opts.body,
+			content_type,
+			uuid, // New thread
+			now,
+			now
+		);
+		insertRecipients(uuid, opts.to, 'to');
+		insertRecipients(uuid, opts.cc ?? [], 'cc');
+		insertRecipients(uuid, opts.bcc ?? [], 'bcc');
 	})();
 
 	return db.prepare('SELECT * FROM message WHERE uuid = ?').get(uuid) as Message;

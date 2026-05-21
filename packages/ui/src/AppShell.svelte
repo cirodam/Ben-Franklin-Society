@@ -32,7 +32,7 @@
 	{/if}
 
 	<main class="app-shell__main">
-		<div class="app-shell__content" style="max-width: {mainMaxWidth};">
+		<div class="app-shell__content" style="--max-width: {mainMaxWidth};">
 			{@render children()}
 		</div>
 		{#if footer}
@@ -54,11 +54,12 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
 	}
 
 	.app-shell__content {
 		width: 100%;
+		max-width: var(--max-width, none);
+		margin: 0 auto;
 		padding: var(--space-8);
 		flex: 1;
 	}

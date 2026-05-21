@@ -12,10 +12,10 @@
 </script>
 
 <div class="page">
-	<PageHeader title="BFS Marketplace">
-		<p>Welcome, @{data.session.handle}.</p>
+	<PageHeader title="Marketplace">
+		<p>Welcome to the community market, @{data.session.handle}.</p>
 		<form class="hero__search" method="get" action="/classifieds">
-			<Input type="search" name="keyword" placeholder="Search classifieds…" class="search-input" />
+			<Input type="search" name="keyword" placeholder="Search the market..." class="search-input" />
 			<Button type="submit" variant="primary">Search</Button>
 		</form>
 	</PageHeader>
@@ -44,10 +44,10 @@
 			<div class="listing-grid">
 				{#each recentClassifieds as listing}
 					<a href="/classifieds/{listing.uuid}" class="listing-card">
-						<div class="listing-card__category">{listing.category}</div>
-						<div class="listing-card__title">{listing.title}</div>
-						<div class="listing-card__price">{fmtPrice(listing.price, listing.price_negotiable)}</div>
-						<div class="listing-card__seller">@{listing.seller_handle_cache}</div>
+						<div class="listing-card__category t-tag">{listing.category}</div>
+						<div class="listing-card__title t-product">{listing.title}</div>
+						<div class="listing-card__price t-price">{fmtPrice(listing.price, listing.price_negotiable)}</div>
+						<div class="listing-card__seller t-seller">@{listing.seller_handle_cache}</div>
 					</a>
 				{/each}
 			</div>
@@ -63,12 +63,12 @@
 			<div class="listing-grid">
 				{#each recentServices as listing}
 					<a href="/services/{listing.uuid}" class="listing-card">
-						<div class="listing-card__category">{listing.category}</div>
-						<div class="listing-card__title">{listing.title}</div>
-						<div class="listing-card__price">
+						<div class="listing-card__category t-tag">{listing.category}</div>
+						<div class="listing-card__title t-product">{listing.title}</div>
+						<div class="listing-card__price t-price">
 							{listing.rate === 0 ? 'Negotiable' : `${listing.rate} F/${listing.rate_unit.replace('per_', '')}`}
 						</div>
-						<div class="listing-card__seller">@{listing.provider_handle_cache}</div>
+						<div class="listing-card__seller t-seller">@{listing.provider_handle_cache}</div>
 					</a>
 				{/each}
 			</div>
@@ -77,85 +77,179 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-8); max-width: 860px; }
+	.page {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-8);
+		max-width: 1000px;
+	}
 
-	p  { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+	p {
+		margin: 0;
+		font-family: var(--font-sans);
+		color: var(--slate);
+		font-size: var(--text-sm);
+		line-height: 1.6;
+	}
 
-	.hero__search { display: flex; gap: var(--space-2); max-width: 420px; margin-top: var(--space-3); }
-	:global(.search-input) { flex: 1; }
+	.hero__search {
+		display: flex;
+		gap: var(--space-2);
+		max-width: 480px;
+		margin-top: var(--space-4);
+	}
+	
+	:global(.search-input) {
+		flex: 1;
+	}
 
+	/* Browse category cards */
 	.browse-links {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 		gap: var(--space-4);
 	}
 
 	.browse-card {
-		border: 1px solid var(--color-border);
+		border: 2px solid var(--deep-forest);
 		border-radius: var(--radius-lg);
-		padding: var(--space-5);
+		padding: var(--space-6);
 		text-decoration: none;
-		color: var(--color-text);
-		background: var(--color-surface);
+		color: var(--charcoal);
+		background: var(--canvas);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
+		transition: all 0.2s;
 	}
-	.browse-card:hover { background: var(--color-surface-hover, #f9fafb); }
-	.browse-card__title { font-weight: var(--weight-semibold); font-size: var(--text-base); }
-	.browse-card__desc  { font-size: var(--text-sm); color: var(--color-text-muted); }
+	
+	.browse-card:hover {
+		background: white;
+		border-color: var(--market-green);
+		box-shadow: 0 4px 12px rgba(74, 124, 89, 0.15);
+		transform: translateY(-2px);
+	}
+	
+	.browse-card__title {
+		font-family: var(--font-serif);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--charcoal);
+	}
+	
+	.browse-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--slate);
+		line-height: 1.5;
+	}
 
-	.section { display: flex; flex-direction: column; gap: var(--space-4); }
+	/* Section styling */
+	.section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+	}
 
 	.section-header {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
+		padding-bottom: var(--space-2);
+		border-bottom: 2px solid var(--border);
 	}
-	h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
-	.see-all { font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: none; }
-	.see-all:hover { text-decoration: underline; }
+	
+	h2 {
+		margin: 0;
+		font-family: var(--font-serif);
+		font-size: var(--text-2xl);
+		font-weight: 600;
+		color: var(--charcoal);
+	}
+	
+	.see-all {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: var(--market-green);
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+	
+	.see-all:hover {
+		color: var(--market-green-mid);
+		text-decoration: underline;
+	}
 
+	/* Listing grid - market stall layout */
 	.listing-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: var(--space-3);
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: var(--space-4);
 	}
 
+	/* Market stall product cards */
 	.listing-card {
-		border: 1px solid var(--color-border);
+		position: relative;
+		border: 2.5px solid var(--deep-forest);
 		border-radius: var(--radius-lg);
-		padding: var(--space-4);
+		padding: var(--space-5);
 		text-decoration: none;
-		color: var(--color-text);
-		background: var(--color-surface);
+		background: var(--canvas);
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: var(--space-3);
+		transition: all 0.2s;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 	}
-	.listing-card:hover { background: var(--color-surface-hover, #f9fafb); }
+	
+	.listing-card:hover {
+		background: white;
+		border-color: var(--market-green);
+		box-shadow: 0 6px 16px rgba(74, 124, 89, 0.18);
+		transform: translateY(-3px);
+	}
+
+	/* Price tag hanging effect */
+	.listing-card::before {
+		content: '';
+		position: absolute;
+		top: -8px;
+		right: var(--space-4);
+		width: 2px;
+		height: 12px;
+		background: var(--ash);
+		opacity: 0.3;
+	}
 
 	.listing-card__category {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		color: var(--deep-forest);
 	}
+
 	.listing-card__title {
-		font-weight: var(--weight-medium);
-		font-size: var(--text-sm);
-		white-space: nowrap;
+		font-size: var(--text-base);
+		line-height: 1.3;
+		min-height: 2.6em;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 		overflow: hidden;
-		text-overflow: ellipsis;
 	}
+
 	.listing-card__price {
-		font-size: var(--text-sm);
-		font-weight: var(--weight-semibold);
-		color: var(--color-accent, #2563eb);
+		font-size: var(--text-lg);
+		margin-top: auto;
 	}
+
 	.listing-card__seller {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		font-family: var(--font-mono);
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--border-faint);
+	}
+
+	@media (max-width: 640px) {
+		.browse-links,
+		.listing-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

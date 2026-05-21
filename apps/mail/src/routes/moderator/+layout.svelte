@@ -73,6 +73,5 @@
 	.mod-content {
 		flex: 1;
 		padding: var(--space-8);
-		max-width: 900px;
 	}
 </style>

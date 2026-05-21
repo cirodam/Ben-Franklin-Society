@@ -162,15 +162,6 @@
 		color: var(--color-text);
 	}
 
-	.role-level {
-		padding: var(--space-1) var(--space-2);
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-		font-size: var(--text-xs);
-		font-weight: var(--weight-medium);
-		border-radius: var(--radius);
-	}
-
 	.role-association {
 		margin-bottom: var(--space-2);
 	}
@@ -183,12 +174,6 @@
 
 	.role-association a:hover {
 		text-decoration: underline;
-	}
-
-	.role-division {
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-2);
 	}
 
 	.role-meta {

@@ -26,28 +26,67 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 640px; }
-	.subtitle { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+	.page {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+		max-width: 720px;
+	}
+	
+	.subtitle {
+		margin: 0;
+		font-family: var(--font-sans);
+		color: var(--slate);
+		font-size: var(--text-base);
+		line-height: 1.6;
+	}
 
-	.choices { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-top: var(--space-2); }
+	.choices {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-5);
+		margin-top: var(--space-3);
+	}
 
+	/* Market stall choice cards */
 	.choice-card {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
-		padding: var(--space-6);
-		border: 1px solid var(--color-border);
+		gap: var(--space-3);
+		padding: var(--space-7);
+		border: 2.5px solid var(--deep-forest);
 		border-radius: var(--radius-lg);
 		text-decoration: none;
-		color: var(--color-text);
-		background: var(--color-surface);
-		transition: border-color 0.15s, background 0.15s;
+		color: var(--charcoal);
+		background: var(--canvas);
+		transition: all 0.2s;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 	}
+	
 	.choice-card:hover {
-		border-color: var(--color-accent);
-		background: var(--color-surface-alt, #f8fafc);
+		border-color: var(--market-green);
+		background: white;
+		box-shadow: 0 6px 16px rgba(74, 124, 89, 0.18);
+		transform: translateY(-3px);
 	}
 
-	.choice-title { font-size: var(--text-base); font-weight: var(--weight-semibold); }
-	.choice-desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; }
+	.choice-title {
+		font-family: var(--font-serif);
+		font-size: var(--text-xl);
+		font-weight: 600;
+		color: var(--market-green);
+	}
+	
+	.choice-desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--slate);
+		line-height: 1.7;
+	}
+
+	@media (max-width: 640px) {
+		.choices {
+			grid-template-columns: 1fr;
+		}
+	}
 </style>

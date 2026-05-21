@@ -45,8 +45,9 @@ export const actions: Actions = {
 			});
 		}
 
+		let person;
 		try {
-			const person = await createPerson({
+			person = await createPerson({
 				handle,
 				given_name: givenName,
 				family_name: familyName,
@@ -54,13 +55,13 @@ export const actions: Actions = {
 				phone: phone || undefined,
 				initial_password: password,
 			});
-
-			redirect(303, `/people/${person.uuid}`);
 		} catch (err: any) {
 			return fail(400, { 
-				error: err.message || 'Failed to create person. Handle may already be taken.',
+				error: err.message || 'Failed to create person.',
 				handle, givenName, familyName, dob, phone
 			});
 		}
+
+		throw redirect(303, `/organization/people/${person.uuid}`);
 	}
 };

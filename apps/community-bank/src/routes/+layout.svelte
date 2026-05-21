@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '@bfs/ui/src/theme.css';
+	import '../community-bank-theme.css';
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider } from '@bfs/ui';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
@@ -13,17 +14,20 @@
 	{#snippet sidebar()}
 		<Sidebar>
 			{#snippet brand()}
-				BFS Community Bank
+				<div class="brand-text">
+					<div class="brand-primary">Community Bank</div>
+					<div class="brand-secondary">Ben Franklin Society</div>
+				</div>
 			{/snippet}
 
 			{#snippet nav()}
 				<SidebarLink href="/">My Account</SidebarLink>
-				<SidebarLink href="/history">History</SidebarLink>
+				<SidebarLink href="/history">Transaction History</SidebarLink>
 				<SidebarLink href="/send">Send Franks</SidebarLink>
 
 				{#if isTeller}
 					<SidebarDivider />
-					<SidebarLink href="/teller" class="teller-link">Teller Mode</SidebarLink>
+					<SidebarLink href="/teller" class="teller-link">Teller Desk</SidebarLink>
 				{/if}
 				{#if isAdmin}
 					{#if !isTeller}<SidebarDivider />{/if}
@@ -41,100 +45,115 @@
 		</Sidebar>
 	{/snippet}
 
+	{#snippet footer()}
+		<div class="motto">Human Flourishing Is The Point</div>
+	{/snippet}
+
 	{@render children()}
 </AppShell>
 
 <style>
+	/* Brand styling */
+	.brand-text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+	
+	.brand-primary {
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: var(--text-base);
+		color: var(--copper);
+		letter-spacing: -0.01em;
+	}
+	
+	.brand-secondary {
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--ink-mid);
+	}
+
 	/* Sidebar structure styling */
 	:global(.sidebar) {
-		background: var(--color-surface);
-		border-right-color: var(--color-border);
+		background: var(--ledger);
+		border-right: 1px solid var(--border);
 	}
 
 	:global(.sidebar__brand) {
-		font-weight: var(--weight-semibold);
-		font-size: var(--text-sm);
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
-		color: var(--color-text-muted);
-		border-bottom-color: var(--color-border-faint);
+		border-bottom: 1px solid var(--border-faint);
 	}
 
 	:global(.sidebar__footer) {
-		border-top-color: var(--color-border-faint);
+		border-top: 1px solid var(--border-faint);
 	}
 
 	/* Default sidebar link styling */
 	:global(.sidebar-link) {
+		font-family: var(--font-sans);
 		font-size: var(--text-sm);
-		color: var(--color-text);
+		font-weight: 500;
+		color: var(--ink);
+		transition: background 0.15s, color 0.15s;
 	}
 
 	:global(.sidebar-link:hover) {
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
+		background: var(--copper-light);
+		color: var(--copper);
 	}
+	
 	:global(.sidebar-link--active) {
-		background: var(--color-accent-subtle);
-		color: var(--color-accent);
-		font-weight: var(--weight-medium);
-	}
-	:global(.sidebar-link--accent) {
-		color: var(--color-accent);
-		font-weight: var(--weight-medium);
-	}
-	:global(.sidebar-link--accent:hover) {
-		background: var(--color-accent-subtle);
-	}
-	:global(.sidebar-link--danger) {
-		color: var(--color-text-muted);
-	}
-	:global(.sidebar-link--danger:hover) {
-		background: var(--color-danger-subtle);
-		color: var(--color-danger);
-	}
-
-	:global(.sidebar-link__badge) {
-		background: var(--color-accent);
-		color: #fff;
-		font-size: 11px;
-		font-weight: var(--weight-bold);
-	}
-
-	:global(.sidebar-group__label) {
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--color-text-muted);
+		background: var(--copper-light);
+		color: var(--copper);
+		font-weight: 600;
 	}
 
 	/* Custom teller/admin link styling */
 	:global(.teller-link) {
-		color: #2d4a2d !important;
-		font-weight: var(--weight-medium) !important;
+		color: var(--olive) !important;
+		font-weight: 500 !important;
 	}
-	:global(.teller-link:hover) {
-		background: #d4edda !important;
-		color: #1a2e1a !important;
+	
+	:global(.teller-link:hover),
+	:global(.teller-link.sidebar-link--active) {
+		background: var(--olive-light) !important;
+		color: var(--olive) !important;
 	}
+	
 	:global(.admin-link) {
-		color: #2d2d4a !important;
-		font-weight: var(--weight-medium) !important;
+		color: var(--ink-mid) !important;
+		font-weight: 500 !important;
 	}
-	:global(.admin-link:hover) {
-		background: #e0e0f4 !important;
-		color: #1a1a2e !important;
+	
+	:global(.admin-link:hover),
+	:global(.admin-link.sidebar-link--active) {
+		background: var(--ledger-lined) !important;
+		color: var(--ink) !important;
 	}
 
 	.sidebar-identity {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
+		padding: var(--space-3);
 	}
+	
 	.handle {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
 		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--ink-faint);
+	}
+
+	.motto {
+		font-family: var(--font-serif);
+		font-size: var(--text-sm);
+		letter-spacing: 0.1em;
+		text-align: center;
+		color: var(--copper);
+		text-transform: uppercase;
+		font-weight: 500;
 	}
 </style>
