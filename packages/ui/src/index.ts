@@ -27,5 +27,12 @@ export { default as SidebarLink } from './SidebarLink.svelte';
 export { default as Spinner } from './Spinner.svelte';
 export { default as Textarea } from './Textarea.svelte';
 
+// Document Editors
+export { default as SectionEditor } from './documents/SectionEditor.svelte';
+export { default as ProvisionEditor } from './documents/ProvisionEditor.svelte';
+export { default as ArticleEditor } from './documents/ArticleEditor.svelte';
+export { default as MotionEditor } from './documents/MotionEditor.svelte';
+export { default as GoverningDocEditor } from './documents/GoverningDocEditor.svelte';
+
 // Utilities
 export * from './utils/date.js';

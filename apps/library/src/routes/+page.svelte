@@ -370,9 +370,17 @@
 			<div class="paper stack">
 				<div class="row" style="justify-content: space-between;">
 					<h2 class="t-label">Actions</h2>
-					<button onclick={() => showFolderForm = !showFolderForm} class="btn btn--secondary">
-						{showFolderForm ? 'Cancel' : '+ New Folder'}
-					</button>
+					<div style="display: flex; gap: 0.5rem;">
+						<button onclick={() => goto('/documents/new/motion')} class="btn btn--primary">
+							+ New Motion
+						</button>
+						<button onclick={() => goto('/documents/new/governing')} class="btn btn--primary">
+							+ New Governing Doc
+						</button>
+						<button onclick={() => showFolderForm = !showFolderForm} class="btn btn--secondary">
+							{showFolderForm ? 'Cancel' : '+ New Folder'}
+						</button>
+					</div>
 				</div>
 				
 				{#if showFolderForm}

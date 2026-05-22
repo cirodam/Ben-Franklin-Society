@@ -411,6 +411,10 @@ importers:
         version: 5.9.3
 
   packages/ui:
+    dependencies:
+      '@bfs/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^5.0.0
