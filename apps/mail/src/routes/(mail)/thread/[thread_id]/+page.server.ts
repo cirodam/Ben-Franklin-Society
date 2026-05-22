@@ -5,8 +5,15 @@ import { markRead, trashMessage, restoreMessage, archiveThread, unarchiveThread 
 import { replyToMessage } from '$lib/server/messages/compose.js';
 import { insertReport } from '$lib/server/messages/recipients.js';
 import { getMailbox } from '$lib/server/mailboxes.js';
-import { getAttachments } from '$lib/server/attachments.js';
+import { getAttachments, getAttachment } from '$lib/server/attachments.js';
 import { getLabels, getThreadLabels, addThreadLabel, removeThreadLabel } from '$lib/server/labels.js';
+import { LibraryClient } from '$lib/library-client.js';
+import { env } from '$env/dynamic/private';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+const LIBRARY_URL = env.LIBRARY_SERVICE_URL || 'http://localhost:5177';
+const ATTACHMENT_DIR = process.env.MAIL_ATTACHMENT_DIR || './data/attachments';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const session  = locals.session!;
@@ -175,5 +182,50 @@ export const actions: Actions = {
 
 		removeThreadLabel(params.thread_id, label_uuid, session.acting_as_uuid);
 		return { success: true };
+	},
+
+	save_to_library: async ({ locals, request }) => {
+		const session = locals.session!;
+		const data = await request.formData();
+		const attachment_uuid = String(data.get('attachment_uuid') ?? '').trim();
+
+		if (!attachment_uuid) {
+			return fail(400, { error: 'Attachment UUID required' });
+		}
+
+		try {
+			// Get attachment metadata
+			const attachment = getAttachment(attachment_uuid);
+			if (!attachment) {
+				return fail(404, { error: 'Attachment not found' });
+			}
+
+			// Read attachment file from disk
+			const full_path = join(ATTACHMENT_DIR, attachment.storage_path);
+			const fileBuffer = await readFile(full_path);
+
+			// Get JWT token from cookies
+			const sessionCookie = request.headers.get('cookie') || '';
+			const oidcSessionMatch = sessionCookie.match(/oidc_session=([^;]+)/);
+			if (!oidcSessionMatch) {
+				return fail(401, { error: 'No session cookie' });
+			}
+			const tokens = JSON.parse(decodeURIComponent(oidcSessionMatch[1]));
+
+			// Upload to library
+			const libraryClient = new LibraryClient(tokens.access_token, LIBRARY_URL);
+			const bucketKey = `user-${session.acting_as_uuid}`;
+
+			const libraryFile = await libraryClient.uploadFile(
+				fileBuffer,
+				attachment.filename,
+				bucketKey
+			);
+
+			return { success: true, file_id: libraryFile.id };
+		} catch (err: any) {
+			console.error('[mail/save_to_library] Error:', err);
+			return fail(500, { error: err.message || 'Failed to save to library' });
+		}
 	},
 };

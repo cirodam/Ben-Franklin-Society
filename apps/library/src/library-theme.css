@@ -1,0 +1,177 @@
+/* Library Theme - Based on BFS Governance Theme */
+
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inconsolata:wght@400;700&display=swap');
+
+:root {
+	/* Colors */
+	--paper: #f9f7f4;
+	--ink: #1a1714;
+	--ink-muted: #4a4541;
+	--ink-subtle: #6a6561;
+	--border: rgba(26, 23, 20, 0.15);
+	--border-heavy: rgba(26, 23, 20, 0.3);
+	--accent: #5a7a5a;
+	--gold: #8b6914;
+	--danger: #a23d3d;
+	--tint-gold: #f5edd7;
+	--tint-green: #e8f0e8;
+
+	/* Fonts */
+	--font-display: 'IM Fell English', serif;
+	--font-label: 'IM Fell English SC', serif;
+	--font-prose: 'Libre Baskerville', serif;
+	--font-numeric: 'Inconsolata', monospace;
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	height: 100%;
+	width: 100%;
+}
+
+body {
+	font-family: var(--font-prose);
+	font-size: 16px;
+	line-height: 1.6;
+	color: var(--ink);
+	background: var(--paper);
+}
+
+/* Typography */
+.t-display {
+	font-family: var(--font-display);
+	font-size: 2rem;
+	font-weight: 400;
+	line-height: 1.2;
+	color: var(--ink);
+}
+
+.t-label {
+	font-family: var(--font-label);
+	font-size: 0.875rem;
+	font-weight: 400;
+	letter-spacing: 0.05em;
+	text-transform: lowercase;
+	color: var(--ink-muted);
+}
+
+.t-prose {
+	font-family: var(--font-prose);
+	line-height: 1.6;
+}
+
+.t-numeric {
+	font-family: var(--font-numeric);
+}
+
+/* Buttons */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	font-family: var(--font-label);
+	font-size: 0.875rem;
+	letter-spacing: 0.05em;
+	text-transform: lowercase;
+	border: 1px solid var(--border-heavy);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.btn:hover {
+	background: var(--tint-green);
+	border-color: var(--accent);
+}
+
+.btn--primary {
+	background: var(--accent);
+	color: var(--paper);
+	border-color: var(--accent);
+}
+
+.btn--primary:hover {
+	background: #4a6a4a;
+	border-color: #4a6a4a;
+}
+
+.btn--secondary {
+	background: transparent;
+	border-color: var(--border-heavy);
+}
+
+/* Links */
+a {
+	color: var(--gold);
+	text-decoration: none;
+}
+
+a:hover {
+	background: var(--tint-gold);
+}
+
+/* Form elements */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='url'],
+textarea,
+select {
+	width: 100%;
+	padding: 0.5rem;
+	font-family: var(--font-prose);
+	font-size: 1rem;
+	border: 1px solid var(--border-heavy);
+	background: var(--paper);
+	color: var(--ink);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
+label {
+	display: block;
+	margin-bottom: 0.25rem;
+	font-family: var(--font-label);
+	font-size: 0.875rem;
+	letter-spacing: 0.05em;
+	text-transform: lowercase;
+	color: var(--ink-muted);
+}
+
+/* Utility classes */
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem;
+}
+
+.paper {
+	background: var(--paper);
+	border: 1px solid var(--border);
+	padding: 1.5rem;
+}
+
+.stack {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.row {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}

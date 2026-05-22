@@ -12,9 +12,10 @@ echo "  • Governance      → http://localhost:5173"
 echo "  • Community Bank  → http://localhost:5174"
 echo "  • Mail            → http://localhost:5175"
 echo "  • Marketplace     → http://localhost:5176"
+echo "  • Library         → http://localhost:5177"
 echo ""
 echo "Press Ctrl+C to stop all servers"
 echo ""
 
-# Start all four apps via turbo
-exec turbo dev --filter=@bfs/governance --filter=@bfs/community-bank --filter=@bfs/mail --filter=@bfs/marketplace
+# Start all apps via turbo
+exec turbo dev --filter=@bfs/governance --filter=@bfs/community-bank --filter=@bfs/mail --filter=@bfs/marketplace --filter=@bfs/library

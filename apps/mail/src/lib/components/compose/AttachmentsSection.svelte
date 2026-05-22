@@ -1,10 +1,19 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import LibraryFilePicker from './LibraryFilePicker.svelte';
 
 	interface Attachment {
 		uuid: string;
 		filename: string;
 		size_bytes: number;
+	}
+
+	interface LibraryFile {
+		id: number;
+		filename: string;
+		size_bytes: number;
+		mime_type: string | null;
+		path: string;
 	}
 
 	let {
@@ -14,6 +23,17 @@
 		attachments?: Attachment[];
 		draftUuid?: string | null;
 	} = $props();
+
+	let showLibraryPicker = $state(false);
+	let libraryFileIds = $state<number[]>([]);
+
+	function handleLibraryFileSelect(file: LibraryFile) {
+		libraryFileIds = [...libraryFileIds, file.id];
+	}
+
+	function removeLibraryFile(fileId: number) {
+		libraryFileIds = libraryFileIds.filter((id) => id !== fileId);
+	}
 </script>
 
 <div class="attachments-section">
@@ -51,8 +71,45 @@
 			<span class="file-icon">📎</span>
 			Attach files (max 10MB per file, 25MB total)
 		</label>
+
+		<button
+			type="button"
+			class="library-btn"
+			onclick={() => (showLibraryPicker = true)}
+		>
+			<span class="file-icon">📚</span>
+			Attach from Library
+		</button>
 	</div>
+
+	{#if libraryFileIds.length > 0}
+		<div class="library-attachments">
+			<p class="library-label">From Library:</p>
+			{#each libraryFileIds as fileId}
+				<div class="library-attachment-item">
+					<span class="attachment-icon">📄</span>
+					<span class="attachment-name">Library file #{fileId}</span>
+					<input type="hidden" name="library_file_ids" value={fileId} />
+					<button
+						type="button"
+						class="attachment-delete"
+						onclick={() => removeLibraryFile(fileId)}
+						title="Remove"
+					>
+						×
+					</button>
+				</div>
+			{/each}
+		</div>
+	{/if}
 </div>
+
+{#if showLibraryPicker}
+	<LibraryFilePicker
+		onSelect={handleLibraryFileSelect}
+		onClose={() => (showLibraryPicker = false)}
+	/>
+{/if}
 
 <style>
 	.attachments-section {
@@ -123,6 +180,51 @@
 	}
 
 	.attachment-delete:hover {
+
+	.library-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-4);
+		background: white;
+		border: 1px solid var(--border-base);
+		border-radius: var(--radius-sm);
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--text-primary);
+		cursor: pointer;
+		transition: all 0.2s;
+		margin-left: var(--space-2);
+	}
+
+	.library-btn:hover {
+		border-color: var(--postal-primary);
+		background: var(--paper-light-blue);
+	}
+
+	.library-attachments {
+		margin-top: var(--space-3);
+		padding-top: var(--space-3);
+		border-top: 1px solid var(--border-base);
+	}
+
+	.library-label {
+		font-size: var(--text-sm);
+		font-weight: 600;
+		margin-bottom: var(--space-2);
+		color: var(--text-secondary);
+	}
+
+	.library-attachment-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		background: var(--paper-light-blue, #f0f8ff);
+		border: 1px solid var(--border-base);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--space-2);
+	}
 		color: var(--error-color, #c00);
 	}
 

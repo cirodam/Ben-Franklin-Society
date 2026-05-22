@@ -80,8 +80,31 @@ services:
       - governance
     restart: unless-stopped
 
+  library:
+    build:
+      context: .
+      dockerfile: apps/library/Dockerfile
+    environment:
+      DATABASE_PATH: /app/data/library.db
+      GOVERNANCE_DATABASE_PATH: /app/governance-data/governance.db
+      GOVERNANCE_URL: http://localhost:5173
+      PUBLIC_URL: http://localhost:5177
+      OIDC_CLIENT_ID: library
+      OIDC_CLIENT_SECRET: dev-secret-library
+      NODE_ENV: development
+      PORT: 5177
+    volumes:
+      - library-data:/app/data
+      - governance-data:/app/governance-data:ro
+    ports:
+      - "5177:5177"
+    depends_on:
+      - governance
+    restart: unless-stopped
+
 volumes:
   governance-data:
   community-bank-data:
   mail-data:
   marketplace-data:
+  library-data:

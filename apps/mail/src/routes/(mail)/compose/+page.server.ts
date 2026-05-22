@@ -7,6 +7,10 @@ import { getMailbox } from '$lib/server/mailboxes.js';
 import { getTemplates } from '$lib/server/templates.js';
 import { saveAttachment, getAttachments, deleteAttachment } from '$lib/server/attachments.js';
 import { getContactGroups } from '$lib/server/contacts.js';
+import { LibraryClient } from '$lib/library-client.js';
+import { env } from '$env/dynamic/private';
+
+const LIBRARY_URL = env.LIBRARY_SERVICE_URL || 'http://localhost:5177';
 
 export interface Prefill {
 	to_raw: string;
@@ -260,6 +264,42 @@ export const actions: Actions = {
 				} catch (err) {
 					return fail(400, {
 						error: err instanceof Error ? err.message : 'Failed to upload attachment',
+						to_raw, cc_raw, bcc_raw, subject, body,
+					});
+				}
+			}
+		}
+
+		// Handle library file attachments
+		const libraryFileIds = data.getAll('library_file_ids') as string[];
+		if (libraryFileIds.length > 0) {
+			// Get JWT token from OIDC session cookie
+			const sessionCookie = request.headers.get('cookie') || '';
+			const oidcSessionMatch = sessionCookie.match(/oidc_session=([^;]+)/);
+			if (!oidcSessionMatch) {
+				return fail(401, {
+					error: 'No session cookie',
+					to_raw, cc_raw, bcc_raw, subject, body,
+				});
+			}
+			const tokens = JSON.parse(decodeURIComponent(oidcSessionMatch[1]));
+			const libraryClient = new LibraryClient(tokens.access_token, LIBRARY_URL);
+
+			for (const fileIdStr of libraryFileIds) {
+				const fileId = Number(fileIdStr);
+				if (!fileId) continue;
+
+				try {
+					const fileData = await libraryClient.downloadFile(fileId);
+					await saveAttachment({
+						message_uuid: message.uuid,
+						filename: fileData.filename,
+						content_type: fileData.contentType,
+						data: Buffer.from(fileData.data),
+					});
+				} catch (err) {
+					return fail(400, {
+						error: err instanceof Error ? err.message : 'Failed to attach library file',
 						to_raw, cc_raw, bcc_raw, subject, body,
 					});
 				}
