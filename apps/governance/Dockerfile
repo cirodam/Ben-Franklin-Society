@@ -51,7 +51,6 @@ RUN mkdir -p /app/data/documents
 # Copy built application
 COPY --from=builder /app/apps/governance/build ./build
 COPY --from=builder /app/apps/governance/package.json ./
-COPY --from=builder /app/apps/governance/data/documents ./data/documents
 
 # Copy node_modules (SvelteKit adapter-node needs them)
 COPY --from=builder /app/node_modules ./node_modules

@@ -2,14 +2,13 @@
 	import type { PageData } from './$types.js';
 	import { GoverningDocEditor } from '@bfs/ui';
 	import type { GoverningDocument } from '@bfs/types';
-	import { randomUUID } from 'node:crypto';
 	import { goto } from '$app/navigation';
 
 	const { data } = $props<{ data: PageData }>();
 
 	// Initialize empty governing document
 	let document = $state<GoverningDocument>({
-		uuid: randomUUID(),
+		uuid: crypto.randomUUID(),
 		type: 'governing',
 		slug: '',
 		document_id: null,

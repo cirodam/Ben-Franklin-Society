@@ -96,20 +96,6 @@ const { data, contentType, filename } = await client.downloadFile(file.id);
 
 ## Testing
 
-### Automated API Tests
-
-```bash
-# Get JWT token from browser (after logging in to governance)
-# In browser console: localStorage.getItem('jwt_token')
-
-export JWT_TOKEN="your-jwt-token-here"
-./test-api.sh
-```
-
-Tests all API endpoints: upload, download, folders, move, rename, delete.
-
-### Manual Testing
-
 1. Start dev environment: `pnpm start`
 2. Navigate to http://localhost:5177
 3. Log in via governance OIDC
@@ -224,7 +210,6 @@ apps/library/
 ├── data/                         # File storage (gitignored)
 ├── API.md                        # API documentation
 ├── INTEGRATION_EXAMPLES.md       # Integration patterns
-├── test-api.sh                   # API test script
 └── README.md                     # This file
 ```
 
@@ -245,6 +230,5 @@ When adding features:
 4. Update UI in +page.svelte
 5. Document in API.md
 6. Add examples to INTEGRATION_EXAMPLES.md
-7. Update test-api.sh
 
 Keep the copy-based sharing model: files shared via embedding data in messages, not via permissions.

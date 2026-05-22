@@ -35,7 +35,7 @@ import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissio
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
 import { db } from '$lib/server/db.js';
-import { syncToDatabase } from '$lib/server/documents/library-core.js';
+import { syncToDatabase } from '$lib/server/documents/society-core.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	// Try to load by UUID first, then by slug

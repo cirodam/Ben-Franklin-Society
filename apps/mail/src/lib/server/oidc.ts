@@ -1,6 +1,15 @@
 import { OidcClient } from '@bfs/oidc-client';
 import { getOidcConfig } from './config.js';
 
+interface Principal {
+	uuid: string;
+	handle: string;
+	type: 'person' | 'association';
+	given_name?: string;
+	family_name?: string;
+	name?: string;
+}
+
 let _oidcClient: OidcClient | null = null;
 let _lastConfigHash: string | null = null;
 
@@ -44,4 +53,33 @@ export function getOidcClient(): OidcClient {
 	}
 	
 	return _oidcClient;
+}
+
+/**
+ * Look up a principal (person or association) by handle from governance API
+ */
+export async function getPrincipalByHandle(handle: string): Promise<Principal | null> {
+	const config = getOidcConfig();
+	
+	if (!config.governanceUrl) {
+		throw new Error('OIDC governance URL not configured');
+	}
+	
+	try {
+		const response = await fetch(`${config.governanceUrl}/api/principals?q=${encodeURIComponent(handle)}&limit=1`);
+		
+		if (!response.ok) {
+			return null;
+		}
+		
+		const data = await response.json();
+		const results = data.results || [];
+		
+		// Find exact handle match
+		const match = results.find((p: Principal) => p.handle === handle);
+		return match || null;
+	} catch (error) {
+		console.error('Error fetching principal:', error);
+		return null;
+	}
 }

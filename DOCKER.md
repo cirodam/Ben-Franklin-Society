@@ -154,13 +154,7 @@ To publish images to Docker Hub (maintainers only):
 docker login
 
 # 2. Build and push all images at once
-./scripts/publish-images.sh cirodam 0.1.0
-
-# Or build and push individually
-./apps/governance/docker-push.sh 0.1.0
-./apps/community-bank/docker-push.sh 0.1.0
-./apps/mail/docker-push.sh 0.1.0
-./apps/marketplace/docker-push.sh 0.1.0
+./scripts/publish-images.sh
 
 # This will publish:
 # - cirodam/ben-franklin-society-governance:0.1.0

@@ -1,0 +1,2376 @@
+Building and publishing BFS images to Docker Hub
+Username: cirodam
+Version: latest
+
+==========================================
+Building: governance
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  48.45MB
+Step 1/36 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 3/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 4/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 5/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 5b0c1afc2732
+Step 6/36 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> 6b3881312e03
+Step 7/36 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> 7c0779ddb9d7
+Step 8/36 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 47b07cda35a9
+Step 9/36 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 7dc923be46af
+Step 10/36 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> 52ec5e21a93d
+Step 11/36 : COPY apps/governance/package.json ./apps/governance/
+ ---> Using cache
+ ---> d9b9716fed83
+Step 12/36 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> b688848bea9b
+Step 13/36 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 14/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 15/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 16/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 17/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> 909cb8c5cf06
+Step 18/36 : COPY packages ./packages
+ ---> Using cache
+ ---> c348ad3a4640
+Step 19/36 : COPY apps/governance ./apps/governance
+ ---> Using cache
+ ---> 202aa2869409
+Step 20/36 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 1027c1f73676
+Step 21/36 : WORKDIR /app/apps/governance
+ ---> Using cache
+ ---> c5b4620cb9bd
+Step 22/36 : RUN pnpm build
+ ---> Using cache
+ ---> 0f3fd5ffaf9c
+Step 23/36 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 24/36 : RUN apk add --no-cache libc6-compat
+ ---> Using cache
+ ---> 9c3a254d34c5
+Step 25/36 : WORKDIR /app
+ ---> Using cache
+ ---> 4b3192f1841e
+Step 26/36 : RUN mkdir -p /app/data/documents
+ ---> Using cache
+ ---> 114963806dce
+Step 27/36 : COPY --from=builder /app/apps/governance/build ./build
+ ---> Using cache
+ ---> c9b4b4e104fa
+Step 28/36 : COPY --from=builder /app/apps/governance/package.json ./
+ ---> Using cache
+ ---> 53668c94056a
+Step 29/36 : COPY --from=builder /app/node_modules ./node_modules
+ ---> Using cache
+ ---> 4f9ec4588ca1
+Step 30/36 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> 886478f63267
+Step 31/36 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> f78343cbdf79
+Step 32/36 : ENV PORT=5173
+ ---> Using cache
+ ---> 63c400c6780a
+Step 33/36 : ENV DATABASE_PATH=/app/data/governance.db
+ ---> Using cache
+ ---> 4917fbd96589
+Step 34/36 : ENV DOCUMENTS_PATH=/app/data/documents
+ ---> Using cache
+ ---> e9d28d1b92ee
+Step 35/36 : EXPOSE 5173
+ ---> Using cache
+ ---> e1287ebd06d3
+Step 36/36 : CMD ["node", "build"]
+ ---> Using cache
+ ---> a32490a119e5
+Successfully built a32490a119e5
+Successfully tagged cirodam/ben-franklin-society-governance:latest
+
+Pushing: cirodam/ben-franklin-society-governance:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-governance]
+2a224797c9a6: Preparing
+1973e8b04d4f: Preparing
+171e10646ecf: Preparing
+11246d040a0a: Preparing
+635634a9cade: Preparing
+8ddb4bfd7859: Preparing
+1f114c1a20c2: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+1f114c1a20c2: Waiting
+0e2b4d22f01d: Waiting
+7e9cf1ccb68e: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+8ddb4bfd7859: Waiting
+1973e8b04d4f: Layer already exists
+171e10646ecf: Layer already exists
+635634a9cade: Layer already exists
+2a224797c9a6: Layer already exists
+11246d040a0a: Layer already exists
+1f8b21f3390a: Layer already exists
+8ddb4bfd7859: Layer already exists
+7e9cf1ccb68e: Layer already exists
+1f114c1a20c2: Layer already exists
+0e2b4d22f01d: Layer already exists
+29df493baa13: Layer already exists
+latest: digest: sha256:c7821acb84b0e1f198e3a17f0a4f2de0543247f4df4c9587be2cc7c2287e9a0b size: 2619
+✓ Published governance
+
+==========================================
+Building: community-bank
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  48.45MB
+Step 1/36 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 3/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 4/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 5/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 5b0c1afc2732
+Step 6/36 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> 6b3881312e03
+Step 7/36 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> 7c0779ddb9d7
+Step 8/36 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 47b07cda35a9
+Step 9/36 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 7dc923be46af
+Step 10/36 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> 52ec5e21a93d
+Step 11/36 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> def30bc6fbc8
+Step 12/36 : COPY apps/community-bank/package.json ./apps/community-bank/
+ ---> Using cache
+ ---> 51a135d31afc
+Step 13/36 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> c6cf68c1be2d
+Step 14/36 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 16/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 17/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 18/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> 909cb8c5cf06
+Step 19/36 : COPY packages ./packages
+ ---> Using cache
+ ---> c348ad3a4640
+Step 20/36 : COPY apps/community-bank ./apps/community-bank
+ ---> Using cache
+ ---> 703e4c3c85f3
+Step 21/36 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 986f88826db1
+Step 22/36 : WORKDIR /app/apps/community-bank
+ ---> Using cache
+ ---> 2cedd57da2a7
+Step 23/36 : RUN pnpm build
+ ---> Using cache
+ ---> b3b18ddbaece
+Step 24/36 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/36 : RUN apk add --no-cache libc6-compat
+ ---> Using cache
+ ---> 9c3a254d34c5
+Step 26/36 : WORKDIR /app
+ ---> Using cache
+ ---> 4b3192f1841e
+Step 27/36 : RUN mkdir -p /app/data
+ ---> Using cache
+ ---> f4968210d077
+Step 28/36 : COPY --from=builder /app/apps/community-bank/build ./build
+ ---> Using cache
+ ---> 0896ccf92bc8
+Step 29/36 : COPY --from=builder /app/apps/community-bank/package.json ./
+ ---> Using cache
+ ---> a1af3e3d0e8c
+Step 30/36 : COPY --from=builder /app/node_modules ./node_modules
+ ---> Using cache
+ ---> b5302a4b4bba
+Step 31/36 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> 696d6e93e1d2
+Step 32/36 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> 7fc4078ecf47
+Step 33/36 : ENV PORT=5174
+ ---> Using cache
+ ---> 45d1353f92b0
+Step 34/36 : ENV DATABASE_PATH=/app/data/bank.db
+ ---> Using cache
+ ---> 31fd969c3956
+Step 35/36 : EXPOSE 5174
+ ---> Using cache
+ ---> 6c09b0e1ac44
+Step 36/36 : CMD ["node", "build"]
+ ---> Using cache
+ ---> bcef25b31941
+Successfully built bcef25b31941
+Successfully tagged cirodam/ben-franklin-society-community-bank:latest
+
+Pushing: cirodam/ben-franklin-society-community-bank:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-community-bank]
+2f7609ac3535: Preparing
+f0823e6ad1d9: Preparing
+80745e5e10d9: Preparing
+12a465837b98: Preparing
+a442a0eaad17: Preparing
+8ddb4bfd7859: Preparing
+1f114c1a20c2: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+8ddb4bfd7859: Waiting
+0e2b4d22f01d: Waiting
+1f114c1a20c2: Waiting
+7e9cf1ccb68e: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+2f7609ac3535: Layer already exists
+12a465837b98: Layer already exists
+f0823e6ad1d9: Layer already exists
+a442a0eaad17: Layer already exists
+80745e5e10d9: Layer already exists
+0e2b4d22f01d: Layer already exists
+8ddb4bfd7859: Layer already exists
+1f114c1a20c2: Layer already exists
+7e9cf1ccb68e: Layer already exists
+1f8b21f3390a: Layer already exists
+29df493baa13: Layer already exists
+latest: digest: sha256:1e8c4ce15b918124c9a69b7d3ef8865d31a27f82b41332ea4895a841638e94a9 size: 2618
+✓ Published community-bank
+
+==========================================
+Building: mail
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  48.45MB
+Step 1/36 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 3/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 4/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 5/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 5b0c1afc2732
+Step 6/36 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> 6b3881312e03
+Step 7/36 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> 7c0779ddb9d7
+Step 8/36 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 47b07cda35a9
+Step 9/36 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 7dc923be46af
+Step 10/36 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> 52ec5e21a93d
+Step 11/36 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> def30bc6fbc8
+Step 12/36 : COPY apps/mail/package.json ./apps/mail/
+ ---> Using cache
+ ---> e63b013c6f86
+Step 13/36 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> ce784b010176
+Step 14/36 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 16/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 17/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 18/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> 909cb8c5cf06
+Step 19/36 : COPY packages ./packages
+ ---> Using cache
+ ---> c348ad3a4640
+Step 20/36 : COPY apps/mail ./apps/mail
+ ---> Using cache
+ ---> f498b93ce4ec
+Step 21/36 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 5c28388c1c3a
+Step 22/36 : WORKDIR /app/apps/mail
+ ---> Using cache
+ ---> 534b9eb4524d
+Step 23/36 : RUN pnpm build
+ ---> Using cache
+ ---> e813e3729cb0
+Step 24/36 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/36 : RUN apk add --no-cache libc6-compat
+ ---> Using cache
+ ---> 9c3a254d34c5
+Step 26/36 : WORKDIR /app
+ ---> Using cache
+ ---> 4b3192f1841e
+Step 27/36 : RUN mkdir -p /app/data
+ ---> Using cache
+ ---> f4968210d077
+Step 28/36 : COPY --from=builder /app/apps/mail/build ./build
+ ---> Using cache
+ ---> 0ac4b0fa8427
+Step 29/36 : COPY --from=builder /app/apps/mail/package.json ./
+ ---> Using cache
+ ---> e14d7d3e45a2
+Step 30/36 : COPY --from=builder /app/node_modules ./node_modules
+ ---> Using cache
+ ---> 8655ab4c5c92
+Step 31/36 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> ee8c008e51a5
+Step 32/36 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> a70b30dd3cc6
+Step 33/36 : ENV PORT=5175
+ ---> Using cache
+ ---> 0b2445bc8bf1
+Step 34/36 : ENV DATABASE_PATH=/app/data/mail.db
+ ---> Using cache
+ ---> bcc727bf28d7
+Step 35/36 : EXPOSE 5175
+ ---> Using cache
+ ---> a1225967130f
+Step 36/36 : CMD ["node", "build"]
+ ---> Using cache
+ ---> bb782748903a
+Successfully built bb782748903a
+Successfully tagged cirodam/ben-franklin-society-mail:latest
+
+Pushing: cirodam/ben-franklin-society-mail:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-mail]
+6239b9e8a850: Preparing
+5d441aa6b377: Preparing
+d03390b6fe54: Preparing
+7e43e535c36d: Preparing
+a442a0eaad17: Preparing
+8ddb4bfd7859: Preparing
+1f114c1a20c2: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+1f114c1a20c2: Waiting
+8ddb4bfd7859: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+7e9cf1ccb68e: Waiting
+0e2b4d22f01d: Waiting
+a442a0eaad17: Layer already exists
+d03390b6fe54: Layer already exists
+7e43e535c36d: Layer already exists
+6239b9e8a850: Layer already exists
+5d441aa6b377: Layer already exists
+8ddb4bfd7859: Layer already exists
+7e9cf1ccb68e: Layer already exists
+1f114c1a20c2: Layer already exists
+0e2b4d22f01d: Layer already exists
+1f8b21f3390a: Layer already exists
+29df493baa13: Layer already exists
+latest: digest: sha256:20419443da452e1ca86c4a00b92205b759d65c460763637a5c62194e04f222e9 size: 2618
+✓ Published mail
+
+==========================================
+Building: marketplace
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  48.45MB
+Step 1/36 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 3/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 4/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 5/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 5b0c1afc2732
+Step 6/36 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> 6b3881312e03
+Step 7/36 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> 7c0779ddb9d7
+Step 8/36 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 47b07cda35a9
+Step 9/36 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 7dc923be46af
+Step 10/36 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> 52ec5e21a93d
+Step 11/36 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> def30bc6fbc8
+Step 12/36 : COPY apps/marketplace/package.json ./apps/marketplace/
+ ---> Using cache
+ ---> 1f1b826c5e92
+Step 13/36 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> c5d0e0e6652e
+Step 14/36 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 16/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 17/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 18/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> 909cb8c5cf06
+Step 19/36 : COPY packages ./packages
+ ---> Using cache
+ ---> c348ad3a4640
+Step 20/36 : COPY apps/marketplace ./apps/marketplace
+ ---> aa8658e7fdaa
+Step 21/36 : RUN pnpm install --frozen-lockfile
+ ---> Running in 602d17eae287
+[91m! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-9.15.2.tgz
+[0mScope: all 8 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +127
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+   ╭──────────────────────────────────────────────────────────────────╮
+   │                                                                  │
+   │                Update available! 9.15.2 → 11.2.2.                │
+   │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v11.2.2   │
+   │         Run "corepack install -g pnpm@11.2.2" to update.         │
+   │                                                                  │
+   ╰──────────────────────────────────────────────────────────────────╯
+
+Progress: resolved 127, reused 0, downloaded 113, added 116
+Progress: resolved 127, reused 0, downloaded 122, added 126
+Progress: resolved 127, reused 0, downloaded 123, added 127, done
+.../node_modules/better-sqlite3 install$ prebuild-install || node-gyp rebuild --release
+.../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.27.7/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+.../esbuild@0.27.7/node_modules/esbuild postinstall: Done
+.../node_modules/better-sqlite3 install: Done
+
+devDependencies:
++ turbo 2.9.12
++ typescript 5.9.3
+
+Done in 3.8s
+ ---> Removed intermediate container 602d17eae287
+ ---> 1b6084d7e23b
+Step 22/36 : WORKDIR /app/apps/marketplace
+ ---> Running in f83cfe05ca2f
+ ---> Removed intermediate container f83cfe05ca2f
+ ---> ea74d86549f0
+Step 23/36 : RUN pnpm build
+ ---> Running in 703ec4872afa
+
+> @bfs/marketplace@0.0.1 build /app/apps/marketplace
+> vite build
+
+vite v6.4.2 building SSR bundle for production...
+transforming...
+[91m8:27:22 PM [vite-plugin-svelte] src/routes/administrator/markets/[uuid]/+page.svelte:62:6 `<form>` cannot be a descendant of `<form>`. When rendering this component on the server, the resulting HTML will be modified by the browser (by moving, removing, or inserting elements), likely resulting in a `hydration_mismatch` warning
+https://svelte.dev/e/node_invalid_placement_ssr
+60:           {:else}
+61:             <span class="confirm-text">This cannot be undone.</span>
+62:             <form method="POST" action="?/close" use:enhance style="display:contents">
+                       ^
+63:               <Button type="submit" variant="danger" class="btn-sm">Confirm Close</Button>
+64:             </form>
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/administrator/markets/[uuid]/sessions/[session_uuid]/+page.svelte:157:1 Unused CSS selector ".assign-input"
+https://svelte.dev/e/css_unused_selector
+155:   }
+156:   .assign-form { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+157:   .assign-input {
+                    ^
+158:     padding: var(--space-1) var(--space-3);
+159:     border: 1px solid var(--color-border);
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/administrator/markets/[uuid]/sessions/[session_uuid]/+page.svelte:165:1 Unused CSS selector ".assign-input--wide"
+https://svelte.dev/e/css_unused_selector
+[0m[91m163:     width: 140px;
+164:   }
+165:   .assign-input--wide { width: 220px; }
+                          ^
+166: 
+167:   :global(.btn-sm) { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/administrator/reports/[uuid]/+page.svelte:159:1 Unused CSS selector ".form-error"
+https://svelte.dev/e/css_unused_selector
+[0m[91m157:   }
+158: 
+159:   .form-error {
+                  ^
+160:     padding: var(--space-3) var(--space-4);
+161:     background: #fee2e2;
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/markets/[uuid]/+page.svelte:62:1 Unused CSS selector ".info-row"
+https://svelte.dev/e/css_unused_selector
+[0m[91m60:   h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+61: 
+62:   .info-row { display: flex; gap: var(--space-3); align-items: center; font-size: var(--text-sm); }
+               ^
+63:   .info-label { color: var(--color-text-muted); font-weight: var(--weight-medium); }
+64: 
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/markets/[uuid]/+page.svelte:63:1 Unused CSS selector ".info-label"
+https://svelte.dev/e/css_unused_selector
+61: 
+62:   .info-row { display: flex; gap: var(--space-3); align-items: center; font-size: var(--text-sm); }
+63:   .info-label { color: var(--color-text-muted); font-weight: var(--weight-medium); }
+                 ^
+64: 
+65:   .sessions-section { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-2); }
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/sell/classified/[uuid]/edit/+page.svelte:72:5 `<form>` cannot be a descendant of `<form>`. When rendering this component on the server, the resulting HTML will be modified by the browser (by moving, removing, or inserting elements), likely resulting in a `hydration_mismatch` warning
+https://svelte.dev/e/node_invalid_placement_ssr
+70:         {:else}
+71:           <span class="confirm-text">Are you sure?</span>
+72:           <form method="POST" action="?/withdraw" use:enhance>
+                     ^
+73:             <button type="submit" class="btn btn-danger">Yes, Withdraw</button>
+74:           </form>
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/routes/sell/service/[uuid]/edit/+page.svelte:74:5 `<form>` cannot be a descendant of `<form>`. When rendering this component on the server, the resulting HTML will be modified by the browser (by moving, removing, or inserting elements), likely resulting in a `hydration_mismatch` warning
+https://svelte.dev/e/node_invalid_placement_ssr
+72:         {:else}
+73:           <span class="confirm-text">Are you sure?</span>
+74:           <form method="POST" action="?/withdraw" use:enhance>
+                     ^
+75:             <button type="submit" class="btn btn-danger">Yes, Withdraw</button>
+76:           </form>
+[0m[91m8:27:22 PM [vite-plugin-svelte] src/lib/components/ContextSwitcher.svelte:73:0 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+71: <svelte:window onclick={closeDropdown} />
+72: 
+73: <div class="context-switcher" onclick={(e) => e.stopPropagation()}>
+          ^
+74:   <button 
+75:     class="switcher-button" 
+8:27:22 PM [vite-plugin-svelte] src/lib/components/ContextSwitcher.svelte:73:0 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+71: <svelte:window onclick={closeDropdown} />
+72: 
+73: <div class="context-switcher" onclick={(e) => e.stopPropagation()}>
+          ^
+74:   <button 
+75:     class="switcher-button" 
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/AccountFinder.svelte:164:3 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+162:       placeholder="Search by handle, name, or UUID..."
+163:       class="search-input"
+164:       autofocus={autoFocus}
+                                ^
+165:     />
+166:   </div>
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:18:39 This reference only captures the initial value of `padding`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+16:   } = $props();
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+                                                   ^
+19:   const hoverClass = hover ? 'card--hover' : '';
+20: </script>
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:19:20 This reference only captures the initial value of `hover`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+19:   const hoverClass = hover ? 'card--hover' : '';
+                              ^
+20: </script>
+21: 
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/FormField.svelte:18:1 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+16: 
+17: <div class="field" class:field--error={!!error}>
+18:   <label class="field__label">{label}</label>
+                                                 ^
+19:   <div class="field__control">
+20:     {@render children()}
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:17:20 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let title = $state(section.title);
+                                ^
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:18:19 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+                               ^
+19:   let rationale = $state(section.rationale || '');
+20: 
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:19:24 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+                                    ^
+20: 
+21:   // Update parent when values change
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:78:1 Unused CSS selector ".section-editor__title"
+https://svelte.dev/e/css_unused_selector
+76:   }
+77: 
+78:   .section-editor__title {
+                            ^
+79:     flex: 1;
+80:   }
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:17:21 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(provision.number);
+                                   ^
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:18:20 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+                                  ^
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:19:19 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+                                 ^
+20:   let reasoning = $state(provision.reasoning || '');
+21: 
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:20:24 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+                                      ^
+21: 
+22:   // Update parent when values change
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:89:1 Unused CSS selector ".provision-editor__number"
+https://svelte.dev/e/css_unused_selector
+87:   }
+88: 
+89:   .provision-editor__number {
+                               ^
+90:     flex: 0 0 8rem;
+91:   }
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:93:1 Unused CSS selector ".provision-editor__title"
+https://svelte.dev/e/css_unused_selector
+91:   }
+92: 
+93:   .provision-editor__title {
+                              ^
+94:     flex: 1;
+95:   }
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:17:21 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(article.number);
+                                 ^
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:18:20 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+                                ^
+19:   let sections = $state<Section[]>(article.sections);
+20: 
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:19:34 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+                                              ^
+20: 
+21:   // Update parent when values change
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:100:1 Unused CSS selector ".article-editor__number"
+https://svelte.dev/e/css_unused_selector
+ 98:   }
+ 99: 
+100:   .article-editor__number {
+                              ^
+101:     flex: 0 0 8rem;
+102:   }
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:104:1 Unused CSS selector ".article-editor__title"
+https://svelte.dev/e/css_unused_selector
+102:   }
+103: 
+104:   .article-editor__title {
+                             ^
+105:     flex: 1;
+106:   }
+[0m[91m8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:20:20 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   } = $props();
+19: 
+20:   let title = $state(motion.title);
+                               ^
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:21:19 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19: 
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+                              ^
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:22:38 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+                                                 ^
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:23:25 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+                                    ^
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+25: 
+8:27:22 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:24:35 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+                                              ^
+25: 
+26:   // Update parent when values change
+[0m[91m8:27:23 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:21:20 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19:   } = $props();
+20: 
+21:   let title = $state(doc.title);
+                            ^
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+8:27:23 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:22:19 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20: 
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+                           ^
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+8:27:23 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:23:24 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+                                ^
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+8:27:23 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:24:23 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+                               ^
+25:   let articles = $state<Article[]>(doc.content.articles);
+26: 
+8:27:23 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:25:34 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+                                          ^
+26: 
+27:   // Update parent when values change
+[0m✓ 340 modules transformed.
+rendering chunks...
+vite v6.4.2 building for production...
+transforming...
+[91m8:27:24 PM [vite-plugin-svelte] src/routes/administrator/markets/[uuid]/sessions/[session_uuid]/+page.svelte:157:1 Unused CSS selector ".assign-input"
+https://svelte.dev/e/css_unused_selector
+155:   }
+156:   .assign-form { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+157:   .assign-input {
+                    ^
+158:     padding: var(--space-1) var(--space-3);
+159:     border: 1px solid var(--color-border);
+8:27:24 PM [vite-plugin-svelte] src/routes/administrator/markets/[uuid]/sessions/[session_uuid]/+page.svelte:165:1 Unused CSS selector ".assign-input--wide"
+https://svelte.dev/e/css_unused_selector
+163:     width: 140px;
+164:   }
+165:   .assign-input--wide { width: 220px; }
+                          ^
+166: 
+167:   :global(.btn-sm) { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+8:27:24 PM [vite-plugin-svelte] src/routes/administrator/markets/[uuid]/+page.svelte:62:6 `<form>` cannot be a descendant of `<form>`. When rendering this component on the server, the resulting HTML will be modified by the browser (by moving, removing, or inserting elements), likely resulting in a `hydration_mismatch` warning
+https://svelte.dev/e/node_invalid_placement_ssr
+60:           {:else}
+61:             <span class="confirm-text">This cannot be undone.</span>
+62:             <form method="POST" action="?/close" use:enhance style="display:contents">
+                       ^
+63:               <Button type="submit" variant="danger" class="btn-sm">Confirm Close</Button>
+64:             </form>
+[0m[91m8:27:24 PM [vite-plugin-svelte] src/routes/administrator/reports/[uuid]/+page.svelte:159:1 Unused CSS selector ".form-error"
+https://svelte.dev/e/css_unused_selector
+157:   }
+158: 
+159:   .form-error {
+                  ^
+160:     padding: var(--space-3) var(--space-4);
+161:     background: #fee2e2;
+8:27:24 PM [vite-plugin-svelte] src/routes/markets/[uuid]/+page.svelte:62:1 Unused CSS selector ".info-row"
+https://svelte.dev/e/css_unused_selector
+60:   h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+61: 
+62:   .info-row { display: flex; gap: var(--space-3); align-items: center; font-size: var(--text-sm); }
+               ^
+63:   .info-label { color: var(--color-text-muted); font-weight: var(--weight-medium); }
+64: 
+8:27:24 PM [vite-plugin-svelte] src/routes/markets/[uuid]/+page.svelte:63:1 Unused CSS selector ".info-label"
+https://svelte.dev/e/css_unused_selector
+61: 
+62:   .info-row { display: flex; gap: var(--space-3); align-items: center; font-size: var(--text-sm); }
+63:   .info-label { color: var(--color-text-muted); font-weight: var(--weight-medium); }
+                 ^
+64: 
+65:   .sessions-section { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-2); }
+[0m[91m8:27:24 PM [vite-plugin-svelte] src/routes/sell/classified/[uuid]/edit/+page.svelte:72:5 `<form>` cannot be a descendant of `<form>`. When rendering this component on the server, the resulting HTML will be modified by the browser (by moving, removing, or inserting elements), likely resulting in a `hydration_mismatch` warning
+https://svelte.dev/e/node_invalid_placement_ssr
+70:         {:else}
+71:           <span class="confirm-text">Are you sure?</span>
+72:           <form method="POST" action="?/withdraw" use:enhance>
+                     ^
+73:             <button type="submit" class="btn btn-danger">Yes, Withdraw</button>
+74:           </form>
+8:27:24 PM [vite-plugin-svelte] src/routes/sell/service/[uuid]/edit/+page.svelte:74:5 `<form>` cannot be a descendant of `<form>`. When rendering this component on the server, the resulting HTML will be modified by the browser (by moving, removing, or inserting elements), likely resulting in a `hydration_mismatch` warning
+https://svelte.dev/e/node_invalid_placement_ssr
+72:         {:else}
+73:           <span class="confirm-text">Are you sure?</span>
+74:           <form method="POST" action="?/withdraw" use:enhance>
+                     ^
+75:             <button type="submit" class="btn btn-danger">Yes, Withdraw</button>
+76:           </form>
+[0m[91m8:27:24 PM [vite-plugin-svelte] src/lib/components/ContextSwitcher.svelte:73:0 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+71: <svelte:window onclick={closeDropdown} />
+72: 
+73: <div class="context-switcher" onclick={(e) => e.stopPropagation()}>
+          ^
+74:   <button 
+75:     class="switcher-button" 
+8:27:24 PM [vite-plugin-svelte] src/lib/components/ContextSwitcher.svelte:73:0 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+71: <svelte:window onclick={closeDropdown} />
+72: 
+73: <div class="context-switcher" onclick={(e) => e.stopPropagation()}>
+          ^
+74:   <button 
+75:     class="switcher-button" 
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/AccountFinder.svelte:164:3 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+162:       placeholder="Search by handle, name, or UUID..."
+163:       class="search-input"
+164:       autofocus={autoFocus}
+                                ^
+165:     />
+166:   </div>
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:18:39 This reference only captures the initial value of `padding`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+16:   } = $props();
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+                                                   ^
+19:   const hoverClass = hover ? 'card--hover' : '';
+20: </script>
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:19:20 This reference only captures the initial value of `hover`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+19:   const hoverClass = hover ? 'card--hover' : '';
+                              ^
+20: </script>
+21: 
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/FormField.svelte:18:1 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+16: 
+17: <div class="field" class:field--error={!!error}>
+18:   <label class="field__label">{label}</label>
+                                                 ^
+19:   <div class="field__control">
+20:     {@render children()}
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:17:20 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let title = $state(section.title);
+                                ^
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:18:19 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+                               ^
+19:   let rationale = $state(section.rationale || '');
+20: 
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:19:24 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+                                    ^
+20: 
+21:   // Update parent when values change
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:78:1 Unused CSS selector ".section-editor__title"
+https://svelte.dev/e/css_unused_selector
+76:   }
+77: 
+78:   .section-editor__title {
+                            ^
+79:     flex: 1;
+80:   }
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:17:21 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(provision.number);
+                                   ^
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:18:20 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+                                  ^
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:19:19 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+                                 ^
+20:   let reasoning = $state(provision.reasoning || '');
+21: 
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:20:24 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+                                      ^
+21: 
+22:   // Update parent when values change
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:89:1 Unused CSS selector ".provision-editor__number"
+https://svelte.dev/e/css_unused_selector
+87:   }
+88: 
+89:   .provision-editor__number {
+                               ^
+90:     flex: 0 0 8rem;
+91:   }
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:93:1 Unused CSS selector ".provision-editor__title"
+https://svelte.dev/e/css_unused_selector
+91:   }
+92: 
+93:   .provision-editor__title {
+                              ^
+94:     flex: 1;
+95:   }
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:20:20 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   } = $props();
+19: 
+20:   let title = $state(motion.title);
+                               ^
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:21:19 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19: 
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+                              ^
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:22:38 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+                                                 ^
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:23:25 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+                                    ^
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+25: 
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:24:35 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+                                              ^
+25: 
+26:   // Update parent when values change
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:21:20 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19:   } = $props();
+20: 
+21:   let title = $state(doc.title);
+                            ^
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:22:19 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20: 
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+                           ^
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:23:24 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+                                ^
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:24:23 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+                               ^
+25:   let articles = $state<Article[]>(doc.content.articles);
+26: 
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:25:34 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+                                          ^
+26: 
+27:   // Update parent when values change
+[0m[91m8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:17:21 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(article.number);
+                                 ^
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:18:20 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+                                ^
+19:   let sections = $state<Section[]>(article.sections);
+20: 
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:19:34 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+                                              ^
+20: 
+21:   // Update parent when values change
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:100:1 Unused CSS selector ".article-editor__number"
+https://svelte.dev/e/css_unused_selector
+ 98:   }
+ 99: 
+100:   .article-editor__number {
+                              ^
+101:     flex: 0 0 8rem;
+102:   }
+8:27:24 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:104:1 Unused CSS selector ".article-editor__title"
+https://svelte.dev/e/css_unused_selector
+102:   }
+103: 
+104:   .article-editor__title {
+                             ^
+105:     flex: 1;
+106:   }
+[0m✓ 311 modules transformed.
+rendering chunks...
+computing gzip size...
+.svelte-kit/output/client/_app/version.json                                       0.03 kB │ gzip:  0.05 kB
+.svelte-kit/output/client/.vite/manifest.json                                    23.48 kB │ gzip:  2.38 kB
+.svelte-kit/output/client/_app/immutable/assets/11.CGYaqIMU.css                   0.20 kB │ gzip:  0.15 kB
+.svelte-kit/output/client/_app/immutable/assets/10.BNxSh_92.css                   0.26 kB │ gzip:  0.18 kB
+.svelte-kit/output/client/_app/immutable/assets/22.DtDZ9pDI.css                   0.26 kB │ gzip:  0.18 kB
+.svelte-kit/output/client/_app/immutable/assets/23.S0nI2eQv.css                   0.32 kB │ gzip:  0.21 kB
+.svelte-kit/output/client/_app/immutable/assets/20.DhQA9I1E.css                   0.34 kB │ gzip:  0.19 kB
+.svelte-kit/output/client/_app/immutable/assets/18.C2VMNwZ_.css                   0.48 kB │ gzip:  0.22 kB
+.svelte-kit/output/client/_app/immutable/assets/4.DHOQIY15.css                    0.71 kB │ gzip:  0.29 kB
+.svelte-kit/output/client/_app/immutable/assets/2.BLYzx8Fo.css                    0.90 kB │ gzip:  0.35 kB
+.svelte-kit/output/client/_app/immutable/assets/17.BNRUmAM8.css                   1.07 kB │ gzip:  0.45 kB
+.svelte-kit/output/client/_app/immutable/assets/21.C99F9VY0.css                   1.13 kB │ gzip:  0.43 kB
+.svelte-kit/output/client/_app/immutable/assets/12.BWOElelZ.css                   1.15 kB │ gzip:  0.40 kB
+.svelte-kit/output/client/_app/immutable/assets/16.BMb2da_G.css                   1.23 kB │ gzip:  0.40 kB
+.svelte-kit/output/client/_app/immutable/assets/5.DNgbyHol.css                    1.27 kB │ gzip:  0.44 kB
+.svelte-kit/output/client/_app/immutable/assets/19.r0eusgwr.css                   1.28 kB │ gzip:  0.47 kB
+.svelte-kit/output/client/_app/immutable/assets/13.TUmlPW8a.css                   1.37 kB │ gzip:  0.46 kB
+.svelte-kit/output/client/_app/immutable/assets/url.5Av4T75l.css                  1.42 kB │ gzip:  0.43 kB
+.svelte-kit/output/client/_app/immutable/assets/9.B9fCLc9Q.css                    1.46 kB │ gzip:  0.52 kB
+.svelte-kit/output/client/_app/immutable/assets/14.CERyE-Nn.css                   1.52 kB │ gzip:  0.48 kB
+.svelte-kit/output/client/_app/immutable/assets/15.D7HBT7eP.css                   1.77 kB │ gzip:  0.50 kB
+.svelte-kit/output/client/_app/immutable/assets/RelatedListings.Be3uFxN_.css      2.29 kB │ gzip:  0.67 kB
+.svelte-kit/output/client/_app/immutable/assets/6.poY3KhnF.css                    2.46 kB │ gzip:  0.65 kB
+.svelte-kit/output/client/_app/immutable/assets/7.0wuh-h4n.css                    2.50 kB │ gzip:  0.66 kB
+.svelte-kit/output/client/_app/immutable/assets/3.bUFHngr8.css                    2.91 kB │ gzip:  0.78 kB
+.svelte-kit/output/client/_app/immutable/assets/8.B07zxfzm.css                    2.91 kB │ gzip:  0.76 kB
+.svelte-kit/output/client/_app/immutable/assets/0.DjvOGnm2.css                    8.37 kB │ gzip:  2.47 kB
+.svelte-kit/output/client/_app/immutable/assets/GoverningDocEditor.D79QYBKO.css  14.38 kB │ gzip:  2.84 kB
+.svelte-kit/output/client/_app/immutable/chunks/CDORCOPF.js                       0.07 kB │ gzip:  0.08 kB
+.svelte-kit/output/client/_app/immutable/chunks/Bzak7iHL.js                       0.10 kB │ gzip:  0.10 kB
+.svelte-kit/output/client/_app/immutable/entry/start.DKB6BrDR.js                  0.12 kB │ gzip:  0.11 kB
+.svelte-kit/output/client/_app/immutable/chunks/BojjrIIA.js                       0.19 kB │ gzip:  0.17 kB
+.svelte-kit/output/client/_app/immutable/chunks/KwwjFGyG.js                       0.19 kB │ gzip:  0.14 kB
+.svelte-kit/output/client/_app/immutable/chunks/CbiZePrI.js                       0.40 kB │ gzip:  0.25 kB
+.svelte-kit/output/client/_app/immutable/chunks/BlFRZOoF.js                       0.40 kB │ gzip:  0.29 kB
+.svelte-kit/output/client/_app/immutable/chunks/tVcsd4bN.js                       0.47 kB │ gzip:  0.33 kB
+.svelte-kit/output/client/_app/immutable/nodes/1.fd_16INg.js                      0.57 kB │ gzip:  0.35 kB
+.svelte-kit/output/client/_app/immutable/nodes/2.DUCj46G5.js                      0.78 kB │ gzip:  0.39 kB
+.svelte-kit/output/client/_app/immutable/chunks/24dfr1p6.js                       0.83 kB │ gzip:  0.45 kB
+.svelte-kit/output/client/_app/immutable/chunks/BjEBGDZW.js                       0.84 kB │ gzip:  0.44 kB
+.svelte-kit/output/client/_app/immutable/chunks/CYiWFKrK.js                       0.85 kB │ gzip:  0.47 kB
+.svelte-kit/output/client/_app/immutable/chunks/D1Gmikk1.js                       0.89 kB │ gzip:  0.49 kB
+.svelte-kit/output/client/_app/immutable/chunks/DKXuiNEU.js                       0.99 kB │ gzip:  0.51 kB
+.svelte-kit/output/client/_app/immutable/chunks/RWsqFmej.js                       1.00 kB │ gzip:  0.49 kB
+.svelte-kit/output/client/_app/immutable/chunks/BmxPkwRc.js                       1.06 kB │ gzip:  0.54 kB
+.svelte-kit/output/client/_app/immutable/nodes/17.D9U4v3py.js                     1.15 kB │ gzip:  0.59 kB
+.svelte-kit/output/client/_app/immutable/nodes/11.DQQVb_2R.js                     1.49 kB │ gzip:  0.81 kB
+.svelte-kit/output/client/_app/immutable/nodes/4.BFu_brQ8.js                      1.69 kB │ gzip:  0.84 kB
+.svelte-kit/output/client/_app/immutable/chunks/cn6COLnx.js                       1.73 kB │ gzip:  0.85 kB
+.svelte-kit/output/client/_app/immutable/nodes/23.B-zU1gbQ.js                     1.74 kB │ gzip:  0.93 kB
+.svelte-kit/output/client/_app/immutable/chunks/vEo8PJ4S.js                       1.76 kB │ gzip:  0.86 kB
+.svelte-kit/output/client/_app/immutable/nodes/22.CuK93JHF.js                     1.78 kB │ gzip:  0.90 kB
+.svelte-kit/output/client/_app/immutable/nodes/10.DochlFI_.js                     1.79 kB │ gzip:  0.90 kB
+.svelte-kit/output/client/_app/immutable/chunks/BX1het6Q.js                       1.90 kB │ gzip:  0.97 kB
+.svelte-kit/output/client/_app/immutable/nodes/12.D2ZgNgj0.js                     1.95 kB │ gzip:  0.93 kB
+.svelte-kit/output/client/_app/immutable/chunks/BHxL9GmG.js                       2.12 kB │ gzip:  1.05 kB
+.svelte-kit/output/client/_app/immutable/chunks/BdtL4XxA.js                       2.22 kB │ gzip:  0.98 kB
+.svelte-kit/output/client/_app/immutable/chunks/BsAt9Gqg.js                       2.32 kB │ gzip:  1.19 kB
+.svelte-kit/output/client/_app/immutable/chunks/BChS8OhW.js                       2.64 kB │ gzip:  1.30 kB
+.svelte-kit/output/client/_app/immutable/nodes/14.BsqahTnS.js                     2.77 kB │ gzip:  1.24 kB
+.svelte-kit/output/client/_app/immutable/nodes/5.D5qo89uq.js                      3.03 kB │ gzip:  1.35 kB
+.svelte-kit/output/client/_app/immutable/nodes/13.qlrT0PEF.js                     3.21 kB │ gzip:  1.44 kB
+.svelte-kit/output/client/_app/immutable/nodes/16.BT1F2Pp3.js                     3.32 kB │ gzip:  1.46 kB
+.svelte-kit/output/client/_app/immutable/nodes/3.Ckjc-zzr.js                      3.82 kB │ gzip:  1.51 kB
+.svelte-kit/output/client/_app/immutable/nodes/9.BnKFjIfW.js                      3.87 kB │ gzip:  1.65 kB
+.svelte-kit/output/client/_app/immutable/nodes/18.ChFfwltq.js                     4.01 kB │ gzip:  1.67 kB
+.svelte-kit/output/client/_app/immutable/nodes/20.BvGpeqwk.js                     4.27 kB │ gzip:  1.71 kB
+.svelte-kit/output/client/_app/immutable/chunks/DUq0aakz.js                       4.49 kB │ gzip:  2.08 kB
+.svelte-kit/output/client/_app/immutable/nodes/15.Bq8sd9Fu.js                     4.50 kB │ gzip:  1.47 kB
+.svelte-kit/output/client/_app/immutable/nodes/19.DCd2zQYh.js                     4.70 kB │ gzip:  1.87 kB
+.svelte-kit/output/client/_app/immutable/nodes/21.BMqL5W9t.js                     4.86 kB │ gzip:  1.87 kB
+.svelte-kit/output/client/_app/immutable/chunks/LLXVCrsv.js                       4.88 kB │ gzip:  2.09 kB
+.svelte-kit/output/client/_app/immutable/chunks/DRxHcNYK.js                       5.19 kB │ gzip:  1.90 kB
+.svelte-kit/output/client/_app/immutable/nodes/7.BEEJdVMV.js                      5.75 kB │ gzip:  2.24 kB
+.svelte-kit/output/client/_app/immutable/chunks/_IWc9gLw.js                       6.48 kB │ gzip:  2.93 kB
+.svelte-kit/output/client/_app/immutable/nodes/8.HdIiGOps.js                      6.50 kB │ gzip:  2.16 kB
+.svelte-kit/output/client/_app/immutable/chunks/CKKwgzzL.js                       7.12 kB │ gzip:  3.28 kB
+.svelte-kit/output/client/_app/immutable/nodes/0.C49n5sZq.js                      8.32 kB │ gzip:  3.27 kB
+.svelte-kit/output/client/_app/immutable/nodes/6.CcV34lsQ.js                      9.72 kB │ gzip:  2.90 kB
+.svelte-kit/output/client/_app/immutable/chunks/Beo7hPcv.js                      10.30 kB │ gzip:  4.42 kB
+.svelte-kit/output/client/_app/immutable/entry/app.BnEzG9wE.js                   12.44 kB │ gzip:  4.61 kB
+.svelte-kit/output/client/_app/immutable/chunks/ASsdOzzS.js                      28.01 kB │ gzip: 10.87 kB
+.svelte-kit/output/client/_app/immutable/chunks/CQ_A75gX.js                      29.13 kB │ gzip: 11.12 kB
+✓ built in 855ms
+.svelte-kit/output/server/.vite/manifest.json                                                                     31.46 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.CGYaqIMU.css                                                 0.20 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.BNxSh_92.css                                                 0.26 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.DtDZ9pDI.css                                                 0.26 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.S0nI2eQv.css                                                 0.32 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.DhQA9I1E.css                                                 0.34 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.C2VMNwZ_.css                                                 0.48 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.DHOQIY15.css                                                 0.71 kB
+.svelte-kit/output/server/_app/immutable/assets/_layout.BLYzx8Fo.css                                               0.90 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.BNRUmAM8.css                                                 1.07 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.C99F9VY0.css                                                 1.13 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.BWOElelZ.css                                                 1.15 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.BMb2da_G.css                                                 1.23 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.DNgbyHol.css                                                 1.27 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.r0eusgwr.css                                                 1.28 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.TUmlPW8a.css                                                 1.37 kB
+.svelte-kit/output/server/_app/immutable/assets/url.5Av4T75l.css                                                   1.42 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.B9fCLc9Q.css                                                 1.46 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.CERyE-Nn.css                                                 1.52 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.D7HBT7eP.css                                                 1.77 kB
+.svelte-kit/output/server/_app/immutable/assets/RelatedListings.Be3uFxN_.css                                       2.29 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.poY3KhnF.css                                                 2.46 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.0wuh-h4n.css                                                 2.50 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.bUFHngr8.css                                                 2.91 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.B07zxfzm.css                                                 2.91 kB
+.svelte-kit/output/server/_app/immutable/assets/_layout.D8PkHCp6.css                                               8.31 kB
+.svelte-kit/output/server/_app/immutable/assets/GoverningDocEditor.BbUm4Qlw.css                                   14.31 kB
+.svelte-kit/output/server/chunks/constants.js                                                                      0.05 kB
+.svelte-kit/output/server/chunks/permissions.js                                                                    0.09 kB
+.svelte-kit/output/server/entries/pages/administrator/_page.server.ts.js                                           0.16 kB
+.svelte-kit/output/server/entries/endpoints/health/_server.ts.js                                                   0.19 kB
+.svelte-kit/output/server/entries/endpoints/api/session/clear/_server.ts.js                                        0.24 kB
+.svelte-kit/output/server/chunks/suspension.js                                                                     0.26 kB
+.svelte-kit/output/server/chunks/date.js                                                                           0.31 kB
+.svelte-kit/output/server/internal.js                                                                              0.35 kB
+.svelte-kit/output/server/chunks/listings.js                                                                       0.37 kB
+.svelte-kit/output/server/entries/pages/_page.server.ts.js                                                         0.37 kB
+.svelte-kit/output/server/chunks/Badge.js                                                                          0.38 kB
+.svelte-kit/output/server/entries/pages/markets/_page.server.ts.js                                                 0.38 kB
+.svelte-kit/output/server/chunks/state.svelte.js                                                                   0.41 kB
+.svelte-kit/output/server/entries/pages/my-listings/_page.server.ts.js                                             0.42 kB
+.svelte-kit/output/server/entries/pages/administrator/_layout.server.ts.js                                         0.42 kB
+.svelte-kit/output/server/chunks/FieldRow.js                                                                       0.47 kB
+.svelte-kit/output/server/chunks/Alert.js                                                                          0.49 kB
+.svelte-kit/output/server/entries/pages/markets/_uuid_/_page.server.ts.js                                          0.51 kB
+.svelte-kit/output/server/entries/pages/markets/_uuid_/sessions/_session_uuid_/_page.server.ts.js                  0.60 kB
+.svelte-kit/output/server/chunks/categories.js                                                                     0.62 kB
+.svelte-kit/output/server/chunks/environment.js                                                                    0.62 kB
+.svelte-kit/output/server/entries/pages/services/_page.server.ts.js                                                0.65 kB
+.svelte-kit/output/server/entries/pages/administrator/_layout.svelte.js                                            0.71 kB
+.svelte-kit/output/server/chunks/format.js                                                                         0.71 kB
+.svelte-kit/output/server/entries/pages/administrator/markets/_page.server.ts.js                                   0.85 kB
+.svelte-kit/output/server/entries/hooks.server.js                                                                  0.86 kB
+.svelte-kit/output/server/chunks/PageHeader.js                                                                     0.94 kB
+.svelte-kit/output/server/chunks/ListItem.js                                                                       0.95 kB
+.svelte-kit/output/server/chunks/config.js                                                                         1.03 kB
+.svelte-kit/output/server/entries/pages/classifieds/_page.server.ts.js                                             1.04 kB
+.svelte-kit/output/server/chunks/Card.js                                                                           1.05 kB
+.svelte-kit/output/server/entries/fallbacks/error.svelte.js                                                        1.08 kB
+.svelte-kit/output/server/entries/endpoints/api/session/switch-context/_server.ts.js                               1.08 kB
+.svelte-kit/output/server/chunks/utils.js                                                                          1.09 kB
+.svelte-kit/output/server/chunks/Breadcrumb.js                                                                     1.11 kB
+.svelte-kit/output/server/entries/endpoints/oauth/callback/_server.ts.js                                           1.12 kB
+.svelte-kit/output/server/entries/pages/administrator/sellers/_page.server.ts.js                                   1.12 kB
+.svelte-kit/output/server/chunks/EmptyState.js                                                                     1.18 kB
+.svelte-kit/output/server/chunks/Button.js                                                                         1.19 kB
+.svelte-kit/output/server/entries/pages/_layout.server.ts.js                                                       1.22 kB
+.svelte-kit/output/server/entries/pages/sell/_page.svelte.js                                                       1.22 kB
+.svelte-kit/output/server/entries/pages/classifieds/_uuid_/_page.server.ts.js                                      1.39 kB
+.svelte-kit/output/server/chunks/index.js                                                                          1.41 kB
+.svelte-kit/output/server/entries/pages/services/_uuid_/_page.server.ts.js                                         1.42 kB
+.svelte-kit/output/server/entries/pages/oidc-setup/_page.server.ts.js                                              1.64 kB
+.svelte-kit/output/server/entries/pages/sell/service/_page.server.ts.js                                            1.73 kB
+.svelte-kit/output/server/entries/pages/sell/classified/_page.server.ts.js                                         1.76 kB
+.svelte-kit/output/server/chunks/queries2.js                                                                       1.79 kB
+.svelte-kit/output/server/chunks/Select.js                                                                         1.88 kB
+.svelte-kit/output/server/entries/pages/administrator/reports/_uuid_/_page.server.ts.js                            1.94 kB
+.svelte-kit/output/server/chunks/mutations2.js                                                                     1.99 kB
+.svelte-kit/output/server/chunks/mutations.js                                                                      2.03 kB
+.svelte-kit/output/server/entries/pages/sell/service/_uuid_/edit/_page.server.ts.js                                2.12 kB
+.svelte-kit/output/server/chunks/Input.js                                                                          2.15 kB
+.svelte-kit/output/server/entries/pages/sell/classified/_uuid_/edit/_page.server.ts.js                             2.16 kB
+.svelte-kit/output/server/chunks/Textarea.js                                                                       2.27 kB
+.svelte-kit/output/server/entries/pages/classifieds/_uuid_/_page.svelte.js                                         2.35 kB
+.svelte-kit/output/server/entries/pages/administrator/_page.svelte.js                                              2.39 kB
+.svelte-kit/output/server/chunks/queries.js                                                                        2.41 kB
+.svelte-kit/output/server/entries/pages/administrator/markets/_uuid_/sessions/_session_uuid_/_page.server.ts.js    2.46 kB
+.svelte-kit/output/server/chunks/Checkbox.js                                                                       2.47 kB
+.svelte-kit/output/server/entries/pages/administrator/markets/_uuid_/_page.server.ts.js                            2.53 kB
+.svelte-kit/output/server/entries/pages/markets/_page.svelte.js                                                    2.60 kB
+.svelte-kit/output/server/entries/pages/services/_uuid_/_page.svelte.js                                            2.67 kB
+.svelte-kit/output/server/entries/pages/services/_page.svelte.js                                                   2.78 kB
+.svelte-kit/output/server/entries/pages/classifieds/_page.svelte.js                                                2.80 kB
+.svelte-kit/output/server/chunks/internal.js                                                                       3.37 kB
+.svelte-kit/output/server/entries/pages/markets/_uuid_/sessions/_session_uuid_/_page.svelte.js                     3.65 kB
+.svelte-kit/output/server/entries/pages/my-listings/_page.svelte.js                                                3.65 kB
+.svelte-kit/output/server/entries/pages/oidc-setup/_page.svelte.js                                                 4.15 kB
+.svelte-kit/output/server/chunks/db.js                                                                             4.19 kB
+.svelte-kit/output/server/chunks/physical.js                                                                       4.45 kB
+.svelte-kit/output/server/entries/pages/markets/_uuid_/_page.svelte.js                                             4.50 kB
+.svelte-kit/output/server/entries/pages/administrator/markets/_page.svelte.js                                      4.54 kB
+.svelte-kit/output/server/entries/pages/_page.svelte.js                                                            4.58 kB
+.svelte-kit/output/server/chunks/RelatedListings.js                                                                5.40 kB
+.svelte-kit/output/server/chunks/exports.js                                                                        5.54 kB
+.svelte-kit/output/server/entries/pages/administrator/sellers/_page.svelte.js                                      5.82 kB
+.svelte-kit/output/server/entries/pages/sell/classified/_page.svelte.js                                            5.89 kB
+.svelte-kit/output/server/entries/pages/sell/classified/_uuid_/edit/_page.svelte.js                                6.10 kB
+.svelte-kit/output/server/chunks/moderation.js                                                                     6.35 kB
+.svelte-kit/output/server/entries/pages/sell/service/_page.svelte.js                                               6.48 kB
+.svelte-kit/output/server/entries/pages/sell/service/_uuid_/edit/_page.svelte.js                                   6.55 kB
+.svelte-kit/output/server/entries/pages/administrator/markets/_uuid_/sessions/_session_uuid_/_page.svelte.js       7.32 kB
+.svelte-kit/output/server/chunks/url.js                                                                            7.98 kB
+.svelte-kit/output/server/entries/pages/administrator/reports/_uuid_/_page.svelte.js                               8.84 kB
+.svelte-kit/output/server/entries/pages/_layout.svelte.js                                                         10.86 kB
+.svelte-kit/output/server/chunks/oidc.js                                                                          10.95 kB
+.svelte-kit/output/server/entries/pages/administrator/markets/_uuid_/_page.svelte.js                              14.57 kB
+.svelte-kit/output/server/chunks/render-context.js                                                                18.01 kB
+.svelte-kit/output/server/remote-entry.js                                                                         30.48 kB
+.svelte-kit/output/server/chunks/shared.js                                                                        49.69 kB
+.svelte-kit/output/server/chunks/root.js                                                                         121.58 kB
+.svelte-kit/output/server/index.js                                                                               140.33 kB
+✓ built in 2.60s
+
+Run npm run preview to preview your production build locally.
+
+> Using @sveltejs/adapter-node
+  ✔ done
+ ---> Removed intermediate container 703ec4872afa
+ ---> 467b57dd026f
+Step 24/36 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/36 : RUN apk add --no-cache libc6-compat
+ ---> Using cache
+ ---> 9c3a254d34c5
+Step 26/36 : WORKDIR /app
+ ---> Using cache
+ ---> 4b3192f1841e
+Step 27/36 : RUN mkdir -p /app/data
+ ---> Using cache
+ ---> f4968210d077
+Step 28/36 : COPY --from=builder /app/apps/marketplace/build ./build
+ ---> f4f2c7fff679
+Step 29/36 : COPY --from=builder /app/apps/marketplace/package.json ./
+ ---> 4860f479d21e
+Step 30/36 : COPY --from=builder /app/node_modules ./node_modules
+ ---> 3fad18cf1b2f
+Step 31/36 : COPY --from=builder /app/packages ./packages
+ ---> 0ce275842150
+Step 32/36 : ENV NODE_ENV=production
+ ---> Running in 1e8377b3c3aa
+ ---> Removed intermediate container 1e8377b3c3aa
+ ---> 95fe80b04e5a
+Step 33/36 : ENV PORT=5176
+ ---> Running in 8eb3dbe2285d
+ ---> Removed intermediate container 8eb3dbe2285d
+ ---> fd4700c482d9
+Step 34/36 : ENV DATABASE_PATH=/app/data/marketplace.db
+ ---> Running in 35da77597829
+ ---> Removed intermediate container 35da77597829
+ ---> eb477ef2335a
+Step 35/36 : EXPOSE 5176
+ ---> Running in bb3ca2c2a3ba
+ ---> Removed intermediate container bb3ca2c2a3ba
+ ---> 6596eb7d1766
+Step 36/36 : CMD ["node", "build"]
+ ---> Running in be009b3bff62
+ ---> Removed intermediate container be009b3bff62
+ ---> a26a7a1e257e
+Successfully built a26a7a1e257e
+Successfully tagged cirodam/ben-franklin-society-marketplace:latest
+
+Pushing: cirodam/ben-franklin-society-marketplace:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-marketplace]
+bf4f228f9c85: Preparing
+f0b14612169a: Preparing
+ae3067b70a29: Preparing
+db56c27fdbde: Preparing
+a442a0eaad17: Preparing
+8ddb4bfd7859: Preparing
+1f114c1a20c2: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+1f114c1a20c2: Waiting
+8ddb4bfd7859: Waiting
+1f8b21f3390a: Waiting
+0e2b4d22f01d: Waiting
+7e9cf1ccb68e: Waiting
+29df493baa13: Waiting
+a442a0eaad17: Layer already exists
+8ddb4bfd7859: Layer already exists
+1f114c1a20c2: Layer already exists
+0e2b4d22f01d: Layer already exists
+7e9cf1ccb68e: Layer already exists
+1f8b21f3390a: Layer already exists
+29df493baa13: Layer already exists
+ae3067b70a29: Pushed
+bf4f228f9c85: Pushed
+db56c27fdbde: Pushed
+f0b14612169a: Pushed
+latest: digest: sha256:78bf2d2a4c252e17a30f2d77d043b4b61473207a2bbf77b86cde9088e3d59b9f size: 2618
+✓ Published marketplace
+
+==========================================
+Building: library
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  48.45MB
+Step 1/36 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 3/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 4/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 5/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 5b0c1afc2732
+Step 6/36 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> 6b3881312e03
+Step 7/36 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> 7c0779ddb9d7
+Step 8/36 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 47b07cda35a9
+Step 9/36 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 7dc923be46af
+Step 10/36 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> 52ec5e21a93d
+Step 11/36 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> def30bc6fbc8
+Step 12/36 : COPY apps/library/package.json ./apps/library/
+ ---> Using cache
+ ---> 0ed91bf480ef
+Step 13/36 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> 785857e91b65
+Step 14/36 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/36 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 4daad088b6f9
+Step 16/36 : WORKDIR /app
+ ---> Using cache
+ ---> e8cd7e4f4a1d
+Step 17/36 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 86f3bf154402
+Step 18/36 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> 909cb8c5cf06
+Step 19/36 : COPY packages ./packages
+ ---> Using cache
+ ---> c348ad3a4640
+Step 20/36 : COPY apps/library ./apps/library
+ ---> 89d04110dfb8
+Step 21/36 : RUN pnpm install --frozen-lockfile
+ ---> Running in 1aa7649022de
+[91m! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-9.15.2.tgz
+[0mScope: all 8 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +127
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+   ╭──────────────────────────────────────────────────────────────────╮
+   │                                                                  │
+   │                Update available! 9.15.2 → 11.2.2.                │
+   │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v11.2.2   │
+   │         Run "corepack install -g pnpm@11.2.2" to update.         │
+   │                                                                  │
+   ╰──────────────────────────────────────────────────────────────────╯
+
+Progress: resolved 127, reused 0, downloaded 110, added 112
+Progress: resolved 127, reused 0, downloaded 123, added 127, done
+.../node_modules/better-sqlite3 install$ prebuild-install || node-gyp rebuild --release
+.../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.27.7/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+.../esbuild@0.27.7/node_modules/esbuild postinstall: Done
+.../node_modules/better-sqlite3 install: Done
+
+devDependencies:
++ turbo 2.9.12
++ typescript 5.9.3
+
+Done in 3.2s
+ ---> Removed intermediate container 1aa7649022de
+ ---> 11f83e8b97ed
+Step 22/36 : WORKDIR /app/apps/library
+ ---> Running in 5045437c4403
+ ---> Removed intermediate container 5045437c4403
+ ---> 3c7b0c1008c9
+Step 23/36 : RUN pnpm build
+ ---> Running in 839db3f2fd2d
+
+> @bfs/library@0.0.1 build /app/apps/library
+> vite build
+
+vite v6.4.2 building SSR bundle for production...
+transforming...
+[91m8:27:49 PM [vite-plugin-svelte] src/routes/documents/new/motion/+page.svelte:17:14 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:     version: 1,
+16:     title: '',
+17:     owner_uuid: data.session.acting_as_uuid,
+                        ^
+18:     created_at: new Date().toISOString(),
+19:     updated_at: new Date().toISOString(),
+8:27:49 PM [vite-plugin-svelte] src/routes/documents/new/motion/+page.svelte:23:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:       status: 'draft',
+22:       provisions: [],
+23:       introducer_uuid: data.session.person_uuid
+                               ^
+24:     }
+25:   });
+8:27:49 PM [vite-plugin-svelte] src/routes/documents/new/motion/+page.svelte:27:29 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+25:   });
+26: 
+27:   let selectedBucket = $state(data.buckets[0]?.bucket_key || '');
+                                      ^
+28:   let saving = $state(false);
+29:   let error = $state<string | null>(null);
+8:27:49 PM [vite-plugin-svelte] src/routes/documents/new/governing/+page.svelte:17:14 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:     version: 1,
+16:     title: '',
+17:     owner_uuid: data.session.acting_as_uuid,
+                        ^
+18:     created_at: new Date().toISOString(),
+19:     updated_at: new Date().toISOString(),
+8:27:49 PM [vite-plugin-svelte] src/routes/documents/new/governing/+page.svelte:28:29 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+26:   });
+27: 
+28:   let selectedBucket = $state(data.buckets[0]?.bucket_key || '');
+                                      ^
+29:   let saving = $state(false);
+30:   let error = $state<string | null>(null);
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/AccountFinder.svelte:164:3 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+162:       placeholder="Search by handle, name, or UUID..."
+163:       class="search-input"
+164:       autofocus={autoFocus}
+                                ^
+165:     />
+166:   </div>
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:18:39 This reference only captures the initial value of `padding`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+16:   } = $props();
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+                                                   ^
+19:   const hoverClass = hover ? 'card--hover' : '';
+20: </script>
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:19:20 This reference only captures the initial value of `hover`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+19:   const hoverClass = hover ? 'card--hover' : '';
+                              ^
+20: </script>
+21: 
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/FormField.svelte:18:1 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+16: 
+17: <div class="field" class:field--error={!!error}>
+18:   <label class="field__label">{label}</label>
+                                                 ^
+19:   <div class="field__control">
+20:     {@render children()}
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:17:20 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let title = $state(section.title);
+                                ^
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:18:19 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+                               ^
+19:   let rationale = $state(section.rationale || '');
+20: 
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:19:24 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+                                    ^
+20: 
+21:   // Update parent when values change
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:78:1 Unused CSS selector ".section-editor__title"
+https://svelte.dev/e/css_unused_selector
+76:   }
+77: 
+78:   .section-editor__title {
+                            ^
+79:     flex: 1;
+80:   }
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:17:21 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(provision.number);
+                                   ^
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:18:20 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+                                  ^
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:19:19 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+                                 ^
+20:   let reasoning = $state(provision.reasoning || '');
+21: 
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:20:24 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+                                      ^
+21: 
+22:   // Update parent when values change
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:89:1 Unused CSS selector ".provision-editor__number"
+https://svelte.dev/e/css_unused_selector
+87:   }
+88: 
+89:   .provision-editor__number {
+                               ^
+90:     flex: 0 0 8rem;
+91:   }
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:93:1 Unused CSS selector ".provision-editor__title"
+https://svelte.dev/e/css_unused_selector
+91:   }
+92: 
+93:   .provision-editor__title {
+                              ^
+94:     flex: 1;
+95:   }
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:17:21 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(article.number);
+                                 ^
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:18:20 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+                                ^
+19:   let sections = $state<Section[]>(article.sections);
+20: 
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:19:34 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+                                              ^
+20: 
+21:   // Update parent when values change
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:100:1 Unused CSS selector ".article-editor__number"
+https://svelte.dev/e/css_unused_selector
+ 98:   }
+ 99: 
+100:   .article-editor__number {
+                              ^
+101:     flex: 0 0 8rem;
+102:   }
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:104:1 Unused CSS selector ".article-editor__title"
+https://svelte.dev/e/css_unused_selector
+102:   }
+103: 
+104:   .article-editor__title {
+                             ^
+105:     flex: 1;
+106:   }
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:21:20 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19:   } = $props();
+20: 
+21:   let title = $state(doc.title);
+                            ^
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:22:19 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20: 
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+                           ^
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:23:24 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+                                ^
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:24:23 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+                               ^
+25:   let articles = $state<Article[]>(doc.content.articles);
+26: 
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:25:34 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+                                          ^
+26: 
+27:   // Update parent when values change
+[0m[91m8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:20:20 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   } = $props();
+19: 
+20:   let title = $state(motion.title);
+                               ^
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:21:19 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19: 
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+                              ^
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:22:38 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+                                                 ^
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:23:25 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+                                    ^
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+25: 
+8:27:49 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:24:35 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+                                              ^
+25: 
+26:   // Update parent when values change
+[0m✓ 263 modules transformed.
+rendering chunks...
+vite v6.4.2 building for production...
+transforming...
+[91m8:27:50 PM [vite-plugin-svelte] src/routes/documents/new/governing/+page.svelte:17:14 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:     version: 1,
+16:     title: '',
+17:     owner_uuid: data.session.acting_as_uuid,
+                        ^
+18:     created_at: new Date().toISOString(),
+19:     updated_at: new Date().toISOString(),
+8:27:50 PM [vite-plugin-svelte] src/routes/documents/new/governing/+page.svelte:28:29 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+26:   });
+27: 
+28:   let selectedBucket = $state(data.buckets[0]?.bucket_key || '');
+                                      ^
+29:   let saving = $state(false);
+30:   let error = $state<string | null>(null);
+8:27:50 PM [vite-plugin-svelte] src/routes/documents/new/motion/+page.svelte:17:14 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:     version: 1,
+16:     title: '',
+17:     owner_uuid: data.session.acting_as_uuid,
+                        ^
+18:     created_at: new Date().toISOString(),
+19:     updated_at: new Date().toISOString(),
+8:27:50 PM [vite-plugin-svelte] src/routes/documents/new/motion/+page.svelte:23:20 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:       status: 'draft',
+22:       provisions: [],
+23:       introducer_uuid: data.session.person_uuid
+                               ^
+24:     }
+25:   });
+8:27:50 PM [vite-plugin-svelte] src/routes/documents/new/motion/+page.svelte:27:29 This reference only captures the initial value of `data`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+25:   });
+26: 
+27:   let selectedBucket = $state(data.buckets[0]?.bucket_key || '');
+                                      ^
+28:   let saving = $state(false);
+29:   let error = $state<string | null>(null);
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/AccountFinder.svelte:164:3 Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus
+162:       placeholder="Search by handle, name, or UUID..."
+163:       class="search-input"
+164:       autofocus={autoFocus}
+                                ^
+165:     />
+166:   </div>
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:18:39 This reference only captures the initial value of `padding`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+16:   } = $props();
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+                                                   ^
+19:   const hoverClass = hover ? 'card--hover' : '';
+20: </script>
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/Card.svelte:19:20 This reference only captures the initial value of `hover`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally
+17: 
+18:   const paddingClass = `card--padding-${padding}`;
+19:   const hoverClass = hover ? 'card--hover' : '';
+                              ^
+20: </script>
+21: 
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/FormField.svelte:18:1 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+16: 
+17: <div class="field" class:field--error={!!error}>
+18:   <label class="field__label">{label}</label>
+                                                 ^
+19:   <div class="field__control">
+20:     {@render children()}
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/Modal.svelte:75:2 `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+73:     {...rest}
+74:   >
+75:     <div class="modal__content" onclick={(e) => e.stopPropagation()}>
+              ^
+76:       {#if title}
+77:         <div class="modal__header">
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:17:20 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let title = $state(section.title);
+                                ^
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:18:19 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+                               ^
+19:   let rationale = $state(section.rationale || '');
+20: 
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:19:24 This reference only captures the initial value of `section`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let title = $state(section.title);
+18:   let body = $state(section.body);
+19:   let rationale = $state(section.rationale || '');
+                                    ^
+20: 
+21:   // Update parent when values change
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/SectionEditor.svelte:78:1 Unused CSS selector ".section-editor__title"
+https://svelte.dev/e/css_unused_selector
+76:   }
+77: 
+78:   .section-editor__title {
+                            ^
+79:     flex: 1;
+80:   }
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:17:21 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(provision.number);
+                                   ^
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:18:20 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+                                  ^
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:19:19 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(provision.number);
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+                                 ^
+20:   let reasoning = $state(provision.reasoning || '');
+21: 
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:20:24 This reference only captures the initial value of `provision`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   let title = $state(provision.title || '');
+19:   let text = $state(provision.text);
+20:   let reasoning = $state(provision.reasoning || '');
+                                      ^
+21: 
+22:   // Update parent when values change
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:89:1 Unused CSS selector ".provision-editor__number"
+https://svelte.dev/e/css_unused_selector
+87:   }
+88: 
+89:   .provision-editor__number {
+                               ^
+90:     flex: 0 0 8rem;
+91:   }
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ProvisionEditor.svelte:93:1 Unused CSS selector ".provision-editor__title"
+https://svelte.dev/e/css_unused_selector
+91:   }
+92: 
+93:   .provision-editor__title {
+                              ^
+94:     flex: 1;
+95:   }
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:17:21 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+15:   } = $props();
+16: 
+17:   let number = $state(article.number);
+                                 ^
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:18:20 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+16: 
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+                                ^
+19:   let sections = $state<Section[]>(article.sections);
+20: 
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:19:34 This reference only captures the initial value of `article`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+17:   let number = $state(article.number);
+18:   let title = $state(article.title);
+19:   let sections = $state<Section[]>(article.sections);
+                                              ^
+20: 
+21:   // Update parent when values change
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:100:1 Unused CSS selector ".article-editor__number"
+https://svelte.dev/e/css_unused_selector
+ 98:   }
+ 99: 
+100:   .article-editor__number {
+                              ^
+101:     flex: 0 0 8rem;
+102:   }
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/ArticleEditor.svelte:104:1 Unused CSS selector ".article-editor__title"
+https://svelte.dev/e/css_unused_selector
+102:   }
+103: 
+104:   .article-editor__title {
+                             ^
+105:     flex: 1;
+106:   }
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:20:20 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+18:   } = $props();
+19: 
+20:   let title = $state(motion.title);
+                               ^
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:21:19 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19: 
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+                              ^
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:22:38 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20:   let title = $state(motion.title);
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+                                                 ^
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:23:25 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let slug = $state(motion.slug);
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+                                    ^
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+25: 
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/MotionEditor.svelte:24:35 This reference only captures the initial value of `motion`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let provisions = $state<Provision[]>(motion.content.provisions);
+23:   let clerkNotes = $state(motion.content.clerk_notes || '');
+24:   let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
+                                              ^
+25: 
+26:   // Update parent when values change
+[0m[91m8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:21:20 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+19:   } = $props();
+20: 
+21:   let title = $state(doc.title);
+                            ^
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:22:19 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+20: 
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+                           ^
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:23:24 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+21:   let title = $state(doc.title);
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+                                ^
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:24:23 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+22:   let slug = $state(doc.slug);
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+                               ^
+25:   let articles = $state<Article[]>(doc.content.articles);
+26: 
+8:27:50 PM [vite-plugin-svelte] /app/packages/ui/src/documents/GoverningDocEditor.svelte:25:34 This reference only captures the initial value of `doc`. Did you mean to reference it inside a derived instead?
+https://svelte.dev/e/state_referenced_locally
+23:   let seniority = $state(doc.content.seniority);
+24:   let preamble = $state(doc.content.preamble || '');
+25:   let articles = $state<Article[]>(doc.content.articles);
+                                          ^
+26: 
+27:   // Update parent when values change
+[0m✓ 233 modules transformed.
+rendering chunks...
+computing gzip size...
+.svelte-kit/output/client/_app/version.json                                       0.03 kB │ gzip:  0.05 kB
+.svelte-kit/output/client/.vite/manifest.json                                     6.22 kB │ gzip:  0.99 kB
+.svelte-kit/output/client/_app/immutable/assets/4.DsFAxsQ6.css                    1.54 kB │ gzip:  0.49 kB
+.svelte-kit/output/client/_app/immutable/assets/3.qD9J82bt.css                    1.54 kB │ gzip:  0.49 kB
+.svelte-kit/output/client/_app/immutable/assets/0.DJ6uzj1H.css                    5.76 kB │ gzip:  1.82 kB
+.svelte-kit/output/client/_app/immutable/assets/GoverningDocEditor.DBYDT4hF.css  13.41 kB │ gzip:  2.49 kB
+.svelte-kit/output/client/_app/immutable/entry/start.DzhgabsJ.js                  0.08 kB │ gzip:  0.09 kB
+.svelte-kit/output/client/_app/immutable/chunks/DxurNuf9.js                       0.23 kB │ gzip:  0.16 kB
+.svelte-kit/output/client/_app/immutable/chunks/Cg8aLidm.js                       0.23 kB │ gzip:  0.20 kB
+.svelte-kit/output/client/_app/immutable/nodes/1.C5PcSIiM.js                      0.50 kB │ gzip:  0.33 kB
+.svelte-kit/output/client/_app/immutable/chunks/BKSI2wWi.js                       0.64 kB │ gzip:  0.39 kB
+.svelte-kit/output/client/_app/immutable/chunks/Conheu7w.js                       0.82 kB │ gzip:  0.49 kB
+.svelte-kit/output/client/_app/immutable/chunks/DWIqQYdL.js                       1.26 kB │ gzip:  0.70 kB
+.svelte-kit/output/client/_app/immutable/chunks/DyiMIOqx.js                       2.55 kB │ gzip:  1.17 kB
+.svelte-kit/output/client/_app/immutable/nodes/5.D-uaefYG.js                      2.89 kB │ gzip:  1.36 kB
+.svelte-kit/output/client/_app/immutable/nodes/0.CqB0nlf6.js                      4.21 kB │ gzip:  1.72 kB
+.svelte-kit/output/client/_app/immutable/chunks/ecXNbwzv.js                       4.86 kB │ gzip:  1.58 kB
+.svelte-kit/output/client/_app/immutable/chunks/B850q3Ph.js                       5.28 kB │ gzip:  2.43 kB
+.svelte-kit/output/client/_app/immutable/chunks/BgXVPPhl.js                       7.12 kB │ gzip:  3.29 kB
+.svelte-kit/output/client/_app/immutable/entry/app.D5o1EHNO.js                    7.33 kB │ gzip:  3.29 kB
+.svelte-kit/output/client/_app/immutable/nodes/4.rIS_NUxW.js                      7.82 kB │ gzip:  2.94 kB
+.svelte-kit/output/client/_app/immutable/chunks/C1cyw_m9.js                      10.47 kB │ gzip:  4.45 kB
+.svelte-kit/output/client/_app/immutable/nodes/3.BNAHmU_s.js                     11.25 kB │ gzip:  4.13 kB
+.svelte-kit/output/client/_app/immutable/nodes/2.D-W2Urrt.js                     16.13 kB │ gzip:  4.87 kB
+.svelte-kit/output/client/_app/immutable/chunks/clPZ47Y1.js                      25.90 kB │ gzip: 10.06 kB
+.svelte-kit/output/client/_app/immutable/chunks/CA49sutH.js                      34.70 kB │ gzip: 13.13 kB
+✓ built in 652ms
+.svelte-kit/output/server/.vite/manifest.json                                                12.05 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.qD9J82bt.css                            1.54 kB
+.svelte-kit/output/server/_app/immutable/assets/_page.DsFAxsQ6.css                            1.54 kB
+.svelte-kit/output/server/_app/immutable/assets/_layout.DJ6uzj1H.css                          5.76 kB
+.svelte-kit/output/server/_app/immutable/assets/GoverningDocEditor.P9jthH14.css              13.36 kB
+.svelte-kit/output/server/entries/endpoints/auth/logout/_server.ts.js                         0.24 kB
+.svelte-kit/output/server/internal.js                                                         0.35 kB
+.svelte-kit/output/server/chunks/state.svelte.js                                              0.44 kB
+.svelte-kit/output/server/entries/endpoints/auth/login/_server.ts.js                          0.50 kB
+.svelte-kit/output/server/entries/endpoints/api/buckets/_server.ts.js                         0.54 kB
+.svelte-kit/output/server/entries/pages/_layout.server.ts.js                                  0.59 kB
+.svelte-kit/output/server/chunks/environment.js                                               0.62 kB
+.svelte-kit/output/server/chunks/client.js                                                    0.65 kB
+.svelte-kit/output/server/entries/fallbacks/error.svelte.js                                   0.69 kB
+.svelte-kit/output/server/entries/hooks.server.js                                             0.96 kB
+.svelte-kit/output/server/chunks/config.js                                                    1.02 kB
+.svelte-kit/output/server/entries/endpoints/api/buckets/_bucket_key_/files/_server.ts.js      1.08 kB
+.svelte-kit/output/server/chunks/utils.js                                                     1.09 kB
+.svelte-kit/output/server/entries/endpoints/oauth/callback/_server.ts.js                      1.10 kB
+.svelte-kit/output/server/entries/endpoints/api/buckets/_bucket_key_/folders/_server.ts.js    1.10 kB
+.svelte-kit/output/server/entries/endpoints/api/folders/_id_/contents/_server.ts.js           1.32 kB
+.svelte-kit/output/server/chunks/index.js                                                     1.44 kB
+.svelte-kit/output/server/entries/endpoints/api/folders/_server.ts.js                         1.45 kB
+.svelte-kit/output/server/entries/pages/oidc-setup/_page.server.ts.js                         1.63 kB
+.svelte-kit/output/server/entries/endpoints/api/files/_server.ts.js                           1.70 kB
+.svelte-kit/output/server/entries/endpoints/api/folders/_id_/_server.ts.js                    2.24 kB
+.svelte-kit/output/server/entries/pages/_page.server.ts.js                                    2.37 kB
+.svelte-kit/output/server/entries/pages/documents/new/motion/_page.server.ts.js               2.64 kB
+.svelte-kit/output/server/entries/pages/documents/new/governing/_page.server.ts.js            2.65 kB
+.svelte-kit/output/server/entries/pages/oidc-setup/_page.svelte.js                            2.71 kB
+.svelte-kit/output/server/chunks/db.js                                                        2.78 kB
+.svelte-kit/output/server/chunks/buckets.js                                                   2.84 kB
+.svelte-kit/output/server/chunks/internal.js                                                  3.37 kB
+.svelte-kit/output/server/entries/endpoints/api/files/_id_/_server.ts.js                      3.50 kB
+.svelte-kit/output/server/chunks/folders.js                                                   5.26 kB
+.svelte-kit/output/server/chunks/files.js                                                     5.47 kB
+.svelte-kit/output/server/chunks/exports.js                                                   5.54 kB
+.svelte-kit/output/server/chunks/attributes.js                                                6.43 kB
+.svelte-kit/output/server/chunks/Textarea.js                                                  6.47 kB
+.svelte-kit/output/server/entries/pages/_layout.svelte.js                                     6.66 kB
+.svelte-kit/output/server/chunks/oidc.js                                                     10.40 kB
+.svelte-kit/output/server/entries/pages/documents/new/motion/_page.svelte.js                 11.07 kB
+.svelte-kit/output/server/entries/pages/_page.svelte.js                                      13.31 kB
+.svelte-kit/output/server/entries/pages/documents/new/governing/_page.svelte.js              16.24 kB
+.svelte-kit/output/server/chunks/render-context.js                                           18.02 kB
+.svelte-kit/output/server/remote-entry.js                                                    30.49 kB
+.svelte-kit/output/server/chunks/shared.js                                                   49.69 kB
+.svelte-kit/output/server/chunks/root.js                                                    114.59 kB
+.svelte-kit/output/server/index.js                                                          140.36 kB
+✓ built in 2.19s
+
+Run npm run preview to preview your production build locally.
+
+> Using @sveltejs/adapter-node
+  ✔ done
+ ---> Removed intermediate container 839db3f2fd2d
+ ---> 0075e22f34a9
+Step 24/36 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/36 : RUN apk add --no-cache libc6-compat
+ ---> Using cache
+ ---> 9c3a254d34c5
+Step 26/36 : WORKDIR /app
+ ---> Using cache
+ ---> 4b3192f1841e
+Step 27/36 : RUN mkdir -p /app/data/buckets
+ ---> Running in af3da78152c8
+ ---> Removed intermediate container af3da78152c8
+ ---> d92b081b948a
+Step 28/36 : COPY --from=builder /app/apps/library/build ./build
+ ---> ad30f95b8026
+Step 29/36 : COPY --from=builder /app/apps/library/package.json ./
+ ---> 56c3d1b5837e
+Step 30/36 : COPY --from=builder /app/node_modules ./node_modules
+ ---> e5588e30fc63
+Step 31/36 : COPY --from=builder /app/packages ./packages
+ ---> 500b8e54289d
+Step 32/36 : ENV NODE_ENV=production
+ ---> Running in 6f50184a5095
+ ---> Removed intermediate container 6f50184a5095
+ ---> 0665ce9173d8
+Step 33/36 : ENV PORT=5177
+ ---> Running in 35b5b0d46772
+ ---> Removed intermediate container 35b5b0d46772
+ ---> e5ff53e2d193
+Step 34/36 : ENV DATABASE_PATH=/app/data/library.db
+ ---> Running in 1c33f0491bbb
+ ---> Removed intermediate container 1c33f0491bbb
+ ---> 8fbb4225d624
+Step 35/36 : EXPOSE 5177
+ ---> Running in 9234269a9d5f
+ ---> Removed intermediate container 9234269a9d5f
+ ---> 235e76dadcbe
+Step 36/36 : CMD ["node", "build"]
+ ---> Running in 366df2f3a9a8
+ ---> Removed intermediate container 366df2f3a9a8
+ ---> 12f746b536c4
+Successfully built 12f746b536c4
+Successfully tagged cirodam/ben-franklin-society-library:latest
+
+Pushing: cirodam/ben-franklin-society-library:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-library]
+c85d2affa633: Preparing
+5cafca927c95: Preparing
+e248e236daf4: Preparing
+2554c6c96a14: Preparing
+2361e810bec9: Preparing
+8ddb4bfd7859: Preparing
+1f114c1a20c2: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+1f8b21f3390a: Waiting
+7e9cf1ccb68e: Waiting
+29df493baa13: Waiting
+1f114c1a20c2: Waiting
+0e2b4d22f01d: Waiting
+8ddb4bfd7859: Waiting
+c85d2affa633: Pushed
+e248e236daf4: Pushed
+2361e810bec9: Pushed
+2554c6c96a14: Pushed
+8ddb4bfd7859: Mounted from cirodam/ben-franklin-society-marketplace
+0e2b4d22f01d: Mounted from cirodam/ben-franklin-society-marketplace
+1f114c1a20c2: Mounted from cirodam/ben-franklin-society-marketplace
+7e9cf1ccb68e: Mounted from cirodam/ben-franklin-society-marketplace
+1f8b21f3390a: Mounted from cirodam/ben-franklin-society-marketplace
+29df493baa13: Mounted from cirodam/ben-franklin-society-marketplace
+5cafca927c95: Pushed
+latest: digest: sha256:461dd36557e46631a53a077e0dbd5302a34429197236a1b282c34d292abde0af size: 2618
+✓ Published library
+
+==========================================
+All images published successfully!
+==========================================
+
+Images published:
+  - cirodam/ben-franklin-society-governance:latest
+  - cirodam/ben-franklin-society-community-bank:latest
+  - cirodam/ben-franklin-society-mail:latest
+  - cirodam/ben-franklin-society-marketplace:latest
+  - cirodam/ben-franklin-society-library:latest

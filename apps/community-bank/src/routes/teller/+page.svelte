@@ -47,7 +47,9 @@
 						</span>
 					</div>
 					{#if acct.is_frozen === 1}
-					</div>
+						<span class="frozen-badge">Frozen</span>
+					{/if}
+				</div>
 				{/each}
 			</div>
 

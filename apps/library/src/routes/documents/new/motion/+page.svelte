@@ -2,14 +2,13 @@
 	import type { PageData } from './$types.js';
 	import { MotionEditor } from '@bfs/ui';
 	import type { MotionDocument } from '@bfs/types';
-	import { randomUUID } from 'node:crypto';
 	import { goto } from '$app/navigation';
 
 	const { data } = $props<{ data: PageData }>();
 
 	// Initialize empty motion
 	let motion = $state<MotionDocument>({
-		uuid: randomUUID(),
+		uuid: crypto.randomUUID(),
 		type: 'motion',
 		slug: '',
 		document_id: null,

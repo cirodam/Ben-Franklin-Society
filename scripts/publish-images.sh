@@ -21,6 +21,7 @@ APPS=(
     "community-bank"
     "mail"
     "marketplace"
+    "library"
 )
 
 for APP in "${APPS[@]}"; do
