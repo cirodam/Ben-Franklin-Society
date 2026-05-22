@@ -1,11 +1,9 @@
-version: '3.8'
-
 # Docker Compose configuration using published images from Docker Hub
 # For production deployments without building from source
 
 services:
   reverse-proxy:
-    image: traefik:v2.10
+    image: traefik:v3.0
     command:
       - "--api.dashboard=true"
       - "--providers.docker=true"

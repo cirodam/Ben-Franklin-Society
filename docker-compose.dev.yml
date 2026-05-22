@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development docker-compose configuration
 # For local testing without SSL/domain requirements
 
