@@ -69,7 +69,7 @@
 					<div class="form-group">
 						<label for="type">Type</label>
 						<select id="type" name="type" bind:value={newDocType}>
-							{#each allTypes as type}
+							{#each societyCodeTypes as type}
 								{@const typeConfig = documentTypes.get(type)}
 								{#if typeConfig && (!typeConfig.canCreate || typeConfig.canCreate(person))}
 									<option value={type}>{typeConfig.icon} {typeConfig.label}</option>
