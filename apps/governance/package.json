@@ -8,7 +8,10 @@
     "build": "vite build",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "seed": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed.ts",
-    "seed:special": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed-special-associations.ts",
+    "seed:all": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed-all.ts all",
+    "seed:services": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed-all.ts services",
+    "seed:colleges": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed-all.ts colleges",
+    "seed:committees": "DATABASE_PATH=${DATABASE_PATH:-./dev.sqlite} tsx scripts/seed-all.ts committees",
     "reset": "bash scripts/reset.sh"
   },
   "dependencies": {

@@ -9,7 +9,7 @@
 	const hasContexts = $derived(data.availableContexts && data.availableContexts.length > 0);
 </script>
 
-<AppShell>
+<AppShell maxWidth="xl">
 	{#snippet sidebar()}
 		<Sidebar>
 			{#snippet brand()}
@@ -34,11 +34,11 @@
 
 			<SidebarGroup label="Communications">
 				<SidebarLink href="/communications/record">The Record</SidebarLink>
-			</SidebarGroup>
+		</SidebarGroup>
 
+		<SidebarGroup label="Federation">
 			<SidebarLink href="/federation/lineage">Federation</SidebarLink>
-
-			<SidebarDivider />
+		</SidebarGroup>
 
 			<SidebarGroup label="Administration">
 				<SidebarLink href="/admin/settings/oidc-clients">OIDC Clients</SidebarLink>

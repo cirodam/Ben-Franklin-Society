@@ -684,44 +684,8 @@ CREATE TABLE IF NOT EXISTS vouch_verifications (
 CREATE INDEX IF NOT EXISTS idx_vouch_verifications_peer ON vouch_verifications(peer_handle);
 CREATE INDEX IF NOT EXISTS idx_vouch_verifications_fresh ON vouch_verifications(peer_handle, checked_at);
 
--- Injury System: Formal records of harm for College of Conciliation
-
-CREATE TABLE IF NOT EXISTS injury_record (
-  uuid          TEXT PRIMARY KEY,
-  injury_number INTEGER NOT NULL UNIQUE,
-  injury_types  TEXT NOT NULL,  -- CSV: physical, material, relational, systemic, communal
-  incident_start TEXT NOT NULL,
-  incident_end  TEXT NULL,
-  location      TEXT NULL,
-  filed_at      TEXT NOT NULL,
-  gravity       TEXT NULL,  -- minor, moderate, severe
-  safety_risk   TEXT NULL,  -- low, moderate, high
-  created_at    TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_injury_record_number ON injury_record(injury_number);
-CREATE INDEX IF NOT EXISTS idx_injury_record_filed_at ON injury_record(filed_at);
-CREATE INDEX IF NOT EXISTS idx_injury_record_gravity ON injury_record(gravity);
-CREATE INDEX IF NOT EXISTS idx_injury_record_safety_risk ON injury_record(safety_risk);
-
-CREATE TABLE IF NOT EXISTS injury_party (
-  injury_uuid TEXT NOT NULL REFERENCES injury_record(uuid) ON DELETE CASCADE,
-  party_uuid  TEXT NOT NULL,  -- person, association, or society UUID
-  role        TEXT NOT NULL,  -- complainant or respondent
-  PRIMARY KEY (injury_uuid, party_uuid, role)
-);
-CREATE INDEX IF NOT EXISTS idx_injury_party_party ON injury_party(party_uuid);
-CREATE INDEX IF NOT EXISTS idx_injury_party_role ON injury_party(role);
-
-CREATE TABLE IF NOT EXISTS incident_account (
-  uuid        TEXT PRIMARY KEY,
-  injury_uuid TEXT NOT NULL REFERENCES injury_record(uuid) ON DELETE CASCADE,
-  author_uuid TEXT NOT NULL,  -- UUID of person providing account
-  author_role TEXT NOT NULL,  -- complainant, respondent, or witness
-  account     TEXT NOT NULL,
-  provided_at TEXT NOT NULL,
-  created_at  TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_incident_account_injury ON incident_account(injury_uuid);
-CREATE INDEX IF NOT EXISTS idx_incident_account_author ON incident_account(author_uuid);
+-- Injury System: Migrated to document library system
+-- Injury reports are stored as library documents with type 'injury_report'
+-- See: /apps/governance/src/lib/server/documents/library-injuries.ts
 
 `;

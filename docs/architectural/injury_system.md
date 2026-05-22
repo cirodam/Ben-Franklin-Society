@@ -3,32 +3,120 @@
 
 ---
 
-## Overview
+## 🔄 Architecture Update (May 2026)
 
-The injury system provides a mechanism for members to formally record harm suffered as a result of another party's actions. This creates an official record of incidents that can be used by the College of Conciliation for mediation, accountability, and conflict resolution.
+**The injury system has been migrated to use the document library system.**
+
+- **Old Implementation:** Three dedicated database tables (`injury_record`, `injury_party`, `incident_account`)
+- **New Implementation:** Library documents with type `'injury_report'` stored as JSON files
+- **Location:** `/apps/governance/src/lib/server/documents/library-injuries.ts`
+- **Type Definitions:** `/apps/governance/src/lib/server/documents/library-types.ts` (search for `InjuryReportContent`)
+
+**Benefits:**
+- Unified with other governance documents (motions, policies, etc.)
+- Built-in versioning and audit trails
+- Simpler architecture (one document type vs. three tables)
+- Consistent permissions via library system
+- Natural integration with library search and UI
+
+**Document Structure:**
+- `type`: `'injury_report'`
+- `document_id`: Sequential injury number as string ("1", "2", "123")
+- `slug`: `injury-{number}` (e.g., "injury-123")
+- `owner_uuid`: Society UUID (injuries are society-level concerns)
+- `content`: All injury data (parties, accounts, assessments) in structured JSON
+
+See [injury_system_migration.md](./injury_system_migration.md) for complete migration details.
 
 ---
 
-## Data Model
+## Overview
 
-### `injury_record`
+The injury system provides a mechanism for members to formally record harm suffered as a result of another party's actions. This creates an official record of incidents that can be used by the **Mediation Service** (overseen by the **College of Conciliation**) for mediation, accountability, and conflict resolution.
 
-The core record of an incident where harm was alleged.
+**Organizational Structure:**
+- The **Mediation Service** handles day-to-day assessment, mediation, and case management
+- The **College of Conciliation** provides oversight, guidance, and can intervene in complex cases
+- This separation ensures specialized skill development while maintaining democratic oversight
 
-| Column | Type | Constraints | Description |
-|---|---|---|---|
-| `uuid` | TEXT | PRIMARY KEY | Permanent identifier |
-| `injury_number` | INTEGER | NOT NULL, UNIQUE | Sequential number for reference |
-| `injury_types` | TEXT | NOT NULL | CSV list of injury types: `physical`, `material`, `relational`, `systemic`, `communal` |
-| `incident_start` | TEXT | NOT NULL | When the injury/incident began (ISO 8601 datetime) |
-| `incident_end` | TEXT | NULL | When it ended (NULL if single moment or ongoing) |
-| `location` | TEXT | NULL | Where the incident occurred (free-form text) |
-| `filed_at` | TEXT | NOT NULL | When the injury record was filed |
-| `gravity` | TEXT | NULL | Assessment of harm severity: `minor`, `moderate`, `severe` |
-| `safety_risk` | TEXT | NULL | Assessment of future risk: `low`, `moderate`, `high` |
-| `created_at` | TEXT | NOT NULL | Record creation timestamp |
+---
 
-### Notes
+## Document Structure
+
+Injury reports are stored as library documents with type `'injury_report'`. Each document contains:
+
+### Core Document Fields
+
+- `uuid`: Unique document identifier
+- `type`: Always `'injury_report'`
+- `slug`: `injury-{number}` (e.g., "injury-123")
+- `document_id`: Sequential injury number as string
+- `version`: Document version number (currently always 1)
+- `title`: `"Injury Report #{number}"`
+- `owner_uuid`: Society UUID
+- `created_at`: ISO 8601 timestamp
+- `updated_at`: ISO 8601 timestamp
+
+### Content Structure (InjuryReportContent)
+
+#### Status & Core Details
+
+- **`status`**: `'filed'` | `'under_review'` | `'mediation'` | `'resolved'` | `'closed'`
+- **`injury_types`**: Array of: `'physical'`, `'material'`, `'relational'`, `'systemic'`, `'communal'`
+- **`incident_start`**: ISO 8601 datetime when incident began
+- **`incident_end`**: ISO 8601 datetime or null (null if ongoing or single moment)
+- **`location`**: Free-form text or null
+- **`filed_by_uuid`**: Person who filed the report
+- **`filed_at`**: ISO 8601 timestamp
+
+#### Parties Involved
+
+**`complainants`**: Array of:
+```typescript
+{
+  party_uuid: string;      // person, association, or society UUID
+  party_name: string;      // cached for display
+  party_type: 'person' | 'association' | 'society';
+}
+```
+
+**`respondents`**: Array (same structure as complainants)
+
+#### Incident Accounts
+
+**`accounts`**: Array of:
+```typescript
+{
+  uuid: string;
+  author_uuid: string;
+  author_name: string;     // cached for display
+  author_role: 'complainant' | 'respondent' | 'witness';
+  account: string;         // narrative text
+  provided_at: string;     // ISO 8601
+}
+```
+
+#### Mediation Service Assessments
+
+- **`gravity`**: `'minor'` | `'moderate'` | `'severe'` | `null`
+- **`safety_risk`**: `'low'` | `'moderate'` | `'high'` | `null`
+- **`assessed_at`**: ISO 8601 timestamp or null
+- **`assessed_by_uuid`**: Mediator UUID or null
+- **`assessment_notes`**: Free-form text or null
+
+#### Resolution Tracking
+
+- **`mediation_notes`**: Free-form text or null
+- **`resolution_summary`**: Description of how it was resolved, or null
+- **`resolved_at`**: ISO 8601 timestamp or null
+- **`closed_at`**: ISO 8601 timestamp or null
+- **`closing_notes`**: Reason for closing without resolution, or null
+
+---
+
+## Conceptual Framework
+
+### Notes on Data Model
 
 - **Injury Types** can be combined. Examples:
   - `"physical"` - bodily harm
@@ -54,48 +142,45 @@ Links parties to an injury record, identifying complainants and respondents.
 |---|---|---|---|
 | `injury_uuid` | TEXT | NOT NULL, FK → `injury_record.uuid` | |
 | `party_uuid` | TEXT | NOT NULL | UUID of person, association, or society |
-| `role` | TEXT | NOT NULL | `complainant` or `respondent` |
+## Conceptual Framework
 
-Primary key: `(injury_uuid, party_uuid, role)`
+### Notes on Data Model
 
-### Notes
+- **Injury Types** can be combined. Examples:
+  - `"physical"` - bodily harm
+  - `"material"` - property damage, financial loss
+  - `"relational"` - damage to relationships, reputation
+  - `"systemic"` - harm from institutional failure or pattern
+  - `"communal"` - harm to community as a whole
+  - Multiple types together (e.g., assault that also damaged reputation)
+
+- **Incident timeframe**: Use `incident_start` for single-moment events. Set `incident_end` for ongoing harm or patterns. Leave `incident_end` NULL if harm is still ongoing.
+
+- **Location**: Free-form text describing where the incident occurred. Can be specific ("Community Workshop, 123 Main St") or general ("Member's residence", "Online/social media", "Multiple locations"). Leave NULL if location is unknown or not applicable (e.g., systemic harm).
 
 - **Multiple complainants** supported - several members can jointly file
 - **Multiple respondents** supported - injury can be against multiple parties
 - **Party types**:
   - Person UUID (from `person` table)
   - Association UUID (from `association` table)
-  - Society UUID (from `society_identity` table)
-  
+  - Society UUID (society association from `association` table)
+
 - **Society as complainant**: When a victim is unable or unwilling to participate, the society itself can file on their behalf using the society's UUID
 
----
+- **Incident Accounts**: 
+  - Each party can provide their account of what happened
+  - Witnesses who are not parties can provide accounts with `author_role = 'witness'`
+  - Multiple accounts from same person/role are permitted (updates, additional information)
 
-### `incident_account`
-
-Narratives of what happened from different perspectives.
-
-| Column | Type | Constraints | Description |
-|---|---|---|---|
-| `uuid` | TEXT | PRIMARY KEY | |
-| `injury_uuid` | TEXT | NOT NULL, FK → `injury_record.uuid` | |
-| `author_uuid` | TEXT | NOT NULL | Who is providing this account |
-| `author_role` | TEXT | NOT NULL | `complainant`, `respondent`, or `witness` |
-| `account` | TEXT | NOT NULL | Their narrative of what happened |
-| `provided_at` | TEXT | NOT NULL | When this account was provided |
-| `created_at` | TEXT | NOT NULL | Record creation timestamp |
-
-### Notes
-
-- Each party can provide their account of what happened
-- Witnesses who are not parties can provide accounts with `author_role = 'witness'`
-- Multiple accounts from same person/role are permitted (updates, additional information)
+- **Assessments**: `gravity` and `safety_risk` are judgment-based assessments made by Mediation Service staff (overseen by the College of Conciliation). These may be NULL when initially filed and assigned during intake/review. See "Incident Assessment" section for guidance on how to assess these categories.
 
 ---
 
 ## Incident Assessment
 
-Two complementary assessments help the College of Conciliation respond appropriately to each incident. These are judgment-based assessments - answer the questions for each category and select the one where you answer "yes" to a significant portion of the questions.
+Two complementary assessments help the Mediation Service respond appropriately to each incident. These are judgment-based assessments performed by trained mediators - answer the questions for each category and select the one where you answer "yes" to a significant portion of the questions.
+
+**Note:** The College of Conciliation provides oversight and can review or adjust assessments, particularly for complex or contentious cases.
 
 ### Gravity Assessment
 

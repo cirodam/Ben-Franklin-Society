@@ -287,6 +287,75 @@ export interface OrgChartContent {
 export type OrgChartDocument = LibraryDocument<OrgChartContent>;
 
 // ============================================================================
+// Injury Reports
+// ============================================================================
+
+export type InjuryReportStatus =
+	| 'filed' // Initial filing
+	| 'under_review' // Mediation Service reviewing/assessing
+	| 'mediation' // Active mediation process
+	| 'resolved' // Successfully resolved
+	| 'closed'; // Closed without resolution
+
+export type InjuryType = 'physical' | 'material' | 'relational' | 'systemic' | 'communal';
+
+export type Gravity = 'minor' | 'moderate' | 'severe';
+
+export type SafetyRisk = 'low' | 'moderate' | 'high';
+
+export interface InjuryParty {
+	party_uuid: string; // person, association, or society UUID
+	party_name: string; // cached for display
+	party_type: 'person' | 'association' | 'society';
+}
+
+export interface IncidentAccount {
+	uuid: string;
+	author_uuid: string;
+	author_name: string; // cached for display
+	author_role: 'complainant' | 'respondent' | 'witness';
+	account: string; // narrative text
+	provided_at: string; // ISO 8601
+}
+
+export interface InjuryReportContent {
+	status: InjuryReportStatus;
+
+	// Core incident details
+	injury_types: InjuryType[];
+	incident_start: string; // ISO 8601
+	incident_end: string | null;
+	location: string | null;
+
+	// Parties involved
+	complainants: InjuryParty[];
+	respondents: InjuryParty[];
+
+	// Narratives from different perspectives
+	accounts: IncidentAccount[];
+
+	// Mediation Service assessments (overseen by College of Conciliation)
+	gravity: Gravity | null;
+	safety_risk: SafetyRisk | null;
+	assessed_at: string | null;
+	assessed_by_uuid: string | null; // Mediator who performed assessment
+	assessment_notes: string | null;
+
+	// Resolution tracking
+	mediation_notes: string | null;
+	resolution_summary: string | null;
+	resolved_at: string | null;
+	closed_at: string | null;
+	closing_notes: string | null;
+
+	// Metadata
+	filed_by_uuid: string; // person who filed the report
+	filed_at: string; // ISO 8601
+}
+
+export type InjuryReportDocument = LibraryDocument<InjuryReportContent>;
+
+// ============================================================================
 // Database Index Row
 // ============================================================================
 

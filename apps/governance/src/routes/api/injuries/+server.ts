@@ -1,15 +1,11 @@
 import { json, error } from '@sveltejs/kit';
-import { db } from '$lib/server/db.js';
 import type { RequestHandler } from './$types.js';
-import type {
-	CreateInjuryRequest,
-	InjuryRecord,
-	InjuryRecordWithDetails
-} from '$lib/server/injuries/injury-types.js';
-import { randomUUID } from 'crypto';
+import * as injuries from '$lib/server/documents/library-injuries.js';
+import { db } from '$lib/server/db.js';
+import type { InjuryType, InjuryParty } from '$lib/server/documents/library-types.js';
 
 /**
- * Create a new injury record
+ * Create a new injury report
  * POST /api/injuries
  */
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -18,10 +14,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		error(401, 'Unauthorized');
 	}
 
-	const body = (await request.json()) as CreateInjuryRequest;
+	const body = await request.json();
 
 	// Validate injury types
-	const validTypes = ['physical', 'material', 'relational', 'systemic', 'communal'];
+	const validTypes: InjuryType[] = ['physical', 'material', 'relational', 'systemic', 'communal'];
+	if (!Array.isArray(body.injury_types) || body.injury_types.length === 0) {
+		error(400, 'At least one injury type required');
+	}
 	for (const type of body.injury_types) {
 		if (!validTypes.includes(type)) {
 			error(400, `Invalid injury type: ${type}`);
@@ -29,97 +28,82 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	// Validate required fields
-	if (!body.injury_types.length) {
-		error(400, 'At least one injury type required');
-	}
 	if (!body.incident_start) {
 		error(400, 'incident_start required');
 	}
-	if (!body.complainants?.length) {
+	if (!Array.isArray(body.complainants) || body.complainants.length === 0) {
 		error(400, 'At least one complainant required');
 	}
-	if (!body.respondents?.length) {
+	if (!Array.isArray(body.respondents) || body.respondents.length === 0) {
 		error(400, 'At least one respondent required');
 	}
 
-	const uuid = randomUUID();
-	const now = new Date().toISOString();
-	const injury_types_csv = body.injury_types.join(',');
+	// Build complainants with cached names
+	const complainants: InjuryParty[] = [];
+	for (const uuid of body.complainants) {
+		const person = db
+			.prepare('SELECT given_name, family_name FROM person WHERE uuid = ?')
+			.get(uuid) as { given_name: string; family_name: string } | undefined;
+		if (!person) {
+			error(400, `Complainant not found: ${uuid}`);
+		}
+		complainants.push({
+			party_uuid: uuid,
+			party_name: `${person.given_name} ${person.family_name}`,
+			party_type: 'person'
+		});
+	}
 
-	// Get next injury number
-	const result = db
-		.prepare('SELECT COALESCE(MAX(injury_number), 0) + 1 as next_num FROM injury_record')
-		.get() as { next_num: number };
-	const injury_number = result.next_num;
-
-	// Begin transaction
-	const insertInjury = db.prepare(`
-		INSERT INTO injury_record (
-			uuid, injury_number, injury_types, incident_start, incident_end,
-			location, filed_at, created_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`);
-
-	const insertParty = db.prepare(`
-		INSERT INTO injury_party (injury_uuid, party_uuid, role)
-		VALUES (?, ?, ?)
-	`);
-
-	const insertAccount = db.prepare(`
-		INSERT INTO incident_account (
-			uuid, injury_uuid, author_uuid, author_role, account, provided_at, created_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?)
-	`);
-
-	const transaction = db.transaction(() => {
-		// Insert injury record
-		insertInjury.run(
-			uuid,
-			injury_number,
-			injury_types_csv,
-			body.incident_start,
-			body.incident_end || null,
-			body.location || null,
-			now,
-			now
-		);
-
-		// Insert complainants
-		for (const complainant_uuid of body.complainants) {
-			insertParty.run(uuid, complainant_uuid, 'complainant');
+	// Build respondents with cached names
+	const respondents: InjuryParty[] = [];
+	for (const uuid of body.respondents) {
+		// Try person first
+		const person = db
+			.prepare('SELECT given_name, family_name FROM person WHERE uuid = ?')
+			.get(uuid) as { given_name: string; family_name: string } | undefined;
+		if (person) {
+			respondents.push({
+				party_uuid: uuid,
+				party_name: `${person.given_name} ${person.family_name}`,
+				party_type: 'person'
+			});
+			continue;
 		}
 
-		// Insert respondents
-		for (const respondent_uuid of body.respondents) {
-			insertParty.run(uuid, respondent_uuid, 'respondent');
+		// Try association
+		const association = db
+			.prepare('SELECT name FROM association WHERE uuid = ?')
+			.get(uuid) as { name: string } | undefined;
+		if (association) {
+			respondents.push({
+				party_uuid: uuid,
+				party_name: association.name,
+				party_type: 'association'
+			});
+			continue;
 		}
 
-		// Insert initial account if provided
-		if (body.complainant_account) {
-			insertAccount.run(
-				randomUUID(),
-				uuid,
-				session.acting_as_uuid,
-				'complainant',
-				body.complainant_account,
-				now,
-				now
-			);
-		}
+		error(400, `Respondent not found: ${uuid}`);
+	}
+
+	// Create the injury report
+	const report = injuries.createInjuryReport({
+		injury_types: body.injury_types,
+		incident_start: body.incident_start,
+		incident_end: body.incident_end || null,
+		location: body.location || null,
+		complainants,
+		respondents,
+		filed_by_uuid: session.acting_as_uuid,
+		initial_account: body.initial_account || undefined
 	});
 
-	transaction();
-
-	const record = db
-		.prepare('SELECT * FROM injury_record WHERE uuid = ?')
-		.get(uuid) as InjuryRecord;
-
-	return json(record, { status: 201 });
+	return json(report, { status: 201 });
 };
 
 /**
- * List injury records
- * GET /api/injuries?gravity=severe&safety_risk=high&status=open
+ * List injury reports
+ * GET /api/injuries?status=filed&gravity=severe&safety_risk=high&limit=50&offset=0
  */
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const session = locals.session;
@@ -127,54 +111,32 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		error(401, 'Unauthorized');
 	}
 
-	// Query parameters for filtering
-	const gravity = url.searchParams.get('gravity');
-	const safety_risk = url.searchParams.get('safety_risk');
-	const limit = parseInt(url.searchParams.get('limit') || '50');
-	const offset = parseInt(url.searchParams.get('offset') || '0');
+	// TODO: Check if user is Mediation Service staff for full access
+	// TODO: Check if user is College of Conciliation member for oversight access
+	// For now, users can only see reports they're party to
 
-	let query = `
-		SELECT *
-		FROM injury_record
-		WHERE 1=1
-	`;
-	const params: any[] = [];
+	// Query parameters
+	const statusParam = url.searchParams.get('status');
+	const gravityParam = url.searchParams.get('gravity');
+	const safetyRiskParam = url.searchParams.get('safety_risk');
+	const limitParam = parseInt(url.searchParams.get('limit') || '50');
+	const offsetParam = parseInt(url.searchParams.get('offset') || '0');
 
-	if (gravity) {
-		query += ' AND gravity = ?';
-		params.push(gravity);
-	}
-
-	if (safety_risk) {
-		query += ' AND safety_risk = ?';
-		params.push(safety_risk);
-	}
-
-	query += ' ORDER BY filed_at DESC LIMIT ? OFFSET ?';
-	params.push(limit, offset);
-
-	const records = db.prepare(query).all(...params) as InjuryRecord[];
-
-	// Get total count for pagination
-	let countQuery = 'SELECT COUNT(*) as total FROM injury_record WHERE 1=1';
-	const countParams: any[] = [];
-
-	if (gravity) {
-		countQuery += ' AND gravity = ?';
-		countParams.push(gravity);
-	}
-
-	if (safety_risk) {
-		countQuery += ' AND safety_risk = ?';
-		countParams.push(safety_risk);
-	}
-
-	const { total } = db.prepare(countQuery).get(...countParams) as { total: number };
-
-	return json({
-		records,
-		total,
-		limit,
-		offset
+	// List reports
+	const reports = injuries.listInjuryReports({
+		status: statusParam as any,
+		gravity: gravityParam as any,
+		safety_risk: safetyRiskParam as any,
+		limit: limitParam,
+		offset: offsetParam
 	});
+
+	// Filter to only reports the user is party to (unless College member)
+		// TODO: Add Mediation Service role check
+		// TODO: Add College of Conciliation oversight check
+	const filteredReports = reports.filter((report) =>
+		injuries.isPartyToReport(report, session.acting_as_uuid)
+	);
+
+	return json(filteredReports);
 };
