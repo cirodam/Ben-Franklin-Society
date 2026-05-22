@@ -26,7 +26,7 @@
 		<span class="separator">•</span>
 		<a href="http://localhost:5176" class="service-link">Marketplace</a>
 		<span class="separator">•</span>
-		<a href="/library" class="service-link">Library</a>
+		<a href="http://localhost:5177" class="service-link">Library</a>
 	</nav>
 
 	{#if showForm}

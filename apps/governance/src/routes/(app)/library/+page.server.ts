@@ -13,8 +13,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const queryParam = url.searchParams.get('q');
 	const ownerParam = url.searchParams.get('owner');
 
-	// Determine which types to show - default to all types
-	const types = typeParam ? typeParam.split(',') : ['governing', 'motion', 'prose', 'contract'];
+	// Society Code: Only show motions and governing documents
+	const types = typeParam ? typeParam.split(',') : ['governing', 'motion'];
 
 	// Build query with owner name JOIN (supports both person and association owners)
 	let query = `

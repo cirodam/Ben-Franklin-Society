@@ -13,7 +13,9 @@
 	
 	let showCreateDialog = $state(false);
 
-	const allTypes = documentTypes.getAllTypes();
+	// Society Code: Only motion and governing document types
+	const societyCodeTypes = ['motion', 'governing'];
+	const allTypes = societyCodeTypes;
 
 	// Update URL when filters change
 	function updateFilters() {
@@ -59,7 +61,8 @@
 
 <div class="page">
 	<header class="header">
-		<h1 class="page-title">Library</h1>
+		<h1 class="page-title">Society Code</h1>
+		<p class="subtitle">Official motions and governing documents of the society</p>
 		<div class="header-actions">
 			<Button onclick={() => showCreateDialog = true}>+ Create document</Button>
 		</div>
@@ -148,8 +151,16 @@
 		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		color: var(--ink);
-		margin: 0 0 var(--space-6) 0;
+		margin: 0 0 var(--space-2) 0;
 		line-height: 1.3;
+	}
+
+	.subtitle {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-base);
+		color: var(--ink-mid);
+		margin: 0 0 var(--space-6) 0;
+		font-style: italic;
 	}
 
 	.header-actions {

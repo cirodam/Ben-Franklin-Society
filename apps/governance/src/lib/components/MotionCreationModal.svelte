@@ -42,7 +42,7 @@
 					<p class="empty-state__hint">Create a motion document in the library first, then return here to introduce it.</p>
 					<div class="modal__actions">
 						<button type="button" class="btn btn--secondary" onclick={closeModal}>Close</button>
-						<a href="/library" class="btn btn--primary">Go to Library</a>
+						<a href="/library" class="btn btn--primary">Go to Society Code</a>
 					</div>
 				</div>
 			{:else}

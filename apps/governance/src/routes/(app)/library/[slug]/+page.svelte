@@ -25,7 +25,7 @@
 </svelte:head>
 
 <div class="document-controls">
-	<a href="/library" class="back">← Library</a>
+	<a href="/library" class="back">← Society Code</a>
 	{#if canEdit && (documentType === 'motion' || documentType === 'governing')}
 		<a href="/library/{doc.slug}/edit" class="edit-link">Edit</a>
 	{/if}
