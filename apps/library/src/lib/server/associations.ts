@@ -1,9 +1,3 @@
-import { openDatabase, type BfsDb } from '@bfs/db';
-
-// Connect to governance database to query associations
-const governancePath = process.env.GOVERNANCE_DATABASE_PATH ?? '../governance/db.sqlite';
-export const governanceDb: BfsDb = openDatabase(governancePath);
-
 export interface Association {
 	uuid: string;
 	handle: string;
@@ -15,37 +9,42 @@ export interface Association {
 
 /**
  * Get associations that a user is a member of
+ * Makes an API call to governance instead of direct DB access
  */
-export function getUserAssociations(userUuid: string): Association[] {
-	const associations = governanceDb.prepare(`
-		SELECT a.*
-		FROM association a
-		INNER JOIN association_member am ON am.association_uuid = a.uuid
-		WHERE am.person_uuid = ?
-		  AND am.removed_at IS NULL
-		  AND a.status = 'active'
-		ORDER BY a.name ASC
-	`).all(userUuid) as Association[];
+export async function getUserAssociations(userUuid: string, accessToken: string): Promise<Association[]> {
+	const governanceUrl = process.env.GOVERNANCE_URL ?? 'http://localhost:5173';
+	
+	try {
+		const response = await fetch(`${governanceUrl}/api/me/associations`, {
+			headers: {
+				'Authorization': `Bearer ${accessToken}`
+			}
+		});
 
-	return associations;
+		if (!response.ok) {
+			console.error('[library/associations] Failed to fetch associations:', response.status);
+			return [];
+		}
+
+		const data = await response.json();
+		return data.associations || [];
+	} catch (err) {
+		console.error('[library/associations] Error fetching associations:', err);
+		return [];
+	}
 }
 
 /**
  * Check if a user is a member of an association
+ * Makes an API call to governance instead of direct DB access
  */
-export function isAssociationMember(userUuid: string, associationHandle: string): boolean {
-	const result = governanceDb.prepare(`
-		SELECT 1
-		FROM association a
-		INNER JOIN association_member am ON am.association_uuid = a.uuid
-		WHERE a.handle = ?
-		  AND am.person_uuid = ?
-		  AND am.removed_at IS NULL
-		  AND a.status = 'active'
-		LIMIT 1
-	`).get(associationHandle, userUuid);
-
-	return result !== undefined;
+export async function isAssociationMember(
+	userUuid: string, 
+	associationHandle: string, 
+	accessToken: string
+): Promise<boolean> {
+	const associations = await getUserAssociations(userUuid, accessToken);
+	return associations.some(a => a.handle === associationHandle);
 }
 
 /**

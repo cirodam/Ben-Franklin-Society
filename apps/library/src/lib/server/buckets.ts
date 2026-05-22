@@ -55,7 +55,7 @@ export function getBucketById(bucketId: number): Bucket | null {
 	return bucket ?? null;
 }
 
-export function getUserBuckets(userUuid: string): Bucket[] {
+export async function getUserBuckets(userUuid: string, accessToken: string): Promise<Bucket[]> {
 	const buckets: Bucket[] = [];
 
 	// User's personal bucket
@@ -66,7 +66,7 @@ export function getUserBuckets(userUuid: string): Bucket[] {
 	});
 
 	// Association buckets (for associations user is a member of)
-	const associations = getUserAssociations(userUuid);
+	const associations = await getUserAssociations(userUuid, accessToken);
 	for (const association of associations) {
 		const associationBucket = ensureBucket('association', association.handle);
 		buckets.push({
@@ -81,11 +81,11 @@ export function getUserBuckets(userUuid: string): Bucket[] {
 /**
  * Check if a user has access to a bucket
  */
-export function canAccessBucket(userUuid: string, bucket: Bucket): boolean {
+export async function canAccessBucket(userUuid: string, bucket: Bucket, accessToken: string): Promise<boolean> {
 	if (bucket.owner_type === 'user') {
 		return bucket.owner_id === userUuid;
 	} else if (bucket.owner_type === 'association') {
-		return isAssociationMember(userUuid, bucket.owner_id);
+		return await isAssociationMember(userUuid, bucket.owner_id, accessToken);
 	}
 	return false;
 }

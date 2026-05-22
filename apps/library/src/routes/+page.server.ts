@@ -3,8 +3,9 @@ import { getUserBuckets, getBucket, canAccessBucket } from '$lib/server/buckets.
 import { listRootFiles, listFiles } from '$lib/server/files.js';
 import { listRootFolders, listFolders, getFolder, getFolderBreadcrumbs } from '$lib/server/folders.js';
 import { error } from '@sveltejs/kit';
+import { getOidcClient } from '$lib/server/oidc.js';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	if (!locals.session) {
 		return {
 			session: null,
@@ -17,7 +18,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		};
 	}
 
-	const buckets = getUserBuckets(locals.session.acting_as_uuid);
+	// Get access token for API calls
+	const accessToken = getOidcClient().getAccessToken(cookies);
+	if (!accessToken) {
+		throw error(401, 'No access token available');
+	}
+
+	const buckets = await getUserBuckets(locals.session.acting_as_uuid, accessToken);
 	if (buckets.length === 0) {
 		return {
 			session: locals.session,
@@ -37,7 +44,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		: buckets[0];
 
 	// Verify user has access to this bucket
-	if (currentBucket && !canAccessBucket(locals.session.acting_as_uuid, currentBucket)) {
+	if (currentBucket && !(await canAccessBucket(locals.session.acting_as_uuid, currentBucket, accessToken))) {
 		throw error(403, 'Not authorized to access this bucket');
 	}
 

@@ -217,6 +217,24 @@ export class OidcClient {
 	}
 
 	/**
+	 * Get the access token from the session cookie
+	 * Returns null if no valid session exists
+	 */
+	getAccessToken(cookies: Cookies): string | null {
+		const sessionData = cookies.get(COOKIE_NAME);
+		if (!sessionData) {
+			return null;
+		}
+
+		try {
+			const tokens = JSON.parse(sessionData) as TokenSet;
+			return tokens.access_token;
+		} catch {
+			return null;
+		}
+	}
+
+	/**
 	 * Refresh the access token using a refresh token
 	 */
 	async refreshAccessToken(refreshToken: string): Promise<TokenSet> {
