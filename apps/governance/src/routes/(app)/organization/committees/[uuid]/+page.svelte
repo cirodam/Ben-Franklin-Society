@@ -270,6 +270,51 @@
 		border-bottom-color: #d4a24a;
 	}
 
+	.motion-status-tabs {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: center;
+		margin-bottom: var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+	}
+
+	.status-tab {
+		padding: var(--space-3) var(--space-5);
+		border: none;
+		background: transparent;
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-base);
+		letter-spacing: 0.08em;
+		color: #7a5c1a;
+		cursor: pointer;
+		position: relative;
+		transition: all 0.2s;
+	}
+
+	.status-tab:hover {
+		color: #151c1a;
+		background: rgba(212, 162, 74, 0.05);
+	}
+
+	.status-tab.active {
+		color: #d4a24a;
+	}
+
+	.status-tab.active::after {
+		content: '';
+		position: absolute;
+		bottom: -1px;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: #d4a24a;
+	}
+
+	.count {
+		font-size: var(--text-sm);
+		opacity: 0.7;
+	}
+
 	.tab-content {
 		min-height: 400px;
 	}
