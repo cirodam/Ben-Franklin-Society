@@ -25,9 +25,9 @@
 
 ---
 
-## Where Commune Fits
+## Where Junto Fits
 
-### Commune App (Proposed)
+### Junto App (Proposed)
 - **Purpose**: Real-time group discussion and voice communication
 - **Model**: Rooms/channels with persistent chat + ephemeral voice
 - **Delivery**: Real-time via WebSocket/WebRTC
@@ -38,7 +38,7 @@
 
 ## Comparison Matrix
 
-| Feature | Mail | Bulletin | Motion Comments | **Commune** |
+| Feature | Mail | Bulletin | Motion Comments | **Junto** |
 |---------|------|----------|-----------------|-------------|
 | **Real-time** | ❌ | ❌ | ❌ | ✅ |
 | **Async** | ✅ | ✅ | ✅ | ✅ (text) |
@@ -79,7 +79,7 @@
 
 **Example**: "I support this motion, but suggest we modify section 3..."
 
-### When to use Commune
+### When to use Junto
 - Quick questions that need immediate answers
 - Brainstorming sessions for new initiatives
 - Casual community discussion
@@ -94,7 +94,7 @@
 ## Integration Opportunities
 
 ### Motion Deliberation Rooms
-- Create dedicated Commune room for each active motion
+- Create dedicated Junto room for each active motion
 - Link from motion detail page to discussion room
 - Facilitate real-time debate before formal vote
 - Supplement formal comments with casual discussion
@@ -128,24 +128,24 @@
 ## Migration from Existing Systems
 
 ### No Migration Needed
-Commune complements existing systems rather than replacing them:
+Junto complements existing systems rather than replacing them:
 
 - **Mail** remains for formal person-to-person correspondence
 - **Bulletin** remains for official announcements and records
 - **Motion Comments** remain for structured governance deliberation
-- **Commune** adds new capability: real-time group discussion
+- **Junto** adds new capability: real-time group discussion
 
 ### Potential Overlap
-- Quick coordination messages might shift from Mail to Commune
-- Some informal discussion might shift from Motion Comments to Commune deliberation rooms
-- Time-sensitive announcements might be posted in Commune first, then formalized in Bulletin
+- Quick coordination messages might shift from Mail to Junto
+- Some informal discussion might shift from Motion Comments to Junto deliberation rooms
+- Time-sensitive announcements might be posted in Junto first, then formalized in Bulletin
 
 ### Best Practice
 Use the right tool for the communication type:
 - **Formal & Official** → Bulletin
 - **Proposal Discussion** → Motion Comments
 - **Person-to-Person** → Mail
-- **Real-time & Group** → Commune
+- **Real-time & Group** → Junto
 
 ---
 
@@ -159,7 +159,7 @@ Use the right tool for the communication type:
 │  Asynchronous   │   Structured    │    Real-time       │
 │                 │                 │                     │
 │  ┌───────────┐  │  ┌───────────┐  │  ┌───────────┐    │
-│  │   Mail    │  │  │ Bulletin  │  │  │  Commune  │    │
+│  │   Mail    │  │  │ Bulletin  │  │  │   Junto   │    │
 │  │           │  │  │           │  │  │           │    │
 │  │ • Inbox   │  │  │ • Record  │  │  │ • Rooms   │    │
 │  │ • Compose │  │  │ • Entries │  │  │ • Chat    │    │
@@ -195,11 +195,11 @@ Use the right tool for the communication type:
 - **Archiving**: Permanent with motion
 - **Deletion**: Should not be deleted (transparency)
 
-### Commune
+### Junto
 - **Privacy**: Public rooms initially (private rooms in future)
 - **Archiving**: Text messages retained (configurable), voice is ephemeral
 - **Deletion**: Messages can be edited/deleted (casual context)
-- **Retention**: Consider 90-day or 1-year retention policy
+- **Retention**: Keep all messages initially, add 90-day pruning later if needed
 
 ---
 
@@ -208,6 +208,8 @@ Use the right tool for the communication type:
 1. **Launch with public rooms only** - Simplest model, fastest to ship
 2. **Add committee/college rooms in Phase 2** - Clear organizational structure
 3. **Consider ephemeral "discussion" rooms** - Temporary rooms that auto-delete after 30 days of inactivity
-4. **Link from motion pages** - "Discuss in Commune" button to create/link room
+4. **Link from motion pages** - "Discuss in Junto" button to create/link room
 5. **Clear communication guidelines** - Help users understand when to use each tool
 6. **Monitor usage patterns** - Adjust features based on how community actually uses it
+7. **Voice limit**: Document 8-user maximum for mesh topology
+8. **STUN/TURN**: Use public STUN servers, add TURN only if NAT issues arise

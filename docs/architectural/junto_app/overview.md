@@ -1,4 +1,4 @@
-# Commune App
+# Junto App
 
 **Purpose**: Real-time intra-community deliberations and discussions
 
@@ -6,11 +6,15 @@
 
 **Status**: Planning
 
+**Port**: 5180
+
 ---
 
 ## Vision
 
 A Discord-like application where community members can gather in public rooms for text and voice discussions. Supports ongoing deliberations, casual conversations, and spontaneous gatherings.
+
+Named after Benjamin Franklin's Junto club - a discussion group where members gathered to debate ideas and improve their community.
 
 ---
 
@@ -126,7 +130,9 @@ interface VoiceParticipant {
 
 ### Authentication
 - Uses existing OIDC session from governance app
-- Access person data (name, avatar) from shared database
+- API-based: calls governance `/api/me/associations` endpoint
+- Machine-independent: can run on separate server from governance
+- Access person data via governance API (not direct DB access)
 
 ### Federation
 - Future: Cross-society rooms (using `.bfs` network)
@@ -138,14 +144,27 @@ interface VoiceParticipant {
 
 ---
 
-## Open Questions
+## Implementation Decisions
 
-1. **App Name**: `commune`, `gathering`, `assembly-hall`, `forum`, `agora`?
-2. **Voice Architecture**: P2P WebRTC or SFU (Selective Forwarding Unit)?
-3. **Message Persistence**: How long should messages be retained?
-4. **Scalability**: WebSocket connection limits, voice channel participant limits?
-5. **Moderation**: Who can moderate rooms? Delete messages?
-6. **Port/Domain**: `commune.bfs` or port-based like other apps?
+### Resolved
+1. **App Name**: `junto` (after Benjamin Franklin's discussion club)
+2. **Port**: 5180 (next in sequence after library)
+3. **Voice Architecture**: Mesh (P2P) WebRTC for MVP, plan SFU migration if needed
+4. **Voice Participant Limit**: 8 users (mesh topology limitation)
+5. **Authentication**: API-based via governance (like library app, machine-independent)
+6. **WebSocket**: Integrated with SvelteKit (start simple, migrate if scaling needed)
+7. **STUN Servers**: Public servers initially (Google STUN)
+8. **TURN Server**: Deferred to post-MVP (add when NAT issues arise)
+
+### Open Questions
+1. **Message Persistence**: How long should messages be retained?
+   - Proposal: Keep all messages initially, add 90-day pruning later
+2. **Initial Rooms**: Seed default rooms (#general, #help) or start empty?
+   - Proposal: Start empty, let community create organically
+3. **Moderation**: Who can moderate rooms? Delete messages?
+   - Proposal: Defer to post-MVP, start with community trust model
+4. **Room Limits**: Maximum rooms? Maximum messages per room?
+   - Proposal: No hard limits initially, monitor and adjust
 
 ---
 

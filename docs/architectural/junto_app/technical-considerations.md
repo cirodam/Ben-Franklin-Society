@@ -1,4 +1,16 @@
-# Commune App - Technical Considerations
+# Junto App - Technical Considerations
+
+## Resolved Decisions
+
+**Port**: 5180
+**Authentication**: API-based via governance (machine-independent)
+**WebSocket**: Integrated with SvelteKit (start simple)
+**Voice**: Mesh topology (P2P WebRTC)
+**Voice Limit**: 8 concurrent users
+**STUN**: Public servers (Google STUN)
+**TURN**: Deferred to post-MVP
+
+---
 
 ## WebSocket Server Options
 
@@ -87,7 +99,7 @@ CREATE TABLE room_participant (
 
 ### Authorization Model (Future)
 ```typescript
-// Room access
+// Room access (association-linked rooms)
 interface RoomAccess {
   room_uuid: string;
   person_uuid: string | null; // null = public
@@ -95,6 +107,11 @@ interface RoomAccess {
   role_uuid: string | null; // role-based access
 }
 ```
+
+### Person Data Access
+- Call governance API for person information (not direct DB)
+- Use `/api/me/associations` for user's associations
+- Machine-independent: Junto can run on separate server
 
 ---
 

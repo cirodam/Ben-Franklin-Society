@@ -1,4 +1,4 @@
-# Commune App - Implementation Roadmap
+# Junto App - Implementation Roadmap
 
 ## Phase 1: Foundation (Week 1)
 
@@ -8,7 +8,7 @@
 - Static room list UI
 
 ### Tasks
-1. Create `apps/commune/` directory structure
+1. Create `apps/junto/` directory structure
 2. Set up SvelteKit project with TypeScript
 3. Add to pnpm workspace and turbo config
 4. Define SQLite schema (room, message tables)
@@ -16,10 +16,13 @@
 6. Implement room CRUD operations
 7. Build room list UI (public rooms only)
 8. Add room creation form
+9. Configure port 5180
+10. Set up OIDC authentication (reuse from library pattern)
 
 ### Deliverables
-- App accessible at `localhost:4001`
+- App accessible at `localhost:5180`
 - Can create and list rooms
+- Authentication working
 - No real-time functionality yet
 
 ---
@@ -32,8 +35,8 @@
 - Message persistence and history
 
 ### Tasks
-1. Set up WebSocket server (Socket.io or native)
-2. Implement WebSocket connection in SvelteKit hooks
+1. Set up WebSocket server (integrated with SvelteKit)
+2. Implement WebSocket connection in hooks
 3. Create message send/receive endpoints
 4. Build chat message components
 5. Implement message input with send action
@@ -41,7 +44,7 @@
 7. Create real-time message broadcasting
 8. Store messages in SQLite
 9. Add scroll-to-bottom on new messages
-10. Implement user identification (from session)
+10. Implement user identification (from OIDC session)
 
 ### Deliverables
 - Functional text chat in rooms
@@ -60,15 +63,17 @@
 
 ### Tasks
 1. Research WebRTC signaling patterns (mesh topology)
-2. Implement signaling server (Socket.io events)
-3. Create voice channel UI panel
-4. Add "Join Voice" / "Leave Voice" buttons
-5. Implement WebRTC offer/answer exchange
-6. Add ICE candidate handling
-7. Show voice participants list
-8. Handle peer connection lifecycle
-9. Add error handling for connection failures
-10. Test with 2 users in same room
+2. Implement signaling server (WebSocket events)
+3. Configure STUN servers (Google public STUN)
+4. Create voice channel UI panel
+5. Add "Join Voice" / "Leave Voice" buttons
+6. Implement WebRTC offer/answer exchange
+7. Add ICE candidate handling
+8. Show voice participants list
+9. Handle peer connection lifecycle
+10. Add error handling for connection failures
+11. Document 8-user voice limit
+12. Test with 2 users in same room
 
 ### Deliverables
 - Users can join/leave voice channels
@@ -142,10 +147,10 @@
 - Multi-app coordination
 
 ### Tasks
-1. Create Dockerfile for commune app
-2. Add to docker-compose.yml
+1. Create Dockerfile for junto app
+2. Add to docker-compose.yml (port 5180)
 3. Configure Nginx reverse proxy
-4. Set up environment variables
+4. Set up environment variables (GOVERNANCE_URL, etc.)
 5. Add to deployment scripts
 6. Test full deployment locally
 7. Deploy to staging environment
@@ -154,7 +159,7 @@
 10. Document deployment process
 
 ### Deliverables
-- Commune app running in production
+- Junto app running in production
 - Integrated with other BFS apps
 - Monitoring and logging in place
 - Deployment documentation
