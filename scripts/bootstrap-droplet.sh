@@ -75,12 +75,25 @@ if [ -f docker-compose.published.yml ]; then
   mv docker-compose.published.yml docker-compose.published.yml.backup.$(date +%Y%m%d-%H%M%S)
 fi
 
-# Download compose file - update URL to your actual repository
-curl -fsSL -o docker-compose.published.yml \
-  https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/docker-compose.published.yml || {
-  echo "Warning: Could not download docker-compose.published.yml"
-  echo "You'll need to copy it manually to $BFS_DIR"
-}
+# Download compose file
+echo "Fetching from GitHub repository..."
+if ! curl -fsSL -o docker-compose.published.yml \
+  https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/docker-compose.published.yml; then
+  echo "Error: Failed to download docker-compose.published.yml from GitHub"
+  echo "Please ensure:"
+  echo "  1. The file exists in the repository"
+  echo "  2. The repository is public or accessible"
+  echo "  3. You have internet connectivity"
+  exit 1
+fi
+
+# Verify the file was downloaded and has content
+if [ ! -f docker-compose.published.yml ] || [ ! -s docker-compose.published.yml ]; then
+  echo "Error: docker-compose.published.yml was not downloaded correctly"
+  exit 1
+fi
+
+echo "✓ docker-compose.published.yml downloaded successfully"
 
 echo ""
 echo "Creating .env file..."
@@ -253,38 +266,53 @@ EOFSCRIPT
 chmod +x "$BFS_DIR/update.sh"
 
 echo ""
+echo "Verifying installation..."
+if [ ! -f "$BFS_DIR/docker-compose.published.yml" ]; then
+  echo "Error: docker-compose.published.yml is missing!"
+  exit 1
+fi
+
+if [ ! -f "$BFS_DIR/.env" ]; then
+  echo "Error: .env file is missing!"
+  exit 1
+fi
+
+echo "✓ All required files present"
+
+echo ""
 echo "=========================================="
 echo "Bootstrap Complete!"
 echo "=========================================="
 echo ""
 echo "Installation directory: $BFS_DIR"
 echo ""
-echo "Next steps:"
+echo "IMPORTANT: Complete these steps before starting services:"
 echo ""
-echo "1. Configure DNS to point to this server's IP:"
-echo "   - governance.yourdomain.com"
-echo "   - bank.yourdomain.com"
-echo "   - mail.yourdomain.com"
-echo "   - marketplace.yourdomain.com"
-echo "   - library.yourdomain.com"
+echo "1. Configure DNS A records pointing to this server ($(hostname -I | awk '{print $1}')):"
+echo "   governance.yourdomain.com"
+echo "   bank.yourdomain.com"
+echo "   mail.yourdomain.com"
+echo "   marketplace.yourdomain.com"
+echo "   library.yourdomain.com"
 echo ""
-echo "2. Edit configuration:"
-echo "   cd $BFS_DIR"
-echo "   nano .env"
+echo "2. Edit .env configuration:"
+echo "   cd $BFS_DIR && nano .env"
 echo ""
-echo "   Set the following:"
-echo "   - DOMAIN=yourdomain.com"
-echo "   - Generate OIDC secrets: openssl rand -hex 32 (4 secrets needed)"
+echo "   Required changes:"
+echo "   - DOMAIN=yourdomain.com (e.g., bfsathensga.org)"
+echo "   - BANK_OIDC_SECRET=<run: openssl rand -hex 32>"
+echo "   - MAIL_OIDC_SECRET=<run: openssl rand -hex 32>"
+echo "   - MARKETPLACE_OIDC_SECRET=<run: openssl rand -hex 32>"
+echo "   - LIBRARY_OIDC_SECRET=<run: openssl rand -hex 32>"
 echo "   - ACME_EMAIL=your-email@example.com"
 echo ""
 echo "3. Start services:"
-echo "   cd $BFS_DIR"
-echo "   ./start.sh"
+echo "   cd $BFS_DIR && ./start.sh"
 echo ""
-echo "4. Monitor startup:"
-echo "   ./logs.sh"
+echo "4. Monitor logs:"
+echo "   cd $BFS_DIR && ./logs.sh"
 echo ""
-echo "5. Initialize governance app:"
+echo "5. After services start (~2 min for SSL), initialize:"
 echo "   Visit https://governance.yourdomain.com/setup"
 echo ""
 echo "Available commands:"
