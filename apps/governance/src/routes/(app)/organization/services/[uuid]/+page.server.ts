@@ -29,7 +29,7 @@ import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
 import { listEnactedMotions, getMotionByUuid } from '$lib/server/governance/motions.js';
 import { db } from '$lib/server/db.js';
-import { getDocumentBySlug } from '$lib/server/documents/library.js';
+import { getDocumentBySlug } from '$lib/server/documents/society-docs.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const association = getAssociationByUuid(params.uuid);

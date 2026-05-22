@@ -24,7 +24,7 @@ import { audit } from '$lib/server/documents/audit.js';
 import { listEnactedMotions, getMotionByUuid, getMotionBySlug, listMotions, createMotion } from '$lib/server/governance/motions.js';
 import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/governance/deliberation-rules.js';
 import { getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
-import { getDocumentBySlug } from '$lib/server/documents/library.js';
+import { getDocumentBySlug } from '$lib/server/documents/society-docs.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ locals }) => {

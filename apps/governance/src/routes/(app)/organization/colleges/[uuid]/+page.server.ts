@@ -6,7 +6,7 @@ import {
 	getRolesByAssociation,
 } from '$lib/server/organization/associations.js';
 import { db } from '$lib/server/db.js';
-import { getDocumentBySlug } from '$lib/server/documents/library.js';
+import { getDocumentBySlug } from '$lib/server/documents/society-docs.js';
 import * as bulletin from '$lib/server/communications/bulletin.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument, saveMotion, saveGoverningDocument } from '$lib/server/documents/library.js';
+import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument, saveMotion, saveGoverningDocument } from '$lib/server/documents/society-docs.js';
 import { createMotion } from '$lib/server/documents/society-motions.js';
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';

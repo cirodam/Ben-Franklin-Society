@@ -383,6 +383,65 @@ const document = JSON.parse(buffer.toString('utf-8'));
 
 ### Part E: Governance Document Editing Context
 
+**STATUS: ✅ COMPLETE**
+
+**Goal:** Enable editing of motions and governing documents in the governance app, focusing exclusively on society code (not prose or contracts).
+
+**Completed Implementation:**
+
+1. **Refactored Edit Route** - `/library/[slug]/edit/`
+   - Removed prose and contract handling
+   - Added motion and governing document support
+   - Uses shared `MotionEditor` and `GoverningDocEditor` from `@bfs/ui`
+   - Simple JSON-based save (serializes entire document)
+
+2. **Server-Side Logic** (`+page.server.ts`)
+   - Load handler checks document type, loads motion or governing doc
+   - Save action accepts serialized JSON, preserves metadata (UUID, slug, timestamps)
+   - Calls `saveMotion()` or `saveGoverningDocument()`
+   - Returns 400 error for prose/contract types (governance doesn't handle these)
+
+3. **Client-Side UI** (`+page.svelte`)
+   - Renders `MotionEditor` for motion documents
+   - Renders `GoverningDocEditor` for governing documents
+   - State management with Svelte 5 runes
+   - Form submission serializes document to hidden input
+   - Cancel/Save buttons with navigation
+
+4. **View Page Updated** (`+page.svelte`)
+   - Edit link now only appears for motion and governing document types
+   - Removed edit link for prose and contract types
+   - Conditional: `{#if canEdit && (documentType === 'motion' || documentType === 'governing')}`
+
+**Architecture Decision:**
+- Governance app focused on **society code only** (motions + governing docs)
+- Prose and contract documents are out of scope for governance
+- These documents would be edited in library app (general workspace)
+- Clear separation of concerns: governance = legislative process, library = general storage
+
+**Files Modified:**
+- `/apps/governance/src/routes/(app)/library/[slug]/edit/+page.server.ts` - Complete rewrite for motion/governing docs
+- `/apps/governance/src/routes/(app)/library/[slug]/edit/+page.svelte` - Replaced custom forms with shared editors
+- `/apps/governance/src/routes/(app)/library/[slug]/+page.svelte` - Updated edit link conditional
+
+**Verification:**
+- ✅ Edit route files compile without errors
+- ✅ Uses shared components from `@bfs/ui` package
+- ✅ Imports from `@bfs/types` for type safety
+- ✅ Pre-existing governance errors unrelated to this work
+
+**Future Enhancements:**
+- Amendment tracking system (record changes over time)
+- Audit logging for all edits
+- Authorization middleware (who can edit what status)
+- Status transition validation
+- Diff view for changes
+- Version history
+
+---
+
+### Part F: Document Lifecycle Tracking
+
 **Motion Editor** (during deliberation):
 - Edit provisions, reasoning, supporting text
 - Amendment tracking (who proposed, when)
