@@ -2,7 +2,16 @@
 set -euo pipefail
 
 # Bootstrap script for deploying BFS to a DigitalOcean droplet
-# Run as root: curl -fsSL https://raw.githubusercontent.com/YOUR_REPO/main/scripts/bootstrap-droplet.sh | bash
+# 
+# Usage:
+#   Basic: sudo bash bootstrap-droplet.sh
+#   With config: sudo DOMAIN=example.com ACME_EMAIL=admin@example.com bash bootstrap-droplet.sh
+#
+# Environment variables:
+#   DOMAIN      - Your domain (e.g., bfsathensga.org) [optional]
+#   ACME_EMAIL  - Email for Let's Encrypt SSL certificates [optional]
+#   DOCKER_USERNAME - Docker Hub username [default: cirodam]
+#   VERSION     - Image version tag [default: latest]
 
 echo "=========================================="
 echo "BFS Droplet Bootstrap Script"
@@ -21,6 +30,7 @@ BFS_DIR="/opt/bfs"
 DOCKER_USERNAME="${DOCKER_USERNAME:-cirodam}"
 VERSION="${VERSION:-latest}"
 DOMAIN="${DOMAIN:-}"
+ACME_EMAIL="${ACME_EMAIL:-}"
 
 echo "Installing system updates..."
 apt update && apt upgrade -y
@@ -100,6 +110,13 @@ echo "Creating .env file..."
 if [ -f .env ]; then
   echo ".env file already exists, skipping..."
 else
+  # Auto-generate OIDC secrets
+  echo "Generating OIDC secrets..."
+  BANK_OIDC_SECRET=$(openssl rand -hex 32)
+  MAIL_OIDC_SECRET=$(openssl rand -hex 32)
+  MARKETPLACE_OIDC_SECRET=$(openssl rand -hex 32)
+  LIBRARY_OIDC_SECRET=$(openssl rand -hex 32)
+
   cat > .env << EOF
 # Docker image configuration
 DOCKER_USERNAME=$DOCKER_USERNAME
@@ -108,28 +125,38 @@ VERSION=$VERSION
 # Domain configuration (without https://)
 DOMAIN=${DOMAIN}
 
-# OIDC secrets (generate with: openssl rand -hex 32)
-BANK_OIDC_SECRET=
-MAIL_OIDC_SECRET=
-MARKETPLACE_OIDC_SECRET=
-LIBRARY_OIDC_SECRET=
+# OIDC secrets (auto-generated)
+BANK_OIDC_SECRET=$BANK_OIDC_SECRET
+MAIL_OIDC_SECRET=$MAIL_OIDC_SECRET
+MARKETPLACE_OIDC_SECRET=$MARKETPLACE_OIDC_SECRET
+LIBRARY_OIDC_SECRET=$LIBRARY_OIDC_SECRET
 
 # Let's Encrypt email for SSL certificates
-ACME_EMAIL=
+ACME_EMAIL=${ACME_EMAIL}
 EOF
 
-  echo ".env file created at $BFS_DIR/.env"
-  echo ""
-  echo "=========================================="
-  echo "IMPORTANT: You must edit .env before starting services!"
-  echo "=========================================="
-  echo ""
-  echo "Required configuration:"
-  echo "1. Set DOMAIN to your domain (e.g., example.com)"
-  echo "2. Generate OIDC secrets with: openssl rand -hex 32" (4 needed)
-  echo "3. Set ACME_EMAIL to your email for Let's Encrypt"
-  echo ""
-  echo "Edit with: nano $BFS_DIR/.env"
+  echo "✓ .env file created at $BFS_DIR/.env"
+  
+  # Check if required values are set
+  if [ -z "$DOMAIN" ] || [ -z "$ACME_EMAIL" ]; then
+    echo ""
+    echo "=========================================="
+    echo "IMPORTANT: Configuration incomplete!"
+    echo "=========================================="
+    echo ""
+    echo "You must edit .env before starting services:"
+    echo ""
+    if [ -z "$DOMAIN" ]; then
+      echo "  - Set DOMAIN to your domain (e.g., bfsathensga.org)"
+    fi
+    if [ -z "$ACME_EMAIL" ]; then
+      echo "  - Set ACME_EMAIL to your email for Let's Encrypt"
+    fi
+    echo ""
+    echo "Edit with: nano $BFS_DIR/.env"
+  else
+    echo "✓ Configuration complete (DOMAIN and ACME_EMAIL set)"
+  fi
 fi
 
 echo ""
@@ -148,9 +175,8 @@ cd "$(dirname "$0")"
 if grep -q "DOMAIN=$" .env || grep -q "ACME_EMAIL=$" .env; then
   echo "Error: .env file is not fully configured!"
   echo "Please edit .env and set all required values:"
-  echo "  - DOMAIN"
-  echo "  - BANK_OIDC_SECRET, MAIL_OIDC_SECRET, MARKETPLACE_OIDC_SECRET, LIBRARY_OIDC_SECRET"
-  echo "  - ACME_EMAIL"
+  echo "  - DOMAIN (e.g., bfsathensga.org)"
+  echo "  - ACME_EMAIL (your email for Let's Encrypt)"
   echo ""
   echo "Edit with: nano .env"
   exit 1
@@ -285,35 +311,68 @@ echo "Bootstrap Complete!"
 echo "=========================================="
 echo ""
 echo "Installation directory: $BFS_DIR"
+echo "Server IP: $(hostname -I | awk '{print $1}')"
 echo ""
-echo "IMPORTANT: Complete these steps before starting services:"
-echo ""
-echo "1. Configure DNS A records pointing to this server ($(hostname -I | awk '{print $1}')):"
-echo "   governance.yourdomain.com"
-echo "   bank.yourdomain.com"
-echo "   mail.yourdomain.com"
-echo "   marketplace.yourdomain.com"
-echo "   library.yourdomain.com"
-echo ""
-echo "2. Edit .env configuration:"
-echo "   cd $BFS_DIR && nano .env"
-echo ""
-echo "   Required changes:"
-echo "   - DOMAIN=yourdomain.com (e.g., bfsathensga.org)"
-echo "   - BANK_OIDC_SECRET=<run: openssl rand -hex 32>"
-echo "   - MAIL_OIDC_SECRET=<run: openssl rand -hex 32>"
-echo "   - MARKETPLACE_OIDC_SECRET=<run: openssl rand -hex 32>"
-echo "   - LIBRARY_OIDC_SECRET=<run: openssl rand -hex 32>"
-echo "   - ACME_EMAIL=your-email@example.com"
-echo ""
-echo "3. Start services:"
-echo "   cd $BFS_DIR && ./start.sh"
+
+# Conditional instructions based on configuration
+if [ -z "$DOMAIN" ] || [ -z "$ACME_EMAIL" ]; then
+  echo "NEXT STEPS:"
+  echo ""
+  echo "1. Configure DNS A records pointing to this server:"
+  if [ -z "$DOMAIN" ]; then
+    echo "   governance.yourdomain.com"
+    echo "   bank.yourdomain.com"
+    echo "   mail.yourdomain.com"
+    echo "   marketplace.yourdomain.com"
+    echo "   library.yourdomain.com"
+    echo "   (or use wildcard: *.yourdomain.com)"
+  else
+    echo "   governance.$DOMAIN"
+    echo "   bank.$DOMAIN"
+    echo "   mail.$DOMAIN"
+    echo "   marketplace.$DOMAIN"
+    echo "   library.$DOMAIN"
+    echo "   (or use wildcard: *.$DOMAIN)"
+  fi
+  echo ""
+  echo "2. Edit .env configuration:"
+  echo "   cd $BFS_DIR && nano .env"
+  echo ""
+  if [ -z "$DOMAIN" ]; then
+    echo "   - Set DOMAIN=yourdomain.com (e.g., bfsathensga.org)"
+  fi
+  if [ -z "$ACME_EMAIL" ]; then
+    echo "   - Set ACME_EMAIL=your-email@example.com"
+  fi
+  echo ""
+  echo "3. Start services:"
+  echo "   cd $BFS_DIR && ./start.sh"
+else
+  echo "CONFIGURATION COMPLETE!"
+  echo ""
+  echo "1. Verify DNS A records point to this server:"
+  echo "   governance.$DOMAIN → $(hostname -I | awk '{print $1}')"
+  echo "   bank.$DOMAIN → $(hostname -I | awk '{print $1}')"
+  echo "   mail.$DOMAIN → $(hostname -I | awk '{print $1}')"
+  echo "   marketplace.$DOMAIN → $(hostname -I | awk '{print $1}')"
+  echo "   library.$DOMAIN → $(hostname -I | awk '{print $1}')"
+  echo "   (or use wildcard: *.$DOMAIN)"
+  echo ""
+  echo "2. Start services:"
+  echo "   cd $BFS_DIR && ./start.sh"
+fi
+
 echo ""
 echo "4. Monitor logs:"
 echo "   cd $BFS_DIR && ./logs.sh"
 echo ""
-echo "5. After services start (~2 min for SSL), initialize:"
-echo "   Visit https://governance.yourdomain.com/setup"
+if [ -n "$DOMAIN" ]; then
+  echo "5. After services start (~2 min for SSL), initialize:"
+  echo "   Visit https://governance.$DOMAIN/setup"
+else
+  echo "5. After services start (~2 min for SSL), initialize:"
+  echo "   Visit https://governance.yourdomain.com/setup"
+fi
 echo ""
 echo "Available commands:"
 echo "  ./start.sh   - Start all services"
