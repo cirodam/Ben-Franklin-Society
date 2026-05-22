@@ -1,8 +1,9 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { loadProseDocument, saveProseDocument, loadContract, saveContract } from '$lib/server/documents/library.js';
+import { getMotionBySlug, saveMotion } from '$lib/server/documents/society-motions.js';
+import { loadGoverningDocument, saveGoverningDocument } from '$lib/server/documents/society-governing.js';
 import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db.js';
-import type { ProseDocument, ContractDocument } from '@bfs/types';
+import type { MotionDocument, GoverningDocument } from '@bfs/types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	// Check document type first
@@ -14,16 +15,16 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(404, 'Document not found');
 	}
 
-	if (item.type === 'prose') {
-		const doc = loadProseDocument(params.slug);
-		if (!doc) throw error(404, 'Document not found');
-		return { document: doc, documentType: 'prose' };
-	} else if (item.type === 'contract') {
-		const doc = loadContract(params.slug);
-		if (!doc) throw error(404, 'Document not found');
-		return { document: doc, documentType: 'contract' };
+	if (item.type === 'motion') {
+		const doc = getMotionBySlug(params.slug);
+		if (!doc) throw error(404, 'Motion not found');
+		return { document: doc, documentType: 'motion' };
+	} else if (item.type === 'governing') {
+		const doc = loadGoverningDocument(params.slug);
+		if (!doc) throw error(404, 'Governing document not found');
+		return { document: doc, documentType: 'governing' };
 	} else {
-		throw error(400, 'Document type not editable');
+		throw error(400, 'Document type not editable in governance app');
 	}
 };
 
@@ -40,93 +41,54 @@ export const actions: Actions = {
 			return fail(404, { error: 'Document not found' });
 		}
 
-		if (item.type === 'prose') {
-			const doc = loadProseDocument(params.slug);
-			if (!doc || doc.type !== 'prose') {
-				return fail(400, { error: 'Invalid document' });
+		if (item.type === 'motion') {
+			const doc = getMotionBySlug(params.slug);
+			if (!doc || doc.type !== 'motion') {
+				return fail(400, { error: 'Invalid motion' });
 			}
 
-			// Get paragraphs from form data
-			const paragraphsJson = data.get('paragraphs') as string;
-			const title = data.get('title') as string;
-			const status = data.get('status') as 'draft' | 'published' | 'archived';
-			const summary = data.get('summary') as string;
-			const tags = data.get('tags') as string;
+			const documentJson = data.get('document') as string;
 
 			try {
-				const paragraphs = JSON.parse(paragraphsJson);
+				const updatedDoc = JSON.parse(documentJson) as MotionDocument;
 				
-				const updatedDoc: ProseDocument = {
-					...doc,
-					title,
-					content: {
-						...doc.content,
-						status,
-						paragraphs,
-						summary: summary || undefined,
-						tags: tags ? tags.split(',').map(t => t.trim()) : undefined,
-					}
-				};
+				// Preserve original metadata
+				updatedDoc.uuid = doc.uuid;
+				updatedDoc.slug = doc.slug;
+				updatedDoc.created_at = doc.created_at;
+				updatedDoc.owner_uuid = doc.owner_uuid;
 
-				saveProseDocument(updatedDoc);
+				saveMotion(updatedDoc);
 				return { success: true };
 			} catch (err) {
-				return fail(400, { error: 'Failed to save document' });
+				console.error('Failed to save motion:', err);
+				return fail(400, { error: 'Failed to save motion' });
 			}
-		} else if (item.type === 'contract') {
-			const doc = loadContract(params.slug);
-			if (!doc || doc.type !== 'contract') {
-				return fail(400, { error: 'Invalid document' });
+		} else if (item.type === 'governing') {
+			const doc = loadGoverningDocument(params.slug);
+			if (!doc || doc.type !== 'governing') {
+				return fail(400, { error: 'Invalid governing document' });
 			}
 
-			const title = data.get('title') as string;
-			const status = data.get('status') as 'draft' | 'active' | 'completed' | 'terminated';
-			const body = data.get('body') as string;
-			
-			// Party A
-			const partyAName = data.get('party_a_name') as string;
-			const partyARole = data.get('party_a_role') as string;
-			const partyAUuid = data.get('party_a_uuid') as string;
-			
-			// Party B
-			const partyBName = data.get('party_b_name') as string;
-			const partyBRole = data.get('party_b_role') as string;
-			const partyBUuid = data.get('party_b_uuid') as string;
-			
-			// Dates
-			const effectiveDate = data.get('effective_date') as string;
-			const expiryDate = data.get('expiry_date') as string;
+			const documentJson = data.get('document') as string;
 
 			try {
-				const updatedDoc: ContractDocument = {
-					...doc,
-					title,
-					content: {
-						...doc.content,
-						status,
-						body,
-						party_a: {
-							principal_uuid: partyAUuid || '',
-							principal_name: partyAName || '',
-							role: partyARole || ''
-						},
-						party_b: {
-							principal_uuid: partyBUuid || '',
-							principal_name: partyBName || '',
-							role: partyBRole || ''
-						},
-						effective_date: effectiveDate || undefined,
-						expiry_date: expiryDate || undefined,
-					}
-				};
+				const updatedDoc = JSON.parse(documentJson) as GoverningDocument;
+				
+				// Preserve original metadata
+				updatedDoc.uuid = doc.uuid;
+				updatedDoc.slug = doc.slug;
+				updatedDoc.created_at = doc.created_at;
+				updatedDoc.owner_uuid = doc.owner_uuid;
 
-				saveContract(updatedDoc);
+				saveGoverningDocument(updatedDoc);
 				return { success: true };
 			} catch (err) {
-				return fail(400, { error: 'Failed to save contract' });
+				console.error('Failed to save governing document:', err);
+				return fail(400, { error: 'Failed to save governing document' });
 			}
 		}
 
-		return fail(400, { error: 'Unsupported document type' });
+		return fail(400, { error: 'Unsupported document type for governance app' });
 	}
 };

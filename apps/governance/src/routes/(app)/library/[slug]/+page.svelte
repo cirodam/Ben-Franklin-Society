@@ -26,7 +26,7 @@
 
 <div class="document-controls">
 	<a href="/library" class="back">← Library</a>
-	{#if canEdit && (documentType === 'prose' || documentType === 'contract')}
+	{#if canEdit && (documentType === 'motion' || documentType === 'governing')}
 		<a href="/library/{doc.slug}/edit" class="edit-link">Edit</a>
 	{/if}
 	{#if canChangeOwner}
