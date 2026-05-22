@@ -10,7 +10,7 @@ export function getOidcClient(): OidcClient {
 			throw new Error('OIDC not configured');
 		}
 		oidcClient = new OidcClient({
-			issuerUrl: `${config.governanceUrl}/oauth`,
+			issuerUrl: config.governanceUrl,
 			clientId: config.clientId,
 			clientSecret: config.clientSecret,
 			redirectUri: config.redirectUri
