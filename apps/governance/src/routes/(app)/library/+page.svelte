@@ -1,50 +1,22 @@
 <script lang="ts">
-	import { Button, EmptyState } from '@bfs/ui';
+	import { Button, EmptyState, Badge } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
 	import { documentTypes } from '$lib/documents';
 	import CreateDocumentDialog from './CreateDocumentDialog.svelte';
+	import type { GoverningDocument, MotionDocument } from '@bfs/types';
 
 	let { data }: { data: PageData } = $props();
-
-	let query = $state(data.filters.query);
-	let typeFilter = $state<string[]>(data.filters.types);
-	let myDocuments = $state(data.filters.owner !== 'all');
 	
 	let showCreateDialog = $state(false);
+	let currentView = $state<'enacted' | 'under-consideration' | 'archived'>(
+		data.currentView === 'under-consideration' ? 'under-consideration' :
+		data.currentView === 'archived' ? 'archived' : 'enacted'
+	);
 
-	// Society Code: Only motion and governing document types
-	const societyCodeTypes = ['motion', 'governing'];
-	const allTypes = societyCodeTypes;
-
-	// Update URL when filters change
-	function updateFilters() {
-		const params = new URLSearchParams();
-		if (typeFilter.length > 0 && typeFilter.length < allTypes.length) {
-			params.set('type', typeFilter.join(','));
-		}
-		if (query.trim()) {
-			params.set('q', query.trim());
-		}
-		if (!myDocuments) {
-			params.set('owner', 'all');
-		}
-		const url = params.toString() ? `?${params}` : '';
-		goto(`/library${url}`, { replaceState: true, keepFocus: true });
-	}
-
-	function handleSearch() {
-		updateFilters();
-	}
-
-	function handleTypeChange(event: Event) {
-		const select = event.target as HTMLSelectElement;
-		if (select.value === 'all') {
-			typeFilter = [];
-		} else {
-			typeFilter = [select.value];
-		}
-		updateFilters();
+	function switchView(view: 'enacted' | 'under-consideration' | 'archived') {
+		currentView = view;
+		goto(`/library?view=${view}`, { replaceState: true });
 	}
 
 	function formatDate(dateString: string): string {
@@ -56,7 +28,24 @@
 		});
 	}
 
-	const selectedType = $derived(typeFilter.length === 1 ? typeFilter[0] : 'all');
+	function getStatusBadgeVariant(status: string): 'success' | 'accent' | 'neutral' | 'warn' {
+		if (status === 'enacted') return 'success';
+		if (['draft', 'introduced', 'deliberation', 'voting', 'adopted'].includes(status)) return 'accent';
+		return 'neutral';
+	}
+
+	const currentData = $derived(() => {
+		if (currentView === 'enacted') return data.enacted;
+		if (currentView === 'under-consideration') return data.underConsideration;
+		return data.archived;
+	});
+
+	const allDocs = $derived(() => {
+		const docs = currentData();
+		return [...docs.governing, ...docs.motions].sort((a, b) => 
+			new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+		);
+	});
 </script>
 
 <div class="page">
@@ -68,57 +57,65 @@
 		</div>
 	</header>
 
-	<div class="search-row">
-		<input
-			class="search-input"
-			type="search"
-			placeholder="Search documents..."
-			bind:value={query}
-			onchange={handleSearch}
-		/>
-		<select class="type-select" value={selectedType} onchange={handleTypeChange}>
-			<option value="all">All types</option>
-			{#each allTypes as type}
-				{@const typeConfig = documentTypes.get(type)}
-				<option value={type}>{typeConfig.label}</option>
-			{/each}
-		</select>
-		<div class="owner-toggle">
-			<button
-				class="owner-toggle-btn"
-				class:active={myDocuments}
-				onclick={() => { myDocuments = true; updateFilters(); }}
-			>
-				Mine
-			</button>
-			<button
-				class="owner-toggle-btn"
-				class:active={!myDocuments}
-				onclick={() => { myDocuments = false; updateFilters(); }}
-			>
-				Public
-			</button>
-		</div>
+	<div class="tabs">
+		<button 
+			class="tab"
+			class:active={currentView === 'enacted'}
+			onclick={() => switchView('enacted')}
+		>
+			Enacted
+			<span class="count">{data.enacted.governing.length + data.enacted.motions.length}</span>
+		</button>
+		<button 
+			class="tab"
+			class:active={currentView === 'under-consideration'}
+			onclick={() => switchView('under-consideration')}
+		>
+			Under Consideration
+			<span class="count">{data.underConsideration.governing.length + data.underConsideration.motions.length}</span>
+		</button>
+		<button 
+			class="tab"
+			class:active={currentView === 'archived'}
+			onclick={() => switchView('archived')}
+		>
+			Archived
+			<span class="count">{data.archived.governing.length + data.archived.motions.length}</span>
+		</button>
 	</div>
 
-	{#if data.items.length === 0}
+	{#if allDocs().length === 0}
 		<EmptyState 
-			title="No documents found"
-			description="Try adjusting your search or filters"
+			title="No documents in this category"
+			description={
+				currentView === 'enacted' ? 'No enacted laws yet' :
+				currentView === 'under-consideration' ? 'No documents under consideration' :
+				'No archived documents'
+			}
 		/>
 	{:else}
 		<div class="document-list">
-			{#each data.items as item}
-				<a href={documentTypes.getDetailRoute(item)} class="document-row">
+			{#each allDocs() as doc}
+				<a href="/library/{doc.slug}" class="document-row">
 					<div class="document-main">
-						<h2 class="document-title">{item.title}</h2>
+						<div class="document-header-row">
+							<h2 class="document-title">{doc.title}</h2>
+							<Badge 
+								label={doc.content.status} 
+								variant={getStatusBadgeVariant(doc.content.status)} 
+							/>
+						</div>
 						<div class="document-meta-line">
-							<span class="document-author">{item.owner_name}</span>
-							<span class="meta-dot">•</span>
-							<span class="document-type">{documentTypes.get(item.type).label}</span>
+							<span class="document-type">
+								{doc.type === 'governing' ? '📜 Governing Document' : '📋 Motion'}
+							</span>
+							{#if doc.type === 'governing' && doc.content.seniority}
+								<span class="meta-dot">•</span>
+								<span class="document-seniority">{doc.content.seniority}</span>
+							{/if}
 						</div>
 					</div>
-					<span class="document-date">{formatDate(item.updated_at)}</span>
+					<span class="document-date">{formatDate(doc.updated_at)}</span>
 				</a>
 			{/each}
 		</div>
@@ -166,6 +163,63 @@
 	.header-actions {
 		display: flex;
 		justify-content: center;
+	}
+
+	.tabs {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: center;
+		border-bottom: 2px solid var(--border);
+		margin-bottom: var(--space-6);
+	}
+
+	.tab {
+		padding: var(--space-3) var(--space-5);
+		border: none;
+		background: transparent;
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-base);
+		letter-spacing: 0.08em;
+		color: var(--ink-mid);
+		cursor: pointer;
+		position: relative;
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.tab:hover {
+		color: var(--ink);
+		background: var(--tint-green-light);
+	}
+
+	.tab.active {
+		color: var(--gold);
+		font-weight: 500;
+	}
+
+	.tab.active::after {
+		content: '';
+		position: absolute;
+		bottom: -2px;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: var(--gold);
+	}
+
+	.count {
+		font-size: var(--text-sm);
+		padding: 0.125rem 0.5rem;
+		background: var(--tint-green-mid);
+		border-radius: 12px;
+		font-variant-numeric: oldstyle-nums;
+	}
+
+	.tab.active .count {
+		background: rgba(212, 162, 74, 0.2);
+		color: var(--gold);
 	}
 
 	.search-row {
@@ -283,9 +337,15 @@
 	.document-main {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: var(--space-2);
 		flex: 1;
 		min-width: 0;
+	}
+
+	.document-header-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
 	}
 
 	.document-title {
@@ -295,6 +355,7 @@
 		color: var(--ink);
 		margin: 0;
 		line-height: 1.3;
+		flex: 1;
 	}
 
 	.document-row:hover .document-title {
@@ -312,7 +373,14 @@
 		font-size: var(--text-sm);
 		color: var(--ink-faint);
 	}
+document-seniority {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+		color: var(--ink-faint);
+		text-transform: capitalize;
+	}
 
+	.
 	.document-type {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);

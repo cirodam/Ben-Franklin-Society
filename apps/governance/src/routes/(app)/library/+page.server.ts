@@ -1,99 +1,66 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument, saveMotion, saveGoverningDocument } from '$lib/server/documents/society-docs.js';
-import { createMotion } from '$lib/server/documents/society-motions.js';
+import { loadGoverningDocument, saveGoverningDocument } from '$lib/server/documents/society-governing.js';
+import { loadMotion, saveMotion, listMotions } from '$lib/server/documents/society-motions.js';
+import { SOCIETY_CODE_DIR } from '$lib/server/documents/society-core.js';
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';
-import type { ProseDocument, ContractDocument } from '@bfs/types';
+import { existsSync, readdirSync } from 'node:fs';
+import type { GoverningDocument, MotionDocument, GoverningStatus, MotionStatus } from '@bfs/types';
 import { db } from '$lib/server/db.js';
 
+// Helper to load all governing documents
+function getAllGoverningDocs(): GoverningDocument[] {
+	const docs: GoverningDocument[] = [];
+	if (!existsSync(SOCIETY_CODE_DIR)) return docs;
+
+	try {
+		const files = readdirSync(SOCIETY_CODE_DIR);
+		for (const file of files) {
+			if (file.endsWith('.json')) {
+				const slug = file.replace('.json', '');
+				const doc = loadGoverningDocument(slug);
+				if (doc && doc.type === 'governing') {
+					docs.push(doc);
+				}
+			}
+		}
+	} catch (err) {
+		console.error('Error loading governing documents:', err);
+	}
+	return docs;
+}
+
 export const load: PageServerLoad = async ({ url, locals }) => {
-	// Get filter parameters from URL
-	const typeParam = url.searchParams.get('type');
-	const statusParam = url.searchParams.get('status');
-	const queryParam = url.searchParams.get('q');
-	const ownerParam = url.searchParams.get('owner');
+	const viewParam = url.searchParams.get('view') || 'enacted';
 
-	// Society Code: Only show motions and governing documents
-	const types = typeParam ? typeParam.split(',') : ['governing', 'motion'];
+	// Load all governing documents and motions
+	const allGoverningDocs = getAllGoverningDocs();
+	const allMotions = listMotions();
 
-	// Build query with owner name JOIN (supports both person and association owners)
-	let query = `
-		SELECT 
-			li.*,
-			p.given_name,
-			p.family_name,
-			p.handle,
-			a.name as association_name,
-			a.handle as association_handle
-		FROM library_item li
-		LEFT JOIN person p ON li.owner_uuid = p.uuid
-		LEFT JOIN association a ON li.owner_uuid = a.uuid
-		WHERE 1=1
-	`;
-	const params: any[] = [];
+	// Group by status category
+	const enacted = {
+		governing: allGoverningDocs.filter(d => d.content.status === 'enacted'),
+		motions: allMotions.filter(m => m.content.status === 'enacted')
+	};
 
-	// Filter by type
-	if (types.length > 0) {
-		const placeholders = types.map(() => '?').join(', ');
-		query += ` AND li.type IN (${placeholders})`;
-		params.push(...types);
-	}
+	const underConsideration = {
+		governing: allGoverningDocs.filter(d => d.content.status === 'draft'),
+		motions: allMotions.filter(m => 
+			['draft', 'introduced', 'deliberation', 'voting', 'adopted'].includes(m.content.status)
+		)
+	};
 
-	// Filter by owner (only filter by person ownership)
-	if (ownerParam !== 'all' && locals.person?.uuid) {
-		query += ' AND li.owner_uuid = ?';
-		params.push(locals.person.uuid);
-	}
-
-	// Search query
-	if (queryParam) {
-		query += ' AND (li.title LIKE ? OR li.slug LIKE ?)';
-		const searchTerm = `%${queryParam}%`;
-		params.push(searchTerm, searchTerm);
-	}
-
-	query += ' ORDER BY li.updated_at DESC';
-
-	const items = db.prepare(query).all(...params) as Array<{
-		uuid: string;
-		type: string;
-		slug: string;
-		document_id: string | null;
-		version: number;
-		title: string;
-		owner_uuid: string;
-		created_at: string;
-		updated_at: string;
-		file_path: string;
-		given_name: string | null;
-		family_name: string | null;
-		handle: string | null;
-		association_name: string | null;
-		association_handle: string | null;
-	}>;
-
-	// Determine owner display name
-	const itemsWithOwner = items.map(item => ({
-		...item,
-		owner_name: item.given_name 
-			? `${item.given_name} ${item.family_name}`
-			: (item.association_name || 'Unknown'),
-		owner_handle: item.handle || item.association_handle || 'unknown'
-	}));
-
-	// Get statistics
-	const stats = getLibraryStats();
+	const archived = {
+		governing: allGoverningDocs.filter(d => ['repealed', 'sunsetted'].includes(d.content.status)),
+		motions: allMotions.filter(m => ['rejected', 'withdrawn'].includes(m.content.status))
+	};
 
 	return {
-		items: itemsWithOwner,
-		stats: getLibraryStats(),
-		person: locals.person,
-		filters: {
-			types,
-			status: statusParam || 'all',
-			query: queryParam || '',
-			owner: ownerParam || 'all',
-		}
+		enacted,
+		underConsideration,
+		archived,
+		currentView: viewParam,
+		person: locals.person
 	};
 };
 

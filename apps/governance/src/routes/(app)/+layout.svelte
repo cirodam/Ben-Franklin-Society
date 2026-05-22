@@ -23,10 +23,10 @@
 				<SidebarLink href="/library">Society Code</SidebarLink>
 				<SidebarLink href="/governance/referenda">Petitions and Referenda</SidebarLink>
 				<SidebarLink href="/governance/general-assembly">General Assembly</SidebarLink>
+				<SidebarLink href="/organization/committees">Committees</SidebarLink>
 			</SidebarGroup>
 
 			<SidebarGroup label="Organization">
-				<SidebarLink href="/organization/committees">Committees</SidebarLink>
 				<SidebarLink href="/organization/directory">Directory</SidebarLink>
 				<SidebarLink href="/organization/services">Services</SidebarLink>
 				<SidebarLink href="/organization/colleges">Colleges</SidebarLink>
