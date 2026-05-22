@@ -18,9 +18,9 @@
 
 			{#snippet nav()}
 			<SidebarLink href="/">Home</SidebarLink>
-			<SidebarLink href="/library">Society Code</SidebarLink>
 
 			<SidebarGroup label="Governance">
+				<SidebarLink href="/library">Society Code</SidebarLink>
 				<SidebarLink href="/governance/referenda">Petitions and Referenda</SidebarLink>
 				<SidebarLink href="/governance/general-assembly">General Assembly</SidebarLink>
 			</SidebarGroup>
