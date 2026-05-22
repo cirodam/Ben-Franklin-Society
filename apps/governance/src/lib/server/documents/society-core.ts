@@ -1,18 +1,18 @@
 /**
- * Library Core - Shared utilities and cross-type operations
+ * Society Core - Shared utilities and cross-type operations for society code documents
  */
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { db } from '../db.js';
-import type { LibraryDocument } from './library-types.js';
+import type { LibraryDocument } from '@bfs/types';
 
 // --- Constants ---
 
-export const LIBRARY_DIR = join(process.cwd(), 'data', 'library');
+export const SOCIETY_CODE_DIR = join(process.cwd(), 'data', 'society-code');
 
 // Ensure directory exists
-if (!existsSync(LIBRARY_DIR)) {
-	mkdirSync(LIBRARY_DIR, { recursive: true });
+if (!existsSync(SOCIETY_CODE_DIR)) {
+	mkdirSync(SOCIETY_CODE_DIR, { recursive: true });
 }
 
 // --- Utilities ---
@@ -225,7 +225,7 @@ export function deleteDocument(uuid: string): boolean {
 		}
 		
 		// Delete file
-		const filePath = join(LIBRARY_DIR, directory, `${row.slug}.json`);
+		const filePath = join(SOCIETY_CODE_DIR, directory, `${row.slug}.json`);
 		if (existsSync(filePath)) {
 			unlinkSync(filePath);
 		}
@@ -273,7 +273,7 @@ export function changeDocumentOwner(slug: string, newOwnerUuid: string): boolean
 		}
 		
 		// Load the file
-		const filePath = join(LIBRARY_DIR, directory, `${slug}.json`);
+		const filePath = join(SOCIETY_CODE_DIR, directory, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return false;
 		}

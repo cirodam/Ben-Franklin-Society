@@ -13,7 +13,7 @@ export {
 	changeDocumentOwner,
 	type LibrarySearchOptions,
 	type LibraryItemSummary
-} from './library-core.js';
+} from './society-core.js';
 
 // Re-export governing documents
 export {
@@ -29,7 +29,7 @@ export {
 	type DocumentStatus,
 	type Document,
 	type LegacyDocument
-} from './library-governing.js';
+} from './society-governing.js';
 
 // Re-export motions
 export {
@@ -41,7 +41,7 @@ export {
 	createMotion,
 	updateMotion,
 	updateMotionStatus
-} from './library-motions.js';
+} from './society-motions.js';
 
 // Re-export simple documents (prose, contracts, org charts)
 export {
@@ -51,9 +51,9 @@ export {
 	saveContract,
 	loadOrgChartDocument,
 	listOrgChartDocuments
-} from './library-simple-docs.js';
+} from './society-simple-docs.js';
 
 // Re-export types for backward compatibility
-export type { Article, Section } from './library-types.js';
-export type { GoverningDocContent as GoverningDocContentType } from './library-types.js';
+export type { Article, Section } from '@bfs/types';
+export type { GoverningDocContent as GoverningDocContentType } from '@bfs/types';
 

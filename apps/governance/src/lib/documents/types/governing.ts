@@ -1,5 +1,5 @@
 import type { DocumentTypeConfig } from '../registry.js';
-import type { GoverningDocument, SeniorityLevel } from '$lib/server/documents/library-types.js';
+import type { GoverningDocument, SeniorityLevel } from '@bfs/types';
 
 /**
  * Seniority level labels.

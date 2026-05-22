@@ -1,5 +1,5 @@
 import type { DocumentTypeConfig } from '../registry.js';
-import type { ProseDocument } from '$lib/server/documents/library-types.js';
+import type { ProseDocument } from '@bfs/types';
 
 /**
  * Document type configuration for prose documents.

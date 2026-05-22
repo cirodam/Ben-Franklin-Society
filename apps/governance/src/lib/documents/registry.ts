@@ -1,5 +1,6 @@
 import type { ComponentType } from 'svelte';
-import type { LibraryDocument, LibraryItemSummary } from '$lib/server/documents/library-types.js';
+import type { LibraryDocument } from '@bfs/types';
+import type { LibraryItemSummary } from '$lib/server/documents/library.js';
 import type { Person } from '$lib/server/schema.js';
 
 /**

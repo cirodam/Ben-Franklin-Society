@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
-import * as injuries from '$lib/server/documents/library-injuries.js';
+import * as injuries from '$lib/server/documents/society-injuries.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = locals.session;

@@ -1,6 +1,6 @@
 import { error, redirect, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import * as injuries from '$lib/server/documents/library-injuries.js';
+import * as injuries from '$lib/server/documents/society-injuries.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

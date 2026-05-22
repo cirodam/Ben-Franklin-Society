@@ -14,15 +14,15 @@ import type {
 	Gravity,
 	SafetyRisk,
 	InjuryReportStatus
-} from './library-types.js';
-import { LIBRARY_DIR, syncToDatabase } from './library-core.js';
+} from '@bfs/types';
+import { SOCIETY_CODE_DIR, syncToDatabase } from './society-core.js';
 
 /**
  * Load an injury report from file
  */
 export function loadInjuryReport(slug: string): InjuryReportDocument | null {
 	try {
-		const filePath = join(LIBRARY_DIR, `${slug}.json`);
+		const filePath = join(SOCIETY_CODE_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -40,7 +40,7 @@ export function loadInjuryReport(slug: string): InjuryReportDocument | null {
  * Save an injury report to file and sync to database
  */
 export function saveInjuryReport(doc: InjuryReportDocument): void {
-	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
+	const filePath = join(SOCIETY_CODE_DIR, `${doc.slug}.json`);
 	doc.updated_at = new Date().toISOString();
 
 	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
@@ -106,10 +106,10 @@ export function listInjuryReports(opts: {
 } = {}): InjuryReportDocument[] {
 	const reports: InjuryReportDocument[] = [];
 
-	if (!existsSync(LIBRARY_DIR)) return reports;
+	if (!existsSync(SOCIETY_CODE_DIR)) return reports;
 
 	try {
-		const files = readdirSync(LIBRARY_DIR);
+		const files = readdirSync(SOCIETY_CODE_DIR);
 		for (const file of files) {
 			if (file.endsWith('.json') && file.startsWith('injury-')) {
 				const slug = file.replace('.json', '');

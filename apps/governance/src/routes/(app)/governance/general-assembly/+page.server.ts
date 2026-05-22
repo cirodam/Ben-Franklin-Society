@@ -162,7 +162,7 @@ export const actions: Actions = {
 		if (motion.content.status !== 'draft') return fail(400, { message: 'Only draft motions can be introduced' });
 
 		// Update motion with body info and transfer ownership to the General Assembly
-		const library = await import('$lib/server/documents/library-motions.js');
+		const library = await import('$lib/server/documents/society-motions.js');
 		
 		// Transfer ownership to the General Assembly
 		library.updateMotionDocument(motion.slug, {

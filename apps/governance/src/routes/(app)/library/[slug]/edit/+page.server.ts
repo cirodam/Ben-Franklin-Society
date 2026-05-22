@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types.js';
 import { loadProseDocument, saveProseDocument, loadContract, saveContract } from '$lib/server/documents/library.js';
 import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db.js';
-import type { ProseDocument, ContractDocument } from '$lib/server/documents/library-types.js';
+import type { ProseDocument, ContractDocument } from '@bfs/types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	// Check document type first

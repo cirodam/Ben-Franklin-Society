@@ -5,15 +5,15 @@ import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
-import type { MotionDocument, MotionContent } from './library-types.js';
-import { LIBRARY_DIR, syncToDatabase } from './library-core.js';
+import type { MotionDocument, MotionContent } from '@bfs/types';
+import { SOCIETY_CODE_DIR, syncToDatabase } from './society-core.js';
 
 /**
  * Load a motion from file
  */
 export function loadMotion(slug: string): MotionDocument | null {
 	try {
-		const filePath = join(LIBRARY_DIR, `${slug}.json`);
+		const filePath = join(SOCIETY_CODE_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -31,7 +31,7 @@ export function loadMotion(slug: string): MotionDocument | null {
  * Save a motion to file and sync to database
  */
 export function saveMotion(doc: MotionDocument): void {
-	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
+	const filePath = join(SOCIETY_CODE_DIR, `${doc.slug}.json`);
 	doc.updated_at = new Date().toISOString();
 	
 	writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
@@ -67,10 +67,10 @@ export function listMotions(opts: {
 } = {}): MotionDocument[] {
 	const motions: MotionDocument[] = [];
 
-	if (!existsSync(LIBRARY_DIR)) return motions;
+	if (!existsSync(SOCIETY_CODE_DIR)) return motions;
 
 	try {
-		const files = readdirSync(LIBRARY_DIR);
+		const files = readdirSync(SOCIETY_CODE_DIR);
 		for (const file of files) {
 			if (file.endsWith('.json')) {
 				const slug = file.replace('.json', '');

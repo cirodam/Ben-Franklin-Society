@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import * as injuries from '$lib/server/documents/library-injuries.js';
-import type { InjuryReportStatus } from '$lib/server/documents/library-types.js';
+import * as injuries from '$lib/server/documents/society-injuries.js';
+import type { InjuryReportStatus } from '@bfs/types';
 
 /**
  * Update status on an injury report

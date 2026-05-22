@@ -4,8 +4,8 @@
 // Functions for applying org chart documents to associations
 
 import { db } from '../db.js';
-import { loadOrgChartDocument } from '../documents/library.js';
-import type { OrgChartContent } from '../documents/library-types.js';
+import { loadOrgChartDocument } from '../documents/society-docs.js';
+import type { OrgChartContent } from '@bfs/types';
 import type { OrgSection, RoleTemplate, Role } from './types.js';
 import { createOrgSection } from './org-sections.js';
 import { createRoleTemplate, setRoleTemplatePermissions } from './role-templates.js';

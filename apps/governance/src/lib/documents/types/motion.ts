@@ -1,5 +1,5 @@
 import type { DocumentTypeConfig } from '../registry.js';
-import type { MotionDocument } from '$lib/server/documents/library-types.js';
+import type { MotionDocument } from '@bfs/types';
 
 /**
  * Document type configuration for motions.

@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { getVoteRuleByUuid, evaluateTally } from './vote-rules.js';
-import * as library from '../documents/library.js';
+import * as library from '../documents/society-docs.js';
 import * as discussions from '../communications/discussions.js';
-import type { MotionDocument, MotionContent, MotionStatus } from '../documents/library-types.js';
+import type { MotionDocument, MotionContent, MotionStatus } from '@bfs/types';
 
 // --- Types ---
 

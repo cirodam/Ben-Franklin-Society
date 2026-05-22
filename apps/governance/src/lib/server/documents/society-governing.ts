@@ -4,8 +4,8 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { GoverningDocument, Article, Section } from './library-types.js';
-import { LIBRARY_DIR, getSocietyUuid, syncToDatabase } from './library-core.js';
+import type { GoverningDocument, Article, Section } from '@bfs/types';
+import { SOCIETY_CODE_DIR, getSocietyUuid, syncToDatabase } from './society-core.js';
 
 // --- File I/O ---
 
@@ -14,7 +14,7 @@ import { LIBRARY_DIR, getSocietyUuid, syncToDatabase } from './library-core.js';
  */
 export function loadGoverningDocument(slug: string): GoverningDocument | null {
 	try {
-		const filePath = join(LIBRARY_DIR, `${slug}.json`);
+		const filePath = join(SOCIETY_CODE_DIR, `${slug}.json`);
 		if (!existsSync(filePath)) {
 			return null;
 		}
@@ -41,7 +41,7 @@ export function loadGoverningDocument(slug: string): GoverningDocument | null {
  * Save a governing document to file and sync to database
  */
 export function saveGoverningDocument(doc: GoverningDocument): void {
-	const filePath = join(LIBRARY_DIR, `${doc.slug}.json`);
+	const filePath = join(SOCIETY_CODE_DIR, `${doc.slug}.json`);
 
 	// Create a clean copy for saving
 	const toSave = { ...doc };

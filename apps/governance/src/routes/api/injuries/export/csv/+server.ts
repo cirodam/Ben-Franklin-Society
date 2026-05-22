@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import * as injuries from '$lib/server/documents/library-injuries.js';
+import * as injuries from '$lib/server/documents/society-injuries.js';
 
 /**
  * GET /api/injuries/export/csv

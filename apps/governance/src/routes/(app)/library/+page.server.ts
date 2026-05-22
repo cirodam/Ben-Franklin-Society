@@ -1,9 +1,9 @@
 import type { PageServerLoad, Actions } from './$types.js';
 import { searchLibrary, getLibraryStats, saveProseDocument, saveContract, deleteDocument, saveMotion, saveGoverningDocument } from '$lib/server/documents/library.js';
-import { createMotion } from '$lib/server/documents/library-motions.js';
+import { createMotion } from '$lib/server/documents/society-motions.js';
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';
-import type { ProseDocument, ContractDocument } from '$lib/server/documents/library-types.js';
+import type { ProseDocument, ContractDocument } from '@bfs/types';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ url, locals }) => {

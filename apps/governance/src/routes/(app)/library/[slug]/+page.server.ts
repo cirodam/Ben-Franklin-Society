@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract, loadMotion, loadGoverningDocument, changeDocumentOwner } from '$lib/server/documents/library.js';
-import { updateMotion } from '$lib/server/documents/library-motions.js';
+import { updateMotion } from '$lib/server/documents/society-motions.js';
 import { hasPermission } from '$lib/server/infrastructure/permissions.js';
 import { db } from '$lib/server/db.js';
 
