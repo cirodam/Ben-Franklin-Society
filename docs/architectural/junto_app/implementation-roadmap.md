@@ -148,7 +148,7 @@
 
 ### Tasks
 1. Create Dockerfile for junto app
-2. Add to docker-compose.yml (port 5180)
+2. Add to docker-compose.published.yml (port 5180)
 3. Configure Nginx reverse proxy
 4. Set up environment variables (GOVERNANCE_URL, etc.)
 5. Add to deployment scripts

@@ -4,13 +4,21 @@ This directory contains everything needed to deploy the BFS application suite wi
 
 ## Files
 
-- **docker-compose.yml** - Production configuration with Traefik reverse proxy
+- **docker-compose.dev.yml** - Local development (direct port access, no SSL)
+- **docker-compose.published.yml** - Production with published DockerHub images
 - **.env.example** - Environment variable template (copy to .env)
 - **apps/*/Dockerfile** - Multi-stage build configurations for each app
 - **.dockerignore** - Files excluded from Docker build context
 - **scripts/backup.sh** - Automated backup script for data volumes
+- **scripts/bootstrap-droplet.sh** - Automated production deployment script
 
 ## Quick Start
+
+Choose your deployment mode:
+
+### Production Deployment (Published Images)
+
+Use published images from DockerHub for production deployments:
 
 ### 1. Configure Environment
 
@@ -22,6 +30,7 @@ cp .env.example .env
 openssl rand -hex 32  # For BANK_OIDC_SECRET
 openssl rand -hex 32  # For MAIL_OIDC_SECRET
 openssl rand -hex 32  # For MARKETPLACE_OIDC_SECRET
+openssl rand -hex 32  # For LIBRARY_OIDC_SECRET
 
 # Edit .env with your domain and secrets
 nano .env
@@ -36,21 +45,22 @@ governance.bfs.example.com  → A record → <server-ip>
 bank.bfs.example.com        → A record → <server-ip>
 mail.bfs.example.com        → A record → <server-ip>
 marketplace.bfs.example.com → A record → <server-ip>
+library.bfs.example.com     → A record → <server-ip>
 ```
 
 Or use wildcard: `*.bfs.example.com → A record → <server-ip>`
 
-### 3. Build and Start
+### 3. Pull and Start
 
 ```bash
-# Build all containers
-docker-compose build
+# Pull published images from DockerHub
+docker compose -f docker-compose.published.yml pull
 
 # Start services
-docker-compose up -d
+docker compose -f docker-compose.published.yml up -d
 
 # Monitor startup
-docker-compose logs -f
+docker compose -f docker-compose.published.yml logs -f
 ```
 
 Let's Encrypt will automatically provision SSL certificates (may take 1-2 minutes).
@@ -59,24 +69,61 @@ Let's Encrypt will automatically provision SSL certificates (may take 1-2 minute
 
 Visit `https://governance.bfs.example.com/setup` to initialize and create the first admin account.
 
+---
+
+### Local Development
+
+Use the development compose file for local testing without SSL:
+
+```bash
+# Start all services with direct port access
+docker compose -f docker-compose.dev.yml up -d
+
+# Access apps directly
+# - http://localhost:5173 (governance)
+# - http://localhost:5174 (community-bank)
+# - http://localhost:5175 (mail)
+# - http://localhost:5176 (marketplace)
+# - http://localhost:5177 (library)
+```
+
 ## Common Commands
+
+### Production (published images)
 
 ```bash
 # View logs
-docker-compose logs -f [service-name]
+docker compose -f docker-compose.published.yml logs -f [service-name]
 
 # Restart a service
-docker-compose restart governance
+docker compose -f docker-compose.published.yml restart governance
 
 # Stop all services
-docker-compose down
+docker compose -f docker-compose.published.yml down
 
-# Rebuild after code changes
-docker-compose build [service-name]
-docker-compose up -d [service-name]
+# Update to latest images
+docker compose -f docker-compose.published.yml pull
+docker compose -f docker-compose.published.yml up -d
 
 # Check service health
 curl https://governance.bfs.example.com/health
+```
+
+### Development
+
+```bash
+# View logs
+docker compose -f docker-compose.dev.yml logs -f [service-name]
+
+# Restart a service
+docker compose -f docker-compose.dev.yml restart governance
+
+# Stop all services
+docker compose -f docker-compose.dev.yml down
+
+# Rebuild after code changes
+docker compose -f docker-compose.dev.yml build [service-name]
+docker compose -f docker-compose.dev.yml up -d [service-name]
 ```
 
 ## Backup & Restore
@@ -89,9 +136,9 @@ curl https://governance.bfs.example.com/health
 ls -lh backups/
 
 # Restore from backup (stop services first)
-docker-compose down
+docker compose -f docker-compose.published.yml down
 docker run --rm -v bfs_governance-data:/data -v $(pwd)/backups:/backup alpine tar xzf /backup/governance-YYYYMMDD.tar.gz -C /data
-docker-compose up -d
+docker compose -f docker-compose.published.yml up -d
 ```
 
 ## Architecture
@@ -117,7 +164,7 @@ Each app:
 
 ```bash
 # Check Traefik logs
-docker-compose logs traefik
+docker compose -f docker-compose.published.yml logs reverse-proxy
 
 # Verify DNS
 dig governance.bfs.example.com
@@ -127,20 +174,20 @@ dig governance.bfs.example.com
 
 ```bash
 # Check service logs
-docker-compose logs governance
+docker compose -f docker-compose.published.yml logs governance
 
 # Verify environment variables
-docker-compose config
+docker compose -f docker-compose.published.yml config
 
 # Restart service
-docker-compose restart governance
+docker compose -f docker-compose.published.yml restart governance
 ```
 
 ### Database Locked
 
 ```bash
 # Restart affected service
-docker-compose restart governance
+docker compose -f docker-compose.published.yml restart governance
 ```
 
 ## Publishing Images to Docker Hub

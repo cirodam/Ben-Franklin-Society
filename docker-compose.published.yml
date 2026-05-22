@@ -159,11 +159,46 @@ services:
       retries: 3
       start_period: 40s
 
+  library:
+    image: ${DOCKER_USERNAME:-cirodam}/ben-franklin-society-library:${VERSION:-latest}
+    environment:
+      DATABASE_PATH: /app/data/library.db
+      GOVERNANCE_URL: ${GOVERNANCE_URL:-https://governance.bfs.example.com}
+      PUBLIC_URL: ${LIBRARY_URL:-https://library.bfs.example.com}
+      OIDC_CLIENT_ID: library
+      OIDC_CLIENT_SECRET: ${LIBRARY_OIDC_SECRET}
+      NODE_ENV: production
+      PORT: 5177
+    volumes:
+      - library-data:/app/data
+    networks:
+      - bfs-network
+    depends_on:
+      - governance
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.library.rule=Host(`${LIBRARY_DOMAIN:-library.bfs.example.com}`)"
+      - "traefik.http.routers.library.entrypoints=websecure"
+      - "traefik.http.routers.library.tls.certresolver=letsencrypt"
+      - "traefik.http.services.library.loadbalancer.server.port=5177"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.library-http.rule=Host(`${LIBRARY_DOMAIN:-library.bfs.example.com}`)"
+      - "traefik.http.routers.library-http.entrypoints=web"
+      - "traefik.http.routers.library-http.middlewares=redirect-to-https"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5177/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   governance-data:
   community-bank-data:
   mail-data:
   marketplace-data:
+  library-data:
   letsencrypt:
 
 networks:

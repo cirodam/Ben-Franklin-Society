@@ -77,7 +77,7 @@ fi
 
 # Download compose file - update URL to your actual repository
 curl -fsSL -o docker-compose.published.yml \
-  https://raw.githubusercontent.com/YOUR_USERNAME/BFS/main/docker-compose.published.yml || {
+  https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/docker-compose.published.yml || {
   echo "Warning: Could not download docker-compose.published.yml"
   echo "You'll need to copy it manually to $BFS_DIR"
 }
@@ -99,6 +99,7 @@ DOMAIN=${DOMAIN}
 BANK_OIDC_SECRET=
 MAIL_OIDC_SECRET=
 MARKETPLACE_OIDC_SECRET=
+LIBRARY_OIDC_SECRET=
 
 # Let's Encrypt email for SSL certificates
 ACME_EMAIL=
@@ -112,7 +113,7 @@ EOF
   echo ""
   echo "Required configuration:"
   echo "1. Set DOMAIN to your domain (e.g., example.com)"
-  echo "2. Generate OIDC secrets with: openssl rand -hex 32"
+  echo "2. Generate OIDC secrets with: openssl rand -hex 32" (4 needed)
   echo "3. Set ACME_EMAIL to your email for Let's Encrypt"
   echo ""
   echo "Edit with: nano $BFS_DIR/.env"
@@ -135,7 +136,7 @@ if grep -q "DOMAIN=$" .env || grep -q "ACME_EMAIL=$" .env; then
   echo "Error: .env file is not fully configured!"
   echo "Please edit .env and set all required values:"
   echo "  - DOMAIN"
-  echo "  - BANK_OIDC_SECRET, MAIL_OIDC_SECRET, MARKETPLACE_OIDC_SECRET"
+  echo "  - BANK_OIDC_SECRET, MAIL_OIDC_SECRET, MARKETPLACE_OIDC_SECRET, LIBRARY_OIDC_SECRET"
   echo "  - ACME_EMAIL"
   echo ""
   echo "Edit with: nano .env"
@@ -209,7 +210,7 @@ echo "Creating backups..."
 mkdir -p "$BACKUP_DIR"
 
 # Backup each data volume
-for volume in bfs_governance-data bfs_community-bank-data bfs_mail-data bfs_marketplace-data; do
+for volume in bfs_governance-data bfs_community-bank-data bfs_mail-data bfs_marketplace-data bfs_library-data; do
   if docker volume inspect "$volume" &> /dev/null; then
     echo "Backing up $volume..."
     docker run --rm \
@@ -265,6 +266,7 @@ echo "   - governance.yourdomain.com"
 echo "   - bank.yourdomain.com"
 echo "   - mail.yourdomain.com"
 echo "   - marketplace.yourdomain.com"
+echo "   - library.yourdomain.com"
 echo ""
 echo "2. Edit configuration:"
 echo "   cd $BFS_DIR"
@@ -272,7 +274,7 @@ echo "   nano .env"
 echo ""
 echo "   Set the following:"
 echo "   - DOMAIN=yourdomain.com"
-echo "   - Generate OIDC secrets: openssl rand -hex 32"
+echo "   - Generate OIDC secrets: openssl rand -hex 32 (4 secrets needed)"
 echo "   - ACME_EMAIL=your-email@example.com"
 echo ""
 echo "3. Start services:"

@@ -110,17 +110,18 @@ Or use a wildcard:
 *.bfs.example.com → A record → <server-ip>
 ```
 
-4. **Build and start services:**
+4. **Pull and start services:**
 
 ```bash
-docker-compose build
-docker-compose up -d
+# For production deployment using published images
+docker compose -f docker-compose.published.yml pull
+docker compose -f docker-compose.published.yml up -d
 ```
 
 5. **Monitor startup:**
 
 ```bash
-docker-compose logs -f
+docker compose -f docker-compose.published.yml logs -f
 ```
 
 Wait for Let's Encrypt to provision certificates (may take 1-2 minutes).
@@ -136,36 +137,56 @@ Visit `https://governance.bfs.example.com/setup` to initialize the governance da
 ### Starting Services
 
 ```bash
-docker-compose up -d
+# Production (published images)
+docker compose -f docker-compose.published.yml up -d
+
+# Development (build from source)
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ### Stopping Services
 
 ```bash
-docker-compose down
+# Production
+docker compose -f docker-compose.published.yml down
+
+# Development
+docker compose -f docker-compose.dev.yml down
 ```
 
 ### Viewing Logs
 
 ```bash
-# All services
-docker-compose logs -f
+# All services (production)
+docker compose -f docker-compose.published.yml logs -f
 
-# Specific service
-docker-compose logs -f governance
+# Specific service (production)
+docker compose -f docker-compose.published.yml logs -f governance
 ```
 
 ### Restarting a Service
 
 ```bash
-docker-compose restart governance
+# Production
+docker compose -f docker-compose.published.yml restart governance
+
+# Development
+docker compose -f docker-compose.dev.yml restart governance
 ```
 
-### Rebuilding After Code Changes
+### Updating Production Images
 
 ```bash
-docker-compose build governance
-docker-compose up -d governance
+# Pull latest images from DockerHub
+docker compose -f docker-compose.published.yml pull
+docker compose -f docker-compose.published.yml up -d
+```
+
+### Rebuilding After Code Changes (Development)
+
+```bash
+docker compose -f docker-compose.dev.yml build governance
+docker compose -f docker-compose.dev.yml up -d governance
 ```
 
 ### Accessing Traefik Dashboard
@@ -190,13 +211,13 @@ docker run --rm -v bfs_marketplace-data:/data -v $(pwd)/backups:/backup alpine t
 
 ```bash
 # Stop services first
-docker-compose down
+docker compose -f docker-compose.published.yml down
 
 # Restore from backup
 docker run --rm -v bfs_governance-data:/data -v $(pwd)/backups:/backup alpine tar xzf /backup/governance-20260514.tar.gz -C /data
 
 # Restart services
-docker-compose up -d
+docker compose -f docker-compose.published.yml up -d
 ```
 
 ### Automated Backups
@@ -314,7 +335,7 @@ Configure monitoring tools (Prometheus, Grafana, etc.) to alert on:
 
 To run apps on separate machines:
 
-1. **Split docker-compose.yml per machine**
+1. **Split docker-compose.published.yml per machine**
 2. **Update environment variables:**
    - Use public URLs for `GOVERNANCE_URL`
    - Apps communicate over internet instead of Docker network
@@ -336,7 +357,7 @@ For high-traffic deployments:
 
 ```bash
 # Check Traefik logs
-docker-compose logs traefik
+docker compose -f docker-compose.published.yml logs reverse-proxy
 
 # Verify DNS propagation
 dig governance.bfs.example.com
@@ -354,7 +375,7 @@ SQLite with WAL mode should prevent most locking issues, but if they occur:
 docker exec <container> lsof /app/data/governance.db
 
 # Restart the affected service
-docker-compose restart governance
+docker compose -f docker-compose.published.yml restart governance
 ```
 
 ### OIDC Authentication Issues
@@ -375,10 +396,10 @@ Ensure `redirect_uri` matches `PUBLIC_URL` in `.env`.
 ### Local Development
 
 ```bash
-# Use development compose file
-docker-compose -f docker-compose.dev.yml up
+# Use development compose file (builds from source, direct port access)
+docker compose -f docker-compose.dev.yml up
 
-# Or use pnpm directly
+# Or use pnpm directly (faster for active development)
 pnpm dev
 ```
 
