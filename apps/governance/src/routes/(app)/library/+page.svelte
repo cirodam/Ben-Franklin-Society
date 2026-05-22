@@ -292,14 +292,13 @@
 		font-size: var(--text-sm);
 		color: var(--ink-faint);
 	}
-document-seniority {
+	.document-seniority {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
 		color: var(--ink-faint);
 		text-transform: capitalize;
 	}
 
-	.
 	.document-type {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-sm);
