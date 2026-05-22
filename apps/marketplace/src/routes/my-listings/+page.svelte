@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Badge, Button, PageHeader } from '@bfs/ui';
 	import type { PageData } from './$types.js';
+	import { formatPriceShort, formatRate, formatDate } from '$lib/utils/format.js';
 
 	let { data }: { data: PageData } = $props();
 	const { classifieds, services } = $derived(data);
@@ -12,18 +13,6 @@
 		withdrawn: 'warn',
 		removed:   'danger',
 	};
-
-	function fmtPrice(price: number, negotiable: number): string {
-		if (price === 0) return 'Free';
-		return `${price} F${negotiable ? ' (neg.)' : ''}`;
-	}
-	function fmtRate(rate: number, unit: string): string {
-		if (unit === 'negotiable' || rate === 0) return 'Negotiable';
-		return `${rate} F/${unit === 'per_hour' ? 'hr' : 'job'}`;
-	}
-	function fmtDate(iso: string): string {
-		return new Date(iso).toLocaleDateString([], { dateStyle: 'medium' });
-	}
 </script>
 
 <div class="page">
@@ -53,8 +42,8 @@
 							<a href="/classifieds/{listing.uuid}">{listing.title}</a>
 						</div>
 						<div class="listing-row__cat">{listing.category}</div>
-						<div class="listing-row__price">{fmtPrice(listing.price, listing.price_negotiable)}</div>
-						<div class="listing-row__date">{fmtDate(listing.created_at)}</div>
+						<div class="listing-row__price">{formatPriceShort(listing.price, listing.price_negotiable)}</div>
+						<div class="listing-row__date">{formatDate(listing.created_at)}</div>
 						<div class="listing-row__status">
 						<Badge variant={STATUS_VARIANT[listing.status] ?? 'neutral'}>{listing.status}</Badge>
 						</div>
@@ -78,8 +67,8 @@
 							<a href="/services/{listing.uuid}">{listing.title}</a>
 						</div>
 						<div class="listing-row__cat">{listing.category}</div>
-						<div class="listing-row__price">{fmtRate(listing.rate, listing.rate_unit)}</div>
-						<div class="listing-row__date">{fmtDate(listing.created_at)}</div>
+						<div class="listing-row__price">{formatRate(listing.rate, listing.rate_unit)}</div>
+						<div class="listing-row__date">{formatDate(listing.created_at)}</div>
 						<div class="listing-row__status">
 						<Badge variant={STATUS_VARIANT[listing.status] ?? 'neutral'}>{listing.status}</Badge>
 						</div>

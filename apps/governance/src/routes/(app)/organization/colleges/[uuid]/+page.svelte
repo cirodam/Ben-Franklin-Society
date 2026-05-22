@@ -1,13 +1,22 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { Button, Card, EmptyState } from '@bfs/ui';
+	import BulletinPostForm from '$lib/components/bulletin/BulletinPostForm.svelte';
+	import BulletinPostCard from '$lib/components/bulletin/BulletinPostCard.svelte';
 	import type { PageData } from './$types.js';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: any } = $props();
 
-	const { association, members, roles, motions, governingDocument } = $derived(data);
+	const { association, members, roles, motions, governingDocument, bulletinPosts } = $derived(data);
 
-	let activeTab: 'members' | 'roles' | 'motions' = $state('members');
+	let activeTab: 'bulletin' | 'members' | 'roles' | 'motions' = $state('bulletin');
+	let showBulletinForm = $state(false);
 
+	$effect(() => {
+		if (form?.success) {
+			showBulletinForm = false;
+		}
+	});
 
 </script>
 
@@ -34,6 +43,13 @@
 	<nav class="tabs">
 		<button
 			class="tab"
+			class:active={activeTab === 'bulletin'}
+			onclick={() => (activeTab = 'bulletin')}
+		>
+			Bulletin
+		</button>
+		<button
+			class="tab"
 			class:active={activeTab === 'members'}
 			onclick={() => (activeTab = 'members')}
 		>
@@ -56,7 +72,37 @@
 	</nav>
 
 	<div class="tab-content">
-		{#if activeTab === 'members'}
+		{#if activeTab === 'bulletin'}
+			<Card>
+				<div class="bulletin-header">
+					<h2>Bulletin Board</h2>
+					<Button size="sm" onclick={() => showBulletinForm = !showBulletinForm}>
+						{showBulletinForm ? 'Cancel' : '+ New Post'}
+					</Button>
+				</div>
+				{#if showBulletinForm}
+					<BulletinPostForm 
+						action="?/default"
+						oncancel={() => showBulletinForm = false}
+					/>
+				{/if}
+				{#if bulletinPosts.length === 0}
+					<EmptyState
+						title="No posts yet"
+						description="This bulletin board is for {association.name} members to share announcements and discussions."
+					/>
+				{:else}
+					<div class="post-list">
+						{#each bulletinPosts as post}
+							<BulletinPostCard 
+								{post} 
+								href="/organization/associations/{association.uuid}/bulletin/{post.uuid}"
+							/>
+						{/each}
+					</div>
+				{/if}
+			</Card>
+		{:else if activeTab === 'members'}
 			<Card>
 				<h2>Members</h2>
 				{#if members.length === 0}
@@ -346,5 +392,26 @@
 		font-size: var(--text-xs);
 		color: #374340;
 		font-style: italic;
+	}
+
+	.bulletin-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-6);
+	}
+
+	.bulletin-header h2 {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-2xl);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0;
+	}
+
+	.post-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
 	}
 </style>

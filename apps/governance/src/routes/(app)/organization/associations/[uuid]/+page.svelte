@@ -2,11 +2,17 @@
 	import { Badge, Card, PageHeader } from '@bfs/ui';
 	import InteractiveOrgChart from '$lib/components/InteractiveOrgChart.svelte';
 	import RoleTemplates from '$lib/components/RoleTemplates.svelte';
+	import Tabs from '$lib/components/Tabs.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
 	const { association, members, roles, roleHierarchy, sections, motions, canAssign, canManage, enactedMotions, templates, vacantRoles, budgetTotal } = $derived(data);
+
+	const tabs = $derived([
+		{ href: `/organization/associations/${association.uuid}`, label: 'Overview' },
+		{ href: `/organization/associations/${association.uuid}/bulletin`, label: 'Bulletin' }
+	]);
 
 	const typeLabel: Record<string, string> = {
 		association: 'Association',
@@ -38,6 +44,8 @@
 		</div>
 	</PageHeader>
 
+	<Tabs {tabs} />
+
 	<div class="sections">
 		<!-- Members -->
 		<Card>
@@ -61,6 +69,17 @@
 					{/each}
 				</ul>
 			{/if}
+		</Card>
+
+		<!-- Bulletin Board -->
+		<Card>
+			<h2>Bulletin Board</h2>
+			<p class="bulletin-description">
+				Share announcements, discussions, and updates with {association.name} members.
+			</p>
+			<a href="/organization/associations/{association.uuid}/bulletin" class="bulletin-link">
+				View Bulletin Board →
+			</a>
 		</Card>
 
 		<!-- Organization Chart -->
@@ -252,5 +271,24 @@
 	.motion__date {
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
+	}
+
+	.bulletin-description {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		margin: 0 0 var(--space-3) 0;
+		line-height: 1.6;
+	}
+
+	.bulletin-link {
+		display: inline-block;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+
+	.bulletin-link:hover {
+		text-decoration: underline;
 	}
 </style>

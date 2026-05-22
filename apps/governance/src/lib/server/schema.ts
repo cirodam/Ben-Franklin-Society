@@ -504,15 +504,28 @@ CREATE TABLE IF NOT EXISTS audit_log (
 -- Bulletin Board: community threads and replies
 
 CREATE TABLE IF NOT EXISTS bulletin_post (
-  uuid       TEXT PRIMARY KEY,
-  author_uuid TEXT NOT NULL REFERENCES person(uuid),
-  title      TEXT NOT NULL,
-  body       TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NULL,
-  expires_at TEXT NULL,
-  deleted_at TEXT NULL
+  uuid             TEXT PRIMARY KEY,
+  author_uuid      TEXT NOT NULL REFERENCES person(uuid),
+  association_uuid TEXT NULL REFERENCES association(uuid),
+  title            TEXT NOT NULL,
+  body             TEXT NOT NULL,
+  visibility       TEXT NOT NULL DEFAULT 'public'
+                   CHECK (visibility IN ('public', 'members_only', 'officers_only')),
+  category         TEXT NULL
+                   CHECK (category IN ('announcement', 'discussion', 'question', 'event', 'policy')),
+  created_at       TEXT NOT NULL,
+  updated_at       TEXT NULL,
+  expires_at       TEXT NULL,
+  deleted_at       TEXT NULL,
+  pinned_at        TEXT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_bulletin_association ON bulletin_post(association_uuid);
+CREATE INDEX IF NOT EXISTS idx_bulletin_visibility ON bulletin_post(association_uuid, visibility, deleted_at);
+CREATE INDEX IF NOT EXISTS idx_bulletin_created ON bulletin_post(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bulletin_deleted_created ON bulletin_post(deleted_at, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bulletin_pinned ON bulletin_post(association_uuid, pinned_at);
+CREATE INDEX IF NOT EXISTS idx_bulletin_category ON bulletin_post(category);
 
 CREATE TABLE IF NOT EXISTS bulletin_comment (
   uuid                TEXT PRIMARY KEY,
@@ -525,6 +538,40 @@ CREATE TABLE IF NOT EXISTS bulletin_comment (
   created_at          TEXT NOT NULL,
   deleted_at          TEXT NULL
 );
+
+CREATE TABLE IF NOT EXISTS bulletin_reaction (
+  uuid        TEXT PRIMARY KEY,
+  post_uuid   TEXT NOT NULL REFERENCES bulletin_post(uuid),
+  person_uuid TEXT NOT NULL REFERENCES person(uuid),
+  reaction    TEXT NOT NULL CHECK (reaction IN ('heart', 'celebrate')),
+  created_at  TEXT NOT NULL,
+  UNIQUE(post_uuid, person_uuid, reaction)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reaction_post ON bulletin_reaction(post_uuid);
+
+CREATE TABLE IF NOT EXISTS bulletin_flag (
+  uuid         TEXT PRIMARY KEY,
+  post_uuid    TEXT NOT NULL REFERENCES bulletin_post(uuid),
+  flagger_uuid TEXT NOT NULL REFERENCES person(uuid),
+  reason       TEXT NOT NULL,
+  created_at   TEXT NOT NULL,
+  resolved_at  TEXT NULL,
+  resolved_by  TEXT NULL REFERENCES person(uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_flag_post ON bulletin_flag(post_uuid);
+CREATE INDEX IF NOT EXISTS idx_flag_resolved ON bulletin_flag(resolved_at);
+
+CREATE TABLE IF NOT EXISTS bulletin_subscription (
+  person_uuid      TEXT NOT NULL REFERENCES person(uuid),
+  association_uuid TEXT NULL REFERENCES association(uuid),
+  notify_posts     INTEGER NOT NULL DEFAULT 0,
+  notify_replies   INTEGER NOT NULL DEFAULT 0,
+  notify_mentions  INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (person_uuid, association_uuid)
+);
+
 
 -- General-purpose discussion threads and comments
 

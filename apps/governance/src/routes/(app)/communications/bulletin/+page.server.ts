@@ -1,40 +1,9 @@
-import { db } from '$lib/server/db.js';
 import { fail, redirect } from '@sveltejs/kit';
-import { randomUUID } from 'node:crypto';
 import type { Actions, PageServerLoad } from './$types.js';
+import * as bulletin from '$lib/server/communications/bulletin.js';
 
 export const load: PageServerLoad = async () => {
-
-	const posts = db.prepare(`
-		SELECT 
-			bp.uuid,
-			bp.title,
-			bp.body,
-			bp.created_at,
-			bp.updated_at,
-			bp.expires_at,
-			p.given_name,
-			p.family_name,
-			p.handle,
-			(SELECT COUNT(*) FROM bulletin_comment WHERE post_uuid = bp.uuid AND deleted_at IS NULL) as comment_count
-		FROM bulletin_post bp
-		JOIN person p ON bp.author_uuid = p.uuid
-		WHERE bp.deleted_at IS NULL
-			AND (bp.expires_at IS NULL OR datetime(bp.expires_at) > datetime('now'))
-		ORDER BY bp.created_at DESC
-	`).all() as Array<{
-		uuid: string;
-		title: string;
-		body: string;
-		created_at: string;
-		updated_at: string | null;
-		expires_at: string | null;
-		given_name: string;
-		family_name: string;
-		handle: string;
-		comment_count: number;
-	}>;
-
+	const posts = bulletin.getSocietyPosts();
 	return { posts };
 };
 
@@ -55,14 +24,17 @@ export const actions: Actions = {
 			return fail(400, { error: 'Body is required' });
 		}
 
-		const uuid = randomUUID();
-		const now = new Date().toISOString();
+		try {
+			const uuid = bulletin.createPost({
+				author_uuid: session.person_uuid,
+				association_uuid: null, // Society-wide post
+				title: title,
+				body: body
+			});
 
-		db.prepare(`
-			INSERT INTO bulletin_post (uuid, author_uuid, title, body, created_at)
-			VALUES (?, ?, ?, ?, ?)
-		`).run(uuid, session.person_uuid, title.trim(), body.trim(), now);
-
-		redirect(303, `/communications/bulletin/${uuid}`);
+			redirect(303, `/communications/bulletin/${uuid}`);
+		} catch (err) {
+			return fail(500, { error: err instanceof Error ? err.message : 'Failed to create post' });
+		}
 	}
 };

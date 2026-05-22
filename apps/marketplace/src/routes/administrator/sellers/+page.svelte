@@ -56,27 +56,30 @@
 								class="inline-form"
 							>
 								<input type="hidden" name="principal_uuid" value={seller.principal_uuid} />
-								<textarea name="reason" rows="2" placeholder="Reason…" required class="inline-reason"></textarea>
+								<Textarea name="reason" rows={2} placeholder="Reason…" required class="inline-reason" />
 								<div class="inline-btns">
-									<button type="button" class="btn-link" onclick={closePanel}>Cancel</button>
-									<button
+									<Button type="button" variant="ghost" class="btn-sm btn-link" onclick={closePanel}>Cancel</Button>
+									<Button
 										type="submit"
-										class="btn btn-sm {openAction === 'suspend' ? 'btn-danger' : 'btn-primary'}"
+										variant={openAction === 'suspend' ? 'danger' : 'primary'}
+										class="btn-sm"
 									>
 										{openAction === 'suspend' ? 'Suspend' : 'Reinstate'}
-									</button>
+									</Button>
 								</div>
 							</form>
 						{:else if seller.suspended}
-							<button
-								class="btn btn-sm btn-primary"
+							<Button
+								variant="primary"
+								class="btn-sm"
 								onclick={() => openPanel(seller.principal_uuid, 'reinstate')}
-							>Reinstate</button>
+							>Reinstate</Button>
 						{:else}
-							<button
-								class="btn btn-sm btn-ghost-danger"
+							<Button
+								variant="ghost"
+								class="btn-sm btn-ghost-danger"
 								onclick={() => openPanel(seller.principal_uuid, 'suspend')}
-							>Suspend</button>
+							>Suspend</Button>
 						{/if}
 					</div>
 				</div>
@@ -114,7 +117,7 @@
 	.seller-count  { color: var(--color-text-muted); font-size: var(--text-xs); padding-top: 3px; }
 
 	.inline-form { display: flex; flex-direction: column; gap: var(--space-2); }
-	.inline-reason {
+	:global(.inline-reason) {
 		width: 100%;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--color-border);
@@ -125,22 +128,7 @@
 	}
 	.inline-btns { display: flex; align-items: center; gap: var(--space-2); }
 
-	.btn {
-		padding: var(--space-2) var(--space-5);
-		border-radius: var(--radius-md);
-		font-size: var(--text-sm);
-		font-weight: var(--weight-medium);
-		cursor: pointer;
-		border: none;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-	}
-	.btn-primary   { background: var(--color-accent); color: #fff; }
-	.btn-danger    { background: #dc2626; color: #fff; }
-	.btn-ghost     { background: transparent; border: 1px solid var(--color-border); color: var(--color-text); }
-	.btn-ghost-danger { background: transparent; border: 1px solid #fca5a5; color: #dc2626; }
-	.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
-	.btn:hover { filter: brightness(0.92); }
-	.btn-link { background: none; border: none; padding: 0; font-size: var(--text-sm); color: var(--color-accent); cursor: pointer; text-decoration: underline; }
+	:global(.btn-sm) { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+	:global(.btn-ghost-danger) { border-color: #fca5a5; color: #dc2626; }
+	:global(.btn-link) { background: none; border: none; padding: 0; font-size: var(--text-sm); color: var(--color-accent); cursor: pointer; text-decoration: underline; }
 </style>

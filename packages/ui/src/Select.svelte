@@ -3,6 +3,7 @@
 
 	let {
 		name = undefined,
+		label = undefined,
 		value = $bindable(''),
 		disabled = false,
 		required = false,
@@ -12,6 +13,7 @@
 		...rest
 	}: {
 		name?: string;
+		label?: string;
 		value?: string | number;
 		disabled?: boolean;
 		required?: boolean;
@@ -24,7 +26,12 @@
 	const hasError = $derived(!!error);
 </script>
 
+{#if label}
+	<label class="select-label" for={name}>{label}</label>
+{/if}
+
 <select
+	id={name}
 	{name}
 	bind:value
 	{disabled}
@@ -98,5 +105,13 @@
 		margin-top: var(--space-1);
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
+	}
+
+	.select-label {
+		display: block;
+		font-size: var(--text-sm);
+		font-weight: var(--weight-medium);
+		color: var(--color-text);
+		margin-bottom: var(--space-1);
 	}
 </style>

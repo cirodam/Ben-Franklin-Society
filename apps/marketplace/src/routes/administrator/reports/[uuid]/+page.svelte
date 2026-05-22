@@ -47,7 +47,7 @@
 			<Card>
 				<div class="card-header">
 					<div class="label">Report</div>
-					<span class="muted-sm">{fmtDate(report.created_at)}</span>
+					<span class="muted-sm">{formatDate(report.created_at)}</span>
 				</div>
 				<p class="reporter-label">From: <em>A member</em></p>
 				<div class="report-reason">{report.reason}</div>

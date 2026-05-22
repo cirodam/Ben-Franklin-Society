@@ -22,7 +22,7 @@
 		<header class="thread-header">
 			<h1 class="thread-title">{data.post.title}</h1>
 			<div class="thread-meta">
-				<span class="thread-author">{data.post.given_name} {data.post.family_name}</span>
+				<span class="thread-author">{data.post.author_given_name} {data.post.author_family_name}</span>
 				<span class="thread-separator">•</span>
 				<time class="thread-date">{formatDate(data.post.created_at)}</time>
 			</div>
@@ -52,7 +52,7 @@
 				{#each data.comments as comment}
 					<article class="reply">
 						<header class="reply-header">
-						<span class="reply-author">{comment.given_name} {comment.family_name}</span>
+					<span class="reply-author">{comment.author_given_name} {comment.author_family_name}</span>
 						<span class="reply-separator">•</span>
 						<time class="reply-date">{formatDate(comment.created_at)}</time>
 					</header>

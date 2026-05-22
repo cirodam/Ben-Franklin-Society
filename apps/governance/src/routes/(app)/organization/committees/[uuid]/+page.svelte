@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Button } from '@bfs/ui';
+	import { Button, Card, EmptyState } from '@bfs/ui';
 	import MotionCreationModal from '$lib/components/MotionCreationModal.svelte';
 	import InteractiveOrgChart from '$lib/components/InteractiveOrgChart.svelte';
 	import MotionList from '$lib/components/MotionList.svelte';
 	import VoteSessionList from '$lib/components/VoteSessionList.svelte';
+	import BulletinPostForm from '$lib/components/bulletin/BulletinPostForm.svelte';
+	import BulletinPostCard from '$lib/components/bulletin/BulletinPostCard.svelte';
 	import type { PageData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: any } = $props();
@@ -23,15 +25,20 @@
 		canCreateMotion,
 		enactedMotions,
 		deliberationRules,
-		governingDocument
+		governingDocument,
+		bulletinPosts
 	} = $derived(data);
 
 	let showModal = $state(false);
-	let activeTab = $state<'docket' | 'votes' | 'organization'>('docket');
+	let activeTab = $state<'bulletin' | 'docket' | 'votes' | 'organization'>('bulletin');
+	let showBulletinForm = $state(false);
 
 	$effect(() => {
 		if (form?.created) {
 			goto(`/governance/motions/${form.created}`);
+		}
+		if (form?.success) {
+			showBulletinForm = false;
 		}
 	});
 
@@ -60,6 +67,12 @@
 	<div class="tab-nav">
 		<button 
 			class="tab-nav__button" 
+			class:active={activeTab === 'bulletin'}
+			onclick={() => activeTab = 'bulletin'}>
+			Bulletin
+		</button>
+		<button 
+			class="tab-nav__button" 
 			class:active={activeTab === 'docket'}
 			onclick={() => activeTab = 'docket'}>
 			Docket
@@ -80,7 +93,37 @@
 
 	<!-- Tab Content -->
 	<div class="tab-content">
-		{#if activeTab === 'docket'}
+		{#if activeTab === 'bulletin'}
+			<Card>
+				<div class="bulletin-header">
+					<h2>Bulletin Board</h2>
+					<Button size="sm" onclick={() => showBulletinForm = !showBulletinForm}>
+						{showBulletinForm ? 'Cancel' : '+ New Post'}
+					</Button>
+				</div>
+				{#if showBulletinForm}
+					<BulletinPostForm 
+						action="?/createBulletinPost"
+						oncancel={() => showBulletinForm = false}
+					/>
+				{/if}
+				{#if bulletinPosts.length === 0}
+					<EmptyState
+						title="No posts yet"
+						description="This bulletin board is for {association.name} members to share announcements and discussions."
+					/>
+				{:else}
+					<div class="post-list">
+						{#each bulletinPosts as post}
+							<BulletinPostCard 
+								{post} 
+								href="/organization/associations/{association.uuid}/bulletin/{post.uuid}"
+							/>
+						{/each}
+					</div>
+				{/if}
+			</Card>
+		{:else if activeTab === 'docket'}
 			<MotionList 
 				motions={allMotions} 
 				canCreate={canCreateMotion} 
@@ -223,5 +266,26 @@
 		margin: var(--space-3) 0;
 		line-height: 1.6;
 		white-space: pre-wrap;
+	}
+
+	.bulletin-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-6);
+	}
+
+	.bulletin-header h2 {
+		font-family: 'IM Fell English', Georgia, serif;
+		font-size: var(--text-2xl);
+		font-weight: 400;
+		color: #151c1a;
+		margin: 0;
+	}
+
+	.post-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
 	}
 </style>

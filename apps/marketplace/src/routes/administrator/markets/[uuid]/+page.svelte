@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Alert, Badge, Breadcrumb, Button, EmptyState, Input, Textarea, formatDateTime } from '@bfs/ui';
+	import { Alert, Badge, Breadcrumb, Button, Card, EmptyState, Input, Textarea, formatDateTime } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -9,11 +9,6 @@
 	let confirmClose  = $state(false);
 	let showSession   = $state(false);
 	let showStall     = $state(false);
-
-	function fmtDatetimeLocal(iso: string): string {
-		// Trim to datetime-local format (YYYY-MM-DDTHH:MM)
-		return iso.slice(0, 16);
-	}
 </script>
 
 <div class="page">
@@ -115,7 +110,7 @@
 			<div class="session-list">
 				{#each sessions as session}
 					<a href="/administrator/markets/{marketplace.uuid}/sessions/{session.uuid}" class="session-row">
-						<div class="session-date">{fmtDatetime(session.starts_at)}</div>
+						<div class="session-date">{formatDateTime(session.starts_at)}</div>
 						<div class="session-status">
 							<Badge variant={session.status === 'scheduled' ? 'success' : 'danger'}>
 								{session.status}

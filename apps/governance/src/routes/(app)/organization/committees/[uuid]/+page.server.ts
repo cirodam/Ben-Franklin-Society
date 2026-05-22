@@ -17,6 +17,7 @@ import {
 	updateRole,
 	deleteRole,
 } from '$lib/server/organization/associations.js';
+import * as bulletin from '$lib/server/communications/bulletin.js';
 import { getCurrentTermHolders, listSortitions, vacateSeatTerm } from '$lib/server/organization/sortition.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry, getBodyRecord } from '$lib/server/communications/record.js';
@@ -157,6 +158,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Load available org chart templates
 	const orgChartTemplates = listOrgChartDocuments();
 
+	// Load bulletin posts
+	const actorUuid = locals.session?.person_uuid ?? null;
+	const bulletinPosts = actorUuid ? bulletin.getAssociationPosts(association.uuid, actorUuid) : [];
+
 	return {
 		association,
 		config,
@@ -176,7 +181,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		record,
 		deliberationRules,
 		governingDocument,
-		orgChartTemplates
+		orgChartTemplates,
+		bulletinPosts
 	};
 };
 
@@ -558,5 +564,38 @@ unassignRole(role_uuid, person_uuid);
 		);
 
 		return { success: true };
+	},
+
+	createBulletinPost: async ({ request, locals, params }) => {
+		const session = locals.session;
+		if (!session) return fail(401, { error: 'Not authenticated' });
+
+		const data = await request.formData();
+		const title = data.get('title');
+		const body = data.get('body');
+		const visibility = data.get('visibility') as 'public' | 'members_only' | 'officers_only' | null;
+		const category = data.get('category') as 'announcement' | 'discussion' | 'question' | 'event' | 'policy' | null;
+
+		if (!title || typeof title !== 'string' || title.trim().length === 0) {
+			return fail(400, { error: 'Title is required' });
+		}
+
+		if (!body || typeof body !== 'string' || body.trim().length === 0) {
+			return fail(400, { error: 'Body is required' });
+		}
+
+		try {
+			bulletin.createPost({
+				author_uuid: session.person_uuid,
+				association_uuid: params.uuid,
+				title: title,
+				body: body,
+				visibility: visibility ?? 'members_only',
+				category: category ?? 'discussion',
+			});
+			return { success: true };
+		} catch (err) {
+			return fail(500, { error: 'Failed to create post' });
+		}
 	},
 };
