@@ -9,10 +9,18 @@ import type { LibraryDocument } from '@bfs/types';
 // --- Constants ---
 
 export const SOCIETY_CODE_DIR = join(process.cwd(), 'data', 'society-code');
+export const GOVERNING_DOCS_DIR = join(SOCIETY_CODE_DIR, 'governing');
+export const MOTIONS_DIR = join(SOCIETY_CODE_DIR, 'motions');
 
-// Ensure directory exists
+// Ensure directories exist
 if (!existsSync(SOCIETY_CODE_DIR)) {
 	mkdirSync(SOCIETY_CODE_DIR, { recursive: true });
+}
+if (!existsSync(GOVERNING_DOCS_DIR)) {
+	mkdirSync(GOVERNING_DOCS_DIR, { recursive: true });
+}
+if (!existsSync(MOTIONS_DIR)) {
+	mkdirSync(MOTIONS_DIR, { recursive: true });
 }
 
 // --- Utilities ---

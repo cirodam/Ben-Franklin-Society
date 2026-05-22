@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types.js';
 import { loadGoverningDocument, saveGoverningDocument } from '$lib/server/documents/society-governing.js';
 import { loadMotion, saveMotion, listMotions } from '$lib/server/documents/society-motions.js';
-import { SOCIETY_CODE_DIR } from '$lib/server/documents/society-core.js';
+import { GOVERNING_DOCS_DIR } from '$lib/server/documents/society-core.js';
 import { randomUUID } from 'node:crypto';
 import { redirect, fail } from '@sveltejs/kit';
 import { existsSync, readdirSync } from 'node:fs';
@@ -11,10 +11,10 @@ import { db } from '$lib/server/db.js';
 // Helper to load all governing documents
 function getAllGoverningDocs(): GoverningDocument[] {
 	const docs: GoverningDocument[] = [];
-	if (!existsSync(SOCIETY_CODE_DIR)) return docs;
+	if (!existsSync(GOVERNING_DOCS_DIR)) return docs;
 
 	try {
-		const files = readdirSync(SOCIETY_CODE_DIR);
+		const files = readdirSync(GOVERNING_DOCS_DIR);
 		for (const file of files) {
 			if (file.endsWith('.json')) {
 				const slug = file.replace('.json', '');
