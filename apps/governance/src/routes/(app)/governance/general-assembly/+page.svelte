@@ -12,6 +12,9 @@
 		config, 
 		termHolders,
 		allMotions,
+		activeMotions,
+		concludedMotions,
+		archivedMotions,
 		roles,
 		sections,
 		members,
@@ -25,6 +28,7 @@
 
 	let showModal = $state(false);
 	let activeTab = $state<'docket' | 'organization'>('docket');
+	let motionView = $state<'active' | 'concluded' | 'archived'>('active');
 
 	$effect(() => {
 		if (form?.introduced) {
@@ -61,11 +65,38 @@
 	<!-- Tab Content -->
 	<div class="tab-content">
 		{#if activeTab === 'docket'}
-			<MotionList 
-				motions={allMotions} 
-				canCreate={canCreateMotion} 
-				onCreateClick={openCreateModal} 
-			/>
+			<div class="motion-status-tabs">
+				<button 
+					class="status-tab" 
+					class:active={motionView === 'active'}
+					onclick={() => motionView = 'active'}>
+					Active <span class="count">({activeMotions.length})</span>
+				</button>
+				<button 
+					class="status-tab" 
+					class:active={motionView === 'concluded'}
+					onclick={() => motionView = 'concluded'}>
+					Concluded <span class="count">({concludedMotions.length})</span>
+				</button>
+				<button 
+					class="status-tab" 
+					class:active={motionView === 'archived'}
+					onclick={() => motionView = 'archived'}>
+					Archived <span class="count">({archivedMotions.length})</span>
+				</button>
+			</div>
+			
+			{#if motionView === 'active'}
+				<MotionList 
+					motions={activeMotions} 
+					canCreate={canCreateMotion} 
+					onCreateClick={openCreateModal} 
+				/>
+			{:else if motionView === 'concluded'}
+				<MotionList motions={concludedMotions} />
+			{:else}
+				<MotionList motions={archivedMotions} />
+			{/if}
 		{:else if activeTab === 'organization'}
 			<InteractiveOrgChart
 				{sections}
@@ -142,6 +173,51 @@
 	.tab-button.active {
 		color: #151c1a;
 		border-bottom-color: #d4a24a;
+	}
+
+	.motion-status-tabs {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: center;
+		margin-bottom: var(--space-6);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+	}
+
+	.status-tab {
+		padding: var(--space-3) var(--space-5);
+		border: none;
+		background: transparent;
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-base);
+		letter-spacing: 0.08em;
+		color: #7a5c1a;
+		cursor: pointer;
+		position: relative;
+		transition: all 0.2s;
+	}
+
+	.status-tab:hover {
+		color: #151c1a;
+		background: rgba(212, 162, 74, 0.05);
+	}
+
+	.status-tab.active {
+		color: #d4a24a;
+	}
+
+	.status-tab.active::after {
+		content: '';
+		position: absolute;
+		bottom: -1px;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: #d4a24a;
+	}
+
+	.count {
+		font-size: var(--text-sm);
+		opacity: 0.7;
 	}
 
 	.tab-content {
