@@ -17,12 +17,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const hasCommunityBank = clients.some(c => c.clientId === 'community-bank');
 	const hasMail = clients.some(c => c.clientId === 'mail');
 	const hasMarketplace = clients.some(c => c.clientId === 'marketplace');
+	const hasLibrary = clients.some(c => c.clientId === 'library');
 
 	return {
 		clients,
 		hasCommunityBank,
 		hasMail,
 		hasMarketplace,
+		hasLibrary,
 	};
 };
 
@@ -101,7 +103,30 @@ export const actions: Actions = {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
 		}
 	},
+	createLibrary: async ({ locals }) => {
+		const actingAs = locals.session?.acting_as_uuid ?? null;
+		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {
+			return fail(403, { error: 'Permission denied' });
+		}
 
+		try {
+			const { clientId, clientSecret } = createClient({
+				name: 'Library',
+				redirectUris: ['http://localhost:5177/oauth/callback'],
+				createdBy: locals.session!.person_uuid,
+				clientId: 'library',
+			});
+
+			return {
+				success: true,
+				clientId,
+				clientSecret,
+				message: 'Library client created successfully',
+			};
+		} catch (err) {
+			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
+		}
+	},
 	create: async ({ request, locals }) => {
 		const actingAs = locals.session?.acting_as_uuid ?? null;
 		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {

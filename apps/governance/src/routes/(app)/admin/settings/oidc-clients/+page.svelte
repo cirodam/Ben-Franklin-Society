@@ -70,6 +70,15 @@
 				</Button>
 			</form>
 
+			<form method="POST" action="?/createLibrary" use:enhance>
+				<Button
+					type="submit" 
+					disabled={data.hasLibrary}
+				>
+					{data.hasLibrary ? '✓ Library' : '+ Library Client'}
+				</Button>
+			</form>
+
 			<Button
 				variant="secondary"
 				onclick={() => showCreateForm = !showCreateForm}
