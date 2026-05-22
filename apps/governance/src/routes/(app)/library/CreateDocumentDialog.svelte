@@ -12,11 +12,12 @@
 	let { open = $bindable(), person, onClose }: Props = $props();
 
 	let newDocTitle = $state('');
-	let newDocType = $state('prose');
+	let newDocType = $state('motion');
 	let activeTab = $state<'create' | 'upload'>('create');
 	let selectedFile = $state<File | null>(null);
 
-	const allTypes = documentTypes.getAllTypes();
+	// Society Code: Only motion and governing document types
+	const societyCodeTypes = ['motion', 'governing'];
 
 	function handleFileChange(event: Event) {
 		const input = event.target as HTMLInputElement;
