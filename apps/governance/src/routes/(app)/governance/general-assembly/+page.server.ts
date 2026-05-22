@@ -100,6 +100,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Get all motions for this body (docket)
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
+	// Group motions by status category
+	const activeMotions = allMotions.filter(m =>
+		['draft', 'introduced', 'deliberation', 'voting'].includes(m.content.status)
+	);
+	const concludedMotions = allMotions.filter(m =>
+		['adopted', 'enacted'].includes(m.content.status)
+	);
+	const archivedMotions = allMotions.filter(m =>
+		['rejected', 'withdrawn'].includes(m.content.status)
+	);
+
 	const canCreateMotion = !!actingAs; // Anyone logged in can create motions
 
 	const canVacate = locals.session

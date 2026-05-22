@@ -64,6 +64,7 @@ export function getMotionByUuid(uuid: string): MotionDocument | null {
 export function listMotions(opts: {
 	status?: string;
 	owner_uuid?: string;
+	body_uuid?: string;
 } = {}): MotionDocument[] {
 	const motions: MotionDocument[] = [];
 
@@ -79,6 +80,7 @@ export function listMotions(opts: {
 					// Apply filters
 					if (opts.status && motion.content.status !== opts.status) continue;
 					if (opts.owner_uuid && motion.owner_uuid !== opts.owner_uuid) continue;
+					if (opts.body_uuid && motion.content.body_uuid !== opts.body_uuid) continue;
 					motions.push(motion);
 				}
 			}
