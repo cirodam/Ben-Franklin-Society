@@ -255,10 +255,60 @@ Now that documents can be created in library, integrate with governance.
 
 ### Part C: Library Client Integration
 
-**Copy LibraryClient to Governance:**
-- [ ] Copy `apps/library/src/lib/client.ts` to `apps/governance/src/lib/library-client.ts`
-- [ ] Add `LIBRARY_URL` environment variable (default: `http://localhost:5177`)
-- [ ] Test connectivity from governance to library service
+**STATUS: ✅ COMPLETE**
+
+**Completed Changes:**
+
+1. **Copied LibraryClient to Governance:**
+   - Created `/apps/governance/src/lib/library-client.ts`
+   - Full-featured client with all methods from library app
+   - Uses JWT token authentication for service-to-service calls
+
+2. **Environment Variable Support:**
+   - Client reads `LIBRARY_URL` environment variable
+   - Default fallback: `http://localhost:5177`
+   - Can be overridden per instantiation
+
+3. **Available Methods:**
+   - `listBuckets()` - Get accessible buckets
+   - `uploadFile()` - Upload files to buckets
+   - `downloadFile()` - Download files by ID
+   - `deleteFile()`, `moveFile()`, `renameFile()` - File operations
+   - `listFiles()` - List files in bucket
+   - `createFolder()`, `deleteFolder()`, `renameFolder()` - Folder operations
+   - `listFolders()`, `getFolderContents()` - Folder navigation
+   - `getFileMetadata()` - Get file info
+   - `searchFiles()` - Search across buckets
+
+4. **Helper Functions:**
+   - `uploadToUserBucket()` - Quick upload to user's personal bucket
+   - `uploadToAssociationBucket()` - Quick upload to association bucket
+   - `downloadFileAsBuffer()` - Download as Buffer for server processing
+
+**Usage Example:**
+```typescript
+import { LibraryClient } from '$lib/library-client.js';
+
+// In a +page.server.ts with JWT token
+const jwtToken = locals.session.jwt_token;
+const client = new LibraryClient(jwtToken);
+
+// Download a document from library
+const { buffer, contentType, filename } = await downloadFileAsBuffer(
+  jwtToken, 
+  fileId
+);
+
+// Parse JSON document
+const document = JSON.parse(buffer.toString('utf-8'));
+```
+
+**Verification:**
+- ✅ Library client compiles without errors
+- ✅ TypeScript types properly defined
+- ✅ Environment variable support implemented
+
+---
 
 ### Part D: Submit Motion from Library
 
