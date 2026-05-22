@@ -4,6 +4,8 @@
 services:
   reverse-proxy:
     image: traefik:v3.2
+    environment:
+      - DOCKER_API_VERSION=1.45
     command:
       - "--api.dashboard=true"
       - "--providers.docker=true"
