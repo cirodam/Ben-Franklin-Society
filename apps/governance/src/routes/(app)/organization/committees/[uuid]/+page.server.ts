@@ -110,6 +110,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Get all motions for this body (docket)
 	const allMotions = listMotions({ bodyUuid: association.uuid });
 
+	// Group motions by status category
+	const activeMotions = allMotions.filter(m =>
+		['draft', 'introduced', 'deliberation', 'voting'].includes(m.content.status)
+	);
+	const concludedMotions = allMotions.filter(m =>
+		['adopted', 'enacted'].includes(m.content.status)
+	);
+	const archivedMotions = allMotions.filter(m =>
+		['rejected', 'withdrawn'].includes(m.content.status)
+	);
+
 	// Get all vote sessions for motions in this body
 	const motionUuids = allMotions.map(m => m.uuid);
 	const allVoteSessions = motionUuids.length > 0
@@ -169,6 +180,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		termHolders,
 		draws,
 		allMotions,
+		activeMotions,
+		concludedMotions,
+		archivedMotions,
 		voteSessions,
 		roles: enrichedRoles,
 		roleHierarchy: roots,

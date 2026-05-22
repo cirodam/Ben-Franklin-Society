@@ -17,6 +17,9 @@
 		sourceCollege,
 		termHolders,
 		allMotions,
+		activeMotions,
+		concludedMotions,
+		archivedMotions,
 		voteSessions,
 		roles,
 		sections,
@@ -31,6 +34,7 @@
 
 	let showModal = $state(false);
 	let activeTab = $state<'bulletin' | 'docket' | 'votes' | 'organization'>('bulletin');
+	let motionView = $state<'active' | 'concluded' | 'archived'>('active');
 	let showBulletinForm = $state(false);
 
 	$effect(() => {
@@ -124,11 +128,38 @@
 				{/if}
 			</Card>
 		{:else if activeTab === 'docket'}
-			<MotionList 
-				motions={allMotions} 
-				canCreate={canCreateMotion} 
-				onCreateClick={openCreateModal} 
-			/>
+			<div class="motion-status-tabs">
+				<button 
+					class="status-tab" 
+					class:active={motionView === 'active'}
+					onclick={() => motionView = 'active'}>
+					Active <span class="count">({activeMotions.length})</span>
+				</button>
+				<button 
+					class="status-tab" 
+					class:active={motionView === 'concluded'}
+					onclick={() => motionView = 'concluded'}>
+					Concluded <span class="count">({concludedMotions.length})</span>
+				</button>
+				<button 
+					class="status-tab" 
+					class:active={motionView === 'archived'}
+					onclick={() => motionView = 'archived'}>
+					Archived <span class="count">({archivedMotions.length})</span>
+				</button>
+			</div>
+			
+			{#if motionView === 'active'}
+				<MotionList 
+					motions={activeMotions} 
+					canCreate={canCreateMotion} 
+					onCreateClick={openCreateModal} 
+				/>
+			{:else if motionView === 'concluded'}
+				<MotionList motions={concludedMotions} />
+			{:else}
+				<MotionList motions={archivedMotions} />
+			{/if}
 		{:else if activeTab === 'votes'}
 			<VoteSessionList sessions={voteSessions} />
 		{:else if activeTab === 'organization'}
