@@ -252,6 +252,31 @@
 		}
 	}
 	
+	async function submitToGovernance(fileId: number, filename: string) {
+		if (!confirm(`Submit "${filename}" to Governance for deliberation?`)) {
+			return;
+		}
+		
+		try {
+			const response = await fetch('http://localhost:5173/api/library/import-motion', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include', // Include cookies for authentication
+				body: JSON.stringify({ library_file_id: fileId })
+			});
+			
+			if (!response.ok) {
+				const error = await response.text();
+				throw new Error(error || 'Failed to submit to governance');
+			}
+			
+			const result = await response.json();
+			alert(`Motion successfully submitted! UUID: ${result.motion_uuid}\nSlug: ${result.slug}`);
+		} catch (err: any) {
+			alert(`Failed to submit to governance: ${err.message}`);
+		}
+	}
+	
 	async function deleteFolder(folderId: number) {
 		if (!confirm('Are you sure you want to delete this folder? It must be empty.')) {
 			return;
@@ -586,6 +611,15 @@
 												<a href="/api/files/{file.id}" class="btn btn--secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
 													Download
 												</a>
+												{#if file.filename.endsWith('.json')}
+													<button 
+														onclick={() => submitToGovernance(file.id, file.filename)} 
+														class="btn btn--primary" 
+														style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
+													>
+														Submit to Governance
+													</button>
+												{/if}
 												<button 
 													onclick={() => startMovingFile(file.id)} 
 													class="btn btn--secondary" 

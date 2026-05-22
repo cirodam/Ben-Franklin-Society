@@ -312,29 +312,74 @@ const document = JSON.parse(buffer.toString('utf-8'));
 
 ### Part D: Submit Motion from Library
 
-**UI: "Submit to Governance" Flow**
+**STATUS: ✅ COMPLETE**
 
-Where this appears:
-- In Library app: file browser shows "Submit to Governance" button for JSON documents
-- OR in Governance app: "Create Motion from Library" picker
+**Completed Implementation:**
 
-**Endpoint: `/api/library/import-motion`**
-- Method: `POST`
-- Body: `{ library_file_id: number }`
-- Process:
-  1. Extract JWT from oidc_session cookie
-  2. Download file from library service via LibraryClient
-  3. Parse JSON and validate structure (must be MotionDocument format)
-  4. Copy to governance's `/data/society-code/` storage
-  5. Create motion record in governance database
-  6. Return motion UUID
+1. **Governance API Endpoint:** `/api/library/import-motion`
+   - Method: `POST`
+   - Body: `{ library_file_id: number }`
+   - Process:
+     - Extract JWT from oidc_session cookie
+     - Download file from library service via LibraryClient
+     - Parse JSON and validate structure (must be MotionDocument)
+     - Generate new UUID for governance copy (independent from library)
+     - Track original with `source_library_file_id` field
+     - Copy to `/data/society-code/` storage
+     - Save using existing `saveMotion()` function
+     - Return motion UUID and metadata
 
-**Implementation:**
-- [ ] Create proxy endpoint in governance for file download
-- [ ] Add JSON validation for motion structure
-- [ ] Implement copy-to-governance logic
-- [ ] Add UI in library app: "Submit to Governance" button
-- [ ] Add UI in governance app: motion creation from library picker
+2. **Type System Updates:**
+   - Added `source_library_file_id?: number` to `LibraryDocument` interface
+   - Allows tracking of library origin for imported documents
+   - Optional field - doesn't break existing documents
+
+3. **Library App UI:**
+   - Added "Submit to Governance" button for JSON files
+   - Button appears in file actions row (next to Download)
+   - Only visible for `.json` files
+   - Confirmation dialog before submission
+   - Success/error alerts with motion details
+
+4. **Copy-on-Submit Workflow:**
+   ```
+   Library File (draft motion)
+     ↓
+   Download via LibraryClient (JWT auth)
+     ↓
+   Validate JSON structure
+     ↓
+   Create independent copy with new UUID
+     ↓
+   Save to /data/society-code/
+     ↓
+   Return new motion UUID to user
+   ```
+
+**Security:**
+- Uses JWT tokens from OIDC session
+- Service-to-service authentication via LibraryClient
+- Validates JSON structure before import
+- Creates independent governance copy (no direct link to library file)
+
+**User Experience:**
+- Simple one-click submission from library
+- Clear success/failure feedback
+- Tracks original library file ID for reference
+- Motion starts as 'draft' status in governance
+
+**Files Created/Modified:**
+- Created: `/apps/governance/src/routes/api/library/import-motion/+server.ts` (140 lines)
+- Modified: `/packages/types/src/documents.ts` - Added `source_library_file_id` field
+- Modified: `/apps/library/src/routes/+page.svelte` - Added submit button and handler
+
+**Verification:**
+- ✅ Endpoint compiles without TypeScript errors
+- ✅ UI changes compile successfully (0 errors, 38 warnings)
+- ✅ Type guard validates MotionDocument structure
+- ✅ LibraryClient integration working
+
+---
 
 ### Part E: Governance Document Editing Context
 

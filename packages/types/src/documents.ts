@@ -24,6 +24,9 @@ export interface LibraryDocument<TContent = unknown> {
 	created_at: string; // ISO 8601
 	updated_at: string; // ISO 8601
 
+	// Integration tracking (optional)
+	source_library_file_id?: number; // If imported from library app, track original file
+
 	// Type-specific content (including status)
 	content: TContent;
 }
