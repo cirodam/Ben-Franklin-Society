@@ -1,0 +1,26 @@
+# Caddyfile for BFS deployment
+# Caddy automatically handles SSL certificates via Let's Encrypt
+
+{
+    email ${ACME_EMAIL}
+}
+
+governance.${DOMAIN} {
+    reverse_proxy governance:5173
+}
+
+bank.${DOMAIN} {
+    reverse_proxy community-bank:5174
+}
+
+mail.${DOMAIN} {
+    reverse_proxy mail:5175
+}
+
+marketplace.${DOMAIN} {
+    reverse_proxy marketplace:5176
+}
+
+library.${DOMAIN} {
+    reverse_proxy library:5177
+}

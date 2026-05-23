@@ -3,26 +3,15 @@
 
 services:
   reverse-proxy:
-    image: traefik:v3.2
-    command:
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@bfs.example.com}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-    environment:
-      - DOCKER_API_VERSION=1.45
+    image: caddy:2.8-alpine
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"  # Traefik dashboard
+      - "443:443/udp"  # HTTP/3
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - letsencrypt:/letsencrypt
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - bfs-network
     restart: unless-stopped
@@ -39,17 +28,6 @@ services:
       - governance-data:/app/data
     networks:
       - bfs-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.governance.rule=Host(`${GOVERNANCE_DOMAIN:-governance.bfs.example.com}`)"
-      - "traefik.http.routers.governance.entrypoints=websecure"
-      - "traefik.http.routers.governance.tls.certresolver=letsencrypt"
-      - "traefik.http.services.governance.loadbalancer.server.port=5173"
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.governance-http.rule=Host(`${GOVERNANCE_DOMAIN:-governance.bfs.example.com}`)"
-      - "traefik.http.routers.governance-http.entrypoints=web"
-      - "traefik.http.routers.governance-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -74,16 +52,6 @@ services:
       - bfs-network
     depends_on:
       - governance
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bank.rule=Host(`${BANK_DOMAIN:-bank.bfs.example.com}`)"
-      - "traefik.http.routers.bank.entrypoints=websecure"
-      - "traefik.http.routers.bank.tls.certresolver=letsencrypt"
-      - "traefik.http.services.bank.loadbalancer.server.port=5174"
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.bank-http.rule=Host(`${BANK_DOMAIN:-bank.bfs.example.com}`)"
-      - "traefik.http.routers.bank-http.entrypoints=web"
-      - "traefik.http.routers.bank-http.middlewares=redirect-to-https"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5174/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -108,16 +76,6 @@ services:
       - bfs-network
     depends_on:
       - governance
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.mail.rule=Host(`${MAIL_DOMAIN:-mail.bfs.example.com}`)"
-      - "traefik.http.routers.mail.entrypoints=websecure"
-      - "traefik.http.routers.mail.tls.certresolver=letsencrypt"
-      - "traefik.http.services.mail.loadbalancer.server.port=5175"
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.mail-http.rule=Host(`${MAIL_DOMAIN:-mail.bfs.example.com}`)"
-      - "traefik.http.routers.mail-http.entrypoints=web"
-      - "traefik.http.routers.mail-http.middlewares=redirect-to-https"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5175/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -142,16 +100,6 @@ services:
       - bfs-network
     depends_on:
       - governance
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.marketplace.rule=Host(`${MARKETPLACE_DOMAIN:-marketplace.bfs.example.com}`)"
-      - "traefik.http.routers.marketplace.entrypoints=websecure"
-      - "traefik.http.routers.marketplace.tls.certresolver=letsencrypt"
-      - "traefik.http.services.marketplace.loadbalancer.server.port=5176"
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.marketplace-http.rule=Host(`${MARKETPLACE_DOMAIN:-marketplace.bfs.example.com}`)"
-      - "traefik.http.routers.marketplace-http.entrypoints=web"
-      - "traefik.http.routers.marketplace-http.middlewares=redirect-to-https"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5176/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -176,16 +124,6 @@ services:
       - bfs-network
     depends_on:
       - governance
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.library.rule=Host(`${LIBRARY_DOMAIN:-library.bfs.example.com}`)"
-      - "traefik.http.routers.library.entrypoints=websecure"
-      - "traefik.http.routers.library.tls.certresolver=letsencrypt"
-      - "traefik.http.services.library.loadbalancer.server.port=5177"
-      # HTTP to HTTPS redirect
-      - "traefik.http.routers.library-http.rule=Host(`${LIBRARY_DOMAIN:-library.bfs.example.com}`)"
-      - "traefik.http.routers.library-http.entrypoints=web"
-      - "traefik.http.routers.library-http.middlewares=redirect-to-https"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5177/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -200,7 +138,8 @@ volumes:
   mail-data:
   marketplace-data:
   library-data:
-  letsencrypt:
+  caddy_data:
+  caddy_config:
 
 networks:
   bfs-network:

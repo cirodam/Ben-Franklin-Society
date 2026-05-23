@@ -106,6 +106,16 @@ fi
 echo "✓ docker-compose.published.yml downloaded successfully"
 
 echo ""
+echo "Downloading Caddyfile template..."
+if ! curl -fsSL -o Caddyfile.template \
+  https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/Caddyfile.template; then
+  echo "Error: Failed to download Caddyfile.template from GitHub"
+  exit 1
+fi
+
+echo "✓ Caddyfile.template downloaded successfully"
+
+echo ""
 echo "Creating .env file..."
 if [ -f .env ]; then
   echo ".env file already exists, skipping..."
@@ -158,6 +168,20 @@ EOF
     echo "✓ Configuration complete (DOMAIN and ACME_EMAIL set)"
   fi
 fi
+
+echo ""
+echo "Generating Caddyfile from template..."
+if [ -f Caddyfile ]; then
+  echo "Caddyfile already exists, backing up..."
+  mv Caddyfile Caddyfile.backup.$(date +%Y%m%d-%H%M%S)
+fi
+
+# Generate Caddyfile from template with actual values
+sed -e "s/\${DOMAIN}/${DOMAIN:-bfs.example.com}/g" \
+    -e "s/\${ACME_EMAIL}/${ACME_EMAIL:-admin@example.com}/g" \
+    Caddyfile.template > Caddyfile
+
+echo "✓ Caddyfile generated successfully"
 
 echo ""
 echo "Creating backup directory..."
@@ -300,6 +324,11 @@ fi
 
 if [ ! -f "$BFS_DIR/.env" ]; then
   echo "Error: .env file is missing!"
+  exit 1
+fi
+
+if [ ! -f "$BFS_DIR/Caddyfile" ]; then
+  echo "Error: Caddyfile is missing!"
   exit 1
 fi
 
