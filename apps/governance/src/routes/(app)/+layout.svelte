@@ -47,6 +47,9 @@
 		{/snippet}
 
 		{#snippet footer()}
+				<div class="footer-location">
+					{data.societyLocation}
+				</div>
 				{#if hasContexts}
 					<div class="footer-context-switcher">
 						<ContextSwitcher 
@@ -93,6 +96,14 @@
 	
 	.footer-context-switcher {
 		padding: var(--space-3);
+	}
+	
+	.footer-location {
+		padding: var(--space-3);
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		text-align: center;
+		color: rgba(255, 255, 255, 0.7);
 	}
 	
 	.footer-identity {

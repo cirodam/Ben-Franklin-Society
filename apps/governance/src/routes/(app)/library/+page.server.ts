@@ -1,12 +1,10 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { loadGoverningDocument, saveGoverningDocument } from '$lib/server/documents/society-governing.js';
-import { loadMotion, saveMotion, listMotions } from '$lib/server/documents/society-motions.js';
+import { loadGoverningDocument } from '$lib/server/documents/society-governing.js';
+import { listMotions } from '$lib/server/documents/society-motions.js';
 import { GOVERNING_DOCS_DIR } from '$lib/server/documents/society-core.js';
-import { randomUUID } from 'node:crypto';
-import { redirect, fail } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { existsSync, readdirSync } from 'node:fs';
-import type { GoverningDocument, MotionDocument, GoverningStatus, MotionStatus } from '@bfs/types';
-import { db } from '$lib/server/db.js';
+import type { GoverningDocument } from '@bfs/types';
 
 // Helper to load all governing documents
 function getAllGoverningDocs(): GoverningDocument[] {
@@ -65,93 +63,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 };
 
 export const actions: Actions = {
-	create: async ({ request, locals }) => {
-		const data = await request.formData();
-		const type = data.get('type') as string;
-		const title = data.get('title') as string;
-
-		if (!locals.person) {
-			return fail(401, { error: 'Not authenticated' });
-		}
-
-		if (!title || !type) {
-			return fail(400, { error: 'Title and type are required' });
-		}
-
-		// Generate slug from title
-		const slug = title
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-|-$/g, '');
-
-		// For now, only support creating prose documents
-		if (type === 'prose') {
-			const doc: ProseDocument = {
-				uuid: randomUUID(),
-				type: 'prose',
-				slug,
-				document_id: null,
-				version: 1,
-				title,
-				owner_uuid: locals.person.uuid,
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString(),
-				content: {
-					status: 'draft',
-					paragraphs: [''],
-				},
-			};
-
-			saveProseDocument(doc);
-			throw redirect(303, `/library/${slug}/edit`);
-		}
-
-		if (type === 'contract') {
-			const doc: ContractDocument = {
-				uuid: randomUUID(),
-				type: 'contract',
-				slug,
-				document_id: null,
-				version: 1,
-				title,
-				owner_uuid: 'SOCIETY', // Contracts are owned by the society
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString(),
-				content: {
-					status: 'draft',
-					body: '',
-					party_a: {
-						principal_uuid: '',
-						principal_name: '',
-						role: ''
-					},
-					party_b: {
-						principal_uuid: '',
-						principal_name: '',
-						role: ''
-					}
-				},
-			};
-
-			saveContract(doc);
-			throw redirect(303, `/library/${slug}/edit`);
-		}
-
-		if (type === 'motion') {
-			const doc = createMotion({
-				slug,
-				title,
-				provisions: [{ number: '1', text: '' }],
-				introducer_uuid: locals.person.uuid,
-				owner_uuid: locals.person.uuid,
-			});
-
-			throw redirect(303, `/library/${slug}`);
-		}
-
-		return fail(400, { error: 'Unsupported document type' });
-	},
-
 	delete: async ({ request, locals }) => {
 		const data = await request.formData();
 		const uuid = data.get('uuid') as string;

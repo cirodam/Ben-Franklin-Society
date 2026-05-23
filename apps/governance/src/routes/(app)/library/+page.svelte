@@ -1,14 +1,11 @@
 <script lang="ts">
-	import { Button, EmptyState, Badge } from '@bfs/ui';
+	import { EmptyState, Badge } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
-	import { documentTypes } from '$lib/documents';
-	import CreateDocumentDialog from './CreateDocumentDialog.svelte';
 	import type { GoverningDocument, MotionDocument } from '@bfs/types';
 
 	let { data }: { data: PageData } = $props();
 	
-	let showCreateDialog = $state(false);
 	let currentView = $state<'enacted' | 'under-consideration' | 'archived'>(
 		data.currentView === 'under-consideration' ? 'under-consideration' :
 		data.currentView === 'archived' ? 'archived' : 'enacted'
@@ -52,9 +49,6 @@
 	<header class="header">
 		<h1 class="page-title">Society Code</h1>
 		<p class="subtitle">Official motions and governing documents of the society</p>
-		<div class="header-actions">
-			<Button onclick={() => showCreateDialog = true}>+ Create document</Button>
-		</div>
 	</header>
 
 	<div class="tabs">
@@ -121,12 +115,6 @@
 		</div>
 	{/if}
 </div>
-
-<CreateDocumentDialog 
-	bind:open={showCreateDialog}
-	person={data.person}
-	onClose={() => showCreateDialog = false}
-/>
 
 <style>
 	.page {

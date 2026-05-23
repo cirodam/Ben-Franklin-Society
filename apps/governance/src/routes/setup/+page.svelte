@@ -28,6 +28,15 @@
 			/>
 
 			<Input
+				name="society_location"
+				type="text"
+				label="Society Location"
+				hint="Short location name for display in navigation"
+				placeholder="e.g. Athens, Georgia"
+				required
+			/>
+
+			<Input
 				name="society_handle"
 				type="text"
 				label="Society Handle"

@@ -30,6 +30,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 
 		const societyName = data.get('society_name');
+		const societyLocation = data.get('society_location');
 		const societyHandle = data.get('society_handle');
 		const rawHandle   = data.get('handle');
 		const givenName   = data.get('given_name');
@@ -40,6 +41,7 @@ export const actions: Actions = {
 
 		if (
 			typeof societyName !== 'string' || !societyName ||
+			typeof societyLocation !== 'string' || !societyLocation ||
 			typeof societyHandle !== 'string' || !societyHandle ||
 			typeof rawHandle !== 'string' || !rawHandle ||
 			typeof givenName !== 'string' || !givenName ||
@@ -96,6 +98,7 @@ export const actions: Actions = {
 
 		// Save community configuration with sensible defaults
 		setInitialCommunityConfig('society_name', societyName, 'The full name of this local society');
+		setInitialCommunityConfig('society_location', societyLocation, 'Short location name for display');
 		setInitialCommunityConfig('dues_rate_monthly', '100', 'Monthly membership dues in Franks');
 		setInitialCommunityConfig('demurrage_rate', '0.02', 'Demurrage rate as a decimal fraction (0.02 = 2% per month)');
 		setInitialCommunityConfig('demurrage_threshold', '5000', 'Balance above which demurrage applies, in Franks');

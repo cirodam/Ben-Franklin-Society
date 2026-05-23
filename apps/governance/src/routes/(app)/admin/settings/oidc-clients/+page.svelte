@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Badge from '@bfs/ui/src/Badge.svelte';
-	import { Alert, Button, Card, FormField, PageHeader, EmptyState } from '@bfs/ui';
+	import { Alert, Button, Card, Input, Textarea, PageHeader, EmptyState } from '@bfs/ui';
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -17,7 +17,7 @@
 
 	{#if form?.success && form?.clientSecret}
 		<Alert variant="success">
-			<p><strong>✅ {form.message}</strong></p>
+			<p><strong>{form.message}</strong></p>
 			<div class="credentials">
 				<div class="credential-row">
 					<span class="credential-label">Client ID:</span>
@@ -28,7 +28,7 @@
 					<code class="credential-value">{form.clientSecret}</code>
 				</div>
 			</div>
-			<p class="warning-text">⚠️ Save these credentials now. The client secret cannot be retrieved later.</p>
+			<p class="warning-text">Save these credentials now. The client secret cannot be retrieved later.</p>
 		</Alert>
 	{/if}
 
@@ -48,7 +48,7 @@
 					type="submit" 
 					disabled={data.hasCommunityBank}
 				>
-					{data.hasCommunityBank ? '✓ Community Bank' : '+ Community Bank Client'}
+					{data.hasCommunityBank ? 'Community Bank' : 'Community Bank'}
 				</Button>
 			</form>
 
@@ -57,7 +57,7 @@
 					type="submit" 
 					disabled={data.hasMail}
 				>
-					{data.hasMail ? '✓ Mail' : '+ Mail Client'}
+					{data.hasMail ? 'Mail' : 'Mail'}
 				</Button>
 			</form>
 
@@ -66,7 +66,7 @@
 					type="submit" 
 					disabled={data.hasMarketplace}
 				>
-					{data.hasMarketplace ? '✓ Marketplace' : '+ Marketplace Client'}
+					{data.hasMarketplace ? 'Marketplace' : 'Marketplace'}
 				</Button>
 			</form>
 
@@ -75,7 +75,7 @@
 					type="submit" 
 					disabled={data.hasLibrary}
 				>
-					{data.hasLibrary ? '✓ Library' : '+ Library Client'}
+					{data.hasLibrary ? 'Library' : 'Library'}
 				</Button>
 			</form>
 
@@ -83,31 +83,29 @@
 				variant="secondary"
 				onclick={() => showCreateForm = !showCreateForm}
 			>
-				{showCreateForm ? 'Cancel' : '+ Other OIDC Client'}
+				{showCreateForm ? 'Cancel' : 'Other Client'}
 			</Button>
 		</div>
 
 		{#if showCreateForm}
 			<form method="POST" action="?/create" use:enhance class="create-form">
-				<FormField label="Client Name" hint="A descriptive name for this application">
-					<input 
-						type="text" 
-						id="name"
-						name="name" 
-						placeholder="e.g., My Custom App" 
-						required 
-					/>
-				</FormField>
+				<Input
+					name="name"
+					label="Client Name"
+					hint="A descriptive name for this application"
+					placeholder="e.g., My Custom App"
+					required
+				/>
 
-				<FormField label="Redirect URIs" hint="One URI per line. Users will be redirected here after authentication.">
-					<textarea 
-						id="redirect_uris"
-						name="redirect_uris" 
-						placeholder="http://localhost:3000/oauth/callback&#10;https://app.example.com/oauth/callback"
-						required 
-						rows="4"
-					></textarea>
-				</FormField>
+				<Textarea
+					name="redirect_uris"
+					label="Redirect URIs"
+					hint="One URI per line. Users will be redirected here after authentication."
+					placeholder="http://localhost:3000/oauth/callback
+https://app.example.com/oauth/callback"
+					rows={4}
+					required
+				/>
 
 				<Button type="submit">Create Client</Button>
 			</form>
@@ -119,7 +117,6 @@
 
 		{#if data.clients.length === 0}
 			<EmptyState 
-				icon="🔑"
 				title="No OIDC clients registered yet"
 			/>
 		{:else}
@@ -158,17 +155,18 @@
 
 						<form method="POST" action="?/delete" use:enhance class="delete-form">
 							<input type="hidden" name="client_id" value={client.clientId} />
-							<button 
-								type="submit" 
-								class="btn btn--danger btn--sm"
-								onclick={(e) => {
-									if (!confirm(`Delete client "${client.name}"? This cannot be undone.`)) {
+						<Button
+							type="submit"
+							variant="danger"
+							size="sm"
+						onclick={(e: MouseEvent) => {
+							if (!confirm(`Delete client "${client.name}"? This cannot be undone.`)) {
 										e.preventDefault();
 									}
 								}}
 							>
 								Delete
-							</button>
+							</Button>
 						</form>
 					</div>
 				{/each}
@@ -281,15 +279,6 @@
 
 	.quick-setup-buttons form {
 		display: contents;
-	}
-
-	.quick-setup-buttons button {
-		width: 100%;
-	}
-
-	.quick-setup-buttons button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
 	}
 
 	.create-form {
