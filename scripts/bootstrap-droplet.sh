@@ -66,12 +66,15 @@ docker compose version
 
 echo ""
 echo "Setting up firewall..."
-# Allow SSH, HTTP, HTTPS
-ufw --force enable
+# Add rules before enabling to avoid timing issues
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
-ufw status
+ufw allow 443/udp  # HTTP/3
+ufw --force enable
+ufw reload
+echo "Firewall rules:"
+ufw status verbose
 
 echo ""
 echo "Creating application directory..."
