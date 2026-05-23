@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getNetworkStats } from '$lib/server/registry.js';
+import { getNetworkStats } from '$lib/server/sync.js';
 import type { RequestHandler } from './$types.js';
 
 /**

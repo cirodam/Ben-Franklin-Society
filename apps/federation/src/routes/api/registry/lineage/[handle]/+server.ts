@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getLineageFromCache, lookupSociety } from '$lib/server/registry.js';
+import { computeLineage, lookupSociety } from '$lib/server/queries.js';
 import type { RequestHandler } from './$types.js';
 
 /**
@@ -9,7 +9,7 @@ import type { RequestHandler } from './$types.js';
 export const GET: RequestHandler = async ({ params }) => {
 	const { handle } = params;
 
-	const lineage = getLineageFromCache(handle);
+	const lineage = computeLineage(handle);
 
 	if (!lineage) {
 		return json(

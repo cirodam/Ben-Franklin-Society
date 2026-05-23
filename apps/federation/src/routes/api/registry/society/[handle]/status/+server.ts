@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { changeStatus, getStatusHistory } from '$lib/server/domains.js';
-import { lookupSociety } from '$lib/server/registry.js';
+import { changeStatus } from '$lib/server/updates.js';
+import { lookupSociety } from '$lib/server/queries.js';
 import type { RequestHandler } from './$types.js';
 
 /**
@@ -15,12 +15,9 @@ export const GET: RequestHandler = async ({ params }) => {
 		return json({ error: 'Society not found' }, { status: 404 });
 	}
 
-	const history = getStatusHistory(handle);
-
 	return json({
 		handle,
-		current_status: society.status,
-		history
+		current_status: society.status
 	});
 };
 
@@ -96,9 +93,8 @@ export const PATCH: RequestHandler = async ({ params, request, getClientAddress 
 		return json({ error: result.error || 'Failed to change status' }, { status: 500 });
 	}
 
-	// Get updated society and history
+	// Get updated society
 	const society = lookupSociety(handle);
-	const history = getStatusHistory(handle, 10);
 
 	return json({
 		success: true,

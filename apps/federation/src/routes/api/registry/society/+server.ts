@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { registerSociety } from '$lib/server/registry.js';
+import { registerSociety } from '$lib/server/registration.js';
+import { lookupSociety, computeLineage } from '$lib/server/queries.js';
 import type { RequestHandler } from './$types.js';
 
 /**
@@ -8,24 +9,30 @@ import type { RequestHandler } from './$types.js';
  * 
  * Body: {
  *   founding_record: FoundingRecord,
- *   endpoint: "https://society.bfs/"
+ *   bfs_url?: string,
+ *   url?: string,
+ *   ip_address?: string,
+ *   port?: number
  * }
  */
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
-		const { founding_record, endpoint } = body;
+		const { founding_record, bfs_url, url, ip_address, port } = body;
 
-		if (!founding_record || !endpoint) {
+		if (!founding_record) {
 			return json(
-				{ success: false, error: 'founding_record and endpoint required' },
+				{ success: false, error: 'founding_record required' },
 				{ status: 400 }
 			);
 		}
 
 		const result = registerSociety({
 			foundingRecord: founding_record,
-			endpoint
+			bfsUrl: bfs_url,
+			url,
+			ipAddress: ip_address,
+			port
 		});
 
 		if (!result.success) {
@@ -33,9 +40,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Get the registered society
-		const { lookupSociety, getLineageFromCache } = await import('$lib/server/registry.js');
 		const society = lookupSociety(founding_record.child.handle);
-		const lineage = getLineageFromCache(founding_record.child.handle);
+		const lineage = computeLineage(founding_record.child.handle);
 
 		return json({
 			success: true,

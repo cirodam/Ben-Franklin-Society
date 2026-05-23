@@ -1,10 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { lookupSociety, getLineageFromCache } from '$lib/server/registry.js';
+import {
+	lookupSociety,
+	computeLineage
+} from '$lib/server/queries.js';
 import {
 	verifyUpdateRequest,
-	updateEndpoint,
-	checkRateLimit
-} from '$lib/server/domains.js';
+	updateConnectivity
+} from '$lib/server/updates.js';
 import type { RequestHandler } from './$types.js';
 
 /**
@@ -20,7 +22,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		return json({ error: 'Society not found' }, { status: 404 });
 	}
 
-	const lineage = getLineageFromCache(handle);
+	const lineage = computeLineage(handle);
 
 	return json({
 		...society,
@@ -30,12 +32,14 @@ export const GET: RequestHandler = async ({ params }) => {
 
 /**
  * PATCH /api/registry/society/:handle
- * Update society endpoint (requires signature authentication)
+ * Update society connectivity (requires signature authentication)
  * 
  * Headers: Authorization: Signature <base64-signature>
  * Body: {
- *   endpoint: string,
- *   endpoint_type?: 'hostname' | 'ip',
+ *   bfs_url?: string,
+ *   url?: string,
+ *   ip_address?: string,
+ *   port?: number,
  *   timestamp: number
  * }
  */
@@ -64,14 +68,6 @@ export const PATCH: RequestHandler = async ({ params, request, getClientAddress 
 		return json({ error: verification.error || 'Invalid signature' }, { status: 401 });
 	}
 
-	// Check rate limit
-	if (!checkRateLimit(handle, 'endpoint')) {
-		return json(
-			{ error: 'Rate limit exceeded (10 endpoint updates per day)' },
-			{ status: 429 }
-		);
-	}
-
 	// Parse body
 	let body: any;
 	try {
@@ -80,19 +76,16 @@ export const PATCH: RequestHandler = async ({ params, request, getClientAddress 
 		return json({ error: 'Invalid JSON' }, { status: 400 });
 	}
 
-	const { endpoint, endpoint_type } = body;
+	const { bfs_url, url, ip_address, port } = body;
 
-	if (!endpoint) {
-		return json({ error: 'Missing endpoint' }, { status: 400 });
-	}
-
-	// Update endpoint
-	const result = updateEndpoint({
+	// Update connectivity
+	const result = updateConnectivity({
 		handle,
-		endpoint,
-		endpointType: endpoint_type,
-		signature: signatureBase64,
-		ipAddress: getClientAddress()
+		bfsUrl: bfs_url,
+		url,
+		ipAddress: ip_address,
+		port,
+		signature: signatureBase64
 	});
 
 	if (!result.success) {
