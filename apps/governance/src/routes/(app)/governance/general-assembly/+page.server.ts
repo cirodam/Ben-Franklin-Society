@@ -157,6 +157,34 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	createAndIntroduce: async ({ request, locals }) => {
+		if (!locals.session) return fail(401, { message: 'Not authenticated' });
+		const actingAs = locals.session.acting_as_uuid;
+
+		const association = getAssociationByHandle('general-assembly');
+		if (!association) return fail(404, { message: 'General Assembly not found' });
+
+		const data = await request.formData();
+		const title = String(data.get('title') ?? '').trim();
+		const body = String(data.get('body') ?? '').trim();
+		const reasoning = String(data.get('reasoning') ?? '').trim();
+
+		if (!title) return fail(400, { message: 'Title is required' });
+		if (!body) return fail(400, { message: 'Motion text is required' });
+
+		// Create motion with status=introduced
+		const motion = createMotion({
+			title,
+			body,
+			reasoning: reasoning || null,
+			introduced_by_uuid: actingAs,
+			body_uuid: association.uuid,
+			body_name: association.name,
+		});
+
+		return { introduced: motion.slug };
+	},
+
 	introduceMotion: async ({ request, locals }) => {
 		if (!locals.session) return fail(401, { message: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;

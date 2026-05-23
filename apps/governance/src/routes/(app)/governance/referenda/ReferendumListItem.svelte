@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Badge } from '@bfs/ui';
+
 	interface Props {
 		referendum: {
 			title: string;
@@ -18,9 +20,9 @@
 	<div class="referendum-item__header">
 		<span class="referendum-item__title">{referendum.title}</span>
 		{#if status === 'scheduled'}
-			<span class="badge badge-info">Scheduled</span>
+			<Badge label="Scheduled" variant="accent" />
 		{:else}
-			<span class="badge badge-neutral">Closed</span>
+			<Badge label="Closed" variant="neutral" />
 		{/if}
 	</div>
 	<span class="referendum-item__meta">
@@ -44,7 +46,7 @@
 	}
 
 	.referendum-item:hover {
-		border-color: #d4a24a;
+		border-color: var(--gold);
 		box-shadow: 
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 8px rgba(0, 0, 0, 0.08);
@@ -58,46 +60,22 @@
 	}
 
 	.referendum-item__title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-lg);
 		font-weight: 600;
-		color: #151c1a;
-	}
-
-	.badge {
-		display: inline-block;
-		padding: 0.125rem 0.5rem;
-		font-family: 'IM Fell English SC', Georgia, serif;
-		font-size: var(--text-xs);
-		font-weight: 400;
-		letter-spacing: 0.15em;
-		text-transform: uppercase;
-		border-radius: 2px;
-		margin-left: var(--space-2);
-	}
-
-	.badge-info {
-		background: rgba(90, 120, 140, 0.15);
-		color: #3a5a6a;
-		border: 1px solid rgba(90, 120, 140, 0.3);
-	}
-
-	.badge-neutral {
-		background: rgba(45, 90, 79, 0.1);
-		color: #374340;
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		color: var(--ink);
 	}
 
 	.referendum-item__meta {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-mid);
 		font-variant-numeric: oldstyle-nums;
 	}
 
 	.referendum-item__description {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #5a5a50;
+		font-family: var(--font-prose);
+		color: var(--ink-mid);
 		font-size: var(--text-sm);
 		line-height: 1.6;
 		margin-top: var(--space-2);

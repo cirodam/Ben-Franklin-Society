@@ -147,7 +147,7 @@
 			placeholder="Explain what you're asking for and why it matters..."
 			required
 		/>
-		<div style="display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-4);">
+		<div class="modal-actions">
 			<Button variant="secondary" onclick={() => showPetitionModal = false}>Cancel</Button>
 			<Button type="submit">Create Petition</Button>
 		</div>
@@ -167,10 +167,10 @@
 	}
 
 	.page-title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin: 0;
 		line-height: 1.3;
 	}
@@ -188,23 +188,23 @@
 		background: none;
 		border: none;
 		border-bottom: 2px solid transparent;
-		font-family: 'IM Fell English SC', Georgia, serif;
+		font-family: var(--font-label);
 		font-size: var(--text-sm);
 		font-weight: 400;
 		text-transform: uppercase;
 		letter-spacing: 0.2em;
-		color: #374340;
+		color: var(--ink-mid);
 		cursor: pointer;
 		transition: all 0.2s;
 	}
 
 	.tab-nav__button:hover {
-		color: #151c1a;
+		color: var(--ink);
 	}
 
 	.tab-nav__button.active {
-		color: #d4a24a;
-		border-bottom-color: #d4a24a;
+		color: var(--gold);
+		border-bottom-color: var(--gold);
 	}
 
 	.section {
@@ -218,10 +218,10 @@
 	}
 
 	.subsection-title {
-		font-family: 'IM Fell English', Georgia, serif;
+		font-family: var(--font-display);
 		font-size: var(--text-xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin-bottom: var(--space-4);
 	}
 
@@ -233,5 +233,12 @@
 
 	.responded-section {
 		margin-top: var(--space-8);
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: flex-end;
+		margin-top: var(--space-4);
 	}
 </style>

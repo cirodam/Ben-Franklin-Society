@@ -1,54 +1,55 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { Button } from '@bfs/ui';
+	import { Badge } from '@bfs/ui';
 
 	interface Props {
 		petition: {
 			uuid: string;
 			title: string;
-			body: string;
+			created_at: string;
 			signature_count: number | null;
 			is_signed_by?: string | null;
 		};
 	}
 
 	let { petition }: Props = $props();
+
+	function formatDate(isoString: string): string {
+		const date = new Date(isoString);
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+	}
 </script>
 
-<div class="petition-card">
+<a href="/governance/petitions/{petition.uuid}" class="petition-card">
 	<div class="petition-card__header">
 		<span class="petition-card__title">{petition.title}</span>
-		<span class="badge badge-warning">Open</span>
+		<div class="petition-card__badges">
+			{#if petition.is_signed_by}
+				<Badge label="Signed" variant="success" />
+			{/if}
+			<Badge label="Open" variant="warn" />
+		</div>
 	</div>
-	<p class="petition-card__body">{petition.body}</p>
-	<div class="petition-card__footer">
+	<div class="petition-card__meta">
+		<span class="petition-card__date">Created {formatDate(petition.created_at)}</span>
 		<span class="petition-card__signatures">
-			{petition.signature_count || 0} signatures
+			{petition.signature_count || 0} {petition.signature_count === 1 ? 'signature' : 'signatures'}
 		</span>
-		{#if petition.is_signed_by}
-			<form method="POST" action="?/unsignPetition" use:enhance>
-				<input type="hidden" name="petition_uuid" value={petition.uuid} />
-				<Button variant="secondary" size="small" type="submit">Unsign</Button>
-			</form>
-		{:else}
-			<form method="POST" action="?/signPetition" use:enhance>
-				<input type="hidden" name="petition_uuid" value={petition.uuid} />
-				<Button size="small" type="submit">Sign Petition</Button>
-			</form>
-		{/if}
 	</div>
-</div>
+</a>
 
 <style>
 	.petition-card {
+		display: block;
 		padding: var(--space-5);
 		background: var(--paper);
 		border: 1px solid rgba(45, 90, 79, 0.2);
 		transition: all 0.2s;
+		text-decoration: none;
+		color: inherit;
 	}
 
 	.petition-card:hover {
-		border-color: #d4a24a;
+		border-color: var(--gold);
 		box-shadow: 
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 8px rgba(0, 0, 0, 0.08);
@@ -58,52 +59,39 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--space-2);
-	}
-
-	.petition-card__title {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: var(--text-lg);
-		font-weight: 600;
-		color: #151c1a;
-	}
-
-	.badge {
-		display: inline-block;
-		padding: 0.125rem 0.5rem;
-		font-family: 'IM Fell English SC', Georgia, serif;
-		font-size: var(--text-xs);
-		font-weight: 400;
-		letter-spacing: 0.15em;
-		text-transform: uppercase;
-		border-radius: 2px;
-		margin-left: var(--space-2);
-	}
-
-	.badge-warning {
-		background: rgba(212, 162, 74, 0.15);
-		color: #7a5c1a;
-		border: 1px solid rgba(212, 162, 74, 0.3);
-	}
-
-	.petition-card__body {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #5a5a50;
-		line-height: 1.7;
+		gap: var(--space-3);
 		margin-bottom: var(--space-3);
 	}
 
-	.petition-card__footer {
+	.petition-card__title {
+		font-family: var(--font-prose);
+		font-size: var(--text-lg);
+		font-weight: 600;
+		color: var(--ink);
+		flex: 1;
+	}
+
+	.petition-card__badges {
+		display: flex;
+		gap: var(--space-2);
+		flex-shrink: 0;
+	}
+
+	.petition-card__meta {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding-top: var(--space-3);
-		border-top: 1px solid rgba(45, 90, 79, 0.2);
+		gap: var(--space-4);
+		font-family: var(--font-prose);
+		font-size: var(--text-sm);
+		color: var(--ink-mid);
+	}
+
+	.petition-card__date {
+		font-variant-numeric: oldstyle-nums;
 	}
 
 	.petition-card__signatures {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: var(--text-sm);
-		color: #5a5a50;
+		font-weight: 500;
 	}
 </style>

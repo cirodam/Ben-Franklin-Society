@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.prepare('SELECT given_name, family_name, handle FROM person WHERE uuid = ?')
 		.get(motion.content.introducer_uuid) as { given_name: string; family_name: string; handle: string } | null;
 
-	const body = db.prepare('SELECT name, handle, abbreviation FROM association WHERE uuid = ?').get(motion.owner_uuid) as { name: string; handle: string; abbreviation: string | null } | null;
+	const body = db.prepare('SELECT uuid, name, handle, abbreviation, type FROM association WHERE uuid = ?').get(motion.owner_uuid) as { uuid: string; name: string; handle: string; abbreviation: string | null; type: string } | null;
 
 	// Load vote sessions for this motion
 	const voteSessions = getVoteSessionsForMotion(motion.uuid);

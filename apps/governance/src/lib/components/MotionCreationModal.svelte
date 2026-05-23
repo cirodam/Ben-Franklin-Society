@@ -1,24 +1,25 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { Button, Textarea, Input } from '@bfs/ui';
 	import type { MotionDocument } from '$lib/server/documents/library-types.js';
 	
 	let { 
 		show = $bindable(false),
 		bodyName = 'this body',
-		action = '?/introduceMotion',
 		draftMotions = []
 	}: {
 		show?: boolean;
 		bodyName?: string;
-		action?: string;
 		draftMotions?: MotionDocument[];
 	} = $props();
 
+	let mode = $state<'create' | 'introduce'>('create');
 	let selectedMotion = $state<string>('');
 
 	function closeModal() {
 		show = false;
 		selectedMotion = '';
+		mode = 'create';
 	}
 
 	function handleOverlayClick(e: MouseEvent) {
@@ -36,17 +37,60 @@
 				<button type="button" class="modal__close" onclick={closeModal}>×</button>
 			</div>
 
-			{#if draftMotions.length === 0}
-				<div class="empty-state">
-					<p>You don't have any draft motions to introduce.</p>
-					<p class="empty-state__hint">Create a motion document in the library first, then return here to introduce it.</p>
-					<div class="modal__actions">
-						<button type="button" class="btn btn--secondary" onclick={closeModal}>Close</button>
-						<a href="/library" class="btn btn--primary">Go to Society Code</a>
-					</div>
+			{#if draftMotions.length > 0}
+				<div class="mode-tabs">
+					<button 
+						class="mode-tab"
+						class:active={mode === 'create'}
+						onclick={() => mode = 'create'}
+					>
+						Create New
+					</button>
+					<button 
+						class="mode-tab"
+						class:active={mode === 'introduce'}
+						onclick={() => mode = 'introduce'}
+					>
+						From Drafts ({draftMotions.length})
+					</button>
 				</div>
+			{/if}
+
+			{#if mode === 'create'}
+				<form method="POST" action="?/createAndIntroduce" use:enhance>
+					<div class="form-content">
+						<Input
+							name="title"
+							label="Motion Title"
+							placeholder="e.g., Establish Community Garden Committee"
+							required
+						/>
+
+						<Textarea
+							name="body"
+							label="Motion Text"
+							hint="What should be done?"
+							placeholder="Be it resolved that..."
+							rows={6}
+							required
+						/>
+
+						<Textarea
+							name="reasoning"
+							label="Reasoning (optional)"
+							hint="Why should this be done?"
+							placeholder="Explanation and justification..."
+							rows={4}
+						/>
+					</div>
+					
+					<div class="modal__actions">
+						<Button variant="secondary" onclick={closeModal}>Cancel</Button>
+						<Button type="submit">Introduce Motion</Button>
+					</div>
+				</form>
 			{:else}
-				<form method="POST" {action} use:enhance>
+				<form method="POST" action="?/introduceMotion" use:enhance>
 					<div class="motion-list">
 						{#each draftMotions as motion}
 							<label class="motion-card">
@@ -72,8 +116,8 @@
 					</div>
 					
 					<div class="modal__actions">
-						<button type="button" class="btn btn--secondary" onclick={closeModal}>Cancel</button>
-						<button type="submit" class="btn btn--primary" disabled={!selectedMotion}>Introduce Motion</button>
+						<Button variant="secondary" onclick={closeModal}>Cancel</Button>
+						<Button type="submit" disabled={!selectedMotion}>Introduce Motion</Button>
 					</div>
 				</form>
 			{/if}
@@ -114,7 +158,7 @@
 	.modal__header h2 {
 		margin: 0;
 		font-size: var(--text-xl);
-		font-family: 'IM Fell English', serif;
+		font-family: var(--font-display);
 		color: var(--ink);
 	}
 
@@ -136,8 +180,45 @@
 		color: var(--ink);
 	}
 
+	.mode-tabs {
+		display: flex;
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
+	}
+
+	.mode-tab {
+		flex: 1;
+		padding: var(--space-3);
+		background: none;
+		border: none;
+		font-family: var(--font-label);
+		font-size: var(--text-sm);
+		letter-spacing: 0.08em;
+		color: var(--ink-mid);
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		transition: all 0.2s;
+	}
+
+	.mode-tab:hover {
+		color: var(--ink);
+		background: var(--tint-gold);
+	}
+
+	.mode-tab.active {
+		color: var(--ink);
+		border-bottom-color: var(--gold);
+		background: var(--tint-gold);
+	}
+
 	form {
 		padding: var(--space-5);
+	}
+
+	.form-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		margin-bottom: var(--space-5);
 	}
 
 	.motion-list {
@@ -147,6 +228,7 @@
 		max-height: 60vh;
 		overflow-y: auto;
 		padding: var(--space-1);
+		margin-bottom: var(--space-5);
 	}
 
 	.motion-card {
@@ -184,7 +266,7 @@
 	}
 
 	.motion-card__title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-lg);
 		font-weight: 600;
 		color: var(--ink);
@@ -192,7 +274,7 @@
 	}
 
 	.motion-card__preview {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: var(--ink-mid);
 		line-height: 1.6;
@@ -200,7 +282,7 @@
 	}
 
 	.motion-card__meta {
-		font-family: 'IM Fell English SC', serif;
+		font-family: var(--font-label);
 		font-size: var(--text-xs);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -213,7 +295,7 @@
 	}
 
 	.empty-state p {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		color: var(--ink-mid);
 		margin-bottom: var(--space-2);
 	}
@@ -227,48 +309,7 @@
 		display: flex;
 		gap: var(--space-3);
 		justify-content: flex-end;
-		margin-top: var(--space-5);
 		padding-top: var(--space-4);
 		border-top: 1px solid rgba(45, 90, 79, 0.1);
-	}
-
-	.btn {
-		padding: var(--space-3) var(--space-5);
-		font-family: 'IM Fell English SC', serif;
-		font-size: var(--text-sm);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		border-radius: var(--radius);
-		border: none;
-		cursor: pointer;
-		transition: all 0.2s;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.btn--primary {
-		background: var(--gold);
-		color: white;
-	}
-
-	.btn--primary:hover:not(:disabled) {
-		background: #8d6b1f;
-	}
-
-	.btn--primary:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.btn--secondary {
-		background: transparent;
-		color: var(--ink);
-		border: 1px solid rgba(45, 90, 79, 0.2);
-	}
-
-	.btn--secondary:hover {
-		background: var(--color-accent-subtle);
 	}
 </style>

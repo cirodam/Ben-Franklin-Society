@@ -58,7 +58,7 @@
 			class="tab-button" 
 			class:active={activeTab === 'organization'}
 			onclick={() => activeTab = 'organization'}>
-			Organizations
+			Organization
 		</button>
 	</div>
 

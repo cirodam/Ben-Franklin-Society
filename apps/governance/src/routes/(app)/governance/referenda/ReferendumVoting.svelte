@@ -125,16 +125,16 @@
 	}
 
 	.referendum__title {
-		font-family: 'IM Fell English', Georgia, serif;
+		font-family: var(--font-display);
 		font-size: var(--text-2xl);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin-bottom: var(--space-3);
 	}
 
 	.referendum__description {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #5a5a50;
+		font-family: var(--font-prose);
+		color: var(--ink-mid);
 		line-height: 1.7;
 		margin-bottom: var(--space-3);
 	}
@@ -142,9 +142,9 @@
 	.referendum__meta {
 		display: flex;
 		gap: var(--space-4);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
-		color: #5a5a50;
+		color: var(--ink-mid);
 		font-variant-numeric: oldstyle-nums;
 	}
 
@@ -161,16 +161,16 @@
 	}
 
 	.question__title {
-		font-family: 'IM Fell English', Georgia, serif;
+		font-family: var(--font-display);
 		font-size: var(--text-lg);
 		font-weight: 400;
-		color: #151c1a;
+		color: var(--ink);
 		margin-bottom: var(--space-3);
 	}
 
 	.question__description {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		color: #5a5a50;
+		font-family: var(--font-prose);
+		color: var(--ink-mid);
 		line-height: 1.7;
 		margin-bottom: var(--space-4);
 	}
@@ -191,11 +191,11 @@
 		background: var(--paper);
 		cursor: pointer;
 		transition: all 0.2s;
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 	}
 
 	.vote-option:hover {
-		border-color: #d4a24a;
+		border-color: var(--gold);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 	}
 
@@ -205,7 +205,7 @@
 		background: rgba(90, 115, 90, 0.1);
 		color: #3a5a3a;
 		border: 1px solid rgba(90, 115, 90, 0.3);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 	}
 </style>

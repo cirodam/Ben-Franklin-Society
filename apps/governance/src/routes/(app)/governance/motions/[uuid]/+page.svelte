@@ -23,6 +23,14 @@
 	// motion is flattened in page.server.ts for backward compatibility
 	const { motion, introducer, body, voteSessions, activeSession, tally, voteRules, currentRule, deliberationRules, currentDeliberationRule, comments, canAdvance, canCreateVoteSession, alreadyVoted, userCanVote, actingAs } = $derived(data);
 
+	const backLink = $derived(
+		body?.handle === 'general-assembly' ? '/governance/general-assembly' :
+		body?.type === 'committee' ? `/organization/committees/${body.uuid}` :
+		body?.type === 'service' ? `/organization/services/${body.uuid}` :
+		body?.type ? `/organization/associations/${body.uuid}` :
+		'/'
+	);
+
 	let showClerkModal = $state(false);
 	let showParliamentarianModal = $state(false);
 	let showRulesModal = $state(false);
@@ -34,7 +42,7 @@
 <div class="page">
 	<!-- Header with back button -->
 	<div class="page-header">
-		<a href="/governance/motions" class="back-link">← Back to Motions</a>
+		<a href={backLink} class="back-link">← Back to {body?.name ?? 'Body'}</a>
 	</div>
 
 	<!-- Page Title -->
