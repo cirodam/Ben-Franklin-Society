@@ -2,6 +2,7 @@ import * as crypto from 'node:crypto';
 import type { KeyObject } from 'node:crypto';
 import { db } from '../db.js';
 import { resolvePermissions } from '../organization/associations.js';
+import { logAuditEvent } from './audit.js';
 
 // ---------------------------------------------------------------------------
 // Key management
@@ -196,6 +197,16 @@ export function issueTokens(params: {
 		new Date().toISOString(),
 		refreshExpiresAt
 	);
+
+	// Log token issuance
+	logAuditEvent({
+		eventType: 'oidc_token_issued',
+		actorUuid: params.personUuid,
+		actingAsUuid: params.actingAsUuid,
+		sessionUuid: params.sessionUuid,
+		success: true,
+		details: { clientId: params.clientId, scope: params.scope }
+	});
 
 	return {
 		access_token: signJwt(accessTokenClaims),

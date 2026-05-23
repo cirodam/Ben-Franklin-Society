@@ -3,7 +3,10 @@ import type { RequestHandler } from './$types';
 import { updateActingAs, getAvailableContexts, resolveSession } from '$lib/server/infrastructure/auth.js';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-	const refreshToken = cookies.get('bfs_session');
+	const isProduction = process.env.NODE_ENV === 'production';
+	const cookieName = isProduction ? '__Host-bfs_session' : 'bfs_session';
+	const refreshToken = cookies.get(cookieName);
+
 	if (!refreshToken) {
 		return error(401, 'Not authenticated');
 	}

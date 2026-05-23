@@ -1,8 +1,18 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { exchangeAuthCode, exchangeRefreshToken, getClient, verifyClientSecret } from '$lib/server/infrastructure/oidc.js';
+import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 
 export const POST: RequestHandler = async ({ request }) => {
+	// Rate limit by IP
+	const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+	const rateLimitKey = `oidc_token:${ip}`;
+	const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMITS.OIDC_TOKEN);
+	
+	if (!rateLimit.allowed) {
+		return json({ error: 'rate_limit_exceeded' }, { status: 429 });
+	}
+
 	const data = await request.formData();
 	const grantType = data.get('grant_type');
 	const clientId = data.get('client_id');

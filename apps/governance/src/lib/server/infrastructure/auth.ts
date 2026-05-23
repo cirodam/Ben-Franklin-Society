@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { randomBytes, createHash, randomUUID } from 'node:crypto';
 import { db } from '../db.js';
+import { logAuditEvent } from './audit.js';
 
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
@@ -84,7 +85,7 @@ export function clearFailedAttempts(personUuid: string): void {
 export function createSession(
 	personUuid: string,
 	opts: { userAgent?: string; ipAddress?: string } = {}
-): { refreshToken: string } {
+): { refreshToken: string; sessionUuid: string } {
 	const uuid = randomUUID();
 	const rawSecret = randomBytes(32).toString('base64url');
 	const tokenHash = hashToken(rawSecret);
@@ -107,7 +108,18 @@ export function createSession(
 		sessionExpiry()
 	);
 
-	return { refreshToken };
+	// Log session creation
+	logAuditEvent({
+		eventType: 'session_created',
+		actorUuid: personUuid,
+		actingAsUuid: personUuid,
+		sessionUuid: uuid,
+		ipAddress: opts.ipAddress,
+		userAgent: opts.userAgent,
+		success: true
+	});
+
+	return { refreshToken, sessionUuid: uuid };
 }
 
 export function resolveSession(refreshToken: string): Session | null {
@@ -231,23 +243,92 @@ export async function authenticatePerson(
 		.prepare('SELECT uuid, status FROM person WHERE handle = ?')
 		.get(handle) as { uuid: string; status: string } | undefined;
 
-	if (!person || person.status !== 'active') return { type: 'invalid' };
-	if (isLockedOut(person.uuid)) return { type: 'locked' };
+	if (!person || person.status !== 'active') {
+		// Log failed login attempt - user not found or inactive
+		logAuditEvent({
+			eventType: 'login_failed',
+			targetUuid: person?.uuid,
+			ipAddress: opts.ipAddress,
+			userAgent: opts.userAgent,
+			success: false,
+			details: { reason: 'invalid_credentials', handle }
+		});
+		return { type: 'invalid' };
+	}
+
+	if (isLockedOut(person.uuid)) {
+		// Log failed login attempt - account locked
+		logAuditEvent({
+			eventType: 'login_failed',
+			targetUuid: person.uuid,
+			ipAddress: opts.ipAddress,
+			userAgent: opts.userAgent,
+			success: false,
+			details: { reason: 'account_locked', handle }
+		});
+		return { type: 'locked' };
+	}
 
 	const creds = db
 		.prepare('SELECT password_hash FROM credentials WHERE person_uuid = ?')
 		.get(person.uuid) as { password_hash: string } | undefined;
 
-	if (!creds) return { type: 'invalid' };
+	if (!creds) {
+		// Log failed login attempt - no credentials found
+		logAuditEvent({
+			eventType: 'login_failed',
+			targetUuid: person.uuid,
+			ipAddress: opts.ipAddress,
+			userAgent: opts.userAgent,
+			success: false,
+			details: { reason: 'no_credentials', handle }
+		});
+		return { type: 'invalid' };
+	}
 
 	const ok = await verifyPassword(creds.password_hash, password);
 	if (!ok) {
 		recordFailedAttempt(person.uuid);
-		if (isLockedOut(person.uuid)) return { type: 'locked' };
+		const nowLocked = isLockedOut(person.uuid);
+
+		// Log failed login attempt - wrong password
+		logAuditEvent({
+			eventType: 'login_failed',
+			targetUuid: person.uuid,
+			ipAddress: opts.ipAddress,
+			userAgent: opts.userAgent,
+			success: false,
+			details: { reason: 'wrong_password', handle, locked: nowLocked }
+		});
+
+		if (nowLocked) {
+			// Log account lockout event
+			logAuditEvent({
+				eventType: 'account_locked',
+				targetUuid: person.uuid,
+				ipAddress: opts.ipAddress,
+				userAgent: opts.userAgent,
+				details: { reason: 'too_many_failed_attempts' }
+			});
+			return { type: 'locked' };
+		}
 		return { type: 'invalid' };
 	}
 
 	clearFailedAttempts(person.uuid);
-	const { refreshToken } = createSession(person.uuid, opts);
+	const { refreshToken, sessionUuid } = createSession(person.uuid, opts);
+
+	// Log successful login
+	logAuditEvent({
+		eventType: 'login',
+		actorUuid: person.uuid,
+		actingAsUuid: person.uuid,
+		sessionUuid,
+		ipAddress: opts.ipAddress,
+		userAgent: opts.userAgent,
+		success: true,
+		details: { handle }
+	});
+
 	return { type: 'ok', refreshToken };
 }

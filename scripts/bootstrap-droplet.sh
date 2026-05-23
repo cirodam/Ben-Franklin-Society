@@ -130,6 +130,10 @@ else
   MARKETPLACE_OIDC_SECRET=$(openssl rand -hex 32)
   LIBRARY_OIDC_SECRET=$(openssl rand -hex 32)
 
+  # Generate Ed25519 OIDC signing key
+  echo "Generating OIDC EdDSA signing key..."
+  OIDC_PRIVATE_KEY=$(openssl genpkey -algorithm Ed25519 -outform PEM | base64 -w 0)
+
   cat > .env << EOF
 # Docker image configuration
 DOCKER_USERNAME=$DOCKER_USERNAME
@@ -137,6 +141,11 @@ VERSION=$VERSION
 
 # Domain configuration (without https://)
 DOMAIN=${DOMAIN}
+
+# OIDC EdDSA signing key (Ed25519)
+# This key signs all access tokens and ID tokens
+# IMPORTANT: Back up this key securely! If lost, all tokens will be invalidated.
+OIDC_PRIVATE_KEY=$OIDC_PRIVATE_KEY
 
 # OIDC secrets (auto-generated)
 BANK_OIDC_SECRET=$BANK_OIDC_SECRET

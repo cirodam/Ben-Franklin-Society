@@ -688,4 +688,28 @@ CREATE INDEX IF NOT EXISTS idx_vouch_verifications_fresh ON vouch_verifications(
 -- Injury reports are stored as library documents with type 'injury_report'
 -- See: /apps/governance/src/lib/server/documents/library-injuries.ts
 
+-- Audit Log: Security and compliance tracking
+CREATE TABLE IF NOT EXISTS audit_log (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp       TEXT NOT NULL DEFAULT (datetime('now')),
+  event_type      TEXT NOT NULL,  -- 'login', 'logout', 'login_failed', 'session_created', 'session_revoked', 'permission_granted', 'permission_revoked', etc.
+  actor_uuid      TEXT NULL REFERENCES person(uuid),  -- Who performed the action (NULL for system events)
+  acting_as_uuid  TEXT NULL,  -- Which context they were acting in (person or association)
+  target_uuid     TEXT NULL,  -- Who/what was affected (person, association, role, etc.)
+  target_type     TEXT NULL,  -- 'person', 'association', 'role', 'session', etc.
+  ip_address      TEXT NULL,  -- IP address of request
+  user_agent      TEXT NULL,  -- User agent string
+  session_uuid    TEXT NULL REFERENCES session(uuid),  -- Associated session
+  success         INTEGER NOT NULL DEFAULT 1,  -- 1 for success, 0 for failure
+  details         TEXT NULL,  -- JSON blob with additional context
+  UNIQUE(timestamp, event_type, actor_uuid, target_uuid)  -- Prevent duplicate log entries
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_uuid, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_target ON audit_log(target_uuid, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_event_type ON audit_log(event_type, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_session ON audit_log(session_uuid, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_ip ON audit_log(ip_address, timestamp DESC);
+
 `;

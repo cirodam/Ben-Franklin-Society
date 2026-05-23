@@ -3,6 +3,10 @@ import { redirect } from '@sveltejs/kit';
 import { resolveSession } from '$lib/server/infrastructure/auth.js';
 import { getPersonByUuid } from '$lib/server/organization/people.js';
 import { db } from '$lib/server/db.js';
+import { scheduleCleanupJobs } from '$lib/server/infrastructure/cleanup.js';
+
+// Schedule cleanup jobs on server startup
+scheduleCleanupJobs();
 
 function isSetupComplete(): boolean {
 	const row = db.prepare('SELECT 1 FROM person LIMIT 1').get();
@@ -20,14 +24,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 		redirect(302, '/setup');
 	}
 
-	const token = event.cookies.get('bfs_session');
+	// Check both cookie names (production uses __Host- prefix)
+	const isProduction = process.env.NODE_ENV === 'production';
+	const cookieName = isProduction ? '__Host-bfs_session' : 'bfs_session';
+	const token = event.cookies.get(cookieName);
+
 	if (token) {
 		const session = resolveSession(token);
 		if (session) {
 			event.locals.session = session;
 			event.locals.person = getPersonByUuid(session.person_uuid);
 		} else {
-			event.cookies.delete('bfs_session', { path: '/' });
+			event.cookies.delete(cookieName, { path: '/' });
 		}
 	}
 

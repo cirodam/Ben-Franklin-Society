@@ -1,8 +1,26 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { getClient, validateRedirectUri, createAuthCode } from '$lib/server/infrastructure/oidc.js';
+import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
+import { logAuditEvent } from '$lib/server/infrastructure/audit.js';
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+export const GET: RequestHandler = async ({ url, locals, request }) => {
+	// Rate limit by IP
+	const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+	const rateLimitKey = `oidc_authorize:${ip}`;
+	const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMITS.OIDC_AUTHORIZE);
+	
+	if (!rateLimit.allowed) {
+		// Log rate limit exceeded
+		logAuditEvent({
+			eventType: 'rate_limit_exceeded',
+			ipAddress: ip,
+			success: false,
+			details: { endpoint: 'oauth/authorize' }
+		});
+		error(429, 'Too many requests');
+	}
+
 	const responseType = url.searchParams.get('response_type');
 	const clientId = url.searchParams.get('client_id');
 	const redirectUri = url.searchParams.get('redirect_uri');
@@ -32,6 +50,17 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		actingAsUuid: locals.session.acting_as_uuid,
 		scope,
 		codeChallenge,
+	});
+
+	// Log authorization
+	logAuditEvent({
+		eventType: 'oidc_authorize',
+		actorUuid: locals.person.uuid,
+		actingAsUuid: locals.session.acting_as_uuid,
+		sessionUuid: locals.session.uuid,
+		ipAddress: ip,
+		success: true,
+		details: { clientId, scope, redirectUri }
 	});
 
 	let dest: URL;

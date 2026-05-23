@@ -24,6 +24,7 @@ services:
       PUBLIC_URL: ${GOVERNANCE_URL:-https://governance.bfs.example.com}
       NODE_ENV: production
       PORT: 5173
+      OIDC_PRIVATE_KEY: ${OIDC_PRIVATE_KEY}
     volumes:
       - governance-data:/app/data
     networks:

@@ -3,7 +3,10 @@ import type { RequestHandler } from './$types';
 import { getAvailableContexts, resolveSession } from '$lib/server/infrastructure/auth.js';
 
 export const GET: RequestHandler = async ({ cookies }) => {
-	const refreshToken = cookies.get('bfs_session');
+	const isProduction = process.env.NODE_ENV === 'production';
+	const cookieName = isProduction ? '__Host-bfs_session' : 'bfs_session';
+	const refreshToken = cookies.get(cookieName);
+
 	if (!refreshToken) {
 		return error(401, 'Not authenticated');
 	}
