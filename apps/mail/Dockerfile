@@ -43,19 +43,23 @@ RUN pnpm build
 
 # Stage 3: Production image
 FROM node:22-alpine AS runner
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
+
+# Enable Corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 # Create data directory
 RUN mkdir -p /app/data
 
-# Copy built application
-COPY --from=builder /app/apps/mail/build ./build
-COPY --from=builder /app/apps/mail/package.json ./
-
-# Copy node_modules (SvelteKit adapter-node needs them)
-COPY --from=builder /app/node_modules ./node_modules
+# Copy monorepo structure
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/mail/package.json ./apps/mail/
+COPY --from=builder /app/apps/mail/build ./apps/mail/build
+
+# Install production dependencies with native modules
+RUN pnpm install --frozen-lockfile --prod
 
 # Environment defaults
 ENV NODE_ENV=production
@@ -64,4 +68,4 @@ ENV DATABASE_PATH=/app/data/mail.db
 
 EXPOSE 5175
 
-CMD ["node", "build"]
+CMD ["node", "apps/mail/build"]
