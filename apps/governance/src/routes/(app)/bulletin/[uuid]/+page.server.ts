@@ -53,7 +53,7 @@ export const actions: Actions = {
 
 		try {
 			bulletin.deletePost(params.uuid, session.person_uuid);
-			redirect(303, '/communications/bulletin');
+			redirect(303, '/');
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Not authorized' });
 		}

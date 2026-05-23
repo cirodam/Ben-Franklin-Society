@@ -9,8 +9,8 @@
 <div class="setup-wrap">
 	<div class="setup-card">
 		<div class="setup-header">
-			<h1 class="setup-title">Welcome to BFS Governance</h1>
-			<p class="setup-subtitle">Create the first administrator account to begin</p>
+			<h1 class="setup-title t-prose">Benjamin Franklin Society Setup</h1>
+			<p class="setup-subtitle t-prose-italic">Create the first administrator account to begin</p>
 		</div>
 
 		{#if form?.error}
@@ -90,7 +90,7 @@
 				required
 			/>
 
-			<Button type="submit" fullWidth>Create account</Button>
+			<Button type="submit" fullWidth>Create</Button>
 		</form>
 	</div>
 </div>
@@ -109,7 +109,6 @@
 		max-width: 520px;
 		background: var(--paper);
 		border: 2px solid var(--border);
-		border-radius: 0;
 		padding: var(--space-12) var(--space-10);
 		box-shadow: var(--shadow-elevated);
 	}
@@ -122,67 +121,20 @@
 	}
 
 	.setup-title {
-		font-family: 'IM Fell English', serif;
 		font-size: var(--text-3xl);
 		font-weight: 400;
 		line-height: 1.2;
-		color: var(--ink);
 		margin-bottom: var(--space-3);
-		letter-spacing: 0.01em;
 	}
 
 	.setup-subtitle {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: var(--text-base);
 		font-style: italic;
 		color: var(--ink-mid);
-		line-height: 1.6;
 	}
 
 	.setup-form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-5);
-	}
-
-	.setup-form :global(label) {
-		font-family: 'IM Fell English SC', serif;
-		font-size: var(--text-sm);
-		letter-spacing: 0.12em;
-		color: var(--ink-mid);
-	}
-
-	.setup-form :global(input) {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: var(--text-base);
-		border: 1px solid var(--border);
-		border-radius: 0;
-		padding: 0.625rem 0.875rem;
-		transition: border-color 0.2s, box-shadow 0.2s;
-	}
-
-	.setup-form :global(input:focus) {
-		border-color: var(--border-strong);
-		box-shadow: 0 0 0 3px rgba(45, 90, 79, 0.08);
-		outline: none;
-	}
-
-	.setup-form :global(button[type="submit"]) {
-		font-family: 'IM Fell English SC', serif;
-		font-size: var(--text-base);
-		letter-spacing: 0.16em;
-		margin-top: var(--space-3);
-		padding: 0.875rem 1.5rem;
-		background: var(--accent);
-		color: #fff;
-		border: 1px solid var(--accent);
-		border-radius: 0;
-		cursor: pointer;
-		transition: background 0.2s, border-color 0.2s;
-	}
-
-	.setup-form :global(button[type="submit"]:hover) {
-		background: #224438;
-		border-color: #224438;
 	}
 </style>

@@ -47,7 +47,7 @@
 			{#each data.posts as post}
 				<BulletinPostCard 
 					{post} 
-					href="/communications/bulletin/{post.uuid}"
+					href="/bulletin/{post.uuid}"
 				/>
 			{/each}
 		</div>
@@ -70,7 +70,7 @@
 	}
 
 	.page-title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		color: var(--ink);
@@ -95,25 +95,25 @@
 		justify-content: center;
 		gap: var(--space-4);
 		padding: var(--space-4) 0;
-		border-bottom: 1px solid rgba(45, 90, 79, 0.2);
+		border-bottom: 1px solid var(--border);
 		margin-bottom: var(--space-6);
 	}
 
 	.service-link {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-base);
-		color: #7a5c1a;
+		color: var(--gold);
 		text-decoration: none;
 		transition: color 0.2s ease;
 	}
 
 	.service-link:hover {
-		color: #d4a24a;
+		color: var(--gold-hover);
 		text-decoration: underline;
 	}
 
 	.separator {
-		color: rgba(45, 90, 79, 0.4);
+		color: var(--ink-faint);
 		font-size: var(--text-sm);
 	}
 </style>

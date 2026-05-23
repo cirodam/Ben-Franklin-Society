@@ -13,7 +13,7 @@
 	{#snippet sidebar()}
 		<Sidebar>
 			{#snippet brand()}
-				BFS Governance
+				Benjamin Franklin Society
 			{/snippet}
 
 			{#snippet nav()}
@@ -83,11 +83,11 @@
 
 <style>
 	.motto {
-		font-family: 'IM Fell English SC', Georgia, serif;
+		font-family: var(--font-label);
 		font-size: var(--text-sm);
 		letter-spacing: 0.25em;
 		text-align: center;
-		color: #7a5c1a;
+		color: var(--gold);
 		text-transform: uppercase;
 	}
 	
@@ -123,8 +123,8 @@
 		padding: var(--space-2) var(--space-3);
 		background: rgba(255, 255, 255, 0.08);
 		border: 1px solid rgba(255, 255, 255, 0.15);
-		border-radius: var(--radius-md);
-		font-family: var(--font-sans);
+		border-radius: 0;
+		font-family: var(--font-label);
 		font-size: var(--text-sm);
 		font-weight: 500;
 		color: rgba(255, 255, 255, 0.85);

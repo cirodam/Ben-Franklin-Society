@@ -115,7 +115,7 @@
 	}
 
 	.page :global(.page-header h1) {
-		font-family: 'IM Fell English', serif;
+		font-family: var(--font-display);
 		font-size: var(--text-4xl);
 		font-weight: 400;
 		line-height: 1.2;
@@ -123,7 +123,7 @@
 	}
 
 	.card__label {
-		font-family: 'IM Fell English SC', serif;
+		font-family: var(--font-label);
 		font-size: var(--text-xs);
 		text-transform: uppercase;
 		letter-spacing: 0.2em;

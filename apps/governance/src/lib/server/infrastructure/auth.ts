@@ -5,7 +5,7 @@ import { logAuditEvent } from './audit.js';
 
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
-const SESSION_EXPIRY_DAYS = 30;
+const SESSION_EXPIRY_HOURS = 1;
 
 // --- Helpers ---
 
@@ -14,7 +14,7 @@ function now(): string {
 }
 
 function sessionExpiry(): string {
-	return new Date(Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+	return new Date(Date.now() + SESSION_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
 }
 
 // SHA-256 is appropriate for refresh tokens: they are 256-bit random values,

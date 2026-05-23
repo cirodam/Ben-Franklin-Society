@@ -32,7 +32,7 @@ export const actions: Actions = {
 				body: body
 			});
 
-			redirect(303, `/communications/bulletin/${uuid}`);
+			redirect(303, `/bulletin/${uuid}`);
 		} catch (err) {
 			return fail(500, { error: err instanceof Error ? err.message : 'Failed to create post' });
 		}

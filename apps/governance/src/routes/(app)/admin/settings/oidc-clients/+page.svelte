@@ -211,7 +211,7 @@
 	}
 
 	h2 {
-		font-family: 'IM Fell English', serif;
+		font-family: var(--font-display);
 		font-size: var(--text-lg);
 		font-weight: 400;
 		color: var(--ink);
@@ -219,7 +219,7 @@
 	}
 
 	.section-description {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: var(--ink-mid);
 		margin-bottom: var(--space-4);
@@ -238,7 +238,7 @@
 		gap: var(--space-3);
 		align-items: center;
 		margin-bottom: var(--space-2);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 	}
 
@@ -247,7 +247,7 @@
 	}
 
 	.credential-label {
-		font-family: 'IM Fell English SC', serif;
+		font-family: var(--font-label);
 		letter-spacing: 0.1em;
 		text-transform: lowercase;
 		min-width: 120px;
@@ -255,7 +255,7 @@
 	}
 
 	.credential-value {
-		font-family: 'Courier New', monospace;
+		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		background: var(--paper);
 		padding: var(--space-1) var(--space-2);
@@ -267,7 +267,7 @@
 	.warning-text {
 		margin-top: var(--space-3);
 		margin-bottom: 0;
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: var(--gold);
 	}
@@ -327,14 +327,14 @@
 
 	.client-name {
 		margin: 0 0 var(--space-2);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-base);
 		font-weight: 600;
 		color: var(--ink);
 	}
 
 	.client-id {
-		font-family: 'Courier New', monospace;
+		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		color: var(--ink-mid);
 		padding: var(--space-1) var(--space-2);
@@ -349,7 +349,7 @@
 
 	.client-details {
 		margin-bottom: var(--space-4);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 	}
 
@@ -362,7 +362,7 @@
 	}
 
 	.detail-label {
-		font-family: 'IM Fell English SC', serif;
+		font-family: var(--font-label);
 		letter-spacing: 0.1em;
 		text-transform: lowercase;
 		color: var(--ink-mid);
@@ -371,7 +371,7 @@
 	}
 
 	.detail-value {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: var(--ink);
 	}
@@ -387,7 +387,7 @@
 	}
 
 	.uri-list code {
-		font-family: 'Courier New', monospace;
+		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		color: var(--ink-mid);
 		padding: var(--space-1) var(--space-2);
@@ -403,7 +403,7 @@
 	}
 
 	.info-content {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: var(--ink-mid);
 		line-height: 1.6;
@@ -412,7 +412,7 @@
 	.info-content h3 {
 		margin-top: var(--space-4);
 		margin-bottom: var(--space-2);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-base);
 		font-weight: 600;
 		color: var(--ink);
@@ -428,7 +428,7 @@
 	}
 
 	.info-content code {
-		font-family: 'Courier New', monospace;
+		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		background: var(--tint-green-mid);
 		padding: 2px var(--space-2);

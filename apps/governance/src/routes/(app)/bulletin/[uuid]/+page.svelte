@@ -16,7 +16,7 @@
 </script>
 
 <div class="page">
-	<a href="/communications/bulletin" class="back-link">← Bulletin</a>
+	<a href="/" class="back-link">← Home</a>
 
 	<article class="thread">
 		<header class="thread-header">

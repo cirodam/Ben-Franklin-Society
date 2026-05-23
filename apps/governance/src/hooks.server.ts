@@ -35,7 +35,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 			event.locals.session = session;
 			event.locals.person = getPersonByUuid(session.person_uuid);
 		} else {
-			event.cookies.delete(cookieName, { path: '/' });
+			// Cookie deletion must match the options used when setting the cookie
+			event.cookies.delete(cookieName, {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: isProduction
+			});
 		}
 	}
 

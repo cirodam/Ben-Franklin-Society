@@ -12,7 +12,7 @@ import { checkRateLimit, resetRateLimit, RATE_LIMITS } from '$lib/server/infrast
  * for authentication and then handle the OAuth callback themselves.
  */
 function getSafeRedirectUrl(next: string | null): string {
-	if (!next) return '/communications/bulletin';
+	if (!next) return '/';
 	
 	// Allow relative paths (same-origin)
 	if (next.startsWith('/')) return next;
@@ -33,7 +33,7 @@ function getSafeRedirectUrl(next: string | null): string {
 		// Invalid URL, fall through to default
 	}
 	
-	return '/communications/bulletin';
+	return '/';
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -98,7 +98,7 @@ export const actions: Actions = {
 			httpOnly: true,
 			sameSite: 'lax',
 			secure: isProduction,
-			maxAge: 30 * 24 * 60 * 60,
+			maxAge: 60 * 60, // 1 hour
 		});
 
 		const next = url.searchParams.get('next');

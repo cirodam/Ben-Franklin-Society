@@ -78,7 +78,7 @@
 				<h2>Recent Bulletin Posts ({data.posts.length})</h2>
 				<div class="posts-list">
 					{#each data.posts as post}
-						<a href="/communications/bulletin/{post.uuid}" class="post-card" style="background-color: {post.color}">
+						<a href="/bulletin/{post.uuid}" class="post-card" style="background-color: {post.color}">
 							<h3 class="post-title">{post.title}</h3>
 							<p class="post-excerpt">{excerpt(post.body)}</p>
 							<div class="post-meta">

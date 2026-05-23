@@ -54,7 +54,7 @@
 	}
 
 	.page-title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		color: #151c1a;
@@ -63,7 +63,7 @@
 	}
 
 	.page-description {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-base);
 		color: #5a5a50;
 		line-height: 1.8;
@@ -101,7 +101,7 @@
 	}
 
 	.card__title {
-		font-family: 'IM Fell English', Georgia, serif;
+		font-family: var(--font-display);
 		font-size: var(--text-xl);
 		font-weight: 400;
 		color: #151c1a;
@@ -109,7 +109,7 @@
 	}
 
 	.card__handle {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: #7a5c1a;
 		font-style: italic;

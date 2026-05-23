@@ -22,8 +22,14 @@ body {
 
 /* Governance-specific color variables */
 :root {
-	--rule-strong: rgba(0, 0, 0, 0.15);
-	--rule:        rgba(0, 0, 0, 0.08);
+	--divider-strong: rgba(0, 0, 0, 0.15);
+	--divider:        rgba(0, 0, 0, 0.08);
+	
+	/* Font families */
+	--font-display:   'IM Fell English', serif;
+	--font-label:     'IM Fell English SC', serif;
+	--font-prose:     'Libre Baskerville', Georgia, serif;
+	--font-mono:      'Courier New', monospace;
 	
 	/* Green palette - primary institutional colors */
 	--accent:     #2d5a4f;
@@ -91,14 +97,14 @@ body {
 
 /* Display — document titles (Charter, Constitution), article headings */
 .t-display {
-	font-family: 'IM Fell English', serif;
+	font-family: var(--font-display);
 	font-weight: 400;
 	line-height: 1.1;
 }
 
 /* Display italic — pull quotes, preambles, subtitles */
 .t-display-italic {
-	font-family: 'IM Fell English', serif;
+	font-family: var(--font-display);
 	font-weight: 400;
 	font-style: italic;
 	line-height: 1.3;
@@ -107,35 +113,35 @@ body {
 /* Label — all small caps labeling: eyebrows, group headers,
    section numbers, metadata labels, button text, nav links */
 .t-label {
-	font-family: 'IM Fell English SC', serif;
+	font-family: var(--font-label);
 	font-weight: 400;
 	letter-spacing: 0.2em;
 }
 
 /* Label loose — wider tracking for eyebrows and category labels */
 .t-label-loose {
-	font-family: 'IM Fell English SC', serif;
+	font-family: var(--font-label);
 	font-weight: 400;
 	letter-spacing: 0.26em;
 }
 
 /* Label tight — nav links, buttons, closer tracking */
 .t-label-tight {
-	font-family: 'IM Fell English SC', serif;
+	font-family: var(--font-label);
 	font-weight: 400;
 	letter-spacing: 0.08em;
 }
 
 /* Prose — body text, document rule text, posts */
 .t-prose {
-	font-family: 'Libre Baskerville', Georgia, serif;
+	font-family: var(--font-prose);
 	font-weight: 400;
 	line-height: 1.8;
 }
 
 /* Prose italic — short preambles, article intros, attestation text */
 .t-prose-italic {
-	font-family: 'Libre Baskerville', Georgia, serif;
+	font-family: var(--font-prose);
 	font-weight: 400;
 	font-style: italic;
 	line-height: 1.65;
@@ -150,12 +156,12 @@ body {
 
 /* Button styling */
 .btn {
-	font-family: 'IM Fell English SC', serif !important;
+	font-family: var(--font-label) !important;
 	font-size: var(--text-base) !important;
 	letter-spacing: 0.16em !important;
 	line-height: 1 !important;
 	padding: 0.75rem 1.5rem !important;
-	border: 1px solid var(--rule-strong) !important;
+	border: 1px solid var(--divider-strong) !important;
 	background: transparent !important;
 	color: var(--ink-mid) !important;
 	cursor: pointer !important;
@@ -197,6 +203,30 @@ body {
 	cursor: not-allowed !important;
 }
 
+/* ── FORM OVERRIDES ── */
+
+/* All form labels use small caps */
+label, .input-label {
+	font-family: var(--font-label) !important;
+	letter-spacing: 0.1em !important;
+	text-transform: lowercase !important;
+	color: var(--ink-mid) !important;
+	font-size: var(--text-sm) !important;
+}
+
+/* All inputs use readable serif */
+input, textarea, select {
+	font-family: var(--font-prose) !important;
+	font-size: var(--text-base) !important;
+	border-radius: 0 !important;
+}
+
+/* Input hints and error messages */
+.input-hint, .input-error {
+	font-family: var(--font-prose) !important;
+	font-size: var(--text-sm) !important;
+}
+
 /* ── UI UTILITIES ── */
 
 /* Links */
@@ -212,7 +242,7 @@ a:hover, .link:hover {
 
 /* Code blocks and inline code */
 code, .code {
-	font-family: 'Courier New', monospace;
+	font-family: var(--font-mono);
 	font-size: var(--text-xs);
 	color: var(--ink-mid);
 	padding: var(--space-1) var(--space-2);
@@ -232,18 +262,9 @@ code, .code {
 	background: var(--paper);
 }
 
-/* Form labels - small caps style */
-.form-label {
-	font-family: 'IM Fell English SC', serif;
-	letter-spacing: 0.1em;
-	text-transform: lowercase;
-	color: var(--ink-mid);
-	font-size: var(--text-xs);
-}
-
 /* Section headings - used in cards */
 h2, .heading-section {
-	font-family: 'IM Fell English', serif;
+	font-family: var(--font-display);
 	font-size: var(--text-lg);
 	font-weight: 400;
 	color: var(--ink);
@@ -251,7 +272,7 @@ h2, .heading-section {
 }
 
 h3, .heading-subsection {
-	font-family: 'Libre Baskerville', Georgia, serif;
+	font-family: var(--font-prose);
 	font-size: var(--text-base);
 	font-weight: 600;
 	color: var(--ink);
@@ -260,7 +281,7 @@ h3, .heading-subsection {
 
 /* Description text - used for help text, metadata */
 .text-secondary {
-	font-family: 'Libre Baskerville', Georgia, serif;
+	font-family: var(--font-prose);
 	font-size: var(--text-sm);
 	color: var(--ink-mid);
 	line-height: 1.6;
@@ -279,7 +300,7 @@ h3, .heading-subsection {
 
 /* Page Headers */
 .page-header h1 {
-	font-family: 'IM Fell English', serif !important;
+	font-family: var(--font-display) !important;
 	font-size: var(--text-3xl) !important;
 	font-weight: 400 !important;
 	color: var(--ink) !important;
@@ -287,7 +308,7 @@ h3, .heading-subsection {
 }
 
 .page-header-description {
-	font-family: 'Libre Baskerville', Georgia, serif !important;
+	font-family: var(--font-prose) !important;
 	color: var(--ink-mid) !important;
 	line-height: 1.6 !important;
 }
@@ -306,8 +327,8 @@ h3, .heading-subsection {
 .sidebar__brand {
 	color: rgba(255, 255, 255, 0.7) !important;
 	border-bottom-color: rgba(255, 255, 255, 0.1) !important;
-	text-align: left !important;
-	font-family: 'IM Fell English SC', serif !important;
+	text-align: center !important;
+	font-family: var(--font-label) !important;
 	font-size: var(--text-md) !important;
 	letter-spacing: 0.08em !important;
 }
@@ -326,7 +347,7 @@ h3, .heading-subsection {
 }
 
 .footer-name {
-	font-family: 'IM Fell English SC', serif;
+	font-family: var(--font-label);
 	font-size: var(--text-sm);
 	letter-spacing: 0.2em;
 	font-weight: 400;
@@ -334,7 +355,7 @@ h3, .heading-subsection {
 }
 
 .footer-handle {
-	font-family: 'IM Fell English SC', serif;
+	font-family: var(--font-label);
 	font-size: var(--text-xs);
 	letter-spacing: 0.08em;
 	color: rgba(255, 255, 255, 0.6);
@@ -346,7 +367,7 @@ h3, .heading-subsection {
 }
 
 .footer-signout-button {
-	font-family: 'IM Fell English SC', serif;
+	font-family: var(--font-label);
 	font-size: var(--text-xs);
 	letter-spacing: 0.08em;
 	color: rgba(255, 255, 255, 0.6);
@@ -371,7 +392,7 @@ h3, .heading-subsection {
 	background-image: none !important;
 	box-shadow: none !important;
 	border-radius: 0 !important;
-	font-family: 'IM Fell English SC', serif !important;
+	font-family: var(--font-label) !important;
 	font-size: var(--text-md) !important;
 	letter-spacing: 0.08em !important;
 	text-decoration: none !important;
@@ -416,7 +437,7 @@ h3, .heading-subsection {
 /* Sidebar groups */
 .sidebar-group__label {
 	color: rgba(255, 255, 255, 0.42) !important;
-	font-family: 'IM Fell English SC', serif !important;
+	font-family: var(--font-label) !important;
 	font-size: var(--text-sm) !important;
 	letter-spacing: 0.26em !important;
 	text-align: left !important;

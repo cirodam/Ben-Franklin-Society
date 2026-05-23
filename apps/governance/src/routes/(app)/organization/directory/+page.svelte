@@ -165,7 +165,7 @@
 	}
 
 	.page-title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: clamp(2.25rem, 4.5vw, 3.5rem);
 		font-weight: 400;
 		color: #151c1a;
@@ -174,7 +174,7 @@
 	}
 
 	.page-description {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-base);
 		color: #5a5a50;
 		line-height: 1.8;
@@ -200,7 +200,7 @@
 		padding: var(--space-3) var(--space-4);
 		border: 1px solid rgba(45, 90, 79, 0.3);
 		background: var(--paper);
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-base);
 		color: #151c1a;
 		outline: none;
@@ -227,7 +227,7 @@
 		padding: var(--space-2) var(--space-4);
 		border: 1px solid rgba(45, 90, 79, 0.3);
 		background: transparent;
-		font-family: 'IM Fell English SC', Georgia, serif;
+		font-family: var(--font-label);
 		font-size: var(--text-sm);
 		font-weight: 400;
 		letter-spacing: 0.15em;
@@ -264,7 +264,7 @@
 	}
 
 	.section-title {
-		font-family: 'IM Fell English', Georgia, serif;
+		font-family: var(--font-display);
 		font-size: var(--text-2xl);
 		font-weight: 400;
 		color: #151c1a;
@@ -311,14 +311,14 @@
 	}
 
 	.result-card__title {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-weight: 600;
 		font-size: var(--text-base);
 		color: #151c1a;
 	}
 
 	.result-card__handle {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-sm);
 		color: #7a5c1a;
 		font-style: italic;
@@ -333,14 +333,14 @@
 	}
 
 	.result-card__date {
-		font-family: 'Libre Baskerville', Georgia, serif;
+		font-family: var(--font-prose);
 		font-size: var(--text-xs);
 		color: #5a5a50;
 		font-variant-numeric: oldstyle-nums;
 	}
 
 	.status-badge {
-		font-family: 'IM Fell English SC', Georgia, serif;
+		font-family: var(--font-label);
 		font-size: var(--text-xs);
 		font-weight: 400;
 		letter-spacing: 0.15em;
@@ -369,7 +369,7 @@
 	}
 
 	.type-badge {
-		font-family: 'IM Fell English SC', Georgia, serif;
+		font-family: var(--font-label);
 		font-size: var(--text-xs);
 		font-weight: 400;
 		letter-spacing: 0.15em;

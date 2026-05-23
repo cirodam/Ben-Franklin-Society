@@ -7,10 +7,15 @@ export const POST: RequestHandler = async ({ cookies, locals }) => {
 		revokeSession(locals.session.uuid);
 	}
 
-	// Delete both cookie names (development and production)
+	// Delete cookie with same options used when setting it
 	const isProduction = process.env.NODE_ENV === 'production';
 	const cookieName = isProduction ? '__Host-bfs_session' : 'bfs_session';
-	cookies.delete(cookieName, { path: '/' });
+	cookies.delete(cookieName, {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: isProduction
+	});
 
 	redirect(302, '/login');
 };
