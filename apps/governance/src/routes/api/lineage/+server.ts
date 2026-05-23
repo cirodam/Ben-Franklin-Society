@@ -22,7 +22,7 @@ export const GET: RequestHandler = async () => {
 		handle: identity.handle,
 		uuid: identity.uuid,
 		public_key: identity.public_key,
-		parent_handle: identity.parent_handle,
+		parent_uuid: identity.parent_uuid,
 		founded_at: identity.founded_at,
 		lineage: lineage,
 		founding_record: identity.founding_record_json ? JSON.parse(identity.founding_record_json) : null

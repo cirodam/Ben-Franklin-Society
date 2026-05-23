@@ -48,7 +48,7 @@ export function logAuditEvent(entry: AuditLogEntry): void {
 		const details = entry.details ? JSON.stringify(entry.details) : null;
 
 		db.prepare(
-			`INSERT INTO audit_log 
+			`INSERT INTO security_audit_log 
 			(event_type, actor_uuid, acting_as_uuid, target_uuid, target_type, 
 			 ip_address, user_agent, session_uuid, success, details)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -86,7 +86,7 @@ export interface AuditLogQuery {
 
 export interface AuditLogRecord {
 	id: number;
-	timestamp: string;
+	logged_at: string;
 	event_type: string;
 	actor_uuid: string | null;
 	acting_as_uuid: string | null;
@@ -124,11 +124,11 @@ export function queryAuditLogs(query: AuditLogQuery): AuditLogRecord[] {
 		params.push(query.ipAddress);
 	}
 	if (query.startTime) {
-		conditions.push('timestamp >= ?');
+		conditions.push('logged_at >= ?');
 		params.push(query.startTime);
 	}
 	if (query.endTime) {
-		conditions.push('timestamp <= ?');
+		conditions.push('logged_at <= ?');
 		params.push(query.endTime);
 	}
 
@@ -136,9 +136,9 @@ export function queryAuditLogs(query: AuditLogQuery): AuditLogRecord[] {
 	const limit = query.limit ?? 100;
 
 	const sql = `
-		SELECT * FROM audit_log
+		SELECT * FROM security_audit_log
 		${whereClause}
-		ORDER BY timestamp DESC
+		ORDER BY logged_at DESC
 		LIMIT ?
 	`;
 
@@ -153,11 +153,11 @@ export function getRecentFailedLogins(personUuid: string, hours: number = 24): A
 
 	return db
 		.prepare(
-			`SELECT * FROM audit_log
+			`SELECT * FROM security_audit_log
 			 WHERE target_uuid = ?
 			   AND event_type = 'login_failed'
-			   AND timestamp >= ?
-			 ORDER BY timestamp DESC`
+			   AND logged_at >= ?
+			 ORDER BY logged_at DESC`
 		)
 		.all(personUuid, cutoff) as AuditLogRecord[];
 }
@@ -168,10 +168,10 @@ export function getRecentFailedLogins(personUuid: string, hours: number = 24): A
 export function getLoginHistory(personUuid: string, limit: number = 50): AuditLogRecord[] {
 	return db
 		.prepare(
-			`SELECT * FROM audit_log
+			`SELECT * FROM security_audit_log
 			 WHERE actor_uuid = ?
 			   AND event_type IN ('login', 'logout')
-			 ORDER BY timestamp DESC
+			 ORDER BY logged_at DESC
 			 LIMIT ?`
 		)
 		.all(personUuid, limit) as AuditLogRecord[];
@@ -185,7 +185,7 @@ export function cleanupAuditLogs(retentionDays: number = 90): number {
 	const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
 
 	const result = db
-		.prepare('DELETE FROM audit_log WHERE timestamp < ?')
+		.prepare('DELETE FROM security_audit_log WHERE logged_at < ?')
 		.run(cutoff);
 
 	return result.changes;

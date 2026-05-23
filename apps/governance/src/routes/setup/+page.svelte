@@ -27,6 +27,16 @@
 				required
 			/>
 
+			<Input
+				name="society_handle"
+				type="text"
+				label="Society Handle"
+				hint="Short identifier for your society (lowercase, no spaces)"
+				placeholder="e.g. athens"
+				pattern="[a-z0-9-]+"
+				required
+			/>
+
 			<FieldRow>
 				<Input
 					name="given_name"

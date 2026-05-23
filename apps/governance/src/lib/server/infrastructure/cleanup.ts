@@ -75,7 +75,7 @@ export function cleanupOldAuditLogs(retentionDays: number = 90): number {
 	const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
 
 	const result = db
-		.prepare('DELETE FROM audit_log WHERE timestamp < ?')
+		.prepare('DELETE FROM security_audit_log WHERE logged_at < ?')
 		.run(cutoff);
 
 	if (result.changes > 0) {

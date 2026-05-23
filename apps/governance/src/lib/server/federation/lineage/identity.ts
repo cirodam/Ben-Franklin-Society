@@ -6,7 +6,7 @@ export interface SocietyIdentity {
 	handle: string;
 	uuid: string;
 	public_key: string;
-	parent_handle: string | null;
+	parent_uuid: string | null;
 	founding_record_json: string | null;
 	founded_at: number | null;
 	created_at: number;
@@ -44,13 +44,13 @@ export function generateIdentityKeypair(): { publicKey: string; privateKey: stri
 
 /**
  * Initialize this society's identity (run once at founding)
- * For root society (Philadelphia), parent_handle is null
+ * For root society (Philadelphia), parent_uuid is null
  */
 export function initializeIdentity(params: {
 	handle: string;
 	privateKeyEncrypted: string; // Already encrypted by caller
 	publicKey: string;
-	parentHandle?: string;
+	parentUuid?: string;
 	foundingRecord?: FoundingRecord;
 }): void {
 	const uuid = randomUUID();
@@ -62,7 +62,7 @@ export function initializeIdentity(params: {
 			uuid,
 			public_key,
 			private_key_encrypted,
-			parent_handle,
+			parent_uuid,
 			founding_record_json,
 			founded_at,
 			created_at
@@ -74,7 +74,7 @@ export function initializeIdentity(params: {
 		uuid,
 		params.publicKey,
 		params.privateKeyEncrypted,
-		params.parentHandle || null,
+		params.parentUuid || null,
 		params.foundingRecord ? JSON.stringify(params.foundingRecord) : null,
 		params.foundingRecord?.founded_at ? new Date(params.foundingRecord.founded_at).getTime() / 1000 : null,
 		now
@@ -90,7 +90,7 @@ export function getIdentity(): SocietyIdentity | null {
 			handle,
 			uuid,
 			public_key,
-			parent_handle,
+			parent_uuid,
 			founding_record_json,
 			founded_at,
 			created_at
@@ -113,10 +113,10 @@ export function getOurLineage(): string[] {
 
 	const lineage: string[] = [identity.handle];
 
-	if (identity.parent_handle) {
+	if (identity.parent_uuid) {
 		// TODO: Walk up the parent chain by querying parent endpoints
-		// For now, just include parent if we have one
-		lineage.push(identity.parent_handle);
+		// For now, just include parent UUID if we have one
+		lineage.push(identity.parent_uuid);
 	}
 
 	return lineage;
@@ -131,13 +131,17 @@ export function getChildren(): Array<{
 	public_key: string;
 	founded_at: number;
 }> {
+	const ourIdentity = getIdentity();
+	if (!ourIdentity) return [];
+
 	const stmt = db.prepare(/* sql */ `
 		SELECT handle, uuid, public_key, founded_at
-		FROM children_societies
+		FROM societies
+		WHERE parent_uuid = ?
 		ORDER BY founded_at ASC
 	`);
 
-	return stmt.all() as Array<{
+	return stmt.all(ourIdentity.uuid) as Array<{
 		handle: string;
 		uuid: string;
 		public_key: string;
@@ -154,25 +158,45 @@ export function recordChild(params: {
 	publicKey: string;
 	foundingRecord: FoundingRecord;
 }): void {
+	const ourIdentity = getIdentity();
+	if (!ourIdentity) throw new Error('Society identity not initialized');
+
 	const stmt = db.prepare(/* sql */ `
-		INSERT INTO children_societies (
-			handle,
+		INSERT INTO societies (
 			uuid,
+			handle,
 			public_key,
+			parent_uuid,
 			founding_record_json,
 			founded_at
-		) VALUES (?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?)
 	`);
 
 	const foundedAt = new Date(params.foundingRecord.founded_at).getTime() / 1000;
 
 	stmt.run(
-		params.handle,
 		params.uuid,
+		params.handle,
 		params.publicKey,
+		ourIdentity.uuid, // parent_uuid (we are their parent)
 		JSON.stringify(params.foundingRecord),
 		foundedAt
 	);
+}
+
+/**
+ * Get this society's private key
+ * Note: In production, this should decrypt the private key first
+ * For now, returns the encrypted key (TODO: implement decryption)
+ */
+export function getPrivateKey(): string | null {
+	const stmt = db.prepare(/* sql */ `
+		SELECT private_key_encrypted FROM society_identity LIMIT 1
+	`);
+	const result = stmt.get() as { private_key_encrypted: string } | undefined;
+	// TODO: Decrypt the private key before returning
+	// For now, assuming it's stored in plain PEM format
+	return result?.private_key_encrypted || null;
 }
 
 /**
@@ -181,6 +205,17 @@ export function recordChild(params: {
  */
 export function signMessage(message: string, privateKeyPem: string): string {
 	return sign(null, Buffer.from(message), privateKeyPem).toString('base64');
+}
+
+/**
+ * Sign a message using our society's private key (convenience wrapper)
+ */
+export function signMessageWithOurKey(message: string): string {
+	const privateKey = getPrivateKey();
+	if (!privateKey) {
+		throw new Error('Private key not available');
+	}
+	return signMessage(message, privateKey);
 }
 
 /**

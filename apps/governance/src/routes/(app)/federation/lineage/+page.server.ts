@@ -73,9 +73,9 @@ export const load: PageServerLoad = async () => {
 			handle: identity.handle,
 			uuid: identity.uuid,
 			public_key: identity.public_key,
-			parent_handle: identity.parent_handle,
+			parent_uuid: identity.parent_uuid,
 			founded_at: identity.founded_at,
-			is_root: !identity.parent_handle
+			is_root: !identity.parent_uuid
 		},
 		lineage,
 		foundingRecord

@@ -6,7 +6,7 @@ export interface SocietyIdentity {
 	handle: string;
 	uuid: string;
 	public_key: string;
-	parent_handle: string | null;
+	parent_uuid: string | null;
 	founded_at: number | null;
 	lineage: string[];
 	founding_record: FoundingRecord | null;
@@ -29,7 +29,7 @@ export async function querySocietyIdentity(endpoint: string): Promise<SocietyIde
 			handle: data.handle,
 			uuid: data.uuid,
 			public_key: data.public_key,
-			parent_handle: data.parent_handle,
+			parent_uuid: data.parent_uuid,
 			founded_at: data.founded_at,
 			lineage: data.lineage || [],
 			founding_record: data.founding_record
@@ -78,12 +78,12 @@ export async function walkLineage(startEndpoint: string): Promise<{
 		}
 
 		// If no parent, we've reached the root
-		if (!identity.parent_handle) {
+		if (!identity.parent_uuid) {
 			break;
 		}
 
-		// Look up parent endpoint
-		const parentEndpoint = await getEndpointForSociety(identity.parent_handle);
+		// Look up parent endpoint by UUID
+		const parentEndpoint = await getEndpointForSociety(identity.parent_uuid);
 		
 		if (!parentEndpoint) {
 			// Can't continue without parent endpoint
@@ -106,21 +106,25 @@ export async function walkLineage(startEndpoint: string): Promise<{
 }
 
 /**
- * Get endpoint for a society (from cache or Federation)
+ * Get endpoint for a society by UUID (from cache or Federation)
+ * Returns the first available endpoint (url, ipv4, or bfs_url)
  */
-async function getEndpointForSociety(handle: string): Promise<string | null> {
+async function getEndpointForSociety(uuid: string): Promise<string | null> {
 	// First check local cache
-	const stmt = db.prepare('SELECT endpoint FROM societies WHERE handle = ?');
-	const row = stmt.get(handle) as { endpoint: string } | undefined;
+	const stmt = db.prepare('SELECT url, ipv4, bfs_url, port FROM societies WHERE uuid = ?');
+	const row = stmt.get(uuid) as { url: string | null; ipv4: string | null; bfs_url: string | null; port: number } | undefined;
 	
 	if (row) {
-		return row.endpoint;
+		const port = row.port || 5173;
+		if (row.url) return row.url;
+		if (row.ipv4) return `http://${row.ipv4}:${port}`;
+		if (row.bfs_url) return `https://${row.bfs_url}`;
 	}
 
 	// Try Federation lookup
 	try {
 		const { lookupInFederation } = await import('../client.js');
-		const society = await lookupInFederation(handle);
+		const society = await lookupInFederation(uuid);
 		return society?.endpoint || null;
 	} catch {
 		return null;
@@ -145,16 +149,16 @@ export async function verifyAndCacheLineage(params: {
 	// Update or insert in societies table
 	const stmt = db.prepare(/* sql */ `
 		INSERT INTO societies (
-			handle,
 			uuid,
-			endpoint,
+			handle,
+			url,
 			public_key,
 			lineage_json,
 			last_lineage_verified
 		) VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT(handle) DO UPDATE SET
-			uuid = excluded.uuid,
-			endpoint = excluded.endpoint,
+		ON CONFLICT(uuid) DO UPDATE SET
+			handle = excluded.handle,
+			url = excluded.url,
 			public_key = excluded.public_key,
 			lineage_json = excluded.lineage_json,
 			last_lineage_verified = excluded.last_lineage_verified
@@ -163,8 +167,8 @@ export async function verifyAndCacheLineage(params: {
 	const now = Math.floor(Date.now() / 1000);
 
 	stmt.run(
-		handle,
 		uuid,
+		handle,
 		endpoint,
 		publicKey,
 		JSON.stringify(result.lineage),

@@ -37,7 +37,7 @@
 		</SidebarGroup>
 
 		<SidebarGroup label="Federation">
-			<SidebarLink href="/federation/lineage">Federation</SidebarLink>
+			<SidebarLink href="/federation">Federation</SidebarLink>
 		</SidebarGroup>
 
 			<SidebarGroup label="Administration">

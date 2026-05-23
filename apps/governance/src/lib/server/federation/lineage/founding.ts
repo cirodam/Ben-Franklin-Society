@@ -1,6 +1,6 @@
 import { db } from '../../db.js';
 import { randomUUID } from 'crypto';
-import { getIdentity, signMessage, type FoundingRecord } from './identity.js';
+import { getIdentity, signMessageWithOurKey, type FoundingRecord } from './identity.js';
 import { registerWithFederation } from '../client.js';
 
 export interface ChildSocietyProposal {
@@ -56,7 +56,7 @@ export function createFoundingRecord(params: {
 		parent_attestation: record.parent_attestation
 	});
 
-	const signature = signMessage(message);
+	const signature = signMessageWithOurKey(message);
 
 	const fullRecord: FoundingRecord = {
 		...record,
@@ -90,53 +90,43 @@ export async function foundChildSociety(params: {
 		childPublicKey: proposal.public_key
 	});
 
-	// Store in children_societies table
+	// Get our identity for parent_uuid
+	const identity = getIdentity();
+	if (!identity) throw new Error('Society identity not initialized');
+
+	// Store child in societies table
 	const stmt = db.prepare(/* sql */ `
-		INSERT INTO children_societies (
-			handle,
-			uuid,
-			public_key,
-			founding_record_json,
-			founded_at
-		) VALUES (?, ?, ?, ?, ?)
-	`);
-
-	const foundedAt = Math.floor(new Date(foundingRecord.founded_at).getTime() / 1000);
-
-	stmt.run(
-		proposal.handle,
-		childUuid,
-		proposal.public_key,
-		JSON.stringify(foundingRecord),
-		foundedAt
-	);
-
-	// Cache the child in our societies table
-	const cacheStmt = db.prepare(/* sql */ `
 		INSERT INTO societies (
-			handle,
 			uuid,
-			endpoint,
+			handle,
 			public_key,
+			parent_uuid,
+			url,
+			founding_record_json,
+			founded_at,
 			lineage_json,
 			latitude,
 			longitude,
 			last_interaction
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`);
 
+	const foundedAt = Math.floor(new Date(foundingRecord.founded_at).getTime() / 1000);
+
 	// Child's lineage is our lineage + them
-	const identity = getIdentity();
 	const ourLineage = identity?.lineage || [identity?.handle || ''];
 	const childLineage = [proposal.handle, ...ourLineage];
 
 	const now = Math.floor(Date.now() / 1000);
 
-	cacheStmt.run(
-		proposal.handle,
+	stmt.run(
 		childUuid,
-		proposal.endpoint,
+		proposal.handle,
 		proposal.public_key,
+		identity.uuid, // parent_uuid (we are their parent)
+		proposal.endpoint, // store as url
+		JSON.stringify(foundingRecord),
+		foundedAt,
 		JSON.stringify(childLineage),
 		proposal.latitude || null,
 		proposal.longitude || null,
@@ -175,13 +165,17 @@ export function getFoundedChildren(): Array<{
 	founded_at: number;
 	founding_record: FoundingRecord;
 }> {
+	const identity = getIdentity();
+	if (!identity) return [];
+
 	const stmt = db.prepare(/* sql */ `
 		SELECT handle, uuid, public_key, founded_at, founding_record_json
-		FROM children_societies
+		FROM societies
+		WHERE parent_uuid = ?
 		ORDER BY founded_at DESC
 	`);
 
-	const rows = stmt.all() as Array<{
+	const rows = stmt.all(identity.uuid) as Array<{
 		handle: string;
 		uuid: string;
 		public_key: string;
@@ -208,13 +202,16 @@ export function getChildByHandle(handle: string): {
 	founded_at: number;
 	founding_record: FoundingRecord;
 } | null {
+	const identity = getIdentity();
+	if (!identity) return null;
+
 	const stmt = db.prepare(/* sql */ `
 		SELECT handle, uuid, public_key, founded_at, founding_record_json
-		FROM children_societies
-		WHERE handle = ?
+		FROM societies
+		WHERE parent_uuid = ? AND handle = ?
 	`);
 
-	const row = stmt.get(handle) as
+	const row = stmt.get(identity.uuid, handle) as
 		| {
 				handle: string;
 				uuid: string;
@@ -239,7 +236,10 @@ export function getChildByHandle(handle: string): {
  * Check if a handle is available (not already used by one of our children)
  */
 export function isHandleAvailable(handle: string): boolean {
-	const stmt = db.prepare('SELECT COUNT(*) as count FROM children_societies WHERE handle = ?');
-	const row = stmt.get(handle) as { count: number };
+	const identity = getIdentity();
+	if (!identity) return true; // If no identity, any handle is "available"
+
+	const stmt = db.prepare('SELECT COUNT(*) as count FROM societies WHERE parent_uuid = ? AND handle = ?');
+	const row = stmt.get(identity.uuid, handle) as { count: number };
 	return row.count === 0;
 }

@@ -17,6 +17,7 @@ import { seedServices } from '../../../scripts/seeders/seed-services.js';
 import { seedColleges } from '../../../scripts/seeders/seed-colleges.js';
 import { seedCommittees } from '../../../scripts/seeders/seed-committees.js';
 import { seedAdminRoles } from '../../../scripts/seeders/seed-roles.js';
+import { generateIdentityKeypair, initializeIdentity } from '$lib/server/federation/lineage/identity.js';
 
 export const load: PageServerLoad = async () => {
 	const existing = db.prepare('SELECT 1 FROM person LIMIT 1').get();
@@ -29,6 +30,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 
 		const societyName = data.get('society_name');
+		const societyHandle = data.get('society_handle');
 		const rawHandle   = data.get('handle');
 		const givenName   = data.get('given_name');
 		const familyName  = data.get('family_name');
@@ -38,6 +40,7 @@ export const actions: Actions = {
 
 		if (
 			typeof societyName !== 'string' || !societyName ||
+			typeof societyHandle !== 'string' || !societyHandle ||
 			typeof rawHandle !== 'string' || !rawHandle ||
 			typeof givenName !== 'string' || !givenName ||
 			typeof familyName !== 'string' || !familyName ||
@@ -49,9 +52,14 @@ export const actions: Actions = {
 		}
 
 		const handle = rawHandle.toLowerCase().trim();
+		const societyHandleClean = societyHandle.toLowerCase().trim();
 
 		if (password !== confirm) {
 			return fail(400, { error: 'Passwords do not match.' });
+		}
+
+		if (!/^[a-z0-9-]{2,32}$/.test(societyHandleClean)) {
+			return fail(400, { error: 'Society handle must be 2–32 lowercase letters, numbers, or hyphens.' });
 		}
 
 		if (password.length < 12) {
@@ -71,6 +79,20 @@ export const actions: Actions = {
 		}
 
 		const person = await createPerson({ handle, given_name: givenName, family_name: familyName, date_of_birth: dob, initial_password: password });
+
+		// Generate society identity (Ed25519 keypair)
+		console.log('\n🔐 Generating society identity...');
+		const { publicKey, privateKey } = generateIdentityKeypair();
+		// Note: privateKey should be encrypted with a master key in production
+		// For now, we'll base64 encode it (TODO: implement proper encryption)
+		const privateKeyEncoded = Buffer.from(privateKey).toString('base64');
+		initializeIdentity({
+			handle: societyHandleClean,
+			privateKeyEncrypted: privateKeyEncoded,
+			publicKey: publicKey
+			// No parent or founding record for root society
+		});
+		console.log(`✅ Society identity initialized: ${societyHandleClean}`);
 
 		// Save community configuration with sensible defaults
 		setInitialCommunityConfig('society_name', societyName, 'The full name of this local society');

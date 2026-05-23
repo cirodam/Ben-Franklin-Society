@@ -1,19 +1,6 @@
-import { db } from '../db.js';
+import { cacheSociety, getSocietyByHandle, type Society } from './societies.js';
 import type { FoundingRecord } from './lineage/identity.js';
-
-export interface Society {
-	handle: string;
-	uuid: string;
-	endpoint: string;
-	public_key: string;
-	lineage_json: string | null;
-	last_lineage_verified: number | null;
-	latitude: number | null;
-	longitude: number | null;
-	last_interaction: number | null;
-	interaction_count: number;
-	discovered_at: number;
-}
+import { db } from '../db.js';
 
 // Federation endpoint (configured via environment or default)
 const FEDERATION_ENDPOINT = process.env.FEDERATION_ENDPOINT || 'http://localhost:5178';
@@ -63,14 +50,14 @@ export async function lookupInFederation(handle: string): Promise<Society | null
 
 		// Cache locally
 		cacheSociety({
-			handle: data.handle,
 			uuid: data.uuid,
-			endpoint: data.endpoint,
+			handle: data.handle,
+			url: data.endpoint,  // Federation returns 'endpoint', store as 'url'
 			publicKey: data.public_key,
-			lineage: data.lineage || []
+			lineageJson: data.lineage ? JSON.stringify(data.lineage) : null
 		});
 
-		return getSocietyFromCache(handle);
+		return getSocietyByHandle(handle);
 	} catch (error) {
 		console.error('Federation lookup error:', error);
 		return null;
@@ -93,15 +80,14 @@ export async function searchSocieties(query: string): Promise<Society[]> {
 		// Cache all results
 		for (const society of data.societies) {
 			cacheSociety({
-				handle: society.handle,
 				uuid: society.uuid,
-				endpoint: society.endpoint,
-				publicKey: society.public_key,
-				lineage: []
+				handle: society.handle,
+				url: society.endpoint,
+				publicKey: society.public_key
 			});
 		}
 
-		return data.societies.map((s: any) => getSocietyFromCache(s.handle)).filter(Boolean) as Society[];
+		return data.societies.map((s: any) => getSocietyByHandle(s.handle)).filter(Boolean) as Society[];
 	} catch (error) {
 		console.error('Federation search error:', error);
 		return [];
@@ -127,11 +113,10 @@ export async function syncFromFederation(): Promise<number> {
 
 			for (const society of data.societies) {
 				cacheSociety({
-					handle: society.handle,
 					uuid: society.uuid,
-					endpoint: society.endpoint,
-					publicKey: society.public_key,
-					lineage: []
+					handle: society.handle,
+					url: society.endpoint,
+					publicKey: society.public_key
 				});
 				totalSynced++;
 			}
@@ -149,77 +134,6 @@ export async function syncFromFederation(): Promise<number> {
 		console.error('Federation sync error:', error);
 		return 0;
 	}
-}
-
-/**
- * Cache a society locally in our societies table
- */
-export function cacheSociety(params: {
-	handle: string;
-	uuid: string;
-	endpoint: string;
-	publicKey: string;
-	lineage: string[];
-	latitude?: number;
-	longitude?: number;
-}): void {
-	const stmt = db.prepare(/* sql */ `
-		INSERT INTO societies (
-			handle,
-			uuid,
-			endpoint,
-			public_key,
-			lineage_json,
-			last_lineage_verified,
-			latitude,
-			longitude
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(handle) DO UPDATE SET
-			uuid = excluded.uuid,
-			endpoint = excluded.endpoint,
-			public_key = excluded.public_key,
-			lineage_json = excluded.lineage_json,
-			last_lineage_verified = excluded.last_lineage_verified,
-			latitude = excluded.latitude,
-			longitude = excluded.longitude
-	`);
-
-	const now = Math.floor(Date.now() / 1000);
-
-	stmt.run(
-		params.handle,
-		params.uuid,
-		params.endpoint,
-		params.publicKey,
-		params.lineage.length > 0 ? JSON.stringify(params.lineage) : null,
-		now,
-		params.latitude || null,
-		params.longitude || null
-	);
-}
-
-/**
- * Get a society from our local cache
- */
-export function getSocietyFromCache(handle: string): Society | null {
-	const stmt = db.prepare(/* sql */ `
-		SELECT 
-			handle,
-			uuid,
-			endpoint,
-			public_key,
-			lineage_json,
-			last_lineage_verified,
-			latitude,
-			longitude,
-			last_interaction,
-			interaction_count,
-			discovered_at
-		FROM societies
-		WHERE handle = ?
-	`);
-
-	return stmt.get(handle) as Society | null;
 }
 
 /**

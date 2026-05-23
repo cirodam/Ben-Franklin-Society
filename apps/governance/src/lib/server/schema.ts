@@ -601,39 +601,86 @@ CREATE TABLE IF NOT EXISTS society_identity (
   uuid                TEXT UNIQUE NOT NULL,
   public_key          TEXT NOT NULL,
   private_key_encrypted TEXT NOT NULL,  -- Encrypted with master key
-  parent_handle       TEXT NULL,
+  parent_uuid         TEXT NULL,  -- UUID of parent society (stable across handle changes)
   founding_record_json TEXT NULL,  -- Contains parent's signature
   founded_at          INTEGER NULL,
   created_at          INTEGER DEFAULT (unixepoch())
 );
 
-CREATE TABLE IF NOT EXISTS children_societies (
-  handle              TEXT PRIMARY KEY,
-  uuid                TEXT UNIQUE NOT NULL,
-  public_key          TEXT NOT NULL,
-  founding_record_json TEXT NOT NULL,  -- Contains our signature
-  founded_at          INTEGER NOT NULL,
-  created_at          INTEGER DEFAULT (unixepoch())
-);
-
--- Known Societies: Cache of other societies we know about
+-- Known Societies: Cache of other societies we know about (includes children, parent, peers)
+-- Note: We never insert ourselves into this table - society_identity is our own identity
 
 CREATE TABLE IF NOT EXISTS societies (
-  handle              TEXT PRIMARY KEY,
-  uuid                TEXT UNIQUE NOT NULL,
-  endpoint            TEXT NOT NULL,  -- https://columbus.bfs/
+  -- Core Identity (UUID is permanent, handle can change)
+  uuid                TEXT PRIMARY KEY,
+  handle              TEXT UNIQUE NOT NULL,
   public_key          TEXT NOT NULL,
-  lineage_json        TEXT,  -- ["columbus", "detroit", "philadelphia"]
-  last_lineage_verified INTEGER,
-  latitude            REAL,
-  longitude           REAL,
-  last_interaction    INTEGER,
+  
+  -- Connectivity (multi-path for DNS bypass)
+  bfs_url             TEXT NULL,      -- athens.bfs (.bfs TLD only)
+  url                 TEXT NULL,      -- https://bfsathensga.org (public DNS URL)
+  ipv4                TEXT NULL,      -- Direct IP, no DNS
+  ipv6                TEXT NULL,      -- Direct IPv6, no DNS
+  port                INTEGER DEFAULT 5173,
+  tor_address         TEXT NULL,      -- Future: .onion
+  i2p_address         TEXT NULL,      -- Future: .i2p
+  
+  -- Network Topology (describes THEIR position in network)
+  parent_uuid         TEXT NULL REFERENCES societies(uuid),
+  
+  -- Cryptographic Proof
+  founding_record_json TEXT NULL,
+  founded_at          INTEGER NULL,
+  
+  -- Lineage Cache
+  lineage_json        TEXT NULL,
+  last_lineage_verified INTEGER NULL,
+  
+  -- Geographic Metadata
+  latitude            REAL NULL,
+  longitude           REAL NULL,
+  
+  -- Interaction Tracking
+  last_interaction    INTEGER NULL,
   interaction_count   INTEGER DEFAULT 0,
-  discovered_at       INTEGER DEFAULT (unixepoch())
+  discovered_at       INTEGER DEFAULT (unixepoch()),
+  
+  -- Notes/Metadata
+  notes               TEXT NULL
 );
 
+CREATE INDEX IF NOT EXISTS idx_societies_handle ON societies(handle);
+CREATE INDEX IF NOT EXISTS idx_societies_parent ON societies(parent_uuid);
 CREATE INDEX IF NOT EXISTS idx_societies_location ON societies(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_societies_interaction ON societies(last_interaction DESC);
+
+-- Adoption Requests: Track pending adoption requests between societies
+
+CREATE TABLE IF NOT EXISTS adoption_requests (
+  request_id          TEXT PRIMARY KEY,  -- UUID
+  child_uuid          TEXT NOT NULL,     -- UUID of society requesting adoption
+  child_handle        TEXT NOT NULL,     -- Handle of requesting society
+  child_public_key    TEXT NOT NULL,     -- Their public key
+  parent_uuid         TEXT NOT NULL,     -- UUID of society being asked to adopt (us or another)
+  parent_handle       TEXT NOT NULL,     -- Handle of parent society
+  message             TEXT NULL,         -- Optional message from child
+  status              TEXT NOT NULL DEFAULT 'pending',  -- pending, approved, rejected
+  requested_at        INTEGER NOT NULL DEFAULT (unixepoch()),
+  responded_at        INTEGER NULL,
+  response_message    TEXT NULL,         -- Optional message from parent
+  signature           TEXT NOT NULL,     -- Child's signature on the request (authenticates request)
+  
+  -- Child's information at time of request
+  child_endpoint      TEXT NULL,         -- Their URL/endpoint
+  child_bfs_url       TEXT NULL,         -- Their .bfs address
+  child_ipv4          TEXT NULL,         -- Direct IP
+  child_ipv6          TEXT NULL,         -- Direct IPv6
+  
+  UNIQUE(child_uuid, parent_uuid)  -- Can't request same parent twice
+);
+
+CREATE INDEX IF NOT EXISTS idx_adoption_requests_parent ON adoption_requests(parent_uuid, status);
+CREATE INDEX IF NOT EXISTS idx_adoption_requests_child ON adoption_requests(child_uuid);
 
 -- Peer Vouching: Trust relationships between societies
 
@@ -688,10 +735,10 @@ CREATE INDEX IF NOT EXISTS idx_vouch_verifications_fresh ON vouch_verifications(
 -- Injury reports are stored as library documents with type 'injury_report'
 -- See: /apps/governance/src/lib/server/documents/library-injuries.ts
 
--- Audit Log: Security and compliance tracking
-CREATE TABLE IF NOT EXISTS audit_log (
+-- Security Audit Log: Authentication and authorization tracking
+CREATE TABLE IF NOT EXISTS security_audit_log (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
-  timestamp       TEXT NOT NULL DEFAULT (datetime('now')),
+  logged_at       TEXT NOT NULL DEFAULT (datetime('now')),
   event_type      TEXT NOT NULL,  -- 'login', 'logout', 'login_failed', 'session_created', 'session_revoked', 'permission_granted', 'permission_revoked', etc.
   actor_uuid      TEXT NULL REFERENCES person(uuid),  -- Who performed the action (NULL for system events)
   acting_as_uuid  TEXT NULL,  -- Which context they were acting in (person or association)
@@ -702,14 +749,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
   session_uuid    TEXT NULL REFERENCES session(uuid),  -- Associated session
   success         INTEGER NOT NULL DEFAULT 1,  -- 1 for success, 0 for failure
   details         TEXT NULL,  -- JSON blob with additional context
-  UNIQUE(timestamp, event_type, actor_uuid, target_uuid)  -- Prevent duplicate log entries
+  UNIQUE(logged_at, event_type, actor_uuid, target_uuid)  -- Prevent duplicate log entries
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_log_timestamp ON audit_log(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_uuid, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_target ON audit_log(target_uuid, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_event_type ON audit_log(event_type, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_session ON audit_log(session_uuid, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_ip ON audit_log(ip_address, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_security_audit_log_timestamp ON security_audit_log(logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_security_audit_log_actor ON security_audit_log(actor_uuid, logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_security_audit_log_target ON security_audit_log(target_uuid, logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_security_audit_log_event_type ON security_audit_log(event_type, logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_security_audit_log_session ON security_audit_log(session_uuid, logged_at DESC);
+CREATE INDEX IF NOT EXISTS idx_security_audit_log_ip ON security_audit_log(ip_address, logged_at DESC);
 
 `;

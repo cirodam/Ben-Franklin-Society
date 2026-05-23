@@ -1,7 +1,8 @@
 import { db } from '../../db.js';
 import { verifyFoundingRecord } from './verification.js';
 import { type FoundingRecord } from './identity.js';
-import { registerWithFederation, cacheSociety } from '../client.js';
+import { registerWithFederation } from '../client.js';
+import { cacheSociety } from '../societies.js';
 
 /**
  * Initialize this society as a child with a founding record from parent
@@ -48,7 +49,7 @@ export async function initializeAsChild(params: {
 			uuid,
 			public_key,
 			private_key_encrypted,
-			parent_handle,
+			parent_uuid,
 			founding_record_json,
 			founded_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -61,18 +62,18 @@ export async function initializeAsChild(params: {
 		uuid,
 		publicKey,
 		privateKeyEncrypted,
-		foundingRecord.parent.handle,
+		foundingRecord.parent.uuid,
 		JSON.stringify(foundingRecord),
 		foundedAt
 	);
 
 	// Cache parent society
-	await cacheSociety({
-		handle: foundingRecord.parent.handle,
+	cacheSociety({
 		uuid: foundingRecord.parent.uuid,
+		handle: foundingRecord.parent.handle,
 		publicKey: foundingRecord.parent.public_key,
-		endpoint: '', // Will be discovered later
-		lineage: [foundingRecord.parent.handle]
+		parentUuid: null, // Parent is likely root or we don't know their parent yet
+		lineageJson: JSON.stringify([foundingRecord.parent.handle])
 	});
 
 	// Register with Federation
@@ -123,7 +124,7 @@ export function initializeAsRoot(params: {
 			uuid,
 			public_key,
 			private_key_encrypted,
-			parent_handle,
+			parent_uuid,
 			founding_record_json,
 			founded_at
 		) VALUES (?, ?, ?, ?, NULL, NULL, ?)
@@ -150,17 +151,17 @@ export function getInitializationStatus(): {
 	initialized: boolean;
 	handle?: string;
 	is_root?: boolean;
-	parent_handle?: string;
+	parent_uuid?: string;
 	founded_at?: number;
 } {
 	const stmt = db.prepare(/* sql */ `
-		SELECT handle, parent_handle, founded_at
+		SELECT handle, parent_uuid, founded_at
 		FROM society_identity
 		LIMIT 1
 	`);
 
 	const row = stmt.get() as
-		| { handle: string; parent_handle: string | null; founded_at: number }
+		| { handle: string; parent_uuid: string | null; founded_at: number }
 		| undefined;
 
 	if (!row) {
@@ -170,8 +171,8 @@ export function getInitializationStatus(): {
 	return {
 		initialized: true,
 		handle: row.handle,
-		is_root: row.parent_handle === null,
-		parent_handle: row.parent_handle || undefined,
+		is_root: row.parent_uuid === null,
+		parent_uuid: row.parent_uuid || undefined,
 		founded_at: row.founded_at
 	};
 }
