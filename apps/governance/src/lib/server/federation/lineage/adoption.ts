@@ -372,6 +372,7 @@ export async function checkAdoptionStatus(params: {
 	error?: string;
 }> {
 	try {
+		// 1. Check status
 		const response = await fetch(
 			`${params.parent_url}/api/federation/adoption/status/${params.request_id}`
 		);
@@ -381,9 +382,32 @@ export async function checkAdoptionStatus(params: {
 		}
 
 		const data = await response.json();
+
+		// 2. If approved, fetch founding record
+		if (data.status === 'approved') {
+			const recordResponse = await fetch(
+				`${params.parent_url}/api/federation/adoption/founding-record/${params.request_id}`
+			);
+
+			if (recordResponse.ok) {
+				const recordData = await recordResponse.json();
+				return {
+					status: data.status,
+					founding_record: recordData.founding_record,
+					response_message: recordData.response_message || data.response_message
+				};
+			} else {
+				return {
+					status: data.status,
+					response_message: data.response_message,
+					error: 'Failed to fetch founding record'
+				};
+			}
+		}
+
+		// For pending/rejected, just return status
 		return {
 			status: data.status,
-			founding_record: data.founding_record,
 			response_message: data.response_message
 		};
 	} catch (error) {

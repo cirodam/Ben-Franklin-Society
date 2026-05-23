@@ -118,7 +118,7 @@ export function collectDemurrage(opts: {
 		.prepare(
 			`SELECT * FROM account 
 			 WHERE demurrage_exempt = 0 
-			 AND balance > 0
+			 AND franks_balance > 0
 			 ORDER BY uuid`
 		)
 		.all() as Account[];
@@ -139,30 +139,31 @@ export function collectDemurrage(opts: {
 	db.transaction(() => {
 		for (const account of eligibleAccounts) {
 			// Calculate demurrage amount (simple percentage)
-			let amount = calculateDemurrage(account.balance, config.rate_percent);
+			let amount = calculateDemurrage(account.franks_balance, config.rate_percent);
 
 			// Don't charge more than the balance
-			if (amount > account.balance) {
-				amount = account.balance;
+			if (amount > account.franks_balance) {
+				amount = account.franks_balance;
 			}
 
 			if (amount === 0) {
 				continue; // Skip if no charge
 			}
 
-			const balanceBefore = account.balance;
+			const balanceBefore = account.franks_balance;
 			const balanceAfter = balanceBefore - amount;
 
 			// Create transaction
 			const transactionUuid = randomUUID();
 			db.prepare(
 				`INSERT INTO "transaction" 
-				(uuid, from_uuid, to_uuid, amount, type, source, memo, created_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+				(uuid, from_uuid, to_uuid, currency, amount, type, source, memo, created_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			).run(
 				transactionUuid,
 				account.uuid,
 				config.destination_account_uuid,
+				'franks', // Demurrage only applies to Franks
 				amount,
 				TransactionType.DEMURRAGE,
 				TransactionSource.SYSTEM,
@@ -171,13 +172,13 @@ export function collectDemurrage(opts: {
 			);
 
 			// Update account balance
-			db.prepare('UPDATE account SET balance = balance - ? WHERE uuid = ?').run(
+			db.prepare('UPDATE account SET franks_balance = franks_balance - ? WHERE uuid = ?').run(
 				amount,
 				account.uuid
 			);
 
 			// Update destination account balance
-			db.prepare('UPDATE account SET balance = balance + ? WHERE uuid = ?').run(
+			db.prepare('UPDATE account SET franks_balance = franks_balance + ? WHERE uuid = ?').run(
 				amount,
 				config.destination_account_uuid
 			);

@@ -10,7 +10,7 @@
 </script>
 
 <div class="page">
-	<PageHeader title="Send Franks" />
+	<PageHeader title="Send Payment" />
 
 	{#if sent}
 		<div class="success-receipt">
@@ -42,9 +42,14 @@
 					<Select name="from_uuid" label="From account" required>
 						{#each accounts as a}
 							<option value={a.uuid} selected={a.uuid === preselect}>
-								{a.name} — {a.balance.toLocaleString()} ƒ
+								{a.name} — {a.franks_balance.toLocaleString()} F / {a.florens_balance.toLocaleString()} ₣
 							</option>
 						{/each}
+					</Select>
+
+					<Select name="currency" label="Currency">
+						<option value="franks">🟢 Franks (local only)</option>
+						<option value="florens">🟡 Florens (works everywhere)</option>
 					</Select>
 
 					<Input
@@ -57,7 +62,7 @@
 
 					<Input
 						name="amount"
-						label="Amount (ƒ)"
+						label="Amount"
 						type="number"
 						min="1"
 						step="1"
@@ -74,7 +79,7 @@
 				</div>
 
 				<div class="form-actions">
-					<Button type="submit" variant="primary">Send Franks</Button>
+					<Button type="submit" variant="primary">Send Payment</Button>
 					<a href="/" class="btn-text">Cancel</a>
 				</div>
 			</form>

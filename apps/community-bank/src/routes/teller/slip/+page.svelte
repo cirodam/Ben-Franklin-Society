@@ -115,11 +115,19 @@
 				<Input
 					name="amount"
 					type="number"
-					label="Amount (ƒ)"
+					label="Amount"
 					min="1"
 					step="1"
 					required
 				/>
+
+				<div class="field">
+					<label for="currency">Currency</label>
+					<select id="currency" name="currency" class="input" required>
+						<option value="franks">🟢 Franks</option>
+						<option value="florens">🟡 Florens</option>
+					</select>
+				</div>
 
 				<Input
 					name="slip_serial"

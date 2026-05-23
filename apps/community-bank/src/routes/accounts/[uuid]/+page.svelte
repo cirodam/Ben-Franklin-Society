@@ -34,15 +34,32 @@
 	<!-- Account Summary Card -->
 	<Card class="summary-card {account.is_frozen === 1 ? 'summary-card--frozen' : ''}">
 		<div class="summary-header">
-			<div class="summary-label">Current Balance</div>
+			<div class="summary-label">Account Balances</div>
 			{#if account.is_frozen === 1}
 				<div class="status-badge frozen">Frozen</div>
 			{:else}
 				<div class="status-badge active">Active</div>
 			{/if}
 		</div>
-		<div class="summary-balance t-balance" class:negative={account.balance < 0} class:positive={account.balance > 0}>
-			{fmt(account.balance)} ƒ
+		<div class="balances-container">
+			<div class="balance-detail franks">
+				<div class="balance-icon">🟢</div>
+				<div class="balance-info">
+					<div class="balance-label">Franks</div>
+					<div class="balance-value t-balance" class:negative={account.franks_balance < 0} class:positive={account.franks_balance > 0}>
+						{fmt(account.franks_balance)}
+					</div>
+				</div>
+			</div>
+			<div class="balance-detail florens">
+				<div class="balance-icon">🟡</div>
+				<div class="balance-info">
+					<div class="balance-label">Florens</div>
+					<div class="balance-value t-balance" class:negative={account.florens_balance < 0} class:positive={account.florens_balance > 0}>
+						{fmt(account.florens_balance)}
+					</div>
+				</div>
+			</div>
 		</div>
 		<div class="summary-meta">
 			<span class="meta-item">{account.uuid.slice(0, 8)}</span>
@@ -97,7 +114,8 @@
 
 						<div class="transaction-footer">
 							<div class="transaction-amount {tx.from_uuid === account.uuid ? 'out' : 'in'}">
-								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)} ƒ
+								<span class="currency-badge {tx.currency}">{tx.currency === 'franks' ? '🟢' : '🟡'}</span>
+								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)}
 							</div>
 							{#if tx.memo}
 								<div class="transaction-memo">{tx.memo}</div>
@@ -184,18 +202,62 @@
 		color: white;
 	}
 
-	.summary-balance {
-		font-size: 2.5rem;
-		margin-bottom: var(--space-2);
-		color: var(--ink);
-		font-weight: 400;
+	.balances-container {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-3);
+		margin-bottom: var(--space-4);
 	}
 
-	.summary-balance.negative {
+	.balance-detail {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-4);
+		border-radius: var(--radius);
+	}
+
+	.balance-detail.franks {
+		background: rgba(34, 197, 94, 0.1);
+		border: 1px solid rgba(34, 197, 94, 0.3);
+	}
+
+	.balance-detail.florens {
+		background: rgba(234, 179, 8, 0.1);
+		border: 1px solid rgba(234, 179, 8, 0.3);
+	}
+
+	.balance-icon {
+		font-size: 2rem;
+		line-height: 1;
+	}
+
+	.balance-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.balance-label {
+		font-family: var(--font-sans);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		color: var(--color-text-subtle);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.balance-value {
+		font-size: var(--text-2xl);
+		font-weight: 600;
+		color: var(--ink);
+	}
+
+	.balance-value.negative {
 		color: var(--color-danger);
 	}
 
-	.summary-balance.positive {
+	.balance-value.positive {
 		color: var(--olive);
 	}
 
@@ -358,6 +420,9 @@
 		font-family: var(--font-mono);
 		font-size: var(--text-lg);
 		font-weight: 600;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	.transaction-amount.in {
@@ -366,6 +431,11 @@
 
 	.transaction-amount.out {
 		color: var(--rust);
+	}
+
+	.currency-badge {
+		font-size: var(--text-base);
+		line-height: 1;
 	}
 
 	.transaction-memo {

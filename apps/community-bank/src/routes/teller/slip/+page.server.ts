@@ -17,12 +17,16 @@ export const actions: Actions = {
 
 		const from_handle  = String(data.get('from_handle')  ?? '').trim().toLowerCase();
 		const to_handle    = String(data.get('to_handle')    ?? '').trim().toLowerCase();
+		const currency     = String(data.get('currency')     ?? 'franks').trim();
 		const amount_str   = String(data.get('amount')       ?? '').trim();
 		const slip_serial  = String(data.get('slip_serial')  ?? '').trim();
 		const memo         = String(data.get('memo')         ?? '').trim() || null;
 
 		if (!from_handle || !to_handle || !amount_str || !slip_serial)
 			return fail(400, { error: 'All fields are required, including the slip serial number.' });
+
+		if (!['franks', 'florens'].includes(currency))
+			return fail(400, { error: 'Invalid currency type.' });
 
 		const amount = parseInt(amount_str, 10);
 		if (isNaN(amount) || amount <= 0)
@@ -49,6 +53,7 @@ export const actions: Actions = {
 		postTransaction({
 			from_uuid: fromAccount.uuid,
 			to_uuid: toAccount.uuid,
+			currency: currency as 'franks' | 'florens',
 			amount,
 			type: TransactionType.TRANSFER,
 			source: TransactionSource.TELLER,

@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS account (
   uuid             TEXT PRIMARY KEY,
   owner_uuid       TEXT NOT NULL,
   name             TEXT NOT NULL,
-  balance          INTEGER NOT NULL DEFAULT 0,
+  franks_balance   INTEGER NOT NULL DEFAULT 0,
+  florens_balance  INTEGER NOT NULL DEFAULT 0,
   is_frozen        INTEGER NOT NULL DEFAULT 0,
   demurrage_exempt INTEGER NOT NULL DEFAULT 0,
   created_at       TEXT NOT NULL,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS "transaction" (
   uuid            TEXT PRIMARY KEY,
   from_uuid       TEXT NOT NULL REFERENCES account(uuid),
   to_uuid         TEXT NOT NULL REFERENCES account(uuid),
+  currency        TEXT NOT NULL CHECK (currency IN ('franks', 'florens')),
   amount          INTEGER NOT NULL,
   type            TEXT NOT NULL,
   source          TEXT NOT NULL,
@@ -69,6 +71,13 @@ CREATE TABLE IF NOT EXISTS monetary_operation (
   total_supply_after    INTEGER NOT NULL,
   performed_by_uuid     TEXT NOT NULL,
   performed_at          TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS clearinghouse_positions (
+  society_handle            TEXT PRIMARY KEY,
+  florens_net_position      INTEGER NOT NULL DEFAULT 0,
+  florens_initial_endowment INTEGER NOT NULL DEFAULT 0,
+  last_calculated_at        TEXT NOT NULL
 );
 
 `;

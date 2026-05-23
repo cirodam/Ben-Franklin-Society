@@ -48,6 +48,8 @@ export const actions: Actions = {
 			return fail(400, { error: result.error });
 		}
 
-		return redirect(303, '/federation/adopt-status?request_id=' + result.request_id);
+		// Redirect to status page with request_id and parent_url
+		const statusUrl = `/federation/adopt-status?request_id=${result.request_id}&parent_url=${encodeURIComponent(parentUrl)}`;
+		return redirect(303, statusUrl);
 	}
 };

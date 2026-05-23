@@ -27,11 +27,15 @@ export const actions: Actions = {
 
 		const from_uuid   = String(data.get('from_uuid')    ?? '').trim();
 		const to_uuid     = String(data.get('to_uuid')      ?? '').trim();
+		const currency    = String(data.get('currency')     ?? 'franks').trim();
 		const amount_str  = String(data.get('amount')       ?? '').trim();
 		const memo        = String(data.get('memo')         ?? '').trim() || null;
 
 		if (!from_uuid || !to_uuid || !amount_str)
 			return fail(400, { error: 'All fields are required.' });
+
+		if (!['franks', 'florens'].includes(currency))
+			return fail(400, { error: 'Invalid currency type.' });
 
 		const amount = parseInt(amount_str, 10);
 		if (isNaN(amount) || amount <= 0)
@@ -67,6 +71,7 @@ export const actions: Actions = {
 		postTransaction({
 			from_uuid,
 			to_uuid,
+			currency: currency as 'franks' | 'florens',
 			amount,
 			type: TransactionType.TRANSFER,
 			source: TransactionSource.ONLINE,

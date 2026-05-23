@@ -105,7 +105,8 @@
 					<tr>
 						<th>UUID</th>
 						<th>Account Name</th>
-						<th class="num">Balance (ƒ)</th>
+						<th class="num">Franks</th>
+						<th class="num">Florens</th>
 						<th>Status</th>
 						<th>Actions</th>
 					</tr>
@@ -115,7 +116,8 @@
 						<tr class={acct.is_frozen === 1 ? 'row--frozen' : ''}>
 							<td class="mono">{acct.uuid.slice(0, 8)}</td>
 							<td>{acct.name}</td>
-							<td class="num {acct.balance < 0 ? 'negative' : ''}">{fmt(acct.balance)}</td>
+							<td class="num {acct.franks_balance < 0 ? 'negative' : ''}">🟢 {fmt(acct.franks_balance)}</td>
+							<td class="num {acct.florens_balance < 0 ? 'negative' : ''}">🟡 {fmt(acct.florens_balance)}</td>
 							<td>
 								{#if acct.is_frozen === 1}
 									<span class="badge badge--frozen">Frozen</span>

@@ -88,7 +88,8 @@
 					
 					<div class="transaction-footer">
 						<div class="transaction-amount {tx.from_uuid === account.uuid ? 'out' : 'in'}">
-							{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)} ƒ
+							<span class="currency-badge {tx.currency}">{tx.currency === 'franks' ? '🟢' : '🟡'}</span>
+							{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)}
 						</div>
 						{#if tx.memo}
 							<div class="transaction-memo">{tx.memo}</div>
@@ -293,10 +294,18 @@
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 		letter-spacing: -0.01em;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	.transaction-amount.in { color: var(--olive); }
 	.transaction-amount.out { color: var(--ink); }
+
+	.currency-badge {
+		font-size: var(--text-lg);
+		line-height: 1;
+	}
 
 	.transaction-memo {
 		flex: 1;

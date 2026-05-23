@@ -54,12 +54,16 @@ export const actions: Actions = {
 
 	correct: async ({ params, locals, request }) => {
 		const data = await request.formData();
+		const currency   = String(data.get('currency')  ?? '').trim();
 		const direction  = String(data.get('direction') ?? '').trim();  // 'credit' | 'debit'
 		const amount_str = String(data.get('amount')    ?? '').trim();
 		const memo       = String(data.get('memo')      ?? '').trim();
 
-		if (!direction || !amount_str || !memo)
-			return fail(400, { error: 'Direction, amount, and memo are all required for a correction.' });
+		if (!currency || !direction || !amount_str || !memo)
+			return fail(400, { error: 'Currency, direction, amount, and memo are all required for a correction.' });
+
+		if (!['franks', 'florens'].includes(currency))
+			return fail(400, { error: 'Invalid currency type.' });
 
 		const amount = parseInt(amount_str, 10);
 		if (isNaN(amount) || amount <= 0)
@@ -73,15 +77,16 @@ export const actions: Actions = {
 
 		// Credit = increase balance, Debit = decrease balance
 		const adjustment = direction === 'credit' ? amount : -amount;
+		const balanceColumn = currency === 'franks' ? 'franks_balance' : 'florens_balance';
 		
-		db.prepare('UPDATE account SET balance = balance + ? WHERE uuid = ?').run(adjustment, account.uuid);
+		db.prepare(`UPDATE account SET ${balanceColumn} = ${balanceColumn} + ? WHERE uuid = ?`).run(adjustment, account.uuid);
 
 		logAdminAction({
 			action: `correction:${direction}`,
 			target_uuid: account.uuid,
 			target_type: 'account',
 			actor_uuid: locals.session!.acting_as_uuid,
-			memo: `${direction === 'credit' ? 'Credit' : 'Debit'} correction of ${amount} franks. ${memo}`,
+			memo: `${direction === 'credit' ? 'Credit' : 'Debit'} correction of ${amount} ${currency}. ${memo}`,
 		});
 
 		return { success: true };

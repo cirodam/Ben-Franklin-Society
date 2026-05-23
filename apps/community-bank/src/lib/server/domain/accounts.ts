@@ -7,7 +7,8 @@ export interface Account {
 	uuid: string;
 	owner_uuid: string;
 	name: string;
-	balance: number;
+	franks_balance: number;
+	florens_balance: number;
 	is_frozen: number;
 	demurrage_exempt: number;
 	created_at: string;
@@ -21,8 +22,8 @@ export function createAccount(opts: {
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
 	db.prepare(
-		`INSERT INTO account (uuid, owner_uuid, name, balance, is_frozen, demurrage_exempt, created_at)
-     VALUES (?, ?, ?, 0, 0, ?, ?)`
+		`INSERT INTO account (uuid, owner_uuid, name, franks_balance, florens_balance, is_frozen, demurrage_exempt, created_at)
+     VALUES (?, ?, ?, 0, 0, 0, ?, ?)`
 	).run(
 		uuid,
 		opts.owner_uuid,

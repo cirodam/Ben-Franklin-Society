@@ -58,8 +58,21 @@
 							<div class="account-card__badge frozen">Frozen</div>
 						{/if}
 					</div>
-					<div class="account-card__balance t-balance" class:negative={acct.balance < 0} class:positive={acct.balance > 0}>
-						{fmt(acct.balance)} ƒ
+					<div class="account-card__balances">
+						<div class="balance-row franks">
+							<span class="currency-icon">🟢</span>
+							<span class="balance-amount t-balance" class:negative={acct.franks_balance < 0} class:positive={acct.franks_balance > 0}>
+								{fmt(acct.franks_balance)}
+							</span>
+							<span class="currency-label">Franks</span>
+						</div>
+						<div class="balance-row florens">
+							<span class="currency-icon">🟡</span>
+							<span class="balance-amount t-balance" class:negative={acct.florens_balance < 0} class:positive={acct.florens_balance > 0}>
+								{fmt(acct.florens_balance)}
+							</span>
+							<span class="currency-label">Florens</span>
+						</div>
 					</div>
 					<div class="account-card__action">
 						View Details →
@@ -182,18 +195,53 @@
 		font-size: var(--text-lg);
 	}
 
-	.account-card__balance {
-		font-size: var(--text-3xl);
+	.account-card__balances {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
 		margin-bottom: var(--space-3);
+	}
+
+	.balance-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+	}
+
+	.balance-row.franks {
+		background: rgba(34, 197, 94, 0.08);
+	}
+
+	.balance-row.florens {
+		background: rgba(234, 179, 8, 0.08);
+	}
+
+	.currency-icon {
+		font-size: var(--text-lg);
+		line-height: 1;
+	}
+
+	.balance-amount {
+		font-size: var(--text-xl);
+		font-weight: var(--weight-bold);
 		color: var(--ink);
+		flex: 1;
 	}
 	
-	.account-card__balance.negative {
+	.balance-amount.negative {
 		color: var(--color-danger);
 	}
 	
-	.account-card__balance.positive {
+	.balance-amount.positive {
 		color: var(--olive);
+	}
+
+	.currency-label {
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		font-weight: var(--weight-medium);
 	}
 
 	.account-card__badge {

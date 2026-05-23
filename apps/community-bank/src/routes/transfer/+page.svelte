@@ -42,7 +42,7 @@
 				<select id="from_uuid" name="from_uuid" bind:value={fromUuid} required class="select-input">
 					{#each accounts as acct}
 						<option value={acct.uuid}>
-							{acct.name} ({fmt(acct.balance)} ƒ)
+							{acct.name} ({fmt(acct.franks_balance)} F / {fmt(acct.florens_balance)} ₣)
 						</option>
 					{/each}
 				</select>
@@ -56,16 +56,24 @@
 					<option value="">-- Select destination --</option>
 					{#each toAccounts as acct}
 						<option value={acct.uuid}>
-							{acct.name} ({fmt(acct.balance)} ƒ)
+							{acct.name} ({fmt(acct.franks_balance)} F / {fmt(acct.florens_balance)} ₣)
 						</option>
 					{/each}
+				</select>
+			</div>
+
+			<div class="form-group">
+				<label for="currency" class="t-label">Currency</label>
+				<select id="currency" name="currency" required class="select-input">
+					<option value="franks">🟢 Franks (local only)</option>
+					<option value="florens">🟡 Florens (works everywhere)</option>
 				</select>
 			</div>
 
 			<Input
 				id="amount"
 				name="amount"
-				label="Amount (Franks)"
+				label="Amount"
 				type="number"
 				min="1"
 				step="1"
@@ -82,7 +90,7 @@
 			/>
 
 			<div class="form-actions">
-				<Button type="submit">Transfer Franks</Button>
+				<Button type="submit">Transfer Funds</Button>
 				<Button type="button" variant="secondary" href="/">Cancel</Button>
 			</div>
 		</form>

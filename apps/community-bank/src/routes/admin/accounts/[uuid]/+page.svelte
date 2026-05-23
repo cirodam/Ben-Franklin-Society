@@ -30,8 +30,12 @@
 	<!-- Balance + freeze toggle -->
 	<div class="info-row">
 		<div class="stat-card">
-			<div class="stat-card__label">Balance</div>
-			<div class="stat-card__value {account.balance < 0 ? 'negative' : ''}">{fmt(account.balance)} ƒ</div>
+			<div class="stat-card__label">Franks Balance</div>
+			<div class="stat-card__value {account.franks_balance < 0 ? 'negative' : ''}">🟢 {fmt(account.franks_balance)}</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-card__label">Florens Balance</div>
+			<div class="stat-card__value {account.florens_balance < 0 ? 'negative' : ''}">🟡 {fmt(account.florens_balance)}</div>
 		</div>
 		<div class="stat-card">
 			<div class="stat-card__label">Status</div>
@@ -56,6 +60,16 @@
 		<form method="POST" action="?/correct" use:enhance class="correction-form">
 			<div class="form-row">
 				<Select
+					name="currency"
+					label="Currency"
+					required
+				>
+					<option value="">Select…</option>
+					<option value="franks">🟢 Franks</option>
+					<option value="florens">🟡 Florens</option>
+				</Select>
+
+				<Select
 					name="direction"
 					label="Direction"
 					required
@@ -68,7 +82,7 @@
 				<Input
 					name="amount"
 					type="number"
-					label="Amount (ƒ)"
+					label="Amount"
 					min="1"
 					step="1"
 					required
@@ -124,7 +138,8 @@
 							<td class="mono">@{tx.from_handle}</td>
 							<td class="mono">@{tx.to_handle}</td>
 							<td class="num {tx.from_uuid === account.uuid ? 'out' : 'in'}">
-								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)} ƒ
+								<span class="currency-badge">{tx.currency === 'franks' ? '🟢' : '🟡'}</span>
+								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)}
 							</td>
 							<td class="mono">{tx.slip_serial ?? ''}</td>
 							<td>{tx.memo ?? ''}</td>
@@ -182,7 +197,7 @@
 	:global(.form-card) { padding: var(--space-5); }
 	.card__label { font-size: var(--text-xs); font-weight: var(--weight-medium); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-faint); display: flex; gap: var(--space-4); align-items: center; }
 	.correction-form { display: flex; flex-direction: column; gap: var(--space-4); }
-	.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+	.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
 	:global(.field-wide) { grid-column: 1 / -1; }
 
 	.btn { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: var(--text-sm); padding: var(--space-2) var(--space-4); border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; font-weight: var(--weight-medium); text-decoration: none; }
@@ -198,6 +213,11 @@
 	.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
 	.in { color: var(--color-success); }
 	.out { color: var(--color-danger); }
+
+	.currency-badge {
+		font-size: var(--text-sm);
+		margin-right: 0.25rem;
+	}
 
 	.page-link { font-size: var(--text-xs); color: var(--color-accent); text-decoration: none; }
 	.page-link:hover { text-decoration: underline; }

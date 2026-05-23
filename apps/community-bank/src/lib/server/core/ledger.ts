@@ -5,6 +5,7 @@ export interface Transaction {
 	uuid: string;
 	from_uuid: string;
 	to_uuid: string;
+	currency: 'franks' | 'florens';
 	amount: number;
 	type: string;
 	source: string;
@@ -25,6 +26,7 @@ export interface EnrichedTransaction extends Transaction {
 export function postTransaction(opts: {
 	from_uuid: string;
 	to_uuid: string;
+	currency: 'franks' | 'florens';
 	amount: number;
 	type: string;
 	source?: string;
@@ -33,22 +35,29 @@ export function postTransaction(opts: {
 	entered_by_uuid?: string | null;
 }): Transaction {
 	if (opts.amount <= 0) throw new Error('Amount must be a positive integer.');
+	if (!['franks', 'florens'].includes(opts.currency)) {
+		throw new Error('Currency must be either "franks" or "florens".');
+	}
 
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
 
+	// Determine which balance column to update based on currency
+	const balanceColumn = opts.currency === 'franks' ? 'franks_balance' : 'florens_balance';
+
 	const insert = db.prepare(
-		`INSERT INTO "transaction" (uuid, from_uuid, to_uuid, amount, type, source, slip_serial, memo, entered_by_uuid, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		`INSERT INTO "transaction" (uuid, from_uuid, to_uuid, currency, amount, type, source, slip_serial, memo, entered_by_uuid, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	);
-	const debit  = db.prepare(`UPDATE account SET balance = balance - ? WHERE uuid = ?`);
-	const credit = db.prepare(`UPDATE account SET balance = balance + ? WHERE uuid = ?`);
+	const debit  = db.prepare(`UPDATE account SET ${balanceColumn} = ${balanceColumn} - ? WHERE uuid = ?`);
+	const credit = db.prepare(`UPDATE account SET ${balanceColumn} = ${balanceColumn} + ? WHERE uuid = ?`);
 
 	db.transaction(() => {
 		insert.run(
 			uuid,
 			opts.from_uuid,
 			opts.to_uuid,
+			opts.currency,
 			opts.amount,
 			opts.type,
 			opts.source ?? 'online',

@@ -99,7 +99,7 @@ export function getMintedSupply(): number {
  */
 export function getTotalSupply(): number {
 	const result = db
-		.prepare('SELECT COALESCE(SUM(balance), 0) as total FROM account')
+		.prepare('SELECT COALESCE(SUM(franks_balance), 0) as total FROM account')
 		.get() as { total: number };
 	return result.total;
 }
@@ -180,7 +180,7 @@ export function mintFranks(opts: {
 
 	db.transaction(() => {
 		// Credit the account
-		db.prepare('UPDATE account SET balance = balance + ? WHERE uuid = ?').run(
+		db.prepare('UPDATE account SET franks_balance = franks_balance + ? WHERE uuid = ?').run(
 			opts.amount,
 			opts.account_uuid
 		);
@@ -227,16 +227,16 @@ export function burnFranks(opts: {
 
 	// Verify account exists and has sufficient balance
 	const account = db
-		.prepare('SELECT uuid, balance FROM account WHERE uuid = ?')
-		.get(opts.account_uuid) as { uuid: string; balance: number } | undefined;
+		.prepare('SELECT uuid, franks_balance FROM account WHERE uuid = ?')
+		.get(opts.account_uuid) as { uuid: string; franks_balance: number } | undefined;
 
 	if (!account) {
 		throw new Error('Account not found');
 	}
 
-	if (account.balance < opts.amount) {
+	if (account.franks_balance < opts.amount) {
 		throw new Error(
-			`Cannot burn ${opts.amount} franks: account only has ${account.balance} franks`
+			`Cannot burn ${opts.amount} franks: account only has ${account.franks_balance} franks`
 		);
 	}
 
@@ -256,7 +256,7 @@ export function burnFranks(opts: {
 
 	db.transaction(() => {
 		// Debit the account
-		db.prepare('UPDATE account SET balance = balance - ? WHERE uuid = ?').run(
+		db.prepare('UPDATE account SET franks_balance = franks_balance - ? WHERE uuid = ?').run(
 			opts.amount,
 			opts.account_uuid
 		);
