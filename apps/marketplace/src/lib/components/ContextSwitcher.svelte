@@ -225,7 +225,7 @@
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		font-weight: 500;
-		color: var(--charcoal, #1f1f1f);
+		color: var(--text-primary, #1a1a1a);
 		cursor: pointer;
 		transition: background 0.15s;
 		text-align: left;

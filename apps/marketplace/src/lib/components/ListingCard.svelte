@@ -40,64 +40,33 @@
 		flex-direction: column;
 		gap: var(--space-2);
 		padding: var(--space-5);
-		border: 2px solid var(--deep-forest);
-		border-radius: var(--radius-lg);
-		background: var(--canvas);
+		border: 1px solid var(--border-light);
+		border-radius: 8px;
+		background: var(--bg-surface);
+		box-shadow: var(--shadow-sm);
 		text-decoration: none;
-		color: var(--charcoal);
-		transition: all 0.2s;
+		transition: all 0.15s ease;
 	}
 
 	.listing-card:hover {
-		background: white;
-		border-color: var(--market-green);
-		box-shadow: 0 4px 12px rgba(74, 124, 89, 0.15);
-		transform: translateY(-2px);
+		border-color: var(--border-accent);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
 	}
 
 	.listing-card__category {
-		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
-		color: var(--deep-forest);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		/* Styled by .t-tag utility class */
 	}
 
 	.listing-card__title {
-		font-family: var(--font-serif);
-		font-size: var(--text-lg);
-		font-weight: 600;
-		color: var(--charcoal);
-		line-height: 1.3;
+		/* Styled by .t-product utility class */
 	}
 
 	.listing-card__price {
-		font-size: var(--text-md);
-		font-weight: var(--weight-bold);
-		color: var(--market-green);
-		font-family: var(--font-sans);
+		/* Styled by .t-price utility class */
 	}
 
 	.listing-card__seller {
-		font-size: var(--text-sm);
-		color: var(--slate);
-		font-family: var(--font-mono);
-	}
-
-	/* Typography classes for semantic styling */
-	.t-tag {
-		/* Category tag styling */
-	}
-
-	.t-product {
-		/* Product name styling */
-	}
-
-	.t-price {
-		/* Price tag styling */
-	}
-
-	.t-seller {
-		/* Seller handle styling */
+		/* Styled by .t-seller utility class */
 	}
 </style>

@@ -15,36 +15,35 @@
 
 <style>
 	.browse-card {
-		border: 2px solid var(--deep-forest);
-		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-light);
+		border-radius: 8px;
 		padding: var(--space-6);
+		background: var(--bg-surface);
+		box-shadow: var(--shadow-sm);
 		text-decoration: none;
-		color: var(--charcoal);
-		background: var(--canvas);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		transition: all 0.2s;
+		transition: all 0.15s ease;
 	}
 
 	.browse-card:hover {
-		background: white;
-		border-color: var(--market-green);
-		box-shadow: 0 4px 12px rgba(74, 124, 89, 0.15);
-		transform: translateY(-2px);
+		border-color: var(--border-accent);
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
 	}
 
 	.browse-card__title {
 		font-family: var(--font-serif);
 		font-weight: 600;
 		font-size: var(--text-lg);
-		color: var(--charcoal);
+		color: var(--text-primary);
 	}
 
 	.browse-card__desc {
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
-		color: var(--slate);
+		color: var(--text-muted);
 		line-height: 1.5;
 	}
 </style>

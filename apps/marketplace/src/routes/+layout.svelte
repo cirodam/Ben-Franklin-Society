@@ -66,12 +66,12 @@
 <style>
 	/* Sidebar structure styling */
 	:global(.sidebar) {
-		background: var(--deep-forest);
-		border-right-color: var(--deep-forest);
+		background: var(--sidebar-bg);
+		border-right-color: var(--sidebar-bg);
 	}
 
 	:global(.sidebar__brand) {
-		border-bottom-color: rgba(255, 255, 255, 0.15);
+		border-bottom-color: var(--sidebar-border);
 	}
 
 	.brand-wrapper {
@@ -108,7 +108,7 @@
 	}
 
 	:global(.sidebar__footer) {
-		border-top-color: rgba(255, 255, 255, 0.15);
+		border-top-color: var(--sidebar-border);
 	}
 
 	/* Sidebar link styling for market theme */
@@ -131,22 +131,22 @@
 	}
 
 	:global(.sidebar-link__badge) {
-		background: var(--color-accent);
+		background: var(--market-green);
 		color: #fff;
 		font-size: 11px;
-		font-weight: var(--weight-bold);
+		font-weight: 700;
 	}
 
 	:global(.sidebar-group__label) {
 		font-size: var(--text-xs);
-		font-weight: var(--weight-semibold);
+		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: var(--color-text-muted);
+		color: rgba(255, 255, 255, 0.6);
 	}
 
 	:global(.sidebar__footer) {
-		border-top-color: rgba(255, 255, 255, 0.15);
+		border-top-color: var(--sidebar-border);
 		padding: 0;
 	}
 

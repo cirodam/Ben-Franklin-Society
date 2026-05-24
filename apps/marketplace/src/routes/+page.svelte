@@ -82,8 +82,8 @@
 	p {
 		margin: 0;
 		font-family: var(--font-sans);
-		color: var(--slate);
-		font-size: var(--text-sm);
+		color: var(--text-secondary);
+		font-size: var(--text-base);
 		line-height: 1.6;
 	}
 
@@ -116,8 +116,8 @@
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		padding-bottom: var(--space-2);
-		border-bottom: 2px solid var(--border);
+		padding-bottom: var(--space-3);
+		border-bottom: 1px solid var(--border-light);
 	}
 	
 	h2 {
@@ -125,7 +125,7 @@
 		font-family: var(--font-serif);
 		font-size: var(--text-2xl);
 		font-weight: 600;
-		color: var(--charcoal);
+		color: var(--text-primary);
 	}
 	
 	.see-all {
@@ -134,11 +134,11 @@
 		font-weight: 500;
 		color: var(--market-green);
 		text-decoration: none;
-		transition: color 0.2s;
+		transition: color 0.15s ease;
 	}
 	
 	.see-all:hover {
-		color: var(--market-green-mid);
+		color: var(--market-green-dark);
 		text-decoration: underline;
 	}
 

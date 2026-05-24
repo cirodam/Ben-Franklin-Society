@@ -13,6 +13,13 @@
 		withdrawn: 'warn',
 		removed:   'danger',
 	};
+
+	function isExpired(expiresAt: string | null): boolean {
+		if (!expiresAt) return false;
+		// Compare date strings directly (YYYY-MM-DD format)
+		const today = new Date().toISOString().split('T')[0];
+		return expiresAt < today;
+	}
 </script>
 
 <div class="page">
@@ -45,7 +52,10 @@
 						<div class="listing-row__price">{formatPriceShort(listing.price, listing.price_negotiable)}</div>
 						<div class="listing-row__date">{formatDate(listing.created_at)}</div>
 						<div class="listing-row__status">
-						<Badge variant={STATUS_VARIANT[listing.status] ?? 'neutral'}>{listing.status}</Badge>
+							<Badge variant={STATUS_VARIANT[listing.status] ?? 'neutral'} label={listing.status} />
+							{#if isExpired(listing.expires_at)}
+								<Badge variant="warn" label="Expired" />
+							{/if}
 						</div>
 						<div class="listing-row__actions">
 							{#if listing.status !== 'removed'}
@@ -130,6 +140,7 @@
 	.listing-row__cat   { font-size: var(--text-xs); color: var(--color-text-muted); }
 	.listing-row__price { font-size: var(--text-sm); }
 	.listing-row__date  { font-size: var(--text-xs); color: var(--color-text-muted); }
+	.listing-row__status { display: flex; gap: var(--space-3); }
 
 	.btn-link {
 		font-size: var(--text-xs);

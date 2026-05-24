@@ -107,21 +107,26 @@
 
 	.listing-category {
 		font-size: var(--text-xs);
-		color: var(--color-text-muted);
+		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
+		font-weight: 600;
 	}
 
 	h1 {
 		margin: 0;
-		font-size: var(--text-2xl);
-		font-weight: var(--weight-bold);
+		font-family: var(--font-serif);
+		font-size: var(--text-3xl);
+		font-weight: 600;
+		color: var(--text-primary);
+		line-height: 1.2;
 	}
 
 	.listing-price {
-		font-size: var(--text-xl);
-		font-weight: var(--weight-bold);
-		color: var(--color-accent, #2563eb);
+		font-size: var(--text-2xl);
+		font-weight: 700;
+		color: var(--market-green);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.listing-meta {
@@ -129,18 +134,19 @@
 		align-items: center;
 		gap: var(--space-2);
 		font-size: var(--text-sm);
-		color: var(--color-text-muted);
+		color: var(--text-muted);
 		flex-wrap: wrap;
 	}
 
 	.handle {
-		color: var(--color-text);
+		color: var(--text-secondary);
 		font-family: var(--font-mono);
-		font-size: var(--text-xs);
+		font-size: var(--text-sm);
 	}
 
 	a.handle {
 		text-decoration: none;
+		color: var(--market-green);
 	}
 
 	a.handle:hover {
@@ -148,18 +154,19 @@
 	}
 
 	.listing-description {
-		padding: var(--space-4);
-		background: var(--color-surface-alt, #f9fafb);
-		border: 1px solid var(--color-border-faint);
-		border-radius: var(--radius-md);
+		padding: var(--space-5);
+		background: var(--bg-subtle);
+		border: 1px solid var(--border-light);
+		border-radius: 8px;
 	}
 
 	.listing-description pre {
 		margin: 0;
 		white-space: pre-wrap;
-		font-family: inherit;
-		font-size: var(--text-sm);
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
 		line-height: 1.7;
+		color: var(--text-secondary);
 	}
 
 	:global(.contact-btn) {
@@ -192,13 +199,13 @@
 		border: none;
 		padding: 0;
 		font-size: var(--text-sm);
-		color: var(--color-accent);
+		color: var(--market-green);
 		cursor: pointer;
 		text-decoration: underline;
 	}
 
 	.btn-link--muted {
-		color: var(--color-text-muted);
+		color: var(--text-muted);
 		font-size: var(--text-xs);
 	}
 </style>
