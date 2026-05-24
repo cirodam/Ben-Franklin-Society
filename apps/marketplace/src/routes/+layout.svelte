@@ -12,7 +12,7 @@
 	const hasContexts = $derived(availableContexts && availableContexts.length > 0);
 </script>
 
-<AppShell maxWidth="lg">
+<AppShell maxWidth="xl">
 	{#snippet sidebar()}
 		<Sidebar>
 			{#snippet brand()}
