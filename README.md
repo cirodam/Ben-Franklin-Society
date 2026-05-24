@@ -55,7 +55,7 @@ Deploy to a fresh Ubuntu server (DigitalOcean, Hetzner, etc.) with a single comm
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/scripts/bootstrap-droplet.sh | \
-  sudo DOMAIN=yourdomain.com ACME_EMAIL=admin@yourdomain.com bash
+  sudo DOMAIN=bfsathensga.org ACME_EMAIL=contact@tylerdteague.com bash
 ```
 
 Then start services:
