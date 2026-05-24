@@ -3,31 +3,40 @@
 
 	interface Props {
 		referendum: {
+			uuid: string;
 			title: string;
 			opens_at?: string;
 			closes_at?: string;
 			closed_at?: string | null;
 			description?: string | null;
 		};
-		status: 'scheduled' | 'closed';
+		status: 'draft' | 'scheduled' | 'open' | 'closed';
 		formatDate?: (isoString: string) => string;
 	}
 
 	let { referendum, status, formatDate }: Props = $props();
 </script>
 
-<div class="referendum-item">
+<a href="/governance/referenda/{referendum.uuid}" class="referendum-item">
 	<div class="referendum-item__header">
 		<span class="referendum-item__title">{referendum.title}</span>
-		{#if status === 'scheduled'}
+		{#if status === 'draft'}
+			<Badge label="Draft" variant="neutral" />
+		{:else if status === 'scheduled'}
 			<Badge label="Scheduled" variant="accent" />
+		{:else if status === 'open'}
+			<Badge label="Open" variant="success" />
 		{:else}
 			<Badge label="Closed" variant="neutral" />
 		{/if}
 	</div>
 	<span class="referendum-item__meta">
-		{#if status === 'scheduled' && referendum.opens_at}
+		{#if status === 'draft'}
+			Work in progress
+		{:else if status === 'scheduled' && referendum.opens_at}
 			Opens {new Date(referendum.opens_at).toLocaleDateString()}
+		{:else if status === 'open' && referendum.closes_at}
+			Closes {new Date(referendum.closes_at).toLocaleDateString()}
 		{:else if status === 'closed' && formatDate}
 			Closed {formatDate(referendum.closed_at || referendum.closes_at || '')}
 		{/if}
@@ -35,13 +44,17 @@
 	{#if referendum.description}
 		<p class="referendum-item__description">{referendum.description}</p>
 	{/if}
-</div>
+</a>
 
 <style>
 	.referendum-item {
+		display: block;
 		padding: var(--space-5);
 		background: var(--paper);
 		border: 1px solid rgba(45, 90, 79, 0.2);
+		text-decoration: none;
+		color: inherit;
+		cursor: pointer;
 		transition: all 0.2s;
 	}
 

@@ -15,9 +15,15 @@ import {
 	getReferendumWithQuestions,
 	castVote,
 	getVote,
+	autoOpenScheduledReferendums,
+	autoCloseOpenReferendums,
 } from '$lib/server/governance/referendums.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
+	// Update referendum statuses based on current time
+	autoOpenScheduledReferendums();
+	autoCloseOpenReferendums();
+
 	const association = getAssociationByHandle('society');
 	if (!association) error(404, 'Society not found');
 
@@ -30,25 +36,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Get referendums
 	const draftReferendums = listReferendums({ status: 'draft' });
+	const scheduledReferendums = listReferendums({ status: 'scheduled' });
 	const openReferendums = listReferendums({ status: 'open' });
 	const closedReferendums = listReferendums({ status: 'closed' });
 
 	// Enrich open referendums with questions and user's votes
-	const enrichedOpenReferendums = openReferendums.map((ref) => {
-		const withQuestions = getReferendumWithQuestions(ref.uuid);
-		if (!withQuestions || !actingAs) return withQuestions;
+	const enrichedOpenReferendums = openReferendums
+		.map((ref) => {
+			const withQuestions = getReferendumWithQuestions(ref.uuid);
+			if (!withQuestions || !actingAs) return withQuestions;
 
-		// Check which questions the user has voted on
-		const questionsWithVotes = withQuestions.questions.map((q) => ({
-			...q,
-			userVote: getVote(q.uuid, actingAs),
-		}));
+			// Check which questions the user has voted on
+			const questionsWithVotes = withQuestions.questions.map((q) => ({
+				...q,
+				userVote: getVote(q.uuid, actingAs),
+			}));
 
-		return {
-			...withQuestions,
-			questions: questionsWithVotes,
-		};
-	});
+			return {
+				...withQuestions,
+				questions: questionsWithVotes,
+			};
+		})
+		.filter((ref) => ref !== null);
 
 	return {
 		association,
@@ -56,6 +65,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		openPetitions,
 		respondedPetitions,
 		draftReferendums,
+		scheduledReferendums,
 		openReferendums: enrichedOpenReferendums,
 		closedReferendums,
 	};

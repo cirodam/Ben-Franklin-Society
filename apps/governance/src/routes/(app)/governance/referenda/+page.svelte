@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { Button, EmptyState, Modal, Input, Textarea } from '@bfs/ui';
 	import PetitionCard from './PetitionCard.svelte';
 	import RespondedPetition from './RespondedPetition.svelte';
@@ -13,6 +14,7 @@
 		openPetitions,
 		respondedPetitions,
 		draftReferendums,
+		scheduledReferendums,
 		openReferendums,
 		closedReferendums,
 	} = $derived(data);
@@ -62,20 +64,22 @@
 				<Button onclick={() => showPetitionModal = true}>Create Petition</Button>
 			</div>
 			
-			{#if openPetitions.length > 0}
-				<section class="section">
+			<section class="section">
+				{#if openPetitions.length > 0}
+					<h3 class="subsection-title">Open Petitions</h3>
+					<p class="subsection-hint">Active petitions seeking signatures and assembly response</p>
 					<div class="list">
 						{#each openPetitions as petition}
 							<PetitionCard {petition} />
 						{/each}
 					</div>
-				</section>
-			{:else}
-				<EmptyState
-					title="No open petitions"
-					description="Be the first to create a petition and signal what matters to the community"
-				/>
-			{/if}
+				{:else}
+					<EmptyState
+						title="No open petitions"
+						description="Be the first to create a petition and signal what matters to the community"
+					/>
+				{/if}
+			</section>
 
 			{#if respondedPetitions.length > 0}
 				<div class="responded-section">
@@ -89,11 +93,28 @@
 			{/if}
 
 		{:else if activeTab === 'referendums'}
+			<div class="section-header">
+				<Button onclick={() => goto('/governance/referenda/new')}>Create Referendum</Button>
+			</div>
+
 			{#if draftReferendums.length > 0}
 				<section class="section">
-					<h3 class="subsection-title">Scheduled Referenda</h3>
+					<h3 class="subsection-title">Draft Referenda</h3>
+					<p class="subsection-hint">Work in progress, not yet scheduled</p>
 					<div class="list">
 						{#each draftReferendums as referendum}
+							<ReferendumListItem {referendum} status="draft" />
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			{#if scheduledReferendums.length > 0}
+				<section class="section">
+					<h3 class="subsection-title">Scheduled Referenda</h3>
+					<p class="subsection-hint">Ready to open on scheduled date</p>
+					<div class="list">
+						{#each scheduledReferendums as referendum}
 							<ReferendumListItem {referendum} status="scheduled" />
 						{/each}
 					</div>
@@ -101,14 +122,15 @@
 			{/if}
 
 			{#if openReferendums.length > 0}
-				{#each openReferendums as referendum}
-					<ReferendumVoting {referendum} />
-				{/each}
-			{:else}
-				<EmptyState
-					title="No open referendums"
-					description="Referendums allow the entire community to vote on important questions"
-				/>
+				<section class="section">
+					<h3 class="subsection-title">Open Referenda</h3>
+					<p class="subsection-hint">Currently accepting votes</p>
+					<div class="list">
+						{#each openReferendums as referendum}
+							<ReferendumListItem referendum={referendum} status="open" />
+						{/each}
+					</div>
+				</section>
 			{/if}
 
 			{#if closedReferendums.length > 0}
@@ -209,6 +231,10 @@
 
 	.section {
 		margin-bottom: var(--space-8);
+		padding: var(--space-6);
+		background: var(--tint-green);
+		border: 1px solid rgba(45, 90, 79, 0.15);
+		border-radius: var(--radius);
 	}
 
 	.section-header {
@@ -222,7 +248,15 @@
 		font-size: var(--text-xl);
 		font-weight: 400;
 		color: var(--ink);
-		margin-bottom: var(--space-4);
+		margin-bottom: var(--space-2);
+	}
+
+	.subsection-hint {
+		font-family: var(--font-prose);
+		font-size: var(--text-sm);
+		color: var(--ink-mid);
+		font-style: italic;
+		margin: 0 0 var(--space-4);
 	}
 
 	.list {
@@ -233,6 +267,10 @@
 
 	.responded-section {
 		margin-top: var(--space-8);
+		padding: var(--space-6);
+		background: var(--tint-green);
+		border: 1px solid rgba(45, 90, 79, 0.15);
+		border-radius: var(--radius);
 	}
 
 	.modal-actions {
