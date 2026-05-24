@@ -3,34 +3,11 @@ import { getBucketById } from './buckets.js';
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, writeFile, readFile, unlink, stat } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
+import type { FileMetadata, UploadFileParams } from '../types.js';
+
+export type { FileMetadata, UploadFileParams };
 
 const STORAGE_ROOT = process.env.STORAGE_PATH || './data/buckets';
-
-export interface FileMetadata {
-	id: number;
-	bucket_id: number;
-	folder_id: number | null;
-	filename: string;
-	path: string;
-	storage_path: string;
-	mime_type: string | null;
-	size_bytes: number;
-	uploaded_at: string;
-	uploaded_by: string;
-	// Document metadata (populated from JSON content)
-	document_type?: string;
-	document_title?: string;
-	document_status?: string;
-}
-
-export interface UploadFileParams {
-	bucketId: number;
-	folderId?: number;
-	filename: string;
-	content: Buffer;
-	mimeType?: string;
-	uploadedBy: string;
-}
 
 /**
  * Generate a unique storage path for a file

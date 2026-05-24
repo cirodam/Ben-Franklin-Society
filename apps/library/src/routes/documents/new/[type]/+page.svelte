@@ -1,37 +1,76 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
-	import { GoverningDocEditor } from '@bfs/ui';
-	import type { GoverningDocument } from '@bfs/types';
+	import { MotionEditor, GoverningDocEditor } from '@bfs/ui';
+	import type { MotionDocument, GoverningDocument } from '@bfs/types';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	const { data } = $props<{ data: PageData }>();
+	const documentType = $page.params.type as 'motion' | 'governing';
 
-	// Initialize empty governing document - capture initial values
+	// Initialize empty document - capture initial values
 	const initialActingAsUuid = data.session.acting_as_uuid;
+	const initialPersonUuid = data.session.person_uuid;
 	const initialBucketKey = data.buckets[0]?.bucket_key || '';
 
-	let document = $state<GoverningDocument>({
-		uuid: crypto.randomUUID(),
-		type: 'governing',
-		slug: '',
-		document_id: null,
-		version: 1,
-		title: '',
-		owner_uuid: initialActingAsUuid,
-		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString(),
-		content: {
-			status: 'draft',
-			seniority: 'bylaw',
-			articles: [],
-			preamble: undefined
-		}
-	});
+	// Create document based on type
+	let document = $state<MotionDocument | GoverningDocument>(
+		documentType === 'motion'
+			? {
+					uuid: crypto.randomUUID(),
+					type: 'motion',
+					slug: '',
+					document_id: null,
+					version: 1,
+					title: '',
+					owner_uuid: initialActingAsUuid,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					content: {
+						status: 'draft',
+						provisions: [],
+						introducer_uuid: initialPersonUuid
+					}
+				}
+			: {
+					uuid: crypto.randomUUID(),
+					type: 'governing',
+					slug: '',
+					document_id: null,
+					version: 1,
+					title: '',
+					owner_uuid: initialActingAsUuid,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					content: {
+						status: 'draft',
+						seniority: 'bylaw',
+						articles: [],
+						preamble: undefined
+					}
+				}
+	);
 
 	let selectedBucket = $state(initialBucketKey);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
 	let editorRef: any;
+
+	// Document type metadata
+	const typeMetadata = {
+		motion: {
+			title: 'Create New Motion',
+			description: 'Draft a motion document to submit to a governing body',
+			saveButtonLabel: 'Save Motion'
+		},
+		governing: {
+			title: 'Create New Governing Document',
+			description: 'Draft a charter, constitution, bylaw, or other governing document',
+			saveButtonLabel: 'Save Document'
+		}
+	};
+
+	const metadata = typeMetadata[documentType];
 
 	async function handleSave() {
 		if (!selectedBucket) {
@@ -121,8 +160,8 @@
 
 <div class="page">
 	<div class="page__header">
-		<h1>Create New Governing Document</h1>
-		<p>Draft a charter, constitution, bylaw, or other governing document</p>
+		<h1>{metadata.title}</h1>
+		<p>{metadata.description}</p>
 	</div>
 
 	<div class="page__content">
@@ -142,7 +181,11 @@
 			</div>
 		{/if}
 
-		<GoverningDocEditor bind:this={editorRef} {document} />
+		{#if documentType === 'motion'}
+			<MotionEditor bind:this={editorRef} motion={document as MotionDocument} />
+		{:else if documentType === 'governing'}
+			<GoverningDocEditor bind:this={editorRef} document={document as GoverningDocument} />
+		{/if}
 
 		<div class="actions">
 			<button
@@ -158,7 +201,7 @@
 				onclick={handleSave}
 				disabled={saving}
 			>
-				{saving ? 'Saving...' : 'Save Document'}
+				{saving ? 'Saving...' : metadata.saveButtonLabel}
 			</button>
 		</div>
 	</div>

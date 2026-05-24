@@ -10,37 +10,9 @@
  *   const file = await client.uploadFile(buffer, 'document.pdf', bucketKey);
  */
 
-export interface FileMetadata {
-	id: number;
-	bucket_id: number;
-	folder_id: number | null;
-	filename: string;
-	path: string;
-	storage_path: string;
-	mime_type: string | null;
-	size_bytes: number;
-	uploaded_at: string;
-	uploaded_by: string;
-}
+import type { FileMetadata, Folder, Bucket } from './types.js';
 
-export interface Folder {
-	id: number;
-	bucket_id: number;
-	parent_folder_id: number | null;
-	name: string;
-	path: string;
-	created_at: string;
-	created_by: string;
-}
-
-export interface Bucket {
-	id: number;
-	bucket_key: string;
-	owner_type: 'user' | 'association';
-	owner_id: string;
-	created_at: string;
-	name?: string;
-}
+export type { FileMetadata, Folder, Bucket };
 
 export class LibraryClient {
 	private baseUrl: string;

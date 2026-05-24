@@ -1,22 +1,8 @@
 import { db } from './db.js';
 import { getBucketById } from './buckets.js';
+import type { Folder, CreateFolderParams } from '../types.js';
 
-export interface Folder {
-	id: number;
-	bucket_id: number;
-	parent_folder_id: number | null;
-	name: string;
-	path: string;
-	created_at: string;
-	created_by: string;
-}
-
-export interface CreateFolderParams {
-	bucketId: number;
-	parentFolderId?: number;
-	name: string;
-	createdBy: string;
-}
+export type { Folder, CreateFolderParams };
 
 /**
  * Create a new folder in a bucket

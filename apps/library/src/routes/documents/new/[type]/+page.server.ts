@@ -4,11 +4,19 @@ import { randomUUID } from 'node:crypto';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { db } from '$lib/server/db.js';
-import type { GoverningDocument } from '@bfs/types';
+import type { MotionDocument, GoverningDocument } from '@bfs/types';
 import { getUserBuckets, canAccessBucket } from '$lib/server/buckets.js';
 import { getOidcClient } from '$lib/server/oidc.js';
 
-export const load: PageServerLoad = async ({ locals, cookies }) => {
+const VALID_TYPES = ['motion', 'governing'] as const;
+type ValidDocumentType = typeof VALID_TYPES[number];
+
+export const load: PageServerLoad = async ({ params, locals, cookies }) => {
+	// Validate document type
+	if (!VALID_TYPES.includes(params.type as any)) {
+		throw error(404, `Invalid document type: ${params.type}`);
+	}
+
 	if (!locals.session) {
 		redirect(302, '/auth/login');
 	}
@@ -28,7 +36,12 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals, cookies }) => {
+	default: async ({ params, request, locals, cookies }) => {
+		// Validate document type
+		if (!VALID_TYPES.includes(params.type as any)) {
+			return { success: false, error: 'Invalid document type' };
+		}
+
 		if (!locals.session) {
 			return { success: false, error: 'Not authenticated' };
 		}
@@ -43,11 +56,16 @@ export const actions: Actions = {
 		}
 
 		try {
-			const doc: GoverningDocument = JSON.parse(documentJson);
+			const doc: MotionDocument | GoverningDocument = JSON.parse(documentJson);
 
 			// Validate document structure
 			if (!doc.uuid || !doc.type || !doc.title || !doc.content) {
 				return { success: false, error: 'Invalid document structure' };
+			}
+
+			// Validate document type matches route parameter
+			if (doc.type !== params.type) {
+				return { success: false, error: 'Document type mismatch' };
 			}
 
 			// Get access token for access check
@@ -107,7 +125,7 @@ export const actions: Actions = {
 				locals.session.person_uuid
 			);
 		} catch (error: any) {
-			console.error('Error creating governing document:', error);
+			console.error('Error creating document:', error);
 			return { success: false, error: 'Failed to create document' };
 		}
 

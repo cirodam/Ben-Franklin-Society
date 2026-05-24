@@ -1,14 +1,8 @@
 import { db } from './db.js';
 import { getUserAssociations, isAssociationMember } from './associations.js';
+import type { Bucket } from '../types.js';
 
-export interface Bucket {
-	id: number;
-	bucket_key: string;
-	owner_type: 'user' | 'association';
-	owner_id: string;
-	created_at: string;
-	name?: string; // Display name for UI (user's name or association name)
-}
+export type { Bucket };
 
 export function ensureBucket(ownerType: 'user' | 'association', ownerId: string): Bucket {
 	const bucketKey = `${ownerType}-${ownerId}`;
