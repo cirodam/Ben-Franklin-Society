@@ -4,7 +4,7 @@ import {
 	getPetitionByUuid,
 	signPetition,
 	unsignPetition,
-} from '$lib/server/governance/petitions.js';
+} from '$lib/server/governance/petition/index.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

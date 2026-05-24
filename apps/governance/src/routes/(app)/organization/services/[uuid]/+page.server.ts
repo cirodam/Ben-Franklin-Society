@@ -27,7 +27,7 @@ import * as bulletin from '$lib/server/communications/bulletin.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
-import { listEnactedMotions, getMotionByUuid } from '$lib/server/governance/motions.js';
+import { listEnactedMotions, getMotionByUuid } from '$lib/server/governance/motion/index.js';
 import { db } from '$lib/server/db.js';
 import { getDocumentBySlug } from '$lib/server/documents/society-docs.js';
 

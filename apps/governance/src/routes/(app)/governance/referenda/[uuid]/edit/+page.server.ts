@@ -12,7 +12,7 @@ import {
 	deleteQuestionOption,
 	deleteReferendum,
 	type QuestionType,
-} from '$lib/server/governance/referendums.js';
+} from '$lib/server/governance/referendum/index.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	if (!locals.session) redirect(302, '/login');

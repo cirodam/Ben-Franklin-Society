@@ -1,60 +1,21 @@
+/**
+ * Mutation functions for the motion system (write operations)
+ */
+
 import { randomUUID } from 'node:crypto';
-import { db } from '../db.js';
-import { getVoteRuleByUuid, evaluateTally } from './vote-rules.js';
-import * as library from '../documents/society-docs.js';
-import * as discussions from '../communications/discussions.js';
-import type { MotionDocument, MotionContent, MotionStatus } from '@bfs/types';
-
-// --- Types ---
-
-// Re-export types from library
-export type { MotionDocument, MotionContent, MotionStatus };
-
-export type VoteChoice = 'aye' | 'nay' | 'abstain';
-
-// Motion comments are now in discussions system
-// Vote tallies are now in vote_sessions system
-
-// --- Helpers ---
+import * as library from '../../documents/society-docs.js';
+import * as discussions from '../../communications/discussions.js';
+import type { MotionDocument, MotionStatus } from './types.js';
+import { ALLOWED_TRANSITIONS } from './types.js';
+import { getMotionByUuid, getMotionBySlug } from './queries.js';
 
 function now(): string {
 	return new Date().toISOString();
 }
 
-const ALLOWED_TRANSITIONS: Partial<Record<MotionStatus, MotionStatus[]>> = {
-	draft: ['introduced', 'withdrawn'],
-	introduced: ['deliberation', 'withdrawn'],
-	deliberation: ['voting', 'withdrawn'],
-	voting: ['withdrawn'], // voting → adopted/rejected goes through vote session finalization
-	adopted: ['enacted', 'withdrawn'], // adopted → enacted when clerk confirms implementation
-};
-
-// --- Motion queries ---
-
-export function getMotionByUuid(uuid: string): MotionDocument | null {
-	return library.getMotionByUuid(uuid);
-}
-
-export function getMotionBySlug(slug: string): MotionDocument | null {
-	return library.getMotionBySlug(slug);
-}
-
-export function listMotions(opts: {
-	bodyUuid?: string;
-	status?: MotionStatus;
-} = {}): MotionDocument[] {
-	return library.listMotions({
-		owner_uuid: opts.bodyUuid,
-		status: opts.status,
-	});
-}
-
-export function listEnactedMotions(): MotionDocument[] {
-	return library.listMotions({ status: 'enacted' });
-}
-
-// --- Motion writes ---
-
+/**
+ * Create a new motion
+ */
 export function createMotion(input: {
 	title: string;
 	body: string;
@@ -121,6 +82,9 @@ export function createMotion(input: {
 	});
 }
 
+/**
+ * Advance a motion to the next status with validation
+ */
 export function advanceMotion(slugOrUuid: string, to: MotionStatus): MotionDocument {
 	let motion = getMotionBySlug(slugOrUuid);
 	if (!motion) motion = getMotionByUuid(slugOrUuid);
@@ -181,6 +145,9 @@ export function setMotionStatus(slugOrUuid: string, to: MotionStatus): MotionDoc
 	return library.updateMotionStatus(motion.slug, to, updates);
 }
 
+/**
+ * Set the vote rule for a motion
+ */
 export function setMotionVoteRule(motionSlugOrUuid: string, voteRuleUuid: string | null): MotionDocument {
 	let motion = getMotionBySlug(motionSlugOrUuid);
 	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
@@ -191,6 +158,9 @@ export function setMotionVoteRule(motionSlugOrUuid: string, voteRuleUuid: string
 	return library.updateMotion(motion.slug, { vote_rule_uuid: voteRuleUuid ?? undefined });
 }
 
+/**
+ * Set the deliberation rule for a motion
+ */
 export function setMotionDeliberationRule(motionSlugOrUuid: string, deliberationRuleUuid: string | null): MotionDocument {
 	let motion = getMotionBySlug(motionSlugOrUuid);
 	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
@@ -201,6 +171,9 @@ export function setMotionDeliberationRule(motionSlugOrUuid: string, deliberation
 	return library.updateMotion(motion.slug, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
 }
 
+/**
+ * Set clerk notes for a motion
+ */
 export function setMotionClerkNotes(motionSlugOrUuid: string, clerkNotes: string | null): MotionDocument {
 	let motion = getMotionBySlug(motionSlugOrUuid);
 	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
@@ -208,19 +181,15 @@ export function setMotionClerkNotes(motionSlugOrUuid: string, clerkNotes: string
 	return library.updateMotion(motion.slug, { clerk_notes: clerkNotes ?? undefined });
 }
 
+/**
+ * Set parliamentarian notes for a motion
+ */
 export function setMotionParliamentarianNotes(motionSlugOrUuid: string, parliamentarianNotes: string | null): MotionDocument {
 	let motion = getMotionBySlug(motionSlugOrUuid);
 	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
 	return library.updateMotion(motion.slug, { parliamentarian_notes: parliamentarianNotes ?? undefined });
 }
-
-// --- Vote Tallies ---
-// Voting is handled by the vote_sessions system (see vote-sessions.ts).
-// Old motion_vote_tally table is deprecated.
-
-// --- Motion Enactment ---
-// These functions are called by the vote_sessions system when a vote is finalized.
 
 /**
  * Enact a motion based on a passed vote session
@@ -266,8 +235,6 @@ export function rejectMotion(motionSlugOrUuid: string, voteSessionUuid: string):
 	});
 }
 
-// --- Comments ---
-
 /**
  * Add a comment to a motion's discussion thread
  */
@@ -302,23 +269,3 @@ export function editMotionComment(commentUuid: string, body: string): void {
 export function deleteMotionComment(commentUuid: string): void {
 	discussions.deleteComment(commentUuid);
 }
-
-/**
- * Get all comments for a motion
- */
-export function getMotionComments(motionUuid: string) {
-	const motion = getMotionByUuid(motionUuid);
-	if (!motion?.content.thread_uuid) return [];
-	
-	return discussions.getCommentsWithAuthors(motion.content.thread_uuid);
-}
-
-/**
- * Check if person is author of a comment
- */
-export function isMotionCommentAuthor(commentUuid: string, personUuid: string): boolean {
-	return discussions.isCommentAuthor(commentUuid, personUuid);
-}
-
-// --- Motion as Document ---
-

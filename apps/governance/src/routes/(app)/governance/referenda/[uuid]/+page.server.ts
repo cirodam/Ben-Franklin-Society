@@ -7,7 +7,7 @@ import {
 	getReferendumResults,
 	autoOpenScheduledReferendums,
 	autoCloseOpenReferendums,
-} from '$lib/server/governance/referendums.js';
+} from '$lib/server/governance/referendum/index.js';
 import { getCommentCount } from '$lib/server/communications/discussions.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

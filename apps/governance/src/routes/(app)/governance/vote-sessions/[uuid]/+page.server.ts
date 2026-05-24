@@ -10,7 +10,7 @@ import {
 	finalizeVoteSession,
 	type VoteChoice
 } from '$lib/server/governance/vote-sessions';
-import { getMotionByUuid } from '$lib/server/governance/motions';
+import { getMotionByUuid } from '$lib/server/governance/motion/index.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions';
 import { db } from '$lib/server/db.js';
 import { audit } from '$lib/server/documents/audit';

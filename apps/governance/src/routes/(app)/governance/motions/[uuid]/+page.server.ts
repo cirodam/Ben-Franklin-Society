@@ -16,7 +16,7 @@ import {
 	deleteMotionComment,
 	isMotionCommentAuthor,
 	type MotionStatus,
-} from '$lib/server/governance/motions.js';
+} from '$lib/server/governance/motion/index.js';
 import { listVoteRules, getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
 import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/governance/deliberation-rules.js';
 import { 

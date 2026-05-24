@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
-import { getMotionByUuid } from './motions.js';
+import { getMotionByUuid } from './motion/index.js';
 import * as library from '../documents/society-docs.js';
 import { getVoteRuleByUuid, evaluateTally } from './vote-rules.js';
 import { finalizeVoteSession, closeVoteSession, getSessionTally, listVoteSessions } from './vote-sessions.js';

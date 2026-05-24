@@ -8,7 +8,7 @@ import {
 	updateMeetingStatus,
 	type ActionTaken,
 } from '$lib/server/governance/meetings.js';
-import { listMotions } from '$lib/server/governance/motions.js';
+import { listMotions } from '$lib/server/governance/motion/index.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';

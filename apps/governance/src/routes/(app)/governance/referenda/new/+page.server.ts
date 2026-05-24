@@ -5,7 +5,7 @@ import {
 	createQuestion,
 	createQuestionOption,
 	type QuestionType,
-} from '$lib/server/governance/referendums.js';
+} from '$lib/server/governance/referendum/index.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.session) {

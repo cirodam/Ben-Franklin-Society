@@ -9,7 +9,7 @@ import {
 	createPetition,
 	signPetition,
 	unsignPetition,
-} from '$lib/server/governance/petitions.js';
+} from '$lib/server/governance/petition/index.js';
 import {
 	listReferendums,
 	getReferendumWithQuestions,
@@ -17,7 +17,7 @@ import {
 	getVote,
 	autoOpenScheduledReferendums,
 	autoCloseOpenReferendums,
-} from '$lib/server/governance/referendums.js';
+} from '$lib/server/governance/referendum/index.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	// Update referendum statuses based on current time

@@ -25,7 +25,7 @@ import {
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
-import { listEnactedMotions, getMotionByUuid } from '$lib/server/governance/motions.js';
+import { listEnactedMotions, getMotionByUuid } from '$lib/server/governance/motion/index.js';
 import { db } from '$lib/server/db.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

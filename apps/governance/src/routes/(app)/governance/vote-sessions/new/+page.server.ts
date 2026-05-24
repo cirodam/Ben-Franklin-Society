@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { createVoteSession } from '$lib/server/governance/vote-sessions';
-import { getMotionByUuid } from '$lib/server/governance/motions';
+import { getMotionByUuid } from '$lib/server/governance/motion/index.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions';
 import { audit } from '$lib/server/documents/audit';
 import { addEntry } from '$lib/server/communications/record';

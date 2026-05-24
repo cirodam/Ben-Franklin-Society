@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { createAssociation, getAssociationByHandle } from '$lib/server/organization/associations.js';
-import { listEnactedMotions } from '$lib/server/governance/motions.js';
+import { listEnactedMotions } from '$lib/server/governance/motion/index.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async () => {

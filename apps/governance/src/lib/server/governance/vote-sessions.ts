@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
-import { enactMotion, rejectMotion, advanceMotion } from './motions.js';
+import { enactMotion, rejectMotion, advanceMotion } from './motion/index.js';
 
 // --- Types ---
 
