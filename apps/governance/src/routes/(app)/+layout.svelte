@@ -33,6 +33,7 @@
 			</SidebarGroup>
 
 			<SidebarGroup label="Communications">
+				<SidebarLink href="/communications/calendar">Calendar</SidebarLink>
 				<SidebarLink href="/communications/record">The Record</SidebarLink>
 		</SidebarGroup>
 

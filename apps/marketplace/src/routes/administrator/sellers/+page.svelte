@@ -89,7 +89,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 760px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 	.search-form { display: flex; align-items: center; gap: var(--space-3); }
 	:global(.search-input) { width: 240px; }

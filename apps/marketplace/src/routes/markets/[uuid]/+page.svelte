@@ -52,7 +52,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 700px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 	.market-location { color: var(--color-text-muted); font-size: var(--text-sm); margin-top: var(--space-1); }
 	.market-description { margin: 0; font-size: var(--text-sm); color: var(--color-text); line-height: 1.6; }

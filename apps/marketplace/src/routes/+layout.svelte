@@ -12,7 +12,7 @@
 	const hasContexts = $derived(availableContexts && availableContexts.length > 0);
 </script>
 
-<AppShell>
+<AppShell maxWidth="lg">
 	{#snippet sidebar()}
 		<Sidebar>
 			{#snippet brand()}
@@ -32,10 +32,10 @@
 				<SidebarLink href="/markets">Markets</SidebarLink>
 				<SidebarDivider />
 				<SidebarLink href="/my-listings">My Listings</SidebarLink>
-				<SidebarLink href="/sell" class="sell-link">+ Sell</SidebarLink>
+				<SidebarLink href="/sell">Sell</SidebarLink>
 				{#if isAdministrator}
 					<SidebarDivider />
-					<SidebarLink href="/administrator" class="admin-link">Administration</SidebarLink>
+					<SidebarLink href="/administrator">Administration</SidebarLink>
 				{/if}
 			{/snippet}
 
@@ -143,26 +143,6 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: var(--color-text-muted);
-	}
-
-	:global(.sell-link) {
-		color: var(--market-green-light);
-		font-weight: 600;
-	}
-	
-	:global(.sell-link:hover) {
-		background: rgba(74, 124, 89, 0.2);
-		color: white;
-	}
-
-	:global(.admin-link) {
-		color: rgba(255, 255, 255, 0.75);
-		font-weight: 500;
-	}
-	
-	:global(.admin-link:hover) {
-		background: rgba(255, 255, 255, 0.1);
-		color: white;
 	}
 
 	:global(.sidebar__footer) {

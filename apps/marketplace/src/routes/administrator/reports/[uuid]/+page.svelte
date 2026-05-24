@@ -117,7 +117,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 900px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }
 
 	.main-grid { display: grid; grid-template-columns: 1fr 280px; gap: var(--space-6); align-items: start; }

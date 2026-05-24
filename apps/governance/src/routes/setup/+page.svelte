@@ -67,8 +67,8 @@
 				name="handle"
 				type="text"
 				label="Handle"
-				hint="Your unique identifier (e.g., @jsmith)"
-				placeholder="@"
+				hint="Your unique identifier (e.g., jsmith)"
+				placeholder="jsmith"
 				autocomplete="username"
 				required
 			/>

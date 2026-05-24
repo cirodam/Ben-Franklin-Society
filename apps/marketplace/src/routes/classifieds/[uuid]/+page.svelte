@@ -45,7 +45,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-5);
-		max-width: 860px;
 	}
 
 	.main-grid {

@@ -83,7 +83,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 680px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 	.listing-form { display: flex; flex-direction: column; gap: var(--space-5); }
 

@@ -184,7 +184,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 800px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 	.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
 	h1 { margin: 0; font-size: var(--text-xl); font-weight: var(--weight-bold); }

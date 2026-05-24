@@ -77,7 +77,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-8);
-		max-width: 1000px;
 	}
 
 	p {

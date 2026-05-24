@@ -56,7 +56,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 640px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 	.session-ends  { font-size: var(--text-sm); color: var(--color-text-muted); }
 	.session-notes { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); font-style: italic; }

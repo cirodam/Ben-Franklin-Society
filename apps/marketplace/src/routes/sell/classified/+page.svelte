@@ -36,7 +36,9 @@
 			<FieldRow>
 				<Input label="Price (Franks)" name="price" type="number" min={0} step={1} value={form?.price ?? '0'} />
 				<div class="field field--check">
-					<Checkbox label="Price is negotiable" name="price_negotiable" value="1" checked={form?.price_negotiable === '1'} />
+					<Checkbox name="price_negotiable" value="1" checked={form?.price_negotiable === '1'}>
+						Price is negotiable
+					</Checkbox>
 				</div>
 			</FieldRow>
 
@@ -57,7 +59,7 @@
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; gap: var(--space-5); max-width: 680px; }
+	.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 	.listing-form { display: flex; flex-direction: column; gap: var(--space-5); }
 

@@ -39,9 +39,6 @@ export interface BulletinComment {
 	post_uuid: string;
 	author_uuid: string;
 	body: string;
-	quoted_author_name: string | null;
-	quoted_excerpt: string | null;
-	quoted_reply_id: string | null;
 	created_at: string;
 	deleted_at: string | null;
 }

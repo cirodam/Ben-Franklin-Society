@@ -30,7 +30,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
-		max-width: 720px;
+
 	}
 	
 	.subtitle {
