@@ -49,23 +49,49 @@ This system is built on the premise that ordinary people, given adequate time an
 
 ### Production Deployment (Docker)
 
-For production deployment with Docker, SSL, and proper domain setup:
+**One-Command Bootstrap**
 
-See **[DOCKER.md](DOCKER.md)** for complete Docker deployment guide.
+Deploy to a fresh Ubuntu server (DigitalOcean, Hetzner, etc.) with a single command:
 
-Quick version:
 ```bash
-cp .env.example .env
-# Edit .env with your domain and secrets
-docker-compose build
-docker-compose up -d
+curl -fsSL https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/scripts/bootstrap-droplet.sh | \
+  sudo DOMAIN=yourdomain.com ACME_EMAIL=admin@yourdomain.com bash
 ```
 
+Then start services:
+```bash
+cd /opt/bfs && ./start.sh
+```
+
+This will:
+- Install Docker and configure firewall
+- Pull pre-built images from Docker Hub
+- Generate all OIDC secrets and keys
+- Configure SSL certificates (Let's Encrypt)
+- Create helper scripts (start.sh, stop.sh, logs.sh, backup.sh)
+
+**DNS Setup Required:**
+
+Point these A records to your server IP:
+- governance.yourdomain.com
+- bank.yourdomain.com
+- mail.yourdomain.com
+- marketplace.yourdomain.com
+
+Or use a wildcard: `*.yourdomain.com`
+
+**Initialize Your Society:**
+
+After services start (~2 minutes for SSL), visit:
+- https://governance.yourdomain.com/setup
+
 Applications will be available at:
-- **Governance**: https://governance.bfs.example.com
-- **Community Bank**: https://bank.bfs.example.com
-- **Mail**: https://mail.bfs.example.com
-- **Marketplace**: https://marketplace.bfs.example.com
+- **Governance**: https://governance.yourdomain.com
+- **Community Bank**: https://bank.yourdomain.com
+- **Mail**: https://mail.yourdomain.com
+- **Marketplace**: https://marketplace.yourdomain.com
+
+For detailed deployment documentation, see **[DOCKER.md](DOCKER.md)**.
 
 ### Development Setup (Local)
 
