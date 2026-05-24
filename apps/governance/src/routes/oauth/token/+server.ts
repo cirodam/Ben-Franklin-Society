@@ -63,6 +63,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'unsupported_grant_type' }, { status: 400 });
 		}
 	} catch (err) {
+		console.error('[oauth/token] Error processing token request:', err);
 		const message = err instanceof Error ? err.message : 'Unknown error';
 		return json({ error: 'invalid_grant', error_description: message }, { status: 400 });
 	}

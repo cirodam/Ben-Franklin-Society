@@ -51,12 +51,14 @@ This system is built on the premise that ordinary people, given adequate time an
 
 **One-Command Bootstrap**
 
-Deploy to a fresh Ubuntu server (DigitalOcean, Hetzner, etc.) with a single command:
+Deploy to a fresh Ubuntu 22.04 LTS server (DigitalOcean, Hetzner, etc.) with a single command:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/scripts/bootstrap-droplet.sh | \
   sudo DOMAIN=bfsathensga.org ACME_EMAIL=contact@tylerdteague.com bash
 ```
+
+> **Recommended OS**: Ubuntu 22.04 LTS (most stable with Docker). Avoid Ubuntu 24.04 due to AppArmor compatibility issues.
 
 Then start services:
 ```bash

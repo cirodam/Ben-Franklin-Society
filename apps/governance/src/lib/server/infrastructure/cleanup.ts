@@ -17,13 +17,42 @@ import { logAuditEvent } from './audit.js';
 export function cleanupExpiredSessions(): number {
 	const now = new Date().toISOString();
 	
-	const result = db
+	// First, find sessions to delete
+	const sessionsToDelete = db
 		.prepare(
-			`DELETE FROM session 
+			`SELECT uuid FROM session 
 			 WHERE expires_at < ? 
 			    OR revoked_at IS NOT NULL`
 		)
-		.run(now);
+		.all(now) as Array<{ uuid: string }>;
+	
+	if (sessionsToDelete.length === 0) {
+		return 0;
+	}
+	
+	const sessionUuids = sessionsToDelete.map(s => s.uuid);
+	const placeholders = sessionUuids.map(() => '?').join(',');
+	
+	// Delete associated refresh tokens (foreign key constraint)
+	db.prepare(
+		`DELETE FROM oidc_refresh_token 
+		 WHERE session_uuid IN (${placeholders})`
+	).run(...sessionUuids);
+	
+	// Nullify session references in audit log (preserve audit history)
+	db.prepare(
+		`UPDATE security_audit_log 
+		 SET session_uuid = NULL 
+		 WHERE session_uuid IN (${placeholders})`
+	).run(...sessionUuids);
+	
+	// Now delete the sessions
+	const result = db
+		.prepare(
+			`DELETE FROM session 
+			 WHERE uuid IN (${placeholders})`
+		)
+		.run(...sessionUuids);
 
 	if (result.changes > 0) {
 		console.log(`[cleanup] Removed ${result.changes} expired session(s)`);

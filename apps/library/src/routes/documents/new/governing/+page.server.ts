@@ -1,18 +1,25 @@
-import { redirect } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
 import { db } from '$lib/server/db.js';
 import type { GoverningDocument } from '@bfs/types';
-import { getUserBuckets } from '$lib/server/buckets.js';
+import { getUserBuckets, canAccessBucket } from '$lib/server/buckets.js';
+import { getOidcClient } from '$lib/server/oidc.js';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, cookies }) => {
 	if (!locals.session) {
 		redirect(302, '/auth/login');
 	}
 
-	const buckets = getUserBuckets(locals.session.acting_as_uuid);
+	// Get access token for API calls
+	const accessToken = getOidcClient().getAccessToken(cookies);
+	if (!accessToken) {
+		throw error(401, 'No access token available');
+	}
+
+	const buckets = await getUserBuckets(locals.session.acting_as_uuid, accessToken);
 
 	return {
 		session: locals.session,
@@ -21,7 +28,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, cookies }) => {
 		if (!locals.session) {
 			return { success: false, error: 'Not authenticated' };
 		}
@@ -43,51 +50,71 @@ export const actions: Actions = {
 				return { success: false, error: 'Invalid document structure' };
 			}
 
+			// Get access token for access check
+			const accessToken = getOidcClient().getAccessToken(cookies);
+			if (!accessToken) {
+				return { success: false, error: 'Not authenticated' };
+			}
+
 			// Get bucket
-			const bucket = db.prepare('SELECT * FROM library_bucket WHERE bucket_key = ?').get(bucket_key) as any;
+			const bucket = db.prepare('SELECT * FROM buckets WHERE bucket_key = ?').get(bucket_key) as any;
 			if (!bucket) {
 				return { success: false, error: 'Bucket not found' };
 			}
 
 			// Verify access to bucket
-			const hasAccess = db.prepare(`
-				SELECT 1 FROM library_bucket_access
-				WHERE bucket_id = ? AND principal_uuid = ?
-			`).get(bucket.id, locals.session.acting_as_uuid);
-
+			const hasAccess = await canAccessBucket(locals.session.acting_as_uuid, bucket, accessToken);
 			if (!hasAccess) {
 				return { success: false, error: 'No access to this bucket' };
 			}
 
-			// Generate filename
+			// Generate filename and paths
 			const filename = `${doc.slug || doc.uuid}.json`;
-			const storagePath = `${randomUUID()}.json`;
-			const fullPath = join(process.cwd(), 'data', 'library-files', storagePath);
+			const filePath = folder_id ? `/${folder_id}/${filename}` : `/${filename}`;
+			
+			// Check if file already exists
+			const existingFile = db.prepare(
+				'SELECT id FROM files WHERE bucket_id = ? AND path = ?'
+			).get(bucket.id, filePath);
+			if (existingFile) {
+				return { success: false, error: 'A file with this name already exists in this location' };
+			}
+			
+			// Use the same filename for storage (slug or document uuid)
+			const storagePath = join(process.cwd(), 'data', 'library-files', filename);
+
+			// Ensure directory exists
+			await mkdir(dirname(storagePath), { recursive: true });
 
 			// Write JSON file
-			await writeFile(fullPath, JSON.stringify(doc, null, 2), 'utf-8');
+			const content = JSON.stringify(doc, null, 2);
+			await writeFile(storagePath, content, 'utf-8');
 
 			// Insert into database
 			const result = db.prepare(`
-				INSERT INTO library_file (
-					bucket_id, folder_id, filename, size_bytes, mime_type,
-					storage_path, hash, uploaded_by, uploaded_at
+				INSERT INTO files (
+					bucket_id, folder_id, filename, path, size_bytes, mime_type,
+					storage_path, uploaded_by, uploaded_at
 				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 			`).run(
 				bucket.id,
 				folder_id || null,
 				filename,
-				Buffer.byteLength(JSON.stringify(doc)),
+				filePath,
+				Buffer.byteLength(content),
 				'application/json',
 				storagePath,
-				'', // TODO: compute hash
 				locals.session.person_uuid
 			);
-
-			redirect(303, `/?bucket=${bucket_key}`);
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error creating governing document:', error);
 			return { success: false, error: 'Failed to create document' };
 		}
+
+		// Return success with redirect location
+		return { 
+			success: true, 
+			redirectTo: `/?bucket=${bucket_key}`
+		};
 	}
 };

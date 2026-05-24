@@ -1,0 +1,16 @@
+{
+  "uuid": "07f3855f-f869-4e92-b5c2-3260976aa4fd",
+  "type": "motion",
+  "slug": "bobs",
+  "document_id": null,
+  "version": 1,
+  "title": "bobs",
+  "owner_uuid": "477a8c03-0261-4d68-a374-a7d6fa83f2c1",
+  "created_at": "2026-05-24T20:28:39.916Z",
+  "updated_at": "2026-05-24T20:28:47.972Z",
+  "content": {
+    "status": "draft",
+    "provisions": [],
+    "introducer_uuid": "477a8c03-0261-4d68-a374-a7d6fa83f2c1"
+  }
+}

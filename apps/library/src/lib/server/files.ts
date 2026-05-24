@@ -17,6 +17,10 @@ export interface FileMetadata {
 	size_bytes: number;
 	uploaded_at: string;
 	uploaded_by: string;
+	// Document metadata (populated from JSON content)
+	document_type?: string;
+	document_title?: string;
+	document_status?: string;
 }
 
 export interface UploadFileParams {
@@ -142,8 +146,19 @@ export async function readFileContent(fileId: number): Promise<Buffer> {
 	}
 
 	try {
+		// Try reading from the stored path first
 		return await readFile(file.storage_path);
 	} catch (err) {
+		// Fallback: if storage_path is just a filename (legacy format),
+		// try looking in the library-files directory
+		if (!file.storage_path.includes('/') && !file.storage_path.includes('\\')) {
+			try {
+				const fallbackPath = join(process.cwd(), 'data', 'library-files', file.storage_path);
+				return await readFile(fallbackPath);
+			} catch {
+				// Ignore fallback error, throw original error
+			}
+		}
 		throw new Error(`Failed to read file from disk: ${err}`);
 	}
 }
@@ -197,6 +212,45 @@ export function listRootFiles(bucketId: number): FileMetadata[] {
 	return db
 		.prepare('SELECT * FROM files WHERE bucket_id = ? AND folder_id IS NULL ORDER BY filename ASC')
 		.all(bucketId) as FileMetadata[];
+}
+
+/**
+ * Extract document metadata from a JSON file
+ */
+export async function getDocumentMetadata(file: FileMetadata): Promise<Partial<FileMetadata>> {
+	if (!file.filename.endsWith('.json')) {
+		return {};
+	}
+
+	try {
+		const content = await readFile(file.storage_path, 'utf-8');
+		const doc = JSON.parse(content);
+		
+		return {
+			document_type: doc.type || 'unknown',
+			document_title: doc.title || file.filename,
+			document_status: doc.content?.status
+		};
+	} catch (err) {
+		console.error(`Failed to read document metadata from ${file.filename}:`, err);
+		return {};
+	}
+}
+
+/**
+ * Enrich file list with document metadata from JSON content
+ */
+export async function enrichFilesWithDocumentMetadata(files: FileMetadata[]): Promise<FileMetadata[]> {
+	const enriched = await Promise.all(
+		files.map(async (file) => {
+			if (file.filename.endsWith('.json')) {
+				const metadata = await getDocumentMetadata(file);
+				return { ...file, ...metadata };
+			}
+			return file;
+		})
+	);
+	return enriched;
 }
 
 /**

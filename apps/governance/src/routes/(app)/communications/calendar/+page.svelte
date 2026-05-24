@@ -8,12 +8,36 @@
 
 	let showAddForm = $state(false);
 
-	function fmt(iso: string | null): string {
-		if (!iso) return '—';
-		return new Date(iso).toLocaleString(undefined, {
-			month: 'short', day: 'numeric', year: 'numeric',
-			hour: '2-digit', minute: '2-digit',
-		});
+	// Group events by month
+	const eventsByMonth = $derived.by(() => {
+		const groups: Map<string, typeof events> = new Map();
+		
+		for (const event of events) {
+			const date = new Date(event.starts_at);
+			const monthKey = date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+			
+			if (!groups.has(monthKey)) {
+				groups.set(monthKey, []);
+			}
+			groups.get(monthKey)!.push(event);
+		}
+		
+		return Array.from(groups.entries());
+	});
+
+	function formatDay(iso: string): string {
+		const date = new Date(iso);
+		return date.toLocaleString(undefined, { day: 'numeric' });
+	}
+
+	function formatWeekday(iso: string): string {
+		const date = new Date(iso);
+		return date.toLocaleString(undefined, { weekday: 'short' });
+	}
+
+	function formatTime(iso: string): string {
+		const date = new Date(iso);
+		return date.toLocaleString(undefined, { hour: 'numeric', minute: '2-digit' });
 	}
 </script>
 
@@ -57,31 +81,38 @@
 
 	{#if events.length === 0}
 		<EmptyState
-			icon="📅"
 			title="No upcoming events"
 		/>
 	{:else}
-		<div class="event-list">
-			{#each events as e}
-				<div class="event">
-					<div class="event__main">
-						<div class="event__title">{e.title}</div>
-						<div class="event__meta">
-							<span>{fmt(e.starts_at)}</span>
-							{#if e.ends_at}<span class="sep">→</span><span>{fmt(e.ends_at)}</span>{/if}
-							{#if e.location}<span class="sep">·</span><span>{e.location}</span>{/if}
-						</div>
-						{#if e.description}<p class="event__desc">{e.description}</p>{/if}
-					</div>
-					{#if canWrite}
-						<form method="POST" action="?/cancel" use:enhance>
-							<input type="hidden" name="event_uuid" value={e.uuid} />
-						<Button class="btn-inline btn-inline--danger" type="submit" size="sm" variant="danger">Cancel</Button>
-						</form>
-					{/if}
+		{#each eventsByMonth as [monthLabel, monthEvents]}
+			<div class="month-group">
+				<h2 class="month-label">{monthLabel}</h2>
+				<div class="event-list">
+					{#each monthEvents as event}
+						<a href="/communications/calendar/{event.uuid}" class="event-row">
+							<div class="event-date">
+								<div class="event-date__day">{formatDay(event.starts_at)}</div>
+								<div class="event-date__weekday">{formatWeekday(event.starts_at)}</div>
+							</div>
+							<div class="event-content">
+								<div class="event-title">{event.title}</div>
+								<div class="event-meta">
+									<span>{formatTime(event.starts_at)}</span>
+									{#if event.ends_at}
+										<span class="sep">→</span>
+										<span>{formatTime(event.ends_at)}</span>
+									{/if}
+									{#if event.location}
+										<span class="sep">·</span>
+										<span>{event.location}</span>
+									{/if}
+								</div>
+							</div>
+						</a>
+					{/each}
 				</div>
-			{/each}
-		</div>
+			</div>
+		{/each}
 	{/if}
 </div>
 
@@ -93,13 +124,6 @@
 		max-width: 740px;
 		margin: 0 auto;
 	}
-
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-	.page-header h1 { margin: 0; }
 
 	.card {
 		background: var(--color-surface);
@@ -123,70 +147,97 @@
 		grid-template-columns: repeat(2, 1fr);
 		gap: var(--space-3);
 	}
-	.field { display: flex; flex-direction: column; gap: var(--space-1); }
 	.field--wide { grid-column: 1 / -1; }
-	.field span { font-size: var(--text-xs); color: var(--color-text-muted); }
-	.opt { opacity: 0.6; }
 
-	.input, .textarea {
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		padding: var(--space-2) var(--space-3);
-		font-size: var(--text-sm);
-		font-family: inherit;
-		backg--wide { grid-column: 1 / -1; }-color-text-muted);
-		font-size: var(--text-sm);
+	.form-actions {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: var(--space-2);
 	}
-	.empty-card p { margin: 0; }
+
+	.month-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.month-label {
+		font-size: var(--text-lg);
+		font-weight: var(--weight-semibold);
+		color: var(--color-text);
+		margin: 0;
+	}
 
 	.event-list {
 		display: flex;
 		flex-direction: column;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 	}
-	.event {
+
+	.event-row {
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: var(--space-4);
+		align-items: center;
+		gap: var(--space-5);
 		padding: var(--space-4) var(--space-5);
 		border-bottom: 1px solid var(--color-border);
 		background: var(--color-surface);
+		text-decoration: none;
+		color: inherit;
+		transition: background-color 0.15s;
 	}
-	.event:last-child { border-bottom: none; }
+	.event-row:last-child { border-bottom: none; }
+	.event-row:hover {
+		background: var(--color-surface-hover, rgba(0, 0, 0, 0.02));
+	}
 
-	.event__title {
+	.event-date {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 56px;
+	}
+
+	.event-date__day {
+		font-size: var(--text-2xl);
+		font-weight: var(--weight-semibold);
+		line-height: 1;
+		color: var(--color-text);
+	}
+
+	.event-date__weekday {
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-text-muted);
+		margin-top: 2px;
+	}
+
+	.event-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.event-title {
+		font-size: var(--text-base);
 		font-weight: var(--weight-medium);
+		color: var(--color-text);
 		margin-bottom: var(--space-1);
 	}
-	.event__meta {
+
+	.event-meta {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
 	}
-	.sep { opacity: 0.4; }
-	.event__desc {
-		margin: var(--space-2) 0 0;
-		font-size: var(--text-sm);
-		color: var(--color-text-muted);
-		line-height: 1.6;
-	}
 
-	.btn-inline {
-		background: none;
-		border: none;
-		padding: 0;
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		cursor: pointer;
-		text-decoration: underline;
-		white-space: nowrap;
-		margin-top: var(--space-1);
+	.sep {
+		opacity: 0.4;
 	}
-	.btn-inline--danger:hover { color: #991b1b; }
 </style>
 

@@ -14,10 +14,12 @@ rm -f apps/governance/db.sqlite apps/governance/db.sqlite-wal apps/governance/db
 rm -f apps/community-bank/bank.sqlite apps/community-bank/bank.sqlite-wal apps/community-bank/bank.sqlite-shm
 rm -f apps/mail/mail.sqlite apps/mail/mail.sqlite-wal apps/mail/mail.sqlite-shm
 rm -f apps/marketplace/marketplace.sqlite apps/marketplace/marketplace.sqlite-wal apps/marketplace/marketplace.sqlite-shm
+rm -f apps/library/library.sqlite apps/library/library.sqlite-wal apps/library/library.sqlite-shm
 
 # Remove user-generated library content
 echo "  Clearing library documents..."
 rm -f apps/governance/data/library/*.json
+rm -rf apps/library/data/buckets
 
 # Ensure filesystem sync
 sync

@@ -2,6 +2,7 @@
 	import type { PageData } from './$types.js';
 	import { invalidate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { Modal } from '@bfs/ui';
 	
 	const { data } = $props<{ data: PageData }>();
 	
@@ -10,6 +11,15 @@
 	let creatingFolder = $state(false);
 	let newFolderName = $state('');
 	let showFolderForm = $state(false);
+	let showAddDocumentModal = $state(false);
+	let activeTab = $state<'create' | 'upload'>('create');
+
+	// Reset upload error when changing tabs or closing modal
+	$effect(() => {
+		if (!showAddDocumentModal || activeTab === 'create') {
+			uploadError = null;
+		}
+	});
 	
 	// Rename state
 	let renamingFileId = $state<number | null>(null);
@@ -20,13 +30,26 @@
 	let movingFileId = $state<number | null>(null);
 	let moveDestinationFolderId = $state<number | null>(null);
 	
+	// Bulk selection state
+	let selectedFileIds = $state<Set<number>>(new Set());
+	let selectedFolderIds = $state<Set<number>>(new Set());
+	let bulkMoveDestination = $state<number | null | 'placeholder'  >('placeholder');
+	
+	// Computed: whether any items are selected
+	let hasSelection = $derived(selectedFileIds.size > 0 || selectedFolderIds.size > 0);
+	let allVisibleSelected = $derived.by(() => {
+		const allFilesSelected = filteredAndSortedFiles.every(f => selectedFileIds.has(f.id));
+		const allFoldersSelected = filteredAndSortedFolders.every(f => selectedFolderIds.has(f.id));
+		return allFilesSelected && allFoldersSelected && (filteredAndSortedFiles.length > 0 || filteredAndSortedFolders.length > 0);
+	});
+	
 	// Search and sort state
 	let searchQuery = $state('');
 	let sortBy = $state<'name' | 'size' | 'date'>('name');
 	let sortDir = $state<'asc' | 'desc'>('asc');
 	
 	// Computed: filtered and sorted items
-	let filteredAndSortedFolders = $derived(() => {
+	let filteredAndSortedFolders = $derived.by(() => {
 		let folders = [...data.folders];
 		
 		// Filter by search
@@ -49,7 +72,7 @@
 		return folders;
 	});
 	
-	let filteredAndSortedFiles = $derived(() => {
+	let filteredAndSortedFiles = $derived.by(() => {
 		let files = [...data.files];
 		
 		// Filter by search
@@ -75,7 +98,7 @@
 	});
 	
 	// Get all folders for move dropdown (current folder + all subfolders)
-	let availableFolders = $derived(() => {
+	let availableFolders = $derived.by(() => {
 		const folders = [{ id: null, name: 'Root', path: '/' }];
 		for (const folder of data.folders) {
 			folders.push({ id: folder.id, name: folder.name, path: folder.path });
@@ -252,31 +275,6 @@
 		}
 	}
 	
-	async function submitToGovernance(fileId: number, filename: string) {
-		if (!confirm(`Submit "${filename}" to Governance for deliberation?`)) {
-			return;
-		}
-		
-		try {
-			const response = await fetch('http://localhost:5173/api/library/import-motion', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				credentials: 'include', // Include cookies for authentication
-				body: JSON.stringify({ library_file_id: fileId })
-			});
-			
-			if (!response.ok) {
-				const error = await response.text();
-				throw new Error(error || 'Failed to submit to governance');
-			}
-			
-			const result = await response.json();
-			alert(`Motion successfully submitted! UUID: ${result.motion_uuid}\nSlug: ${result.slug}`);
-		} catch (err: any) {
-			alert(`Failed to submit to governance: ${err.message}`);
-		}
-	}
-	
 	async function deleteFolder(folderId: number) {
 		if (!confirm('Are you sure you want to delete this folder? It must be empty.')) {
 			return;
@@ -326,6 +324,112 @@
 		} else {
 			sortBy = column;
 			sortDir = 'asc';
+		}
+	}
+	
+	// Bulk selection functions
+	function toggleFileSelection(fileId: number) {
+		const newSet = new Set(selectedFileIds);
+		if (newSet.has(fileId)) {
+			newSet.delete(fileId);
+		} else {
+			newSet.add(fileId);
+		}
+		selectedFileIds = newSet;
+	}
+	
+	function toggleFolderSelection(folderId: number) {
+		const newSet = new Set(selectedFolderIds);
+		if (newSet.has(folderId)) {
+			newSet.delete(folderId);
+		} else {
+			newSet.add(folderId);
+		}
+		selectedFolderIds = newSet;
+	}
+	
+	function toggleAllSelection() {
+		if (allVisibleSelected) {
+			selectedFileIds = new Set();
+			selectedFolderIds = new Set();
+		} else {
+			selectedFileIds = new Set(filteredAndSortedFiles.map(f => f.id));
+			selectedFolderIds = new Set(filteredAndSortedFolders.map(f => f.id));
+		}
+	}
+	
+	function clearSelection() {
+		selectedFileIds = new Set();
+		selectedFolderIds = new Set();
+		bulkMoveDestination = 'placeholder';
+	}
+	
+	async function bulkDelete() {
+		const fileCount = selectedFileIds.size;
+		const folderCount = selectedFolderIds.size;
+		const totalCount = fileCount + folderCount;
+		
+		if (totalCount === 0) return;
+		
+		const message = `Are you sure you want to delete ${totalCount} item${totalCount > 1 ? 's' : ''}? (${fileCount} file${fileCount !== 1 ? 's' : ''}, ${folderCount} folder${folderCount !== 1 ? 's' : ''})`;
+		if (!confirm(message)) return;
+		
+		try {
+			// Delete files
+			for (const fileId of selectedFileIds) {
+				const response = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
+				if (!response.ok) {
+					throw new Error(`Failed to delete file ${fileId}`);
+				}
+			}
+			
+			// Delete folders
+			for (const folderId of selectedFolderIds) {
+				const response = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
+				if (!response.ok) {
+					throw new Error(`Failed to delete folder ${folderId}`);
+				}
+			}
+			
+			clearSelection();
+			await invalidate($page.url.pathname);
+		} catch (err: any) {
+			alert(err.message);
+		}
+	}
+	
+	async function bulkMove() {
+		const fileCount = selectedFileIds.size;
+		
+		if (fileCount === 0) {
+			alert('Please select files to move. Folder moving is not supported in bulk operations.');
+			return;
+		}
+		
+		if (bulkMoveDestination === 'placeholder') {
+			alert('Please select a destination folder.');
+			return;
+		}
+		
+		try {
+			// Move files
+			for (const fileId of selectedFileIds) {
+				const response = await fetch(`/api/files/${fileId}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ folder_id: bulkMoveDestination })
+				});
+				
+				if (!response.ok) {
+					throw new Error(`Failed to move file ${fileId}`);
+				}
+			}
+			
+			clearSelection();
+			bulkMoveDestination = 'placeholder';
+			await invalidate($page.url.pathname);
+		} catch (err: any) {
+			alert(err.message);
 		}
 	}
 	
@@ -396,11 +500,8 @@
 				<div class="row" style="justify-content: space-between;">
 					<h2 class="t-label">Actions</h2>
 					<div style="display: flex; gap: 0.5rem;">
-						<button onclick={() => goto('/documents/new/motion')} class="btn btn--primary">
-							+ New Motion
-						</button>
-						<button onclick={() => goto('/documents/new/governing')} class="btn btn--primary">
-							+ New Governing Doc
+						<button onclick={() => showAddDocumentModal = true} class="btn btn--primary">
+							add document
 						</button>
 						<button onclick={() => showFolderForm = !showFolderForm} class="btn btn--secondary">
 							{showFolderForm ? 'Cancel' : '+ New Folder'}
@@ -432,46 +533,21 @@
 						{uploadError}
 					</div>
 				{/if}
-				
-				<form onsubmit={handleUpload} class="stack">
-					<input type="hidden" name="bucket_key" value={data.currentBucket?.bucket_key} />
-					{#if data.currentFolder}
-						<input type="hidden" name="folder_id" value={data.currentFolder.id} />
-					{/if}
-					
-					<div>
-						<label for="file">Upload File</label>
-						<input 
-							type="file" 
-							id="file" 
-							name="file" 
-							required 
-							disabled={uploading}
-						/>
-					</div>
-					
-					<button type="submit" class="btn btn--primary" disabled={uploading}>
-						{uploading ? 'Uploading...' : 'Upload'}
-					</button>
-				</form>
-			</div>
-			
-			<!-- Contents -->
-			<div class="paper stack">
-				<div class="row" style="justify-content: space-between; align-items: center;">
-					<h2 class="t-label">
-						{data.currentFolder ? data.currentFolder.name : 'My Files'}
-					</h2>
-					
-					<!-- Search -->
-					<div style="display: flex; align-items: center; gap: 0.5rem;">
-						<input 
-							type="text" 
-							bind:value={searchQuery}
-							placeholder="Search files..."
-							style="padding: 0.25rem 0.5rem; width: 200px;"
-						/>
-					</div>
+		</div>
+		<!-- Contents -->
+		<div class="paper stack">
+			<div class="row" style="justify-content: space-between; align-items: center;">
+				<h2 class="t-label">
+					{data.currentFolder ? data.currentFolder.name : 'Documents'}
+				</h2>
+				<div>
+					<input 
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Search files..."
+						style="padding: 0.25rem 0.5rem; width: 200px;"
+					/>
+				</div>
 				</div>
 				
 				<!-- Sort Controls -->
@@ -500,7 +576,45 @@
 					</button>
 				</div>
 				
-				{#if filteredAndSortedFolders().length === 0 && filteredAndSortedFiles().length === 0}
+				<!-- Bulk Actions Toolbar -->
+				{#if hasSelection}
+					<div style="padding: 1rem; background: var(--paper-dark); border: 1px solid var(--border); display: flex; gap: 1rem; align-items: center; justify-content: space-between;">
+						<div style="display: flex; gap: 1rem; align-items: center;">
+							<span class="t-label">
+								{selectedFileIds.size + selectedFolderIds.size} item{selectedFileIds.size + selectedFolderIds.size !== 1 ? 's' : ''} selected
+							</span>
+							<button onclick={clearSelection} class="btn btn--secondary" style="font-size: 0.875rem;">
+								Clear Selection
+							</button>
+						</div>
+						<div style="display: flex; gap: 0.5rem; align-items: center;">
+							{#if selectedFileIds.size > 0 && selectedFolderIds.size === 0}
+								<select 
+									bind:value={bulkMoveDestination} 
+									style="padding: 0.5rem; font-family: inherit;"
+								>
+								<option value="placeholder">Move to...</option>
+								<option value={null}>Root</option>
+								{#each data.folders as folder}
+									<option value={folder.id}>{folder.name}</option>
+								{/each}
+							</select>
+							<button 
+								onclick={bulkMove} 
+								class="btn btn--primary"
+								disabled={bulkMoveDestination === 'placeholder'}
+								>
+									Move Selected
+								</button>
+							{/if}
+							<button onclick={bulkDelete} class="btn btn--secondary" style="background: var(--danger); color: white;">
+								Delete Selected
+							</button>
+						</div>
+					</div>
+				{/if}
+				
+				{#if filteredAndSortedFolders.length === 0 && filteredAndSortedFiles.length === 0}
 					<p style="color: var(--ink-subtle);">
 						{searchQuery ? 'No matching files or folders.' : 'This folder is empty.'}
 					</p>
@@ -508,17 +622,32 @@
 					<table style="width: 100%; border-collapse: collapse;">
 						<thead>
 							<tr style="border-bottom: 1px solid var(--border-heavy);">
+								<th style="text-align: center; padding: 0.5rem; width: 40px;">
+									<input 
+										type="checkbox" 
+										checked={allVisibleSelected}
+										onchange={toggleAllSelection}
+										style="cursor: pointer;"
+									/>
+								</th>
 								<th style="text-align: left; padding: 0.5rem;" class="t-label">Name</th>
-								<th style="text-align: left; padding: 0.5rem;" class="t-label">Type</th>
-								<th style="text-align: left; padding: 0.5rem;" class="t-label">Size</th>
+						<th style="text-align: left; padding: 0.5rem;" class="t-label">Type</th>
 								<th style="text-align: left; padding: 0.5rem;" class="t-label">Date</th>
 								<th style="text-align: right; padding: 0.5rem;" class="t-label">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							<!-- Folders -->
-							{#each filteredAndSortedFolders() as folder}
+						{#each filteredAndSortedFolders as folder}
 								<tr style="border-bottom: 1px solid var(--border);">
+									<td style="padding: 0.5rem; text-align: center;">
+										<input 
+											type="checkbox" 
+											checked={selectedFolderIds.has(folder.id)}
+											onchange={() => toggleFolderSelection(folder.id)}
+											style="cursor: pointer;"
+										/>
+									</td>
 									<td style="padding: 0.5rem;">
 										{#if renamingFolderId === folder.id}
 											<div style="display: flex; gap: 0.25rem; align-items: center;">
@@ -542,10 +671,7 @@
 												📁 {folder.name}
 											</button>
 										{/if}
-									</td>
-									<td style="padding: 0.5rem;">Folder</td>
-									<td style="padding: 0.5rem;">—</td>
-									<td style="padding: 0.5rem;">{formatDate(folder.created_at)}</td>
+								</td>								<td style="padding: 0.5rem;" class="t-label">Folder</td>									<td style="padding: 0.5rem;">{formatDate(folder.created_at)}</td>
 									<td style="padding: 0.5rem; text-align: right;">
 										{#if renamingFolderId !== folder.id}
 											<div class="row" style="justify-content: flex-end; gap: 0.5rem;">
@@ -570,8 +696,16 @@
 							{/each}
 							
 							<!-- Files -->
-							{#each filteredAndSortedFiles() as file}
+							{#each filteredAndSortedFiles as file}
 								<tr style="border-bottom: 1px solid var(--border);">
+									<td style="padding: 0.5rem; text-align: center;">
+										<input 
+											type="checkbox" 
+											checked={selectedFileIds.has(file.id)}
+											onchange={() => toggleFileSelection(file.id)}
+											style="cursor: pointer;"
+										/>
+									</td>
 									<td style="padding: 0.5rem;">
 										{#if renamingFileId === file.id}
 											<div style="display: flex; gap: 0.25rem; align-items: center;">
@@ -588,11 +722,18 @@
 												<button onclick={cancelRename} class="btn btn--secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Cancel</button>
 											</div>
 										{:else}
-											{file.filename}
+										<div style="display: flex; align-items: center; gap: 0.5rem;">
+											<span>{file.document_title || file.filename}</span>
+									</div>
+									{/if}
+								</td>
+								<td style="padding: 0.5rem;">
+									{#if file.document_type}
+										<span class="document-type-badge">{file.document_type}</span>
+									{:else}
+										—
 										{/if}
 									</td>
-									<td style="padding: 0.5rem;">File</td>
-									<td style="padding: 0.5rem;" class="t-numeric">{formatBytes(file.size_bytes)}</td>
 									<td style="padding: 0.5rem;">{formatDate(file.uploaded_at)}</td>
 									<td style="padding: 0.5rem; text-align: right;">
 										{#if movingFileId === file.id}
@@ -611,15 +752,11 @@
 												<a href="/api/files/{file.id}" class="btn btn--secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
 													Download
 												</a>
-												{#if file.filename.endsWith('.json')}
-													<button 
-														onclick={() => submitToGovernance(file.id, file.filename)} 
-														class="btn btn--primary" 
-														style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
-													>
-														Submit to Governance
-													</button>
-												{/if}
+											{#if file.filename.endsWith('.json')}
+												<a href="/documents/{file.id}" class="btn btn--primary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+													Open
+												</a>
+											{/if}
 												<button 
 													onclick={() => startMovingFile(file.id)} 
 													class="btn btn--secondary" 
@@ -652,4 +789,180 @@
 			</div>
 		</div>
 	{/if}
+
+<!-- Add Document Modal -->
+<Modal bind:open={showAddDocumentModal} title="Add Document" size="md">
+	<div class="modal-tabs">
+		<button 
+			class="modal-tab"
+			class:active={activeTab === 'create'}
+			onclick={() => activeTab = 'create'}
+		>
+			create
+		</button>
+		<button 
+			class="modal-tab"
+			class:active={activeTab === 'upload'}
+			onclick={() => activeTab = 'upload'}
+		>
+			upload
+		</button>
+	</div>
+
+	{#if activeTab === 'create'}
+		<div class="create-content">
+			<p class="create-description">
+				Choose a document type to create:
+			</p>
+			<div class="document-type-buttons">
+				<button onclick={() => goto('/documents/new/motion')} class="btn btn--primary">
+					new motion
+				</button>
+				<button onclick={() => goto('/documents/new/governing')} class="btn btn--primary">
+					new governing document
+				</button>
+			</div>
+		</div>
+	{:else}
+		<form onsubmit={handleUpload} class="upload-content">
+			<input type="hidden" name="bucket_key" value={data.currentBucket?.bucket_key} />
+			{#if data.currentFolder}
+				<input type="hidden" name="folder_id" value={data.currentFolder.id} />
+			{/if}
+			
+			<p class="upload-description">
+				Upload a JSON document file to your library.
+			</p>
+			
+			<div class="upload-form">
+				<input 
+					type="file" 
+					id="modal_file" 
+					name="file" 
+					accept=".json"
+					required 
+					disabled={uploading}
+				/>
+			</div>
+			
+			{#if uploadError}
+				<div style="padding: 0.75rem; background: #fdd; border: 1px solid var(--red); border-radius: var(--radius-sm);">
+					{uploadError}
+				</div>
+			{/if}
+			
+			<div style="display: flex; justify-content: flex-end; gap: var(--space-3);">
+				<button 
+					type="button" 
+					class="btn btn--secondary" 
+					onclick={() => showAddDocumentModal = false}
+					disabled={uploading}
+				>
+					cancel
+				</button>
+				<button 
+					type="submit" 
+					class="btn btn--primary" 
+					disabled={uploading}
+				>
+					{uploading ? 'uploading...' : 'upload'}
+				</button>
+			</div>
+		</form>
+	{/if}
+</Modal>
 </div>
+<style>
+	/* Modal tabs */
+	.modal-tabs {
+		display: flex;
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.modal-tab {
+		font-family: var(--font-label);
+		font-size: 0.875rem;
+		text-transform: lowercase;
+		letter-spacing: 0.025em;
+		padding: var(--space-3) var(--space-4);
+		background: none;
+		border: none;
+		border-bottom: 2px solid transparent;
+		color: var(--ink-muted);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.modal-tab:hover {
+		color: var(--ink);
+	}
+
+	.modal-tab.active {
+		color: var(--ink);
+		border-bottom-color: var(--accent);
+	}
+
+	/* Create content */
+	.create-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.create-description {
+		font-family: var(--font-prose);
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+		line-height: 1.5;
+	}
+
+	.document-type-buttons {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	/* Upload content */
+	.upload-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.upload-description {
+		font-family: var(--font-prose);
+		font-size: 0.875rem;
+		color: var(--ink-muted);
+		margin-top: calc(-1 * var(--space-2));
+	}
+
+	.upload-form input[type='file'] {
+		padding: var(--space-4);
+		border: 2px dashed var(--border-heavy);
+		border-radius: var(--radius-sm);
+		background: var(--paper);
+		cursor: pointer;
+	}
+
+	.upload-form input[type='file']:hover {
+		border-color: var(--accent);
+		background: var(--tint-green);
+	}
+
+	/* Document type badge */
+	.document-type-badge {
+		font-family: var(--font-label);
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 0.125rem var(--space-2);
+		background: var(--tint-green);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		color: var(--ink-muted);
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+</style>

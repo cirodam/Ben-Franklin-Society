@@ -14,7 +14,7 @@
 		readonly = false
 	}: {
 		document: GoverningDocument;
-		onUpdate: (updates: Partial<GoverningDocument>) => void;
+		onUpdate?: (updates: Partial<GoverningDocument>) => void;
 		readonly?: boolean;
 	} = $props();
 
@@ -24,9 +24,9 @@
 	let preamble = $state(doc.content.preamble || '');
 	let articles = $state<Article[]>(doc.content.articles);
 
-	// Update parent when values change
-	$effect(() => {
-		onUpdate({
+	// Export method to get current editor state
+	export function getUpdates(): Partial<GoverningDocument> {
+		return {
 			title,
 			slug,
 			content: {
@@ -35,8 +35,8 @@
 				preamble: preamble || undefined,
 				articles
 			}
-		});
-	});
+		};
+	}
 
 	function addArticle() {
 		const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];

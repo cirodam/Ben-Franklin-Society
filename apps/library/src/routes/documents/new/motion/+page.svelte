@@ -6,7 +6,11 @@
 
 	const { data } = $props<{ data: PageData }>();
 
-	// Initialize empty motion
+	// Initialize empty motion - capture initial values
+	const initialActingAsUuid = data.session.acting_as_uuid;
+	const initialPersonUuid = data.session.person_uuid;
+	const initialBucketKey = data.buckets[0]?.bucket_key || '';
+
 	let motion = $state<MotionDocument>({
 		uuid: crypto.randomUUID(),
 		type: 'motion',
@@ -14,28 +18,31 @@
 		document_id: null,
 		version: 1,
 		title: '',
-		owner_uuid: data.session.acting_as_uuid,
+		owner_uuid: initialActingAsUuid,
 		created_at: new Date().toISOString(),
 		updated_at: new Date().toISOString(),
 		content: {
 			status: 'draft',
 			provisions: [],
-			introducer_uuid: data.session.person_uuid
+			introducer_uuid: initialPersonUuid
 		}
 	});
 
-	let selectedBucket = $state(data.buckets[0]?.bucket_key || '');
+	let selectedBucket = $state(initialBucketKey);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
-
-	function handleUpdate(updates: Partial<MotionDocument>) {
-		motion = { ...motion, ...updates, updated_at: new Date().toISOString() };
-	}
+	let editorRef: any;
 
 	async function handleSave() {
 		if (!selectedBucket) {
 			error = 'Please select a bucket';
 			return;
+		}
+
+		// Get current state from editor
+		if (editorRef) {
+			const updates = editorRef.getUpdates();
+			motion = { ...motion, ...updates, updated_at: new Date().toISOString() };
 		}
 
 		if (!motion.title) {
@@ -61,13 +68,47 @@
 				body: formData
 			});
 
+			// If redirected, navigate to the new location
 			if (response.redirected) {
-				window.location.href = response.url;
-			} else {
-				const result = await response.json();
-				if (!result.success) {
+				await goto(response.url);
+				return;
+			}
+
+			// Otherwise check for JSON response
+			try {
+				const responseData = await response.json();
+				
+				// Handle SvelteKit's devalue serialization format
+				let result;
+				if (responseData.type === 'success' && responseData.data) {
+					// Parse the devalue serialized data
+					const parsed = JSON.parse(responseData.data);
+					if (Array.isArray(parsed) && parsed.length > 0) {
+						result = parsed[0];
+						// If redirectTo is a number, it's an index into the array
+						if (typeof result.redirectTo === 'number') {
+							result.redirectTo = parsed[result.redirectTo];
+						}
+					}
+				} else {
+					// Plain JSON response
+					result = responseData;
+				}
+				
+				if (result && result.success && result.redirectTo) {
+					// Navigate to the redirect location
+					await goto(result.redirectTo);
+					return;
+				} else if (result && !result.success) {
 					error = result.error || 'Failed to save document';
 				}
+			} catch {
+				// If we can't parse JSON but got a success status, assume it worked
+				if (response.ok) {
+					await goto('/');
+					return;
+				}
+				error = 'Failed to save document';
 			}
 		} catch (err) {
 			error = 'Failed to save document';
@@ -101,7 +142,7 @@
 			</div>
 		{/if}
 
-		<MotionEditor {motion} onUpdate={handleUpdate} />
+		<MotionEditor bind:this={editorRef} {motion} />
 
 		<div class="actions">
 			<button

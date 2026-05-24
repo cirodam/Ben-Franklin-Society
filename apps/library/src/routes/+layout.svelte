@@ -15,7 +15,6 @@
 		<Sidebar>
 			{#snippet brand()}
 				<div class="brand-wrapper">
-					<span class="brand-icon">📚</span>
 					<div class="brand-text">
 						<div class="brand-primary">Library</div>
 						<div class="brand-secondary">Ben Franklin Society</div>
@@ -24,9 +23,7 @@
 			{/snippet}
 
 			{#snippet nav()}
-				<SidebarLink href="/">My Files</SidebarLink>
-				<SidebarDivider />
-				<SidebarLink href="/documents">Documents</SidebarLink>
+				<SidebarLink href="/">Files</SidebarLink>
 			{/snippet}
 
 			{#snippet footer()}
@@ -57,13 +54,7 @@
 	/* Sidebar branding */
 	.brand-wrapper {
 		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.brand-icon {
-		font-size: var(--text-2xl);
-		line-height: 1;
+		flex-direction: column;
 	}
 
 	.brand-text {

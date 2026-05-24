@@ -13,7 +13,7 @@
 		readonly = false
 	}: {
 		motion: MotionDocument;
-		onUpdate: (updates: Partial<MotionDocument>) => void;
+		onUpdate?: (updates: Partial<MotionDocument>) => void;
 		readonly?: boolean;
 	} = $props();
 
@@ -23,9 +23,9 @@
 	let clerkNotes = $state(motion.content.clerk_notes || '');
 	let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
 
-	// Update parent when values change
-	$effect(() => {
-		onUpdate({
+	// Export method to get current editor state
+	export function getUpdates(): Partial<MotionDocument> {
+		return {
 			title,
 			slug,
 			content: {
@@ -34,8 +34,8 @@
 				clerk_notes: clerkNotes || undefined,
 				parliamentarian_notes: parliamentarianNotes || undefined
 			}
-		});
-	});
+		};
+	}
 
 	function addProvision() {
 		const nextNumber = (provisions.length + 1).toString();

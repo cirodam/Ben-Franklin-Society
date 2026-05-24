@@ -1,0 +1,16 @@
+{
+  "uuid": "a1f74c58-49f6-4b26-bac3-055cd2b4388b",
+  "type": "motion",
+  "slug": "te",
+  "document_id": null,
+  "version": 1,
+  "title": "te",
+  "owner_uuid": "477a8c03-0261-4d68-a374-a7d6fa83f2c1",
+  "created_at": "2026-05-24T20:22:37.805Z",
+  "updated_at": "2026-05-24T20:22:44.459Z",
+  "content": {
+    "status": "draft",
+    "provisions": [],
+    "introducer_uuid": "477a8c03-0261-4d68-a374-a7d6fa83f2c1"
+  }
+}

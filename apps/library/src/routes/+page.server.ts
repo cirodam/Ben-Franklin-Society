@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types.js';
 import { getUserBuckets, getBucket, canAccessBucket } from '$lib/server/buckets.js';
-import { listRootFiles, listFiles } from '$lib/server/files.js';
+import { listRootFiles, listFiles, enrichFilesWithDocumentMetadata } from '$lib/server/files.js';
 import { listRootFolders, listFolders, getFolder, getFolderBreadcrumbs } from '$lib/server/folders.js';
 import { error } from '@sveltejs/kit';
 import { getOidcClient } from '$lib/server/oidc.js';
@@ -61,7 +61,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		const currentFolder = getFolder(folderId);
 		
 		if (currentFolder && currentFolder.bucket_id === currentBucket.id) {
-			const files = listFiles(currentBucket.id, folderId);
+			const files = await enrichFilesWithDocumentMetadata(listFiles(currentBucket.id, folderId));
 			const folders = listFolders(currentBucket.id, folderId);
 			const breadcrumbs = getFolderBreadcrumbs(folderId);
 
@@ -78,7 +78,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	}
 
 	// Root level
-	const files = listRootFiles(currentBucket.id);
+	const files = await enrichFilesWithDocumentMetadata(listRootFiles(currentBucket.id));
 	const folders = listRootFolders(currentBucket.id);
 
 	return {
