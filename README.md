@@ -47,7 +47,24 @@ This system is built on the premise that ordinary people, given adequate time an
 
 ## Quick Start
 
-### Production Deployment (Docker)
+### Two Deployment Types
+
+BFS has two distinct deployment modes:
+
+**Society Deployment**: Full BFS stack for a single community (governance + services)
+- Apps: governance, community-bank, mail, marketplace, library
+- Each society runs on its own server
+- For: Community administrators
+
+**Federation Deployment**: Network-wide discovery registry (separate server)
+- App: federation (single API service)
+- Runs on centralized infrastructure
+- For: Network coordinators
+- See: [Federation README](apps/federation/README.md) and [Deployment Guide](docs/architectural/deployment.md)
+
+---
+
+### Society Deployment (Docker)
 
 **One-Command Bootstrap**
 

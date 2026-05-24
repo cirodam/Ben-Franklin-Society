@@ -1,15 +1,30 @@
 # Docker Deployment Quick Start
 
-This directory contains everything needed to deploy the BFS application suite with Docker.
+This directory contains everything needed to deploy BFS with Docker.
 
-## Files
+## Two Deployment Types
+
+**Society Deployment** (this guide):
+- Complete BFS stack for a single society
+- Apps: governance, community-bank, mail, marketplace, library
+- Each society runs on its own server
+- Use: `docker-compose.published.yml`
+
+**Federation Deployment** (separate):
+- Network-wide discovery registry
+- Single API service on separate server
+- Use: `docker-compose.federation.yml`
+- See: [docs/architectural/deployment.md](docs/architectural/deployment.md#federation-registry-deployment)
+
+---
+
+## Society Deployment Files
 
 - **docker-compose.dev.yml** - Local development (direct port access, no SSL)
 - **docker-compose.published.yml** - Production with published DockerHub images
 - **.env.example** - Environment variable template (copy to .env)
 - **apps/*/Dockerfile** - Multi-stage build configurations for each app
 - **.dockerignore** - Files excluded from Docker build context
-- **scripts/backup.sh** - Automated backup script for data volumes
 - **scripts/bootstrap-droplet.sh** - Automated production deployment script
 
 ## Quick Start

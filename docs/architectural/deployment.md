@@ -6,24 +6,64 @@
 
 ## Overview
 
-The BFS application suite is deployed as containerized services behind a unified domain. Each application (governance, community bank, mail, marketplace) runs in its own Docker container with isolated storage, communicating via HTTP APIs.
+The BFS application suite consists of two distinct deployment types:
+
+1. **Society Deployments** - Each individual society runs its own server with governance, community bank, mail, marketplace, and library applications
+2. **Federation Registry** - A single centralized discovery service that tracks all societies in the network
+
+Each deployment type uses Docker containers with isolated storage, communicating via HTTP APIs.
+
+---
+
+## Deployment Types
+
+### Society Server Deployment
+
+Each society operates its own server with a complete stack of BFS applications behind a unified domain. Applications run in isolated Docker containers:
+
+```
+governance.society.example.com  → Governance app (OIDC provider)
+bank.society.example.com        → Community Bank
+mail.society.example.com        → Mail
+marketplace.society.example.com → Marketplace
+library.society.example.com     → Library
+```
+
+**Use:** `docker-compose.published.yml` or `docker-compose.dev.yml`
+
+### Federation Registry Deployment
+
+The federation registry is a standalone service deployed on a separate server. It provides:
+- Society discovery and lookup
+- Cryptographic lineage verification
+- Network statistics and metrics
+- Florens issuance tracking
+
+```
+federation.bfs.network → Federation Registry API
+```
+
+**Use:** `docker-compose.federation.yml`
+
+**Important:** The federation server must run independently from any individual society server.
 
 ---
 
 ## Architecture
 
-### Domain Structure
+### Society Domain Structure
 
-All applications are served from subdomains of a single root domain:
+All applications for a society are served from subdomains of a single root domain:
 
 ```
 governance.bfs.example.com  → Governance app (OIDC provider)
 bank.bfs.example.com        → Community Bank
 mail.bfs.example.com        → Mail
 marketplace.bfs.example.com → Marketplace
+library.bfs.example.com     → Library
 ```
 
-### Network Topology
+### Society Network Topology
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -64,12 +104,18 @@ Volumes mount to `/app/data` within each container.
 
 ## Deployment
 
-### Prerequisites
+### Prerequisites (All Deployments)
 
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 - Domain with DNS control
 - Ports 80, 443 open to internet
+
+---
+
+## Society Server Deployment
+
+Deploy a complete BFS society with all applications on a single server.
 
 ### Initial Setup
 
@@ -88,6 +134,7 @@ cp .env.example .env
 openssl rand -hex 32  # Use output for BANK_OIDC_SECRET
 openssl rand -hex 32  # Use output for MAIL_OIDC_SECRET
 openssl rand -hex 32  # Use output for MARKETPLACE_OIDC_SECRET
+openssl rand -hex 32  # Use output for LIBRARY_OIDC_SECRET
 
 # Edit .env
 nano .env
@@ -102,6 +149,7 @@ governance.bfs.example.com  → A record → <server-ip>
 bank.bfs.example.com        → A record → <server-ip>
 mail.bfs.example.com        → A record → <server-ip>
 marketplace.bfs.example.com → A record → <server-ip>
+library.bfs.example.com     → A record → <server-ip>
 ```
 
 Or use a wildcard:
@@ -130,12 +178,77 @@ Wait for Let's Encrypt to provision certificates (may take 1-2 minutes).
 
 Visit `https://governance.bfs.example.com/setup` to initialize the governance database and create the first administrator account.
 
+7. **Register with Federation:**
+
+After setup, register your society with the federation registry at `https://federation.bfs.network`.
+
+---
+
+## Federation Registry Deployment
+
+Deploy the centralized discovery service on a separate server.
+
+**Important:** The federation must run on a different server than any individual society.
+
+### Initial Setup
+
+1. **Clone repository and configure environment:**
+
+```bash
+git clone <repository-url> bfs-federation
+cd bfs-federation
+cp .env.federation.example .env
+```
+
+2. **Edit `.env` file with your domain:**
+
+```bash
+nano .env
+```
+
+Set:
+```env
+DOCKER_USERNAME=cirodam
+VERSION=latest
+FEDERATION_DOMAIN=federation.bfs.network
+ACME_EMAIL=admin@example.com
+```
+
+3. **Configure DNS:**
+
+Point federation domain to your server's public IP:
+
+```
+federation.bfs.network → A record → <server-ip>
+```
+
+4. **Pull and start service:**
+
+```bash
+docker compose -f docker-compose.federation.yml pull
+docker compose -f docker-compose.federation.yml up -d
+```
+
+5. **Monitor startup:**
+
+```bash
+docker compose -f docker-compose.federation.yml logs -f
+```
+
+6. **Verify deployment:**
+
+Test the API:
+```bash
+curl https://federation.bfs.network/api/registry/stats
+```
+
 ---
 
 ## Operations
 
 ### Starting Services
 
+**Society Server:**
 ```bash
 # Production (published images)
 docker compose -f docker-compose.published.yml up -d
@@ -144,8 +257,14 @@ docker compose -f docker-compose.published.yml up -d
 docker compose -f docker-compose.dev.yml up -d
 ```
 
+**Federation Registry:**
+```bash
+docker compose -f docker-compose.federation.yml up -d
+```
+
 ### Stopping Services
 
+**Society Server:**
 ```bash
 # Production
 docker compose -f docker-compose.published.yml down
@@ -154,8 +273,14 @@ docker compose -f docker-compose.published.yml down
 docker compose -f docker-compose.dev.yml down
 ```
 
+**Federation Registry:**
+```bash
+docker compose -f docker-compose.federation.yml down
+```
+
 ### Viewing Logs
 
+**Society Server:**
 ```bash
 # All services (production)
 docker compose -f docker-compose.published.yml logs -f
@@ -199,25 +324,48 @@ Visit `http://<server-ip>:8080` (not exposed publicly by default).
 
 ### Database Backup
 
+**Society Server:**
 ```bash
 # Backup all databases
+mkdir -p backups
 docker run --rm -v bfs_governance-data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/governance-$(date +%Y%m%d).tar.gz -C /data .
 docker run --rm -v bfs_community-bank-data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/bank-$(date +%Y%m%d).tar.gz -C /data .
 docker run --rm -v bfs_mail-data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/mail-$(date +%Y%m%d).tar.gz -C /data .
 docker run --rm -v bfs_marketplace-data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/marketplace-$(date +%Y%m%d).tar.gz -C /data .
+docker run --rm -v bfs_library-data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/library-$(date +%Y%m%d).tar.gz -C /data .
+```
+
+**Federation Registry:**
+```bash
+# Backup federation database
+mkdir -p backups
+docker run --rm -v bfs_federation-data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/federation-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
 ### Database Restore
 
+**Society Server:**
 ```bash
 # Stop services first
 docker compose -f docker-compose.published.yml down
 
 # Restore from backup
-docker run --rm -v bfs_governance-data:/data -v $(pwd)/backups:/backup alpine tar xzf /backup/governance-20260514.tar.gz -C /data
+docker run --rm -v bfs_governance-data:/data -v $(pwd)/backups:/backup alpine tar xzf /backup/governance-20260524.tar.gz -C /data
 
 # Restart services
 docker compose -f docker-compose.published.yml up -d
+```
+
+**Federation Registry:**
+```bash
+# Stop service
+docker compose -f docker-compose.federation.yml down
+
+# Restore from backup
+docker run --rm -v bfs_federation-data:/data -v $(pwd)/backups:/backup alpine tar xzf /backup/federation-20260524.tar.gz -C /data
+
+# Restart service
+docker compose -f docker-compose.federation.yml up -d
 ```
 
 ### Automated Backups

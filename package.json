@@ -7,6 +7,10 @@
     "dev": "turbo dev",
     "start": "bash scripts/start.sh",
     "reset": "bash scripts/reset.sh",
+    "federation:start": "bash scripts/federation-start.sh",
+    "federation:reset": "bash scripts/federation-reset.sh",
+    "publish:society": "bash scripts/publish-images.sh",
+    "publish:federation": "bash scripts/publish-federation-images.sh",
     "check": "turbo check",
     "lint": "turbo lint"
   },

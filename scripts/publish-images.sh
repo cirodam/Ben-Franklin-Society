@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Docker Hub Publishing Script for BFS Apps
+# Docker Hub Publishing Script for BFS Society Apps
 # Usage: ./scripts/publish-images.sh [docker-hub-username] [version-tag]
 # Example: ./scripts/publish-images.sh cirodam 0.1.0
+#
+# Note: Federation is published separately via publish-federation-images.sh
 
 DOCKER_USERNAME="${1:-cirodam}"
 VERSION="${2:-latest}"

@@ -1,5 +1,6 @@
-# Docker Compose configuration using published images from Docker Hub
-# For production deployments without building from source
+# Society Deployment - Docker Compose (Published Images)
+# For production society deployments using published images from Docker Hub
+# (Federation has separate docker-compose.federation.yml)
 
 services:
   reverse-proxy:

@@ -1,5 +1,6 @@
 # Development docker-compose configuration
-# For local testing without SSL/domain requirements
+# For local testing of SOCIETY APPS without SSL/domain requirements
+# (Federation has its own docker-compose.federation.yml)
 
 services:
   governance:

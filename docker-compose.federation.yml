@@ -1,0 +1,53 @@
+# Docker Compose configuration for Federation Registry
+# For deploying the centralized discovery service on its own server
+#
+# This is separate from society deployments - the federation server runs
+# independently and provides registry/discovery services for all societies.
+
+services:
+  reverse-proxy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile.federation:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+      FEDERATION_DOMAIN: ${FEDERATION_DOMAIN:-federation.bfs.network}
+    networks:
+      - federation-network
+    restart: unless-stopped
+
+  federation:
+    image: ${DOCKER_USERNAME:-cirodam}/ben-franklin-society-federation:${VERSION:-latest}
+    environment:
+      DATABASE_PATH: /app/data/federation.db
+      NODE_ENV: production
+      PORT: 5180
+    volumes:
+      - federation-data:/app/data
+    networks:
+      - federation-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5180/api/registry/stats', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  federation-data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  federation-network:
+    driver: bridge

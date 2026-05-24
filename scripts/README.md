@@ -1,6 +1,104 @@
-# Bootstrap Script for DigitalOcean Droplets
+# BFS Scripts
 
-## bootstrap-droplet.sh
+Development and deployment scripts for the Ben Franklin Society platform.
+
+## Two Workflows
+
+BFS has two distinct operational modes that never overlap:
+
+- **Society Workflow**: Running individual BFS societies (governance, banking, mail, marketplace, library)
+- **Federation Workflow**: Operating the network-wide discovery registry
+
+Use society scripts when working on society features. Use federation scripts when working on network coordination.
+
+---
+
+## Society Workflow
+
+Scripts for developing and deploying individual BFS societies.
+
+### start.sh
+Start all society applications in development mode.
+
+```bash
+./scripts/start.sh
+# Or: pnpm start
+```
+
+Launches: governance, community-bank, mail, marketplace, library at http://localhost:5173-5177
+
+### reset.sh
+Reset all society application databases to fresh state.
+
+```bash
+./scripts/reset.sh          # Reset databases only
+./scripts/reset.sh --clean  # Also clear build artifacts
+# Or: pnpm reset
+```
+
+### publish-images.sh
+Build and publish Docker images for society applications.
+
+```bash
+./scripts/publish-images.sh <username> <version>
+./scripts/publish-images.sh cirodam 0.1.0
+# Or: pnpm publish:society cirodam 0.1.0
+```
+
+Builds and pushes: governance, community-bank, mail, marketplace, library
+
+### bootstrap-droplet.sh
+Automated society deployment to a fresh Ubuntu server.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/.../bootstrap-droplet.sh | \
+  sudo DOMAIN=bfsathensga.org ACME_EMAIL=admin@example.com bash
+```
+
+See [bootstrap-droplet.sh documentation](#bootstrap-dropletsh) below for details.
+
+---
+
+## Federation Workflow
+
+Scripts for developing and deploying the federation registry (network coordination).
+
+### federation-start.sh
+Start the federation registry in development mode (standalone).
+
+```bash
+./scripts/federation-start.sh
+# Or: pnpm federation:start
+```
+
+Launches federation API at http://localhost:5180
+
+### federation-reset.sh
+Reset the federation registry database.
+
+```bash
+./scripts/federation-reset.sh
+# Or: pnpm federation:reset
+```
+
+### publish-federation-images.sh
+Build and publish Docker image for federation registry.
+
+```bash
+./scripts/publish-federation-images.sh <username> <version>
+./scripts/publish-federation-images.sh cirodam 0.1.0
+# Or: pnpm publish:federation cirodam 0.1.0
+```
+
+Builds and pushes: federation
+
+**Note**: Federation has its own separate docker-compose.federation.yml and deployment process. See [docs/architectural/deployment.md](../docs/architectural/deployment.md) for federation deployment instructions.
+
+---
+
+## Detailed Documentation
+
+### bootstrap-droplet.sh
 
 Automated setup script for deploying BFS to a fresh Ubuntu droplet.
 
