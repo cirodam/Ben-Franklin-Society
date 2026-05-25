@@ -127,7 +127,7 @@
 												name="response_message"
 												placeholder="Optional message to the child society..."
 												rows={2}
-												bind:value={responseMessages[request.request_id]}
+												value={responseMessages[request.request_id] || ''}
 											/>
 											<Button 
 												type="submit" 

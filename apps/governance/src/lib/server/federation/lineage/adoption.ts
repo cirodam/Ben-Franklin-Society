@@ -52,13 +52,19 @@ export async function requestAdoption(params: {
 			return { success: false, error: `Failed to fetch parent identity (HTTP ${response.status})` };
 		}
 
-		// Check content type before parsing
-		const contentType = response.headers.get('content-type');
-		if (!contentType || !contentType.includes('application/json')) {
-			return { success: false, error: `Parent URL returned non-JSON response (${contentType || 'unknown'}). Is this a BFS governance server?` };
+		// Read response as text first, then try to parse as JSON
+		const responseText = await response.text();
+		let parentIdentity;
+		try {
+			parentIdentity = JSON.parse(responseText);
+		} catch (parseError) {
+			const contentType = response.headers.get('content-type');
+			const preview = responseText.substring(0, 200);
+			return { 
+				success: false, 
+				error: `Parent URL returned invalid JSON. Content-Type: ${contentType}. Response starts with: ${preview}` 
+			};
 		}
-
-		const parentIdentity = await response.json();
 
 		// 2. Create and sign adoption request
 		const requestId = randomUUID();
@@ -85,7 +91,7 @@ export async function requestAdoption(params: {
 		const signature = signMessageWithOurKey(messageToSign);
 
 		// 3. Send adoption request to parent with signature
-		const adoptionResponse = await fetch(`${params.parentUrl}/api/federation/adoption/request`, {
+		const adoptionResponse = await fetch(`${params.parentUrl}/api/adoption/request`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -111,7 +117,8 @@ export async function requestAdoption(params: {
 		return { success: true, request_id: requestId };
 	} catch (error) {
 		console.error('Adoption request error:', error);
-		return { success: false, error: 'Failed to send adoption request' };
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+		return { success: false, error: `Failed to send adoption request: ${errorMessage}` };
 	}
 }
 
@@ -313,7 +320,7 @@ export async function approveAdoption(params: {
 
 		// 4. Send founding record to child
 		// The child will need to poll or we send it via callback
-		// For now, child can fetch via /api/federation/adoption/status/:request_id
+		// For now, child can fetch via /api/adoption/status/:request_id
 
 		return {
 			success: true,
@@ -380,7 +387,7 @@ export async function checkAdoptionStatus(params: {
 	try {
 		// 1. Check status
 		const response = await fetch(
-			`${params.parent_url}/api/federation/adoption/status/${params.request_id}`
+			`${params.parent_url}/api/adoption/status/${params.request_id}`
 		);
 
 		if (!response.ok) {
@@ -392,7 +399,7 @@ export async function checkAdoptionStatus(params: {
 		// 2. If approved, fetch founding record
 		if (data.status === 'approved') {
 			const recordResponse = await fetch(
-				`${params.parent_url}/api/federation/adoption/founding-record/${params.request_id}`
+				`${params.parent_url}/api/adoption/founding-record/${params.request_id}`
 			);
 
 			if (recordResponse.ok) {
