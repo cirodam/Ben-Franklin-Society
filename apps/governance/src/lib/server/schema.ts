@@ -661,6 +661,23 @@ CREATE TABLE IF NOT EXISTS outgoing_adoption_requests (
 
 CREATE INDEX IF NOT EXISTS idx_outgoing_adoption_requests_status ON outgoing_adoption_requests(status, completed);
 
+-- Federation Servers: Registry of known federation discovery servers
+CREATE TABLE IF NOT EXISTS federation_servers (
+  uuid TEXT PRIMARY KEY,
+  url TEXT NOT NULL UNIQUE,      -- e.g., 'https://federation.bfs.network'
+  handle TEXT,                    -- human-readable name, e.g., 'BFS Main'
+  service_type TEXT DEFAULT 'registry', -- 'registry', 'central_bank', 'insurance', 'arbitration', etc.
+  is_primary INTEGER DEFAULT 0,  -- which one to use for discovery
+  connection_status TEXT DEFAULT 'disconnected', -- 'connected', 'disconnected', 'pending'
+  connected_at INTEGER,           -- unix timestamp when we successfully registered
+  last_contacted_at INTEGER,      -- unix timestamp for health checks
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_federation_servers_primary ON federation_servers(is_primary);
+CREATE INDEX IF NOT EXISTS idx_federation_servers_service_type ON federation_servers(service_type);
+
 -- Peer Vouching: Trust relationships between societies
 
 -- Vouches we've issued to other societies

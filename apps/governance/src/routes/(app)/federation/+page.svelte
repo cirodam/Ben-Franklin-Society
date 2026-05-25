@@ -194,6 +194,9 @@
 							</Button>
 						{/if}
 					</div>
+					<Button href="/federation/servers" variant="secondary" fullWidth>
+						Federation Servers
+					</Button>
 				</div>
 			</Card>
 		</div>

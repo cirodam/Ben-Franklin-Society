@@ -1,9 +1,19 @@
 import { cacheSociety, getSocietyByHandle, type Society } from './societies.js';
 import type { FoundingRecord } from './lineage/identity.js';
 import { db } from '../db.js';
+import { getPrimaryFederationServer, updateFederationServerContact } from './servers.js';
 
-// Federation endpoint (configured via environment or default)
-const FEDERATION_ENDPOINT = process.env.FEDERATION_ENDPOINT || 'http://localhost:5178';
+/**
+ * Get the federation endpoint from the database or fall back to environment/default
+ */
+function getFederationEndpoint(): string {
+	const primaryServer = getPrimaryFederationServer();
+	if (primaryServer) {
+		return primaryServer.url;
+	}
+	// Fallback to environment variable or localhost default
+	return process.env.FEDERATION_ENDPOINT || 'http://localhost:5180';
+}
 
 /**
  * Register this society or a child society with the Federation
@@ -13,7 +23,8 @@ export async function registerWithFederation(params: {
 	endpoint: string;
 }): Promise<{ success: boolean; error?: string }> {
 	try {
-		const response = await fetch(`${FEDERATION_ENDPOINT}/api/registry/society`, {
+		const federationEndpoint = getFederationEndpoint();
+		const response = await fetch(`${federationEndpoint}/api/registry/society`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -40,7 +51,8 @@ export async function registerWithFederation(params: {
  */
 export async function lookupInFederation(handle: string): Promise<Society | null> {
 	try {
-		const response = await fetch(`${FEDERATION_ENDPOINT}/api/registry/society/${handle}`);
+		const federationEndpoint = getFederationEndpoint();
+		const response = await fetch(`${federationEndpoint}/api/registry/society/${handle}`);
 
 		if (!response.ok) {
 			return null;
@@ -69,7 +81,8 @@ export async function lookupInFederation(handle: string): Promise<Society | null
  */
 export async function searchSocieties(query: string): Promise<Society[]> {
 	try {
-		const response = await fetch(`${FEDERATION_ENDPOINT}/api/registry/societies?limit=50`);
+		const federationEndpoint = getFederationEndpoint();
+		const response = await fetch(`${federationEndpoint}/api/registry/societies?limit=50`);
 
 		if (!response.ok) {
 			return [];
@@ -102,8 +115,10 @@ export async function syncFromFederation(): Promise<number> {
 		let page = 1;
 		let totalSynced = 0;
 
+		const federationEndpoint = getFederationEndpoint();
+
 		while (true) {
-			const response = await fetch(`${FEDERATION_ENDPOINT}/api/registry/societies?page=${page}&limit=100`);
+			const response = await fetch(`${federationEndpoint}/api/registry/societies?page=${page}&limit=100`);
 
 			if (!response.ok) {
 				break;

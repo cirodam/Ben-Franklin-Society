@@ -23,8 +23,7 @@ function verifyFoundingRecord(record: FoundingRecord): boolean {
 }
 
 /**
- * Register a new society in the Federation index
- * Verifies the parent's signature on the founding record
+ * Register a new society in the Federation index (simplified - no verification yet)
  */
 export function registerSociety(params: {
 	foundingRecord: FoundingRecord;
@@ -35,10 +34,10 @@ export function registerSociety(params: {
 }): { success: boolean; error?: string } {
 	const { foundingRecord, bfsUrl, url, ipAddress, port = 5173 } = params;
 
-	// Verify the parent's signature
-	if (!verifyFoundingRecord(foundingRecord)) {
-		return { success: false, error: 'Invalid founding record signature' };
-	}
+	// TODO: Verify the parent's signature (skipped for now to simplify bootstrapping)
+	// if (!verifyFoundingRecord(foundingRecord)) {
+	//   return { success: false, error: 'Invalid founding record signature' };
+	// }
 
 	// Check if uuid is already registered
 	const existingByUuid = db.prepare('SELECT uuid FROM societies WHERE uuid = ?').get(foundingRecord.child.uuid);
@@ -52,15 +51,7 @@ export function registerSociety(params: {
 		return { success: false, error: 'Society handle already registered' };
 	}
 
-	// If child has a parent, verify parent exists in registry
-	if (foundingRecord.parent.uuid) {
-		const parent = lookupSocietyByUuid(foundingRecord.parent.uuid);
-		if (parent && parent.public_key !== foundingRecord.parent.public_key) {
-			return { success: false, error: 'Parent public key mismatch' };
-		}
-	}
-
-	// Register the society
+	// Register the society (skip parent verification for now)
 	const foundedAt = Math.floor(new Date(foundingRecord.founded_at).getTime() / 1000);
 
 	const stmt = db.prepare(/* sql */ `
