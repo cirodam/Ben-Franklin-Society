@@ -136,6 +136,9 @@
 							<h3 class="children-title">Founded Societies</h3>
 							<Badge 
 							variant={data.capacity.available ? 'neutral' : 'danger'} 
+							label="{data.children.length} / {data.capacity.maximum}" 
+						/>
+					</div>
 
 						{#if data.children.length > 0}
 							<div class="children-list">
