@@ -1,10 +1,7 @@
 # Caddyfile for Federation Registry
-# Caddy automatically handles SSL certificates via Let's Encrypt
+# Configured for HTTP-only access via IP address
+# No SSL/domain required - suitable for internal networks or initial testing
 
-{
-    email ${ACME_EMAIL}
-}
-
-${FEDERATION_DOMAIN} {
+:80 {
     reverse_proxy federation:5180
 }

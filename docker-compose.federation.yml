@@ -9,15 +9,10 @@ services:
     image: caddy:2.8-alpine
     ports:
       - "80:80"
-      - "443:443"
-      - "443:443/udp"  # HTTP/3
     volumes:
       - ./Caddyfile.federation:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    environment:
-      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
-      FEDERATION_DOMAIN: ${FEDERATION_DOMAIN:-federation.bfs.network}
     networks:
       - federation-network
     restart: unless-stopped

@@ -4,14 +4,14 @@ set -euo pipefail
 # Bootstrap script for deploying BFS Federation Registry to a droplet
 # 
 # Usage:
-#   Basic: sudo bash bootstrap-federation-droplet.sh
-#   With config: sudo FEDERATION_DOMAIN=federation.bfs.network ACME_EMAIL=admin@example.com bash bootstrap-federation-droplet.sh
+#   sudo bash bootstrap-federation-droplet.sh
 #
 # Environment variables:
-#   FEDERATION_DOMAIN - Your federation domain (e.g., federation.bfs.network) [optional]
-#   ACME_EMAIL        - Email for Let's Encrypt SSL certificates [optional]
 #   DOCKER_USERNAME   - Docker Hub username [default: cirodam]
 #   VERSION           - Image version tag [default: latest]
+#
+# The federation will be accessible at http://YOUR_SERVER_IP
+# No domain name or SSL configuration required.
 
 # Non-interactive mode for apt (prevents configuration prompts)
 export DEBIAN_FRONTEND=noninteractive
@@ -32,8 +32,6 @@ fi
 FEDERATION_DIR="/opt/bfs-federation"
 DOCKER_USERNAME="${DOCKER_USERNAME:-cirodam}"
 VERSION="${VERSION:-latest}"
-FEDERATION_DOMAIN="${FEDERATION_DOMAIN:-}"
-ACME_EMAIL="${ACME_EMAIL:-}"
 
 echo "Installing system updates..."
 apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
@@ -72,8 +70,6 @@ echo "Setting up firewall..."
 # Add rules before enabling to avoid timing issues
 ufw allow 22/tcp
 ufw allow 80/tcp
-ufw allow 443/tcp
-ufw allow 443/udp  # HTTP/3
 ufw --force enable
 ufw reload
 echo "Firewall rules:"
@@ -130,36 +126,9 @@ else
 # Docker image configuration
 DOCKER_USERNAME=$DOCKER_USERNAME
 VERSION=$VERSION
-
-# Federation domain configuration (without https://)
-FEDERATION_DOMAIN=${FEDERATION_DOMAIN}
-
-# Let's Encrypt email for SSL certificates
-ACME_EMAIL=${ACME_EMAIL}
 EOF
 
   echo "✓ .env file created at $FEDERATION_DIR/.env"
-  
-  # Check if required values are set
-  if [ -z "$FEDERATION_DOMAIN" ] || [ -z "$ACME_EMAIL" ]; then
-    echo ""
-    echo "=========================================="
-    echo "IMPORTANT: Configuration incomplete!"
-    echo "=========================================="
-    echo ""
-    echo "You must edit .env before starting services:"
-    echo ""
-    if [ -z "$FEDERATION_DOMAIN" ]; then
-      echo "  - Set FEDERATION_DOMAIN to your domain (e.g., federation.bfs.network)"
-    fi
-    if [ -z "$ACME_EMAIL" ]; then
-      echo "  - Set ACME_EMAIL to your email for Let's Encrypt"
-    fi
-    echo ""
-    echo "Edit with: nano $FEDERATION_DIR/.env"
-  else
-    echo "✓ Configuration complete (FEDERATION_DOMAIN and ACME_EMAIL set)"
-  fi
 fi
 
 echo ""
@@ -173,17 +142,6 @@ cat > "$FEDERATION_DIR/start.sh" << 'EOFSCRIPT'
 set -euo pipefail
 
 cd "$(dirname "$0")"
-
-# Check if .env is configured
-if grep -q "FEDERATION_DOMAIN=$" .env || grep -q "ACME_EMAIL=$" .env; then
-  echo "Error: .env file is not fully configured!"
-  echo "Please edit .env and set all required values:"
-  echo "  - FEDERATION_DOMAIN (e.g., federation.bfs.network)"
-  echo "  - ACME_EMAIL (your email for Let's Encrypt)"
-  echo ""
-  echo "Edit with: nano .env"
-  exit 1
-fi
 
 echo "Pulling latest images..."
 docker compose -f docker-compose.federation.yml pull
@@ -252,27 +210,10 @@ echo "=========================================="
 echo ""
 echo "Installation directory: $FEDERATION_DIR"
 echo ""
-
-# Final configuration check
-if [ -z "$FEDERATION_DOMAIN" ] || [ -z "$ACME_EMAIL" ]; then
-  echo "⚠️  NEXT STEPS:"
-  echo "1. Edit configuration: nano $FEDERATION_DIR/.env"
-  echo "2. Start services: $FEDERATION_DIR/start.sh"
-  echo ""
-  echo "Required configuration:"
-  if [ -z "$FEDERATION_DOMAIN" ]; then
-    echo "  - FEDERATION_DOMAIN (your domain, e.g., federation.bfs.network)"
-  fi
-  if [ -z "$ACME_EMAIL" ]; then
-    echo "  - ACME_EMAIL (your email for Let's Encrypt)"
-  fi
-else
-  echo "✅ Configuration complete!"
-  echo ""
-  echo "Start the federation registry with:"
-  echo "  $FEDERATION_DIR/start.sh"
-fi
-
+echo "✅ Configuration complete!"
+echo ""
+echo "Start the federation registry with:"
+echo "  $FEDERATION_DIR/start.sh"
 echo ""
 echo "Useful commands:"
 echo "  Start:   $FEDERATION_DIR/start.sh"
@@ -281,7 +222,7 @@ echo "  Restart: $FEDERATION_DIR/restart.sh"
 echo "  Logs:    $FEDERATION_DIR/logs.sh"
 echo ""
 echo "The federation registry will be available at:"
-echo "  https://${FEDERATION_DOMAIN:-federation.bfs.network}"
+echo "  http://YOUR_SERVER_IP"
 echo ""
-echo "Make sure your DNS A record points to this server's IP address."
+echo "To find your server's IP address, run: ip addr show"
 echo "=========================================="
