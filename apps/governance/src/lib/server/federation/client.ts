@@ -1,5 +1,5 @@
 import { cacheSociety, getSocietyByHandle, type Society } from './societies.js';
-import type { FoundingRecord } from './lineage/identity.js';
+import { getIdentity, type FoundingRecord } from './lineage/identity.js';
 import { db } from '../db.js';
 import { getPrimaryFederationServer, updateFederationServerContact } from './servers.js';
 
@@ -19,30 +19,90 @@ function getFederationEndpoint(): string {
  * Register this society or a child society with the Federation
  */
 export async function registerWithFederation(params: {
-	foundingRecord: FoundingRecord;
+	foundingRecord: FoundingRecord | null;
 	endpoint: string;
+	serverUrl?: string; // Optional: specify which federation server to register with
 }): Promise<{ success: boolean; error?: string }> {
 	try {
-		const federationEndpoint = getFederationEndpoint();
-		const response = await fetch(`${federationEndpoint}/api/registry/society`, {
+		const federationEndpoint = (params.serverUrl || getFederationEndpoint()).replace(/\/$/, ''); // Remove trailing slash
+		
+		console.log('Registering with federation:', federationEndpoint);
+		console.log('Endpoint URL:', params.endpoint);
+		
+		// Build the request body
+		const requestBody: any = {};
+		
+		if (params.foundingRecord) {
+			// Child society with founding record
+			requestBody.founding_record = params.foundingRecord;
+		} else {
+			// Root society - need to send identity directly
+			const identity = getIdentity();
+			if (!identity) {
+				return { success: false, error: 'Society identity not initialized' };
+			}
+			
+			// Create a self-founding record for root societies
+			requestBody.founding_record = {
+				type: 'society_founding',
+				parent: {
+					handle: identity.handle,
+					uuid: identity.uuid,
+					public_key: identity.public_key
+				},
+				child: {
+					handle: identity.handle,
+					uuid: identity.uuid,
+					public_key: identity.public_key
+				},
+				founded_at: new Date(identity.created_at * 1000).toISOString(),
+				parent_attestation: `The ${identity.handle} society is self-founded.`,
+				signature: '' // Self-founded societies don't have a parent signature
+			};
+		}
+		
+		// Parse the endpoint URL
+		try {
+			const endpointUrl = new URL(params.endpoint);
+			requestBody.url = params.endpoint;
+			requestBody.bfs_url = params.endpoint;
+			// Note: We don't send ip_address or port - let federation extract from URL
+		} catch (e) {
+			return { success: false, error: 'Invalid endpoint URL' };
+		}
+		
+		const apiUrl = `${federationEndpoint}/api/registry/society`;
+		console.log('Fetching:', apiUrl);
+		console.log('Request body:', JSON.stringify(requestBody, null, 2));
+		
+		const response = await fetch(apiUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				founding_record: params.foundingRecord,
-				endpoint: params.endpoint
-			})
+			body: JSON.stringify(requestBody)
 		});
 
 		if (!response.ok) {
-			const error = await response.json();
-			return { success: false, error: error.error || 'Registration failed' };
+			const contentType = response.headers.get('content-type');
+			let errorMsg = `Registration failed (${response.status})`;
+			
+			if (contentType?.includes('application/json')) {
+				const error = await response.json();
+				errorMsg = error.error || errorMsg;
+			} else {
+				const text = await response.text();
+				console.error('Federation returned non-JSON response:', text.substring(0, 500));
+				errorMsg = `Server error: ${response.status} ${response.statusText}`;
+			}
+			
+			return { success: false, error: errorMsg };
 		}
 
 		const result = await response.json();
 		return { success: true };
 	} catch (error) {
 		console.error('Federation registration error:', error);
-		return { success: false, error: 'Failed to connect to Federation' };
+		const errorMsg = error instanceof Error ? error.message : 'Failed to connect to Federation';
+		return { success: false, error: errorMsg };
 	}
 }
 

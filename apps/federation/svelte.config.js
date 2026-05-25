@@ -5,10 +5,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapter({
-			// Mark better-sqlite3 as external to avoid bundling CommonJS module
-			external: ['better-sqlite3']
-		})
+		adapter: adapter()
 	}
 };
 

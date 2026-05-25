@@ -53,6 +53,10 @@ export function registerSociety(params: {
 
 	// Register the society (skip parent verification for now)
 	const foundedAt = Math.floor(new Date(foundingRecord.founded_at).getTime() / 1000);
+	
+	// Detect self-founded societies (parent === child)
+	const isSelfFounded = foundingRecord.parent.uuid === foundingRecord.child.uuid;
+	const parentUuid = isSelfFounded ? null : foundingRecord.parent.uuid;
 
 	const stmt = db.prepare(/* sql */ `
 		INSERT INTO societies (
@@ -73,7 +77,7 @@ export function registerSociety(params: {
 	stmt.run(
 		foundingRecord.child.uuid,
 		foundingRecord.child.handle,
-		foundingRecord.parent.uuid || null,
+		parentUuid,
 		foundingRecord.child.public_key,
 		bfsUrl || null,
 		url || null,

@@ -8,7 +8,7 @@ export const schema = /* sql */ `
 CREATE TABLE IF NOT EXISTS societies (
   uuid                TEXT PRIMARY KEY,
   handle              TEXT UNIQUE NOT NULL,
-  parent_uuid         TEXT NULL REFERENCES societies(uuid),
+  parent_uuid         TEXT NULL,
   public_key          TEXT NOT NULL,
   
   -- Multi-path connectivity (DNS independence)

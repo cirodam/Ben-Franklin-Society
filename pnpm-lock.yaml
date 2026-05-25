@@ -121,6 +121,9 @@ importers:
       '@bfs/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
     devDependencies:
       '@sveltejs/adapter-node':
         specifier: ^5.0.0

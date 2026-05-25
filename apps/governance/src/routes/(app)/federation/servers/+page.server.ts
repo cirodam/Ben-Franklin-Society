@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	getAllFederationServers,
+	getFederationServer,
 	addFederationServer,
 	updateFederationServer,
 	deleteFederationServer,
@@ -9,7 +10,7 @@ import {
 	updateFederationServerConnectionStatus
 } from '$lib/server/federation/servers';
 import { registerWithFederation } from '$lib/server/federation/client';
-import { getIdentity, createFoundingRecord } from '$lib/server/federation/lineage/identity';
+import { getIdentity } from '$lib/server/federation/lineage/identity';
 import { randomUUID } from 'crypto';
 
 export const load: PageServerLoad = async () => {
@@ -106,6 +107,13 @@ export const actions: Actions = {
 			// Update status to pending
 			updateFederationServerConnectionStatus({ uuid, status: 'pending' });
 
+			// Get the federation server we're registering with
+			const server = getFederationServer(uuid);
+			if (!server) {
+				updateFederationServerConnectionStatus({ uuid, status: 'disconnected' });
+				return fail(400, { error: 'Federation server not found' });
+			}
+
 			// Get our identity
 			const identity = getIdentity();
 			if (!identity) {
@@ -113,18 +121,20 @@ export const actions: Actions = {
 				return fail(400, { error: 'Society identity not initialized' });
 			}
 
-			// Create founding record (will be from initialization)
-			const foundingRecord = createFoundingRecord({
-				childHandle: identity.handle,
-				childUuid: identity.uuid,
-				childPublicKey: identity.public_key
-			});
+			// Get our existing founding record (if any) - proves our lineage
+			const foundingRecord = identity.founding_record_json 
+				? JSON.parse(identity.founding_record_json)
+				: null;
 
 			// Get endpoint (use request origin)
 			const endpoint = requestUrl.origin;
 
-			// Register with federation
-			const result = await registerWithFederation({ foundingRecord, endpoint });
+			// Register with the specific federation server
+			const result = await registerWithFederation({ 
+				foundingRecord, 
+				endpoint,
+				serverUrl: server.url 
+			});
 
 			if (result.success) {
 				updateFederationServerConnectionStatus({ uuid, status: 'connected' });

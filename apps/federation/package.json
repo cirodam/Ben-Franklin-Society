@@ -13,7 +13,8 @@
     "@bfs/db": "workspace:*",
     "@bfs/events": "workspace:*",
     "@bfs/types": "workspace:*",
-    "@bfs/ui": "workspace:*"
+    "@bfs/ui": "workspace:*",
+    "better-sqlite3": "^11.0.0"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.0.0",
