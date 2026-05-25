@@ -115,6 +115,56 @@ Applications will be available at:
 
 For detailed deployment documentation, see **[DOCKER.md](DOCKER.md)**.
 
+---
+
+### Federation Deployment (Docker)
+
+**One-Command Bootstrap**
+
+Deploy the federation registry to a fresh Ubuntu 22.04 LTS server:
+
+```bash
+# Download and run bootstrap script
+wget https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/scripts/bootstrap-federation-droplet.sh
+sudo bash bootstrap-federation-droplet.sh
+```
+
+Or as a one-liner:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cirodam/Ben-Franklin-Society/master/scripts/bootstrap-federation-droplet.sh | sudo bash
+```
+
+Then start services:
+```bash
+cd /opt/bfs-federation && ./start.sh
+```
+
+This will:
+- Install Docker and configure firewall (ports 22, 80)
+- Download federation compose file and Caddyfile
+- Pull pre-built federation image from Docker Hub
+- Create helper scripts (start.sh, stop.sh, restart.sh, logs.sh)
+
+**Access via IP Address:**
+
+The federation registry will be accessible at:
+- **http://YOUR_SERVER_IP**
+
+No domain name or SSL required. To find your server's IP:
+```bash
+ip addr show
+```
+
+**Configure Societies:**
+
+In each society's governance app, add the federation server:
+1. Go to **Federation** → **Servers**
+2. Add server with URL: `http://YOUR_FEDERATION_IP`
+3. Click **Register** to join the network
+
+---
+
 ### Development Setup (Local)
 
 1. Reset databases (development only):
@@ -265,6 +315,33 @@ This is a monorepo containing multiple SvelteKit applications that work together
 - `pnpm lint` — Lint all apps
 - `pnpm reset` — Reset all databases (development only)
 - `pnpm start` — Start all apps with turbo
+
+### Building and Publishing Docker Images
+
+**Society Apps** (governance, community-bank, mail, marketplace):
+
+```bash
+# Build and push all society applications
+./scripts/publish-images.sh cirodam 1.0.0
+
+# Build specific app only
+cd apps/governance && docker build -t cirodam/ben-franklin-society-governance:1.0.0 .
+docker push cirodam/ben-franklin-society-governance:1.0.0
+```
+
+**Federation Registry** (standalone service):
+
+```bash
+# Build and publish federation image
+cd apps/federation
+docker build -t cirodam/ben-franklin-society-federation:latest .
+docker push cirodam/ben-franklin-society-federation:latest
+
+# Deploy to federation server
+sudo bash scripts/bootstrap-federation-droplet.sh
+```
+
+The federation registry requires a separate server and uses [docker-compose.federation.yml](docker-compose.federation.yml) for deployment.
 
 ### Project Layout
 
