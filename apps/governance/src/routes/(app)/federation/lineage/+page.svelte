@@ -111,7 +111,7 @@
 			<Card>
 				<div class="lineage-node lineage-node--current">
 					<div class="lineage-node__badge">
-						<Badge variant="primary" label="You are here" />
+						<Badge variant="accent" label="You are here" />
 					</div>
 					<div class="lineage-node__content">
 						<div class="lineage-node__header">
@@ -145,7 +145,7 @@
 				<div class="lineage-connector">
 					<div class="lineage-connector__line"></div>
 					<div class="lineage-connector__label">
-						<Badge variant="secondary" label="Founded {formatDate(Math.floor(new Date(data.foundingRecord.founded_at).getTime() / 1000))}" />
+						<Badge variant="neutral" label="Founded {formatDate(Math.floor(new Date(data.foundingRecord.founded_at).getTime() / 1000))}" />
 					</div>
 					<div class="lineage-connector__line"></div>
 				</div>
@@ -166,7 +166,7 @@
 				<div class="lineage-connector">
 					<div class="lineage-connector__line"></div>
 					<div class="lineage-connector__label">
-						<Badge variant="secondary" label="by parent" />
+						<Badge variant="neutral" label="by parent" />
 					</div>
 					<div class="lineage-connector__line"></div>
 				</div>
@@ -177,7 +177,7 @@
 						<div class="lineage-node__content">
 							<div class="lineage-node__header">
 								<h3 class="lineage-node__title">@{data.foundingRecord.parent.handle}</h3>
-								<Badge variant="secondary" label="Parent" />
+								<Badge variant="neutral" label="Parent" />
 							</div>
 							<div class="lineage-node__details">
 								<div class="lineage-detail">

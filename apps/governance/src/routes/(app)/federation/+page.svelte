@@ -81,7 +81,7 @@
 						{#if data.identity?.is_root}
 							<Badge variant="success" label="Root Society" />
 						{:else}
-							<Badge variant="primary" label="Child Society" />
+							<Badge variant="accent" label="Child Society" />
 						{/if}
 					</div>
 
@@ -135,10 +135,7 @@
 						<div class="children-header">
 							<h3 class="children-title">Founded Societies</h3>
 							<Badge 
-								variant={data.capacity.available ? 'secondary' : 'danger'} 
-								label="{data.capacity.current} / {data.capacity.maximum} children"
-							/>
-						</div>
+							variant={data.capacity.available ? 'neutral' : 'danger'} 
 
 						{#if data.children.length > 0}
 							<div class="children-list">
