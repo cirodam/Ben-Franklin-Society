@@ -13,6 +13,9 @@ set -euo pipefail
 #   DOCKER_USERNAME - Docker Hub username [default: cirodam]
 #   VERSION     - Image version tag [default: latest]
 
+# Non-interactive mode for apt (prevents configuration prompts)
+export DEBIAN_FRONTEND=noninteractive
+
 echo "=========================================="
 echo "BFS Droplet Bootstrap Script"
 echo "=========================================="
@@ -33,11 +36,11 @@ DOMAIN="${DOMAIN:-}"
 ACME_EMAIL="${ACME_EMAIL:-}"
 
 echo "Installing system updates..."
-apt update && apt upgrade -y
+apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 echo ""
 echo "Installing required packages..."
-apt install -y curl git ufw
+apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" curl git ufw
 
 echo ""
 echo "Installing Docker..."
@@ -53,7 +56,7 @@ fi
 echo ""
 echo "Installing Docker Compose plugin..."
 if ! docker compose version &> /dev/null; then
-  apt install -y docker-compose-plugin
+  apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" docker-compose-plugin
   echo "Docker Compose installed successfully"
 else
   echo "Docker Compose already installed"

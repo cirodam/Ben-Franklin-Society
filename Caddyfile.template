@@ -5,6 +5,11 @@
     email ${ACME_EMAIL}
 }
 
+# Redirect root domain to governance
+${DOMAIN} {
+    redir https://governance.${DOMAIN}{uri} permanent
+}
+
 governance.${DOMAIN} {
     reverse_proxy governance:5173
 }

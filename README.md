@@ -47,7 +47,7 @@ This system is built on the premise that ordinary people, given adequate time an
 
 ## Quick Start
 
-### Two Deployment Types
+   A`Q### Two Deployment Types
 
 BFS has two distinct deployment modes:
 
@@ -96,8 +96,11 @@ Point these A records to your server IP:
 - bank.yourdomain.com
 - mail.yourdomain.com
 - marketplace.yourdomain.com
+- library.yourdomain.com
 
 Or use a wildcard: `*.yourdomain.com`
+
+Optionally, point the root domain (yourdomain.com) to your server IP for automatic redirect to governance.
 
 **Initialize Your Society:**
 

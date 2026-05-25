@@ -1,4 +1,4 @@
-import { generateKeyPairSync, sign, verify } from 'crypto';
+import { generateKeyPairSync, sign, verify, createPrivateKey, createPublicKey } from 'crypto';
 import { db } from '../../db.js';
 import { randomUUID } from 'crypto';
 
@@ -194,9 +194,9 @@ export function getPrivateKey(): string | null {
 		SELECT private_key_encrypted FROM society_identity LIMIT 1
 	`);
 	const result = stmt.get() as { private_key_encrypted: string } | undefined;
-	// TODO: Decrypt the private key before returning
-	// For now, assuming it's stored in plain PEM format
-	return result?.private_key_encrypted || null;
+	// Private key is base64 encoded in the database, decode it to get PEM
+	if (!result?.private_key_encrypted) return null;
+	return Buffer.from(result.private_key_encrypted, 'base64').toString('utf-8');
 }
 
 /**
@@ -204,7 +204,8 @@ export function getPrivateKey(): string | null {
  * Note: In production, private key should be decrypted first
  */
 export function signMessage(message: string, privateKeyPem: string): string {
-	return sign(null, Buffer.from(message), privateKeyPem).toString('base64');
+	const privateKeyObject = createPrivateKey(privateKeyPem);
+	return sign(null, Buffer.from(message), privateKeyObject).toString('base64');
 }
 
 /**
@@ -223,7 +224,8 @@ export function signMessageWithOurKey(message: string): string {
  */
 export function verifySignature(message: string, signature: string, publicKeyPem: string): boolean {
 	try {
-		return verify(null, Buffer.from(message), publicKeyPem, Buffer.from(signature, 'base64'));
+		const publicKeyObject = createPublicKey(publicKeyPem);
+		return verify(null, Buffer.from(message), publicKeyObject, Buffer.from(signature, 'base64'));
 	} catch {
 		return false;
 	}

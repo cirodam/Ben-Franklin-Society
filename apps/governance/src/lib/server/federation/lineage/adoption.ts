@@ -47,9 +47,15 @@ export async function requestAdoption(params: {
 
 	try {
 		// 1. Fetch parent's identity
-		const response = await fetch(`${params.parentUrl}/api/federation/identity`);
+		const response = await fetch(`${params.parentUrl}/api/lineage`);
 		if (!response.ok) {
-			return { success: false, error: 'Failed to fetch parent identity' };
+			return { success: false, error: `Failed to fetch parent identity (HTTP ${response.status})` };
+		}
+
+		// Check content type before parsing
+		const contentType = response.headers.get('content-type');
+		if (!contentType || !contentType.includes('application/json')) {
+			return { success: false, error: `Parent URL returned non-JSON response (${contentType || 'unknown'}). Is this a BFS governance server?` };
 		}
 
 		const parentIdentity = await response.json();

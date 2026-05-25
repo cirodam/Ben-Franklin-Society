@@ -265,7 +265,7 @@ export async function getOurRoot(): Promise<string> {
  */
 export async function addPeerSociety(societyUrl: string): Promise<void> {
 	// 1. Fetch their identity
-	const response = await fetch(`${societyUrl}/api/federation/identity`);
+	const response = await fetch(`${societyUrl}/api/lineage`);
 
 	if (!response.ok) {
 		throw new Error(`Failed to fetch society identity: ${response.statusText}`);
