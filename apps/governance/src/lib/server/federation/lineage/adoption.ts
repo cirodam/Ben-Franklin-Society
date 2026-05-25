@@ -105,7 +105,21 @@ export async function requestAdoption(params: {
 			return { success: false, error: error.error || 'Adoption request failed' };
 		}
 
-		// 3. Cache parent society locally
+		// 4. Store outgoing request in our local database
+		db.prepare(/* sql */ `
+			INSERT INTO outgoing_adoption_requests (
+				request_id, parent_url, parent_uuid, parent_handle, message, requested_at
+			) VALUES (?, ?, ?, ?, ?, ?)
+		`).run(
+			requestId,
+			params.parentUrl,
+			parentIdentity.uuid,
+			parentIdentity.handle,
+			params.message || null,
+			requestTimestamp
+		);
+
+		// 5. Cache parent society locally
 		cacheSociety({
 			uuid: parentIdentity.uuid,
 			handle: parentIdentity.handle,
@@ -249,6 +263,40 @@ export function getAllAdoptionRequests(): AdoptionRequest[] {
 	`);
 
 	return stmt.all(identity.uuid) as AdoptionRequest[];
+}
+
+/**
+ * Get all outgoing adoption requests (requests WE'VE sent)
+ */
+export function getOutgoingAdoptionRequests(): Array<{
+	request_id: string;
+	parent_url: string;
+	parent_uuid: string | null;
+	parent_handle: string | null;
+	message: string | null;
+	requested_at: number;
+	last_checked: number | null;
+	status: string | null;
+	completed: number;
+	completed_at: number | null;
+}> {
+	const stmt = db.prepare(/* sql */ `
+		SELECT * FROM outgoing_adoption_requests
+		ORDER BY requested_at DESC
+	`);
+
+	return stmt.all() as Array<{
+		request_id: string;
+		parent_url: string;
+		parent_uuid: string | null;
+		parent_handle: string | null;
+		message: string | null;
+		requested_at: number;
+		last_checked: number | null;
+		status: string | null;
+		completed: number;
+		completed_at: number | null;
+	}>;
 }
 
 /**
@@ -396,6 +444,14 @@ export async function checkAdoptionStatus(params: {
 
 		const data = await response.json();
 
+		// Update local record
+		const now = Math.floor(Date.now() / 1000);
+		db.prepare(/* sql */ `
+			UPDATE outgoing_adoption_requests
+			SET status = ?, last_checked = ?
+			WHERE request_id = ?
+		`).run(data.status, now, params.request_id);
+
 		// 2. If approved, fetch founding record
 		if (data.status === 'approved') {
 			const recordResponse = await fetch(
@@ -473,6 +529,14 @@ export function completeAdoption(params: {
 		publicKey: params.founding_record.parent.public_key,
 		parentUuid: null // Parent is likely root or we don't know their parent
 	});
+
+	// Mark outgoing adoption request as completed
+	const completedAt = Math.floor(Date.now() / 1000);
+	db.prepare(/* sql */ `
+		UPDATE outgoing_adoption_requests
+		SET completed = 1, completed_at = ?, status = 'approved'
+		WHERE parent_uuid = ? AND completed = 0
+	`).run(completedAt, params.founding_record.parent.uuid);
 
 	return { success: true };
 }

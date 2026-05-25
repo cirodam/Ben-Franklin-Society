@@ -185,8 +185,9 @@
 						{#if data.identity?.is_root}
 							<Button href="/federation/adopt-request" variant="secondary" fullWidth>
 								Request Adoption
-							</Button>
-						{/if}
+							</Button>						<Button href="/federation/my-requests" variant="secondary" fullWidth>
+							My Adoption Requests
+						</Button>						{/if}
 						{#if data.capacity.available}
 							<Button href="/federation/adoption-requests" variant="secondary" fullWidth>
 								View Adoption Requests

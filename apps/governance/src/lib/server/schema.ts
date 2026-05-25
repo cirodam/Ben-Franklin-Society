@@ -589,7 +589,7 @@ CREATE TABLE IF NOT EXISTS societies (
   i2p_address         TEXT NULL,      -- Future: .i2p
   
   -- Network Topology (describes THEIR position in network)
-  parent_uuid         TEXT NULL REFERENCES societies(uuid),
+  parent_uuid         TEXT NULL,  -- No FK: may reference societies not in our cache
   
   -- Cryptographic Proof
   founding_record_json TEXT NULL,
@@ -644,6 +644,22 @@ CREATE TABLE IF NOT EXISTS adoption_requests (
 
 CREATE INDEX IF NOT EXISTS idx_adoption_requests_parent ON adoption_requests(parent_uuid, status);
 CREATE INDEX IF NOT EXISTS idx_adoption_requests_child ON adoption_requests(child_uuid);
+
+-- Outgoing Adoption Requests: Track adoption requests WE'VE sent to potential parents
+CREATE TABLE IF NOT EXISTS outgoing_adoption_requests (
+  request_id          TEXT PRIMARY KEY,  -- UUID we generated
+  parent_url          TEXT NOT NULL,     -- URL of parent we're requesting adoption from
+  parent_uuid         TEXT NULL,         -- UUID of parent (if known)
+  parent_handle       TEXT NULL,         -- Handle of parent (if known)
+  message             TEXT NULL,         -- Our message to them
+  requested_at        INTEGER NOT NULL DEFAULT (unixepoch()),
+  last_checked        INTEGER NULL,      -- Last time we checked status
+  status              TEXT NULL,         -- pending, approved, rejected (as reported by parent)
+  completed           INTEGER DEFAULT 0, -- 1 if we've completed our side of adoption
+  completed_at        INTEGER NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_outgoing_adoption_requests_status ON outgoing_adoption_requests(status, completed);
 
 -- Peer Vouching: Trust relationships between societies
 

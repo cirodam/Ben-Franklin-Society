@@ -134,6 +134,8 @@
 							};
 						}}
 					>
+						<input type="hidden" name="request_id" value={data.request_id} />
+						<input type="hidden" name="parent_url" value={data.parent_url} />
 						<Button 
 							type="submit" 
 							variant="primary" 

@@ -27,9 +27,10 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	complete: async ({ url }) => {
-		const request_id = url.searchParams.get('request_id');
-		const parent_url = url.searchParams.get('parent_url');
+	complete: async ({ request }) => {
+		const formData = await request.formData();
+		const request_id = formData.get('request_id') as string;
+		const parent_url = formData.get('parent_url') as string;
 
 		if (!request_id || !parent_url) {
 			return { success: false, error: 'request_id and parent_url are required' };
