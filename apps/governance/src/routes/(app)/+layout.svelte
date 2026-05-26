@@ -21,6 +21,7 @@
 
 			<SidebarGroup label="Governance">
 				<SidebarLink href="/library">Society Code</SidebarLink>
+				<SidebarLink href="/encyclopedia">Encyclopedia</SidebarLink>
 				<SidebarLink href="/governance/referenda">Petitions and Referenda</SidebarLink>
 				<SidebarLink href="/governance/general-assembly">General Assembly</SidebarLink>
 				<SidebarLink href="/organization/committees">Committees</SidebarLink>
