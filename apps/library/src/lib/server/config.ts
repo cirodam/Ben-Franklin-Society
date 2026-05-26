@@ -1,4 +1,5 @@
 import { db } from './db.js';
+import { env } from '$env/dynamic/private';
 
 export function getConfig(key: string): string | null {
 	const row = db.prepare('SELECT value FROM config WHERE key = ?').get(key) as
@@ -17,10 +18,10 @@ export function isOidcConfigured(): boolean {
 
 export function getOidcConfig() {
 	return {
-		governanceUrl: getConfig('oidc_governance_url') ?? 'http://localhost:5173',
+		governanceUrl: getConfig('oidc_governance_url') ?? env.GOVERNANCE_URL ?? 'http://localhost:5173',
 		clientId: getConfig('oidc_client_id') ?? 'library',
 		clientSecret: getConfig('oidc_client_secret'),
-		redirectUri: getConfig('oidc_redirect_uri') ?? 'http://localhost:5177/oauth/callback',
+		redirectUri: getConfig('oidc_redirect_uri') ?? (env.PUBLIC_URL ? `${env.PUBLIC_URL}/oauth/callback` : 'http://localhost:5177/oauth/callback'),
 	};
 }
 

@@ -145,6 +145,13 @@ VERSION=$VERSION
 # Domain configuration (without https://)
 DOMAIN=${DOMAIN}
 
+# Application URLs (generated from DOMAIN)
+GOVERNANCE_URL=https://governance.${DOMAIN}
+BANK_URL=https://bank.${DOMAIN}
+MAIL_URL=https://mail.${DOMAIN}
+MARKETPLACE_URL=https://marketplace.${DOMAIN}
+LIBRARY_URL=https://library.${DOMAIN}
+
 # OIDC EdDSA signing key (Ed25519)
 # This key signs all access tokens and ID tokens
 # IMPORTANT: Back up this key securely! If lost, all tokens will be invalidated.

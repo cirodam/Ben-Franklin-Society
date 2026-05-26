@@ -1,4 +1,5 @@
 import { db } from './core/db.js';
+import { env } from '$env/dynamic/private';
 
 /**
  * Get a configuration value from the database
@@ -24,13 +25,14 @@ export function isOidcConfigured(): boolean {
 
 /**
  * Get all OIDC configuration values
+ * Prefers: database config > environment variables > localhost defaults
  */
 export function getOidcConfig() {
 	return {
-		governanceUrl: getConfig('oidc:governance_url') ?? 'http://localhost:5173',
+		governanceUrl: getConfig('oidc:governance_url') ?? env.GOVERNANCE_URL ?? 'http://localhost:5173',
 		clientId: getConfig('oidc:client_id') ?? 'community-bank',
 		clientSecret: getConfig('oidc:client_secret'),
-		redirectUri: getConfig('oidc:redirect_uri') ?? 'http://localhost:5174/oauth/callback',
+\t\tredirectUri: getConfig('oidc:redirect_uri') ?? (env.PUBLIC_URL ? `${env.PUBLIC_URL}/oauth/callback` : 'http://localhost:5174/oauth/callback'),
 	};
 }
 
