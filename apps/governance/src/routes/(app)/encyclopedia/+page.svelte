@@ -1,12 +1,11 @@
 <script lang="ts">
-	import Card from '@bfs/ui/Card.svelte';
-	import Badge from '@bfs/ui/Badge.svelte';
+	import { Card, Badge } from '@bfs/ui';
 	import type { PageData } from './$types.js';
 
 	let { data }: { data: PageData } = $props();
 
 	// Group articles by category
-	const articlesByCategory = $derived(() => {
+	const articlesByCategory = $derived.by(() => {
 		const grouped = new Map<string, typeof data.articles>();
 		
 		data.articles.forEach(article => {
@@ -18,35 +17,37 @@
 		});
 
 		return grouped;
-	})();
+	});
 </script>
 
 <div class="encyclopedia">
 	<header class="header">
-		<h1>Encyclopedia</h1>
-		<p>Society knowledge base and documentation</p>
+		<h1 class="t-display">Encyclopedia</h1>
+		<p class="t-prose subtitle">Knowledge base of philosophical and institutional foundations</p>
 	</header>
 
 	<div class="content">
 		{#if data.articles.length === 0}
 			<Card>
-				<p>No articles yet. Add markdown files to <code>data/encyclopedia/</code> to get started.</p>
+				<p class="t-prose">No articles yet. Add markdown files to <code>data/encyclopedia/</code> to get started.</p>
 			</Card>
 		{:else}
 			{#each articlesByCategory as [category, articles]}
 				<section class="category-section">
-					<h2>{category}</h2>
+					<h2 class="category-title">{category}</h2>
 					<div class="articles-grid">
 						{#each articles as article}
 							<Card>
-								<a href="/encyclopedia/{article.slug}" class="article-link">
-									<h3>{article.metadata.title}</h3>
-									{#if article.metadata.author}
-										<p class="meta">By {article.metadata.author}</p>
-									{/if}
-									{#if article.metadata.created}
-										<p class="meta">{new Date(article.metadata.created).toLocaleDateString()}</p>
-									{/if}
+								<a href="/encyclopedia/{article.slug}" class="article-card">
+									<h3 class="article-title">{article.metadata.title}</h3>
+									<div class="article-meta">
+										{#if article.metadata.author}
+											<span class="meta-item">By {article.metadata.author}</span>
+										{/if}
+										{#if article.metadata.created}
+											<span class="meta-item">{new Date(article.metadata.created).toLocaleDateString()}</span>
+										{/if}
+									</div>
 								</a>
 							</Card>
 						{/each}
@@ -61,67 +62,92 @@
 	.encyclopedia {
 		max-width: 1200px;
 		margin: 0 auto;
-		padding: 2rem;
+		padding: var(--space-8) var(--space-4);
 	}
 
 	.header {
-		margin-bottom: 2rem;
+		text-align: center;
+		margin-bottom: var(--space-10);
+		padding-bottom: var(--space-6);
 		border-bottom: 1px solid var(--border);
-		padding-bottom: 1rem;
 	}
 
 	.header h1 {
-		margin: 0 0 0.5rem 0;
-		font-size: 2rem;
+		margin: 0 0 var(--space-3) 0;
+		font-size: clamp(2.25rem, 5vw, 3.5rem);
+		color: var(--ink);
 	}
 
-	.header p {
+	.subtitle {
 		margin: 0;
-		color: var(--text-secondary);
+		font-size: var(--text-md);
+		color: var(--ink-mid);
 	}
 
 	.category-section {
-		margin-bottom: 3rem;
+		margin-bottom: var(--space-10);
 	}
 
-	.category-section h2 {
-		font-size: 1.5rem;
-		margin-bottom: 1rem;
-		color: var(--text-primary);
+	.category-title {
+		font-family: 'IM Fell English', serif;
+		font-size: var(--text-xl);
+		font-weight: 400;
+		margin: 0 0 var(--space-5) 0;
+		color: var(--ink);
 	}
 
 	.articles-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		gap: var(--space-4);
 	}
 
-	.article-link {
+	.article-card {
 		display: block;
 		text-decoration: none;
 		color: inherit;
+		padding: var(--space-1);
+		transition: background-color 0.15s ease;
 	}
 
-	.article-link:hover h3 {
-		color: var(--accent);
+	.article-card:hover {
+		background: var(--tint-gold);
 	}
 
-	.article-link h3 {
-		margin: 0 0 0.5rem 0;
-		font-size: 1.125rem;
-		transition: color 0.2s;
+	.article-card:hover .article-title {
+		color: var(--gold);
 	}
 
-	.meta {
-		margin: 0.25rem 0;
-		font-size: 0.875rem;
-		color: var(--text-secondary);
+	.article-title {
+		font-family: 'IM Fell English', serif;
+		font-size: var(--text-lg);
+		font-weight: 400;
+		margin: 0 0 var(--space-2) 0;
+		color: var(--ink);
+		transition: color 0.15s ease;
+	}
+
+	.article-meta {
+		display: flex;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.meta-item {
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-xs);
+		letter-spacing: 0.1em;
+		text-transform: lowercase;
+		color: var(--ink-mid);
 	}
 
 	code {
-		background: var(--bg-secondary);
-		padding: 0.125rem 0.375rem;
-		border-radius: 3px;
-		font-size: 0.875rem;
+		font-family: 'Courier New', monospace;
+		font-size: var(--text-xs);
+		color: var(--ink-mid);
+		padding: var(--space-1) var(--space-2);
+		background: var(--tint-green-mid);
+		border: 1px solid var(--border-subtle);
+		border-radius: 2px;
 	}
 </style>

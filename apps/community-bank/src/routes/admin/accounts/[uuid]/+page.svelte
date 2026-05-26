@@ -6,7 +6,10 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const { account, transactions, auditLog, principalLabel, page, pageSize } = $derived(data);
 
-	function fmt(n: number) { return n.toLocaleString(); }
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
+	}
 	function date(s: string) { return s.slice(0, 16).replace('T', ' '); }
 </script>
 
@@ -31,11 +34,11 @@
 	<div class="info-row">
 		<div class="stat-card">
 			<div class="stat-card__label">Franks Balance</div>
-			<div class="stat-card__value {account.franks_balance < 0 ? 'negative' : ''}">🟢 {fmt(account.franks_balance)}</div>
+			<div class="stat-card__value {account.franks_balance < 0 ? 'negative' : ''}">🟢 {fmtCurrency(account.franks_balance)}</div>
 		</div>
 		<div class="stat-card">
 			<div class="stat-card__label">Florens Balance</div>
-			<div class="stat-card__value {account.florens_balance < 0 ? 'negative' : ''}">🟡 {fmt(account.florens_balance)}</div>
+			<div class="stat-card__value {account.florens_balance < 0 ? 'negative' : ''}">🟡 {fmtCurrency(account.florens_balance)}</div>
 		</div>
 		<div class="stat-card">
 			<div class="stat-card__label">Status</div>
@@ -139,7 +142,7 @@
 							<td class="mono">@{tx.to_handle}</td>
 							<td class="num {tx.from_uuid === account.uuid ? 'out' : 'in'}">
 								<span class="currency-badge">{tx.currency === 'franks' ? '🟢' : '🟡'}</span>
-								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)}
+							{tx.from_uuid === account.uuid ? '−' : '+'}{fmtCurrency(tx.amount)}
 							</td>
 							<td class="mono">{tx.slip_serial ?? ''}</td>
 							<td>{tx.memo ?? ''}</td>

@@ -4,8 +4,14 @@ import type { Account } from '../domain/accounts.js';
 
 /**
  * Check if a session has app-wide admin permission for banking
+ * Only grants admin when acting as an association (not as personal context)
  */
 export function hasAppWideAdmin(session: Session): boolean {
+	// Must be acting as an association (not as self) to use admin permissions
+	if (session.acting_as_uuid === session.person_uuid) {
+		return false;
+	}
+	
 	return session.permissions.some(
 		(p) => p.app === 'bank' && p.permission === PERMISSIONS.ADMIN
 	);
@@ -47,17 +53,12 @@ export function canTransferFrom(session: Session, account: Account): boolean {
 		return true;
 	}
 	
-	// Must be acting as the account owner
-	if (account.owner_uuid !== session.acting_as_uuid) {
-		return false;
-	}
-	
-	// Personal account - always allowed when acting as yourself
-	if (session.acting_as_uuid === session.person_uuid) {
+	// If acting as the account owner, you can transfer from your own account
+	if (account.owner_uuid === session.acting_as_uuid) {
 		return true;
 	}
 	
-	// Association account - need teller permission
+	// Otherwise, need teller permission to transfer from other accounts
 	return hasPermission(session, PERMISSIONS.TELLER);
 }
 

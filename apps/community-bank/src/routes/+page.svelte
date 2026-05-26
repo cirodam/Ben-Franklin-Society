@@ -5,13 +5,12 @@
 	import type { PageData, ActionData } from './$types.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	const { accounts, session, isAdmin } = $derived(data);
+	const { accounts, session } = $derived(data);
 	
 	const isPersonal = $derived(session && session.acting_as_uuid === session.person_uuid);
 	
 	const pageTitle = $derived(() => {
 		if (!session) return 'My Accounts';
-		if (isAdmin && !isPersonal) return 'All Bank Accounts';
 		if (!isPersonal) return 'Association Accounts';
 		return 'My Accounts';
 	});
@@ -19,8 +18,9 @@
 	let showCreateForm = $state(false);
 	let newAccountName = $state('');
 
-	function fmt(n: number) {
-		return n.toLocaleString();
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
 	}
 </script>
 
@@ -31,7 +31,6 @@
 			<ContextBadge 
 				actingAsUuid={session.acting_as_uuid}
 				personUuid={session.person_uuid}
-				isAdmin={isAdmin}
 			/>
 		{/if}
 	</div>
@@ -62,14 +61,14 @@
 						<div class="balance-row franks">
 							<span class="currency-icon">🟢</span>
 							<span class="balance-amount t-balance" class:negative={acct.franks_balance < 0} class:positive={acct.franks_balance > 0}>
-								{fmt(acct.franks_balance)}
-							</span>
-							<span class="currency-label">Franks</span>
-						</div>
-						<div class="balance-row florens">
-							<span class="currency-icon">🟡</span>
-							<span class="balance-amount t-balance" class:negative={acct.florens_balance < 0} class:positive={acct.florens_balance > 0}>
-								{fmt(acct.florens_balance)}
+							{fmtCurrency(acct.franks_balance)}
+						</span>
+						<span class="currency-label">Franks</span>
+					</div>
+					<div class="balance-row florens">
+						<span class="currency-icon">🟡</span>
+						<span class="balance-amount t-balance" class:negative={acct.florens_balance < 0} class:positive={acct.florens_balance > 0}>
+							{fmtCurrency(acct.florens_balance)}
 							</span>
 							<span class="currency-label">Florens</span>
 						</div>

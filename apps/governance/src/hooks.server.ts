@@ -4,9 +4,13 @@ import { resolveSession } from '$lib/server/infrastructure/auth.js';
 import { getPersonByUuid } from '$lib/server/organization/people.js';
 import { db } from '$lib/server/db.js';
 import { scheduleCleanupJobs } from '$lib/server/infrastructure/cleanup.js';
+import { startOutboxWorker } from '$lib/server/central-bank/outbox.js';
 
 // Schedule cleanup jobs on server startup
 scheduleCleanupJobs();
+
+// Start outbox worker for delivering bank commands
+startOutboxWorker();
 
 function isSetupComplete(): boolean {
 	const row = db.prepare('SELECT 1 FROM person LIMIT 1').get();

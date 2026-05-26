@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { hashPassword } from '../infrastructure/auth.js';
 import { revokeAllSessions } from '../infrastructure/auth.js';
+import { issueInitialFranks } from '../central-bank/issuance.js';
 
 // --- Types ---
 
@@ -83,7 +84,23 @@ export async function createPerson(input: NewPersonInput): Promise<Person> {
 		).run(uuid, passwordHash, joinedAt, joinedAt);
 	})();
 
-	return getPersonByUuid(uuid)!;
+	const person = getPersonByUuid(uuid)!;
+
+	// Queue initial Franks issuance (2000 per year of age) to Treasury
+	// Command is written to outbox and will be delivered by background worker
+	try {
+		const commandUuid = issueInitialFranks({
+			personUuid: uuid,
+			dateOfBirth: input.date_of_birth,
+			performedByUuid: uuid // New member is credited as performer
+		});
+		console.log(`Queued initial issuance for ${uuid}: command ${commandUuid}`);
+	} catch (err) {
+		console.error(`Failed to queue initial franks for ${uuid}:`, err);
+		// Continue - member creation succeeded, issuance can be retried
+	}
+
+	return person;
 }
 
 export function updatePersonProfile(

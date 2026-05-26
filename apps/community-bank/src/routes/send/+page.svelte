@@ -7,6 +7,11 @@
 	const { accounts, preselect } = $derived(data);
 
 	let sent = $state(false);
+	
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
+	}
 </script>
 
 <div class="page">
@@ -42,38 +47,34 @@
 					<Select name="from_uuid" label="From account" required>
 						{#each accounts as a}
 							<option value={a.uuid} selected={a.uuid === preselect}>
-								{a.name} — {a.franks_balance.toLocaleString()} F / {a.florens_balance.toLocaleString()} ₣
-							</option>
-						{/each}
-					</Select>
+							{a.name} — {fmtCurrency(a.franks_balance)} F / {fmtCurrency(a.florens_balance)} ₣
+						</option>
+					{/each}
+				</Select>
 
-					<Select name="currency" label="Currency">
-						<option value="franks">🟢 Franks (local only)</option>
-						<option value="florens">🟡 Florens (works everywhere)</option>
-					</Select>
+				<Select name="currency" label="Currency">
+					<option value="franks">🟢 Franks (local only)</option>
+					<option value="florens">🟡 Florens (works everywhere)</option>
+				</Select>
 
-					<Input
-						name="to_handle"
-						label="To (handle)"
-						type="text"
-						placeholder="e.g. jane_smith or food-service"
-						required
-					/>
+				<Input
+					name="to_handle"
+					label="To (handle)"
+					type="text"
+					placeholder="e.g. jane_smith or food-service"
+					required
+				/>
 
-					<Input
-						name="amount"
-						label="Amount"
-						type="number"
-						min="1"
-						step="1"
-						required
-					/>
+				<Input
+					name="amount"
+					label="Amount"
+					type="number"
+					min="0.01"
+					step="0.01"
+					required
+				/>
 
-					<Input
-						name="memo"
-						label="Memo (optional)"
-						type="text"
-						maxlength="200"
+				<Input
 						class="field-wide"
 					/>
 				</div>

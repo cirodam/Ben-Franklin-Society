@@ -3,37 +3,28 @@
 	 * Context Badge Component
 	 * 
 	 * Displays a small badge indicating the current context mode
-	 * (personal, association, or admin)
+	 * (association only - personal context shows no badge)
 	 */
 	
 	interface Props {
 		actingAsUuid: string;
 		personUuid: string;
-		isAdmin?: boolean;
 		contextLabel?: string;
 	}
 	
-	let { actingAsUuid, personUuid, isAdmin = false, contextLabel }: Props = $props();
+	let { actingAsUuid, personUuid, contextLabel }: Props = $props();
 	
 	const isPersonal = $derived(actingAsUuid === personUuid);
-	const isAssociation = $derived(!isPersonal);
-	
-	const badgeType = $derived(() => {
-		if (isAdmin) return 'admin';
-		if (isAssociation) return 'association';
-		return 'personal';
-	});
 	
 	const badgeLabel = $derived(() => {
-		if (isAdmin) return 'Admin View';
-		if (isAssociation && contextLabel) return contextLabel;
-		if (isAssociation) return 'Association Context';
-		return null; // Don't show badge for personal context
+		if (isPersonal) return null; // Don't show badge for personal context
+		if (contextLabel) return contextLabel;
+		return 'Association Context';
 	});
 </script>
 
 {#if badgeLabel()}
-	<div class="context-badge" class:admin={badgeType() === 'admin'} class:association={badgeType() === 'association'}>
+	<div class="context-badge">
 		{badgeLabel()}
 	</div>
 {/if}
@@ -49,17 +40,8 @@
 		font-weight: 600;
 		letter-spacing: 0.02em;
 		text-transform: uppercase;
-	}
-	
-	.context-badge.association {
 		background: var(--highlight-faint);
 		color: var(--highlight);
 		border: 1px solid var(--highlight-border);
-	}
-	
-	.context-badge.admin {
-		background: var(--error-faint);
-		color: var(--error);
-		border: 1px solid var(--error-border);
 	}
 </style>

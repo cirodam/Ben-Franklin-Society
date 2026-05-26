@@ -34,7 +34,7 @@
 				{/if}
 				{#if isAdmin}
 					{#if !isTeller}<SidebarDivider />{/if}
-					<SidebarLink href="/admin" class="admin-link">Administration</SidebarLink>
+					<SidebarLink href="/admin">Administration</SidebarLink>
 				{/if}
 			{/snippet}
 
@@ -123,7 +123,8 @@
 		font-weight: 600;
 	}
 
-	/* Custom teller/admin link styling */
+
+	/* Custom teller link styling */
 	:global(.teller-link) {
 		color: var(--olive) !important;
 		font-weight: 500 !important;
@@ -135,16 +136,6 @@
 		color: var(--olive) !important;
 	}
 	
-	:global(.admin-link) {
-		color: var(--ink-mid) !important;
-		font-weight: 500 !important;
-	}
-	
-	:global(.admin-link:hover),
-	:global(.admin-link.sidebar-link--active) {
-		background: var(--ledger-lined) !important;
-		color: var(--ink) !important;
-	}
 	.sidebar-footer-content {
 		padding: var(--space-3);
 	}

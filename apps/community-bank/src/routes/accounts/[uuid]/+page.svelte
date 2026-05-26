@@ -5,8 +5,9 @@
 	let { data }: { data: PageData } = $props();
 	const { account, allAccounts, recentTransactions } = $derived(data);
 
-	function fmt(n: number) {
-		return n.toLocaleString();
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
 	}
 
 	function date(s: string) {
@@ -47,16 +48,16 @@
 				<div class="balance-info">
 					<div class="balance-label">Franks</div>
 					<div class="balance-value t-balance" class:negative={account.franks_balance < 0} class:positive={account.franks_balance > 0}>
-						{fmt(account.franks_balance)}
-					</div>
+					{fmtCurrency(account.franks_balance)}
 				</div>
 			</div>
-			<div class="balance-detail florens">
-				<div class="balance-icon">🟡</div>
-				<div class="balance-info">
-					<div class="balance-label">Florens</div>
-					<div class="balance-value t-balance" class:negative={account.florens_balance < 0} class:positive={account.florens_balance > 0}>
-						{fmt(account.florens_balance)}
+		</div>
+		<div class="balance-detail florens">
+			<div class="balance-icon">🟡</div>
+			<div class="balance-info">
+				<div class="balance-label">Florens</div>
+				<div class="balance-value t-balance" class:negative={account.florens_balance < 0} class:positive={account.florens_balance > 0}>
+					{fmtCurrency(account.florens_balance)}
 					</div>
 				</div>
 			</div>
@@ -115,7 +116,7 @@
 						<div class="transaction-footer">
 							<div class="transaction-amount {tx.from_uuid === account.uuid ? 'out' : 'in'}">
 								<span class="currency-badge {tx.currency}">{tx.currency === 'franks' ? '🟢' : '🟡'}</span>
-								{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)}
+							{tx.from_uuid === account.uuid ? '−' : '+'}{fmtCurrency(tx.amount)}
 							</div>
 							{#if tx.memo}
 								<div class="transaction-memo">{tx.memo}</div>

@@ -1,9 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountsForContext, getAccountByUuid } from '$lib/server/domain/accounts.js';
+import { getAccountsForContext, getAccountByUuid, getAccountsByOwner } from '$lib/server/domain/accounts.js';
 import { canTransferFrom } from '$lib/server/auth/authorization.js';
 import { postTransaction } from '$lib/server/core/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
+import { resolveHandle } from '$lib/server/external/governance.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session!;
@@ -11,8 +12,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		(a) => a.is_frozen === 0
 	);
 	
-	// Require at least 2 accounts for internal transfers
-	if (accounts.length < 2) {
+	// Need at least one account to transfer from
+	if (accounts.length === 0) {
 		throw redirect(303, '/');
 	}
 	
@@ -26,24 +27,49 @@ export const actions: Actions = {
 		const data = await request.formData();
 
 		const from_uuid   = String(data.get('from_uuid')    ?? '').trim();
-		const to_uuid     = String(data.get('to_uuid')      ?? '').trim();
+		const to_input    = String(data.get('to_input')     ?? '').trim(); // Can be UUID or handle
 		const currency    = String(data.get('currency')     ?? 'franks').trim();
 		const amount_str  = String(data.get('amount')       ?? '').trim();
 		const memo        = String(data.get('memo')         ?? '').trim() || null;
 
-		if (!from_uuid || !to_uuid || !amount_str)
+		if (!from_uuid || !to_input || !amount_str)
 			return fail(400, { error: 'All fields are required.' });
 
 		if (!['franks', 'florens'].includes(currency))
 			return fail(400, { error: 'Invalid currency type.' });
 
-		const amount = parseInt(amount_str, 10);
-		if (isNaN(amount) || amount <= 0)
-			return fail(400, { error: 'Amount must be a positive whole number.' });
+		// Parse amount as decimal (e.g., 12.54) and convert to cents (1254)
+		const amountDecimal = parseFloat(amount_str);
+		if (isNaN(amountDecimal) || amountDecimal <= 0)
+			return fail(400, { error: 'Amount must be a positive number.' });
+		
+		// Validate max 2 decimal places
+		if (!/^\d+(\.\d{1,2})?$/.test(amount_str))
+			return fail(400, { error: 'Amount can have at most 2 decimal places.' });
+		
+		const amount = Math.round(amountDecimal * 100); // Convert to cents
 
-		// Verify both accounts exist and we have permission
+		// Verify source account exists and we have permission
 		const fromAccount = getAccountByUuid(from_uuid);
-		const toAccount = getAccountByUuid(to_uuid);
+		
+		// Resolve destination - could be a UUID or a handle
+		let toAccount = getAccountByUuid(to_input);
+		
+		if (!toAccount) {
+			// Try resolving as a handle
+			const personInfo = await resolveHandle(to_input);
+			if (!personInfo) {
+				return fail(404, { error: `No account found matching "${to_input}".` });
+			}
+			
+			// Find this person's accounts (use their primary/first account)
+			const personAccounts = getAccountsByOwner(personInfo.uuid);
+			if (personAccounts.length === 0) {
+				return fail(404, { error: `${personInfo.name} has no bank accounts.` });
+			}
+			
+			toAccount = personAccounts[0]; // Use first account
+		}
 
 		if (!fromAccount)
 			return fail(404, { error: 'Source account not found.' });
@@ -54,10 +80,6 @@ export const actions: Actions = {
 		// Check transfer permission (must own from account or be admin)
 		if (!canTransferFrom(session, fromAccount))
 			return fail(403, { error: 'Not authorized to transfer from this account.' });
-		
-		// For internal transfers, must also own destination
-		if (toAccount.owner_uuid !== session.acting_as_uuid)
-			return fail(403, { error: 'Destination account not yours.' });
 
 		if (fromAccount.is_frozen === 1)
 			return fail(403, { error: 'Source account is frozen.' });

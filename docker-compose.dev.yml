@@ -11,6 +11,8 @@ services:
       DATABASE_PATH: /app/data/governance.db
       DOCUMENTS_PATH: /app/data/documents
       PUBLIC_URL: http://localhost:5173
+      COMMUNITY_BANK_URL: http://community-bank:5174
+      GOVERNANCE_SHARED_SECRET: dev-shared-secret-governance-bank
       NODE_ENV: development
       PORT: 5173
     volumes:
@@ -29,6 +31,7 @@ services:
       PUBLIC_URL: http://localhost:5174
       OIDC_CLIENT_ID: community-bank
       OIDC_CLIENT_SECRET: dev-secret-bank
+      GOVERNANCE_SHARED_SECRET: dev-shared-secret-governance-bank
       NODE_ENV: development
       PORT: 5174
     volumes:

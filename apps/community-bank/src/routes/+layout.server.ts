@@ -21,7 +21,11 @@ export const load: LayoutServerLoad = async ({ locals, url, cookies, fetch }) =>
 	// Check permissions from session (embedded in JWT access token)
 	const client = getOidcClient();
 	const isTeller = client.hasPermission(session, 'bank', PERMISSIONS.TELLER);
-	const isAdmin = client.hasPermission(session, 'bank', PERMISSIONS.ADMIN);
+	
+	// Only show admin features when acting as an association with admin permission
+	const isAdmin = session.acting_as_uuid !== session.person_uuid && 
+	                client.hasPermission(session, 'bank', PERMISSIONS.ADMIN);
+	
 	const governanceUrl = client['config'].issuerUrl;
 	
 	// Fetch available contexts from governance server

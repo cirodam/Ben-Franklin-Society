@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../core/db.js';
 import type { Session } from '@bfs/oidc-client';
-import { hasAppWideAdmin } from '../auth/authorization.js';
 
 export interface Account {
 	uuid: string;
@@ -46,18 +45,9 @@ export function getAccountsByOwner(owner_uuid: string): Account[] {
 
 /**
  * Get accounts for the current session context
- * - App-wide admins see all accounts
- * - Others see only accounts they own (based on acting_as_uuid)
+ * Returns accounts owned by the acting_as_uuid (person or association)
  */
 export function getAccountsForContext(session: Session): Account[] {
-	// App-wide admin sees everything
-	if (hasAppWideAdmin(session)) {
-		return db
-			.prepare('SELECT * FROM account ORDER BY name, created_at')
-			.all() as Account[];
-	}
-	
-	// Everyone else sees only their context's accounts
 	return getAccountsByOwner(session.acting_as_uuid);
 }
 

@@ -1,9 +1,10 @@
 	import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getAccountsForContext, getAccountByUuid, searchAccounts } from '$lib/server/domain/accounts.js';
+import { getAccountsForContext, getAccountByUuid, getAccountsByOwner } from '$lib/server/domain/accounts.js';
 import { canTransferFrom } from '$lib/server/auth/authorization.js';
 import { postTransaction } from '$lib/server/core/ledger.js';
 import { TransactionType, TransactionSource } from '$lib/server/transaction-types.js';
+import { resolveHandle } from '$lib/server/external/governance.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals.session!;
@@ -31,9 +32,16 @@ export const actions: Actions = {
 		if (!['franks', 'florens'].includes(currency))
 			return fail(400, { error: 'Invalid currency type.' });
 
-		const amount = parseInt(amount_str, 10);
-		if (isNaN(amount) || amount <= 0)
-			return fail(400, { error: 'Amount must be a positive whole number.' });
+		// Parse amount as decimal (e.g., 12.54) and convert to cents (1254)
+		const amountDecimal = parseFloat(amount_str);
+		if (isNaN(amountDecimal) || amountDecimal <= 0)
+			return fail(400, { error: 'Amount must be a positive number.' });
+		
+		// Validate max 2 decimal places
+		if (!/^\d+(\.\d{1,2})?$/.test(amount_str))
+			return fail(400, { error: 'Amount can have at most 2 decimal places.' });
+		
+		const amount = Math.round(amountDecimal * 100); // Convert to cents
 
 		// Verify the source account belongs to the acting principal and we have permission
 		const fromAccount = getAccountByUuid(from_uuid);
@@ -46,11 +54,19 @@ export const actions: Actions = {
 		if (fromAccount.is_frozen === 1)
 			return fail(403, { error: 'That account is frozen.' });
 
-		// Resolve recipient by handle (search by name/uuid)
-		const searchResults = searchAccounts(to_handle, 5);
-		const toAccount = searchResults[0];
-		if (!toAccount)
-			return fail(400, { error: `No account found matching "${to_handle}".` });
+		// Resolve recipient by handle - look up in governance database
+		const personInfo = await resolveHandle(to_handle);
+		if (!personInfo) {
+			return fail(400, { error: `No person found with handle "${to_handle}".` });
+		}
+
+		// Find the person's bank accounts
+		const personAccounts = getAccountsByOwner(personInfo.uuid);
+		if (personAccounts.length === 0) {
+			return fail(400, { error: `${personInfo.name} has no bank accounts.` });
+		}
+
+		const toAccount = personAccounts[0]; // Use their first/primary account
 
 		if (toAccount.uuid === from_uuid)
 			return fail(400, { error: 'Cannot send to yourself.' });

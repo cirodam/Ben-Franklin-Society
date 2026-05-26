@@ -94,5 +94,23 @@ export function seedAdminRoles(founderUuid: string): void {
 		permissions: ['administrator'],
 	}, founderUuid);
 
+	// Treasury Treasurer
+	createAdminRole({
+		associationHandle: 'treasury',
+		title: 'Treasurer',
+		description: 'Manages Treasury accounts and appropriations',
+		app: 'bank',
+		permissions: [],
+	}, founderUuid);
+
+	// Social Insurance Fund Administrator
+	createAdminRole({
+		associationHandle: 'social-insurance',
+		title: 'Administrator',
+		description: 'Manages Social Insurance Fund accounts and disbursements',
+		app: 'bank',
+		permissions: [],
+	}, founderUuid);
+
 	console.log('✅ Seeded admin roles');
 }

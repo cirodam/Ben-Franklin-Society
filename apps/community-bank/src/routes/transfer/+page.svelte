@@ -7,27 +7,19 @@
 	const { accounts, preselect } = $derived(data);
 
 	let fromUuid = $state(preselect || (accounts[0]?.uuid ?? ''));
-	let toUuid = $state('');
+	let toInput = $state(''); // Can be handle or UUID
 	let amount = $state('');
 	let memo = $state('');
 
-	// Available destination accounts (exclude the selected source account)
-	const toAccounts = $derived(accounts.filter(a => a.uuid !== fromUuid));
-
-	function fmt(n: number) {
-		return n.toLocaleString();
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
 	}
 
-	// Auto-select first available destination if source changes
-	$effect(() => {
-		if (toUuid && toUuid === fromUuid) {
-			toUuid = toAccounts[0]?.uuid ?? '';
-		}
-	});
 </script>
 
 <div class="page">
-	<PageHeader title="Transfer Between Accounts" />
+	<PageHeader title="Transfer Funds" />
 
 	{#if form?.error}
 		<div class="error-message">
@@ -42,7 +34,7 @@
 				<select id="from_uuid" name="from_uuid" bind:value={fromUuid} required class="select-input">
 					{#each accounts as acct}
 						<option value={acct.uuid}>
-							{acct.name} ({fmt(acct.franks_balance)} F / {fmt(acct.florens_balance)} ₣)
+							{acct.name} ({fmtCurrency(acct.franks_balance)} F / {fmtCurrency(acct.florens_balance)} ₣)
 						</option>
 					{/each}
 				</select>
@@ -51,15 +43,28 @@
 			<div class="transfer-arrow">↓</div>
 
 			<div class="form-group">
-				<label for="to_uuid" class="t-label">To Account</label>
-				<select id="to_uuid" name="to_uuid" bind:value={toUuid} required class="select-input">
-					<option value="">-- Select destination --</option>
-					{#each toAccounts as acct}
-						<option value={acct.uuid}>
-							{acct.name} ({fmt(acct.franks_balance)} F / {fmt(acct.florens_balance)} ₣)
-						</option>
+				<label for="to_input" class="t-label">To (Handle or Account)</label>
+				<input
+					id="to_input"
+					name="to_input"
+					type="text"
+					bind:value={toInput}
+					placeholder="e.g., tylerdteague or account UUID"
+					required
+					class="text-input"
+				/>
+				<div class="help-text">Enter a person's handle or select from your accounts:</div>
+				<div class="quick-accounts">
+					{#each accounts.filter(a => a.uuid !== fromUuid) as acct}
+						<button
+							type="button"
+							class="quick-account-btn"
+							onclick={() => (toInput = acct.uuid)}
+						>
+							{acct.name}
+						</button>
 					{/each}
-				</select>
+				</div>
 			</div>
 
 			<div class="form-group">
@@ -75,8 +80,8 @@
 				name="amount"
 				label="Amount"
 				type="number"
-				min="1"
-				step="1"
+				min="0.01"
+				step="0.01"
 				bind:value={amount}
 				required
 			/>
@@ -145,6 +150,55 @@
 		outline: none;
 		border-color: var(--color-accent);
 		box-shadow: 0 0 0 3px rgba(139, 90, 60, 0.1);
+	}
+
+	.text-input {
+		width: 100%;
+		padding: var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		font-family: var(--font-sans);
+		font-size: var(--text-base);
+		color: var(--color-text);
+		background: white;
+		transition: border-color 0.2s;
+	}
+
+	.text-input:focus {
+		outline: none;
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px rgba(139, 90, 60, 0.1);
+	}
+
+	.help-text {
+		margin-top: var(--space-2);
+		font-size: var(--text-sm);
+		color: var(--color-text-light);
+		font-family: var(--font-sans);
+	}
+
+	.quick-accounts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+
+	.quick-account-btn {
+		padding: var(--space-2) var(--space-3);
+		background: white;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--color-text);
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.quick-account-btn:hover {
+		background: var(--color-accent-subtle);
+		border-color: var(--color-accent);
 	}
 
 	.transfer-arrow {

@@ -10,7 +10,10 @@
 
 	let showCreateForm = $state(false);
 
-	function fmt(n: number) { return n.toLocaleString(); }
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
+	}
 
 	// Success handling - redirect to new account
 	$effect(() => {
@@ -116,8 +119,8 @@
 						<tr class={acct.is_frozen === 1 ? 'row--frozen' : ''}>
 							<td class="mono">{acct.uuid.slice(0, 8)}</td>
 							<td>{acct.name}</td>
-							<td class="num {acct.franks_balance < 0 ? 'negative' : ''}">🟢 {fmt(acct.franks_balance)}</td>
-							<td class="num {acct.florens_balance < 0 ? 'negative' : ''}">🟡 {fmt(acct.florens_balance)}</td>
+					<td class="num {acct.franks_balance < 0 ? 'negative' : ''}">🟢 {fmtCurrency(acct.franks_balance)}</td>
+					<td class="num {acct.florens_balance < 0 ? 'negative' : ''}">🟡 {fmtCurrency(acct.florens_balance)}</td>
 							<td>
 								{#if acct.is_frozen === 1}
 									<span class="badge badge--frozen">Frozen</span>

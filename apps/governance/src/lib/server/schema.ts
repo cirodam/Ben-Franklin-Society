@@ -755,4 +755,20 @@ CREATE INDEX IF NOT EXISTS idx_security_audit_log_event_type ON security_audit_l
 CREATE INDEX IF NOT EXISTS idx_security_audit_log_session ON security_audit_log(session_uuid, logged_at DESC);
 CREATE INDEX IF NOT EXISTS idx_security_audit_log_ip ON security_audit_log(ip_address, logged_at DESC);
 
+-- Bank Command Outbox: Queue of commands to be sent to Community Bank
+-- Uses transactional outbox pattern for reliable delivery
+CREATE TABLE IF NOT EXISTS bank_command_outbox (
+  uuid              TEXT PRIMARY KEY,
+  command_type      TEXT NOT NULL,  -- 'mint', 'burn', etc.
+  payload           TEXT NOT NULL,  -- JSON payload for the command
+  created_at        TEXT NOT NULL,
+  delivered_at      TEXT NULL,
+  failed_attempts   INTEGER NOT NULL DEFAULT 0,
+  last_error        TEXT NULL,
+  next_retry_after  TEXT NULL  -- Exponential backoff
+);
+
+CREATE INDEX IF NOT EXISTS idx_bank_command_outbox_pending ON bank_command_outbox(delivered_at, next_retry_after);
+CREATE INDEX IF NOT EXISTS idx_bank_command_outbox_created ON bank_command_outbox(created_at);
+
 `;

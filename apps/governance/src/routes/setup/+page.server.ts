@@ -18,6 +18,8 @@ import { seedColleges } from '../../../scripts/seeders/seed-colleges.js';
 import { seedCommittees } from '../../../scripts/seeders/seed-committees.js';
 import { seedAdminRoles } from '../../../scripts/seeders/seed-roles.js';
 import { generateIdentityKeypair, initializeIdentity } from '$lib/server/federation/lineage/identity.js';
+import { issueInitialFranks } from '$lib/server/central-bank/issuance.js';
+import { queueCreateAccountCommand } from '$lib/server/central-bank/outbox.js';
 
 export const load: PageServerLoad = async () => {
 	const existing = db.prepare('SELECT 1 FROM person LIMIT 1').get();
@@ -113,7 +115,47 @@ export const actions: Actions = {
 		console.log('\n🌱 Seeding system associations...');
 		seedAssociations(coreAssociations, person.uuid, { skipIfExists: false });
 
+		// Queue bank account creation for all seeded associations
+		console.log('\n💰 Queueing bank account creation for system associations...');
+		const associationsNeedingAccounts = ['society', 'general-assembly', 'treasury', 'social-insurance'];
+		for (const handle of associationsNeedingAccounts) {
+			const assoc = getAssociationByHandle(handle);
+			if (assoc) {
+				try {
+					const commandUuid = queueCreateAccountCommand({
+						owner_uuid: assoc.uuid,
+						name: assoc.name,
+						demurrage_exempt: handle === 'treasury' || handle === 'social-insurance' // Treasury and SIF exempt from demurrage
+					});
+					console.log(`  ✓ Queued account creation for ${assoc.name}: ${commandUuid}`);
+				} catch (err) {
+					console.error(`  ✗ Failed to queue account creation for ${assoc.name}:`, err);
+				}
+			}
+		}
+
 		// Seed services, colleges, and committees
+		seedServices(services, person.uuid, { skipIfExists: false });
+		seedColleges(colleges, person.uuid, { skipIfExists: false });
+		seedCommittees(committees, person.uuid, { skipIfExists: false });
+
+		// Queue bank account creation for service associations
+		console.log('\n💰 Queueing bank account creation for service associations...');
+		for (const service of services) {
+			const assoc = getAssociationByHandle(service.handle);
+			if (assoc) {
+				try {
+					const commandUuid = queueCreateAccountCommand({
+						owner_uuid: assoc.uuid,
+						name: assoc.name,
+						demurrage_exempt: false // Services subject to normal demurrage
+					});
+					console.log(`  ✓ Queued account creation for ${assoc.name}: ${commandUuid}`);
+				} catch (err) {
+					console.error(`  ✗ Failed to queue account creation for ${assoc.name}:`, err);
+				}
+			}
+		}
 		seedServices(services, person.uuid, { skipIfExists: false });
 		seedColleges(colleges, person.uuid, { skipIfExists: false });
 		seedCommittees(committees, person.uuid, { skipIfExists: false });
@@ -169,6 +211,18 @@ export const actions: Actions = {
 
 		// Create Administrator roles in satellite app associations (bank, mail, marketplace)
 		seedAdminRoles(person.uuid);
+
+		// Issue initial Franks for the founder (now that Treasury exists)
+		try {
+			const commandUuid = issueInitialFranks({
+				personUuid: person.uuid,
+				dateOfBirth: dob,
+				performedByUuid: person.uuid
+			});
+			console.log(`✅ Queued initial issuance for founder: command ${commandUuid}`);
+		} catch (err) {
+			console.error('⚠️  Failed to queue initial franks for founder:', err);
+		}
 
 		console.log('✅ Setup complete!\n');
 		redirect(302, '/login');

@@ -9,7 +9,10 @@
 
 	const TX_TYPES = ['', 'transfer', 'issuance', 'demurrage', 'dues', 'payroll', 'allowance'];
 
-	function fmt(n: number) { return n.toLocaleString(); }
+	// Format cents as currency (e.g., 1254 -> "12.54")
+	function fmtCurrency(cents: number): string {
+		return (cents / 100).toFixed(2);
+	}
 	function date(s: string) { return s.slice(0, 16).replace('T', ' '); }
 
 	function typeLabel(t: string) {
@@ -89,7 +92,7 @@
 					<div class="transaction-footer">
 						<div class="transaction-amount {tx.from_uuid === account.uuid ? 'out' : 'in'}">
 							<span class="currency-badge {tx.currency}">{tx.currency === 'franks' ? '🟢' : '🟡'}</span>
-							{tx.from_uuid === account.uuid ? '−' : '+'}{fmt(tx.amount)}
+							{tx.from_uuid === account.uuid ? '−' : '+'}{fmtCurrency(tx.amount)}
 						</div>
 						{#if tx.memo}
 							<div class="transaction-memo">{tx.memo}</div>
