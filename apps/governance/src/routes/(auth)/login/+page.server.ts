@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types.js';
 import { authenticatePerson } from '$lib/server/infrastructure/auth.js';
 import { getCommunityConfig } from '$lib/server/infrastructure/config.js';
 import { checkRateLimit, resetRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
+import { env } from '$env/dynamic/private';
 
 /**
  * Validate and return a safe redirect URL.
@@ -19,10 +20,15 @@ function getSafeRedirectUrl(next: string | null): string {
 	
 	// Allow full URLs to known satellite apps (for OAuth redirect_uri validation)
 	const allowedOrigins = [
-		'http://localhost:5174', // community-bank
-		'http://localhost:5175', // mail
-		'http://localhost:5176', // marketplace
-	];
+		'http://localhost:5174', // community-bank (dev)
+		'http://localhost:5175', // mail (dev)
+		'http://localhost:5176', // marketplace (dev)
+		'http://localhost:5177', // library (dev)
+		env.BANK_URL,            // production
+		env.MAIL_URL,            // production
+		env.MARKETPLACE_URL,     // production
+		env.LIBRARY_URL,         // production
+	].filter(Boolean); // Remove undefined values
 	
 	try {
 		const url = new URL(next);

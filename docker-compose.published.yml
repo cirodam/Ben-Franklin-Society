@@ -26,6 +26,11 @@ services:
       NODE_ENV: production
       PORT: 5173
       OIDC_PRIVATE_KEY: ${OIDC_PRIVATE_KEY}
+      # Satellite app URLs for OIDC client registration
+      BANK_URL: ${BANK_URL:-https://bank.bfs.example.com}
+      MAIL_URL: ${MAIL_URL:-https://mail.bfs.example.com}
+      MARKETPLACE_URL: ${MARKETPLACE_URL:-https://marketplace.bfs.example.com}
+      LIBRARY_URL: ${LIBRARY_URL:-https://library.bfs.example.com}
     volumes:
       - governance-data:/app/data
     networks:

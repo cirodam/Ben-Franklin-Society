@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { listClients, createClient, deleteClient } from '$lib/server/infrastructure/oidc.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
+import { env } from '$env/dynamic/private';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const actingAs = locals.session?.acting_as_uuid ?? null;
@@ -36,9 +37,13 @@ export const actions: Actions = {
 		}
 
 		try {
+			const redirectUri = env.BANK_URL 
+				? `${env.BANK_URL}/oauth/callback`
+				: 'http://localhost:5174/oauth/callback';
+
 			const { clientId, clientSecret } = createClient({
 				name: 'Community Bank',
-				redirectUris: ['http://localhost:5174/oauth/callback'],
+				redirectUris: [redirectUri],
 				createdBy: locals.session!.person_uuid,
 				clientId: 'community-bank',
 			});
@@ -61,9 +66,13 @@ export const actions: Actions = {
 		}
 
 		try {
+			const redirectUri = env.MAIL_URL 
+				? `${env.MAIL_URL}/oauth/callback`
+				: 'http://localhost:5175/oauth/callback';
+
 			const { clientId, clientSecret } = createClient({
 				name: 'Mail',
-				redirectUris: ['http://localhost:5175/oauth/callback'],
+				redirectUris: [redirectUri],
 				createdBy: locals.session!.person_uuid,
 				clientId: 'mail',
 			});
@@ -86,9 +95,13 @@ export const actions: Actions = {
 		}
 
 		try {
+			const redirectUri = env.MARKETPLACE_URL 
+				? `${env.MARKETPLACE_URL}/oauth/callback`
+				: 'http://localhost:5176/oauth/callback';
+
 			const { clientId, clientSecret } = createClient({
 				name: 'Marketplace',
-				redirectUris: ['http://localhost:5176/oauth/callback'],
+				redirectUris: [redirectUri],
 				createdBy: locals.session!.person_uuid,
 				clientId: 'marketplace',
 			});
@@ -103,6 +116,7 @@ export const actions: Actions = {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
 		}
 	},
+
 	createLibrary: async ({ locals }) => {
 		const actingAs = locals.session?.acting_as_uuid ?? null;
 		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {
@@ -110,9 +124,13 @@ export const actions: Actions = {
 		}
 
 		try {
+			const redirectUri = env.LIBRARY_URL 
+				? `${env.LIBRARY_URL}/oauth/callback`
+				: 'http://localhost:5177/oauth/callback';
+
 			const { clientId, clientSecret } = createClient({
 				name: 'Library',
-				redirectUris: ['http://localhost:5177/oauth/callback'],
+				redirectUris: [redirectUri],
 				createdBy: locals.session!.person_uuid,
 				clientId: 'library',
 			});
@@ -127,6 +145,7 @@ export const actions: Actions = {
 			return fail(400, { error: err instanceof Error ? err.message : 'Failed to create client' });
 		}
 	},
+
 	create: async ({ request, locals }) => {
 		const actingAs = locals.session?.acting_as_uuid ?? null;
 		if (!actingAs || !hasPermission(actingAs, PERMISSIONS.GOVERNANCE_ADMIN)) {

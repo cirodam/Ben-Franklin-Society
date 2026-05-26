@@ -32,7 +32,7 @@ export function getOidcConfig() {
 		governanceUrl: getConfig('oidc:governance_url') ?? env.GOVERNANCE_URL ?? 'http://localhost:5173',
 		clientId: getConfig('oidc:client_id') ?? 'community-bank',
 		clientSecret: getConfig('oidc:client_secret'),
-\t\tredirectUri: getConfig('oidc:redirect_uri') ?? (env.PUBLIC_URL ? `${env.PUBLIC_URL}/oauth/callback` : 'http://localhost:5174/oauth/callback'),
+		redirectUri: getConfig('oidc:redirect_uri') ?? (env.PUBLIC_URL ? `${env.PUBLIC_URL}/oauth/callback` : 'http://localhost:5174/oauth/callback'),
 	};
 }
 

@@ -1,29 +1,29 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
 import { isOidcConfigured, setOidcConfig, getOidcConfig } from '$lib/server/config.js';
+import { env } from '$env/dynamic/private';
 
 const APP_NAME = 'Community Bank';
 const DEFAULT_CLIENT_ID = 'community-bank';
-const DEFAULT_REDIRECT_URI = 'http://localhost:5174/oauth/callback';
-const DEFAULT_GOVERNANCE_URL = 'http://localhost:5173';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ url }) => {
 	if (isOidcConfigured()) {
 		redirect(302, '/');
 	}
 
 	const config = getOidcConfig();
+	const redirectUri = env.PUBLIC_URL ? `${env.PUBLIC_URL}/oauth/callback` : `${url.origin}/oauth/callback`;
 
 	return {
 		appName: APP_NAME,
 		clientId: DEFAULT_CLIENT_ID,
-		redirectUri: DEFAULT_REDIRECT_URI,
+		redirectUri,
 		governanceUrl: config.governanceUrl,
 	};
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, url }) => {
 		const data = await request.formData();
 		const governanceUrl = data.get('governance_url');
 		const clientSecret = data.get('client_secret');
@@ -43,13 +43,16 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid Governance URL format' });
 		}
 
+		// Use PUBLIC_URL env var if set, otherwise use request origin
+		const redirectUri = env.PUBLIC_URL ? `${env.PUBLIC_URL}/oauth/callback` : `${url.origin}/oauth/callback`;
+
 		// Save to database
 		try {
 			setOidcConfig({
 				governanceUrl,
 				clientId: DEFAULT_CLIENT_ID,
 				clientSecret,
-				redirectUri: DEFAULT_REDIRECT_URI,
+				redirectUri,
 			});
 		} catch (err) {
 			console.error('Failed to save OIDC config:', err);
