@@ -18,6 +18,7 @@ export interface MonetarySupply {
 export interface MonetaryOperation {
 	uuid: string;
 	type: 'mint' | 'burn';
+	currency: 'franks' | 'florens';
 	amount: number;
 	account_uuid: string;
 	reason: string;
@@ -76,22 +77,23 @@ export function updateMonetaryPolicy(policy: Partial<MonetaryPolicy>): void {
 // --- Supply Queries ---
 
 /**
- * Get minted supply (franks this society has created)
+ * Get minted supply for a specific currency
  */
-export function getMintedSupply(): number {
+export function getMintedSupply(currency: 'franks' | 'florens' = 'franks'): number {
+	const column = currency === 'franks' ? 'minted_franks_supply' : 'minted_florens_supply';
 	const result = db
-		.prepare('SELECT minted_supply FROM monetary_supply WHERE id = 1')
-		.get() as { minted_supply: number } | undefined;
+		.prepare(`SELECT ${column} FROM monetary_supply WHERE id = 1`)
+		.get() as { minted_franks_supply?: number; minted_florens_supply?: number } | undefined;
 
 	if (!result) {
 		// Initialize if doesn't exist
 		db.prepare(
-			'INSERT OR IGNORE INTO monetary_supply (id, minted_supply, updated_at) VALUES (1, 0, ?)'
+			'INSERT OR IGNORE INTO monetary_supply (id, minted_franks_supply, minted_florens_supply, updated_at) VALUES (1, 0, 0, ?)'
 		).run(new Date().toISOString());
 		return 0;
 	}
 
-	return result.minted_supply;
+	return result[column] ?? 0;
 }
 
 /**
@@ -173,7 +175,7 @@ export function mintFranks(opts: {
 
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
-	const mintedBefore = getMintedSupply();
+	const mintedBefore = getMintedSupply('franks');
 	const totalBefore = getTotalSupply();
 	const mintedAfter = mintedBefore + opts.amount;
 	const totalAfter = totalBefore + opts.amount;
@@ -187,14 +189,14 @@ export function mintFranks(opts: {
 
 		// Update minted supply
 		db.prepare(
-			'INSERT INTO monetary_supply (id, minted_supply, updated_at) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET minted_supply = ?, updated_at = ?'
+			'INSERT INTO monetary_supply (id, minted_franks_supply, minted_florens_supply, updated_at) VALUES (1, ?, 0, ?) ON CONFLICT(id) DO UPDATE SET minted_franks_supply = ?, updated_at = ?'
 		).run(mintedAfter, now, mintedAfter, now);
 
 		// Log operation
 		db.prepare(
 			`INSERT INTO monetary_operation 
-			(uuid, type, amount, account_uuid, reason, minted_supply_before, minted_supply_after, total_supply_before, total_supply_after, performed_by_uuid, performed_at)
-			VALUES (?, 'mint', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			(uuid, type, currency, amount, account_uuid, reason, minted_supply_before, minted_supply_after, total_supply_before, total_supply_after, performed_by_uuid, performed_at)
+			VALUES (?, 'mint', 'franks', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		).run(
 			uuid,
 			opts.amount,
@@ -242,7 +244,7 @@ export function burnFranks(opts: {
 
 	const uuid = randomUUID();
 	const now = new Date().toISOString();
-	const mintedBefore = getMintedSupply();
+	const mintedBefore = getMintedSupply('franks');
 	const totalBefore = getTotalSupply();
 
 	if (opts.amount > mintedBefore) {
@@ -263,14 +265,78 @@ export function burnFranks(opts: {
 
 		// Update minted supply
 		db.prepare(
-			'INSERT INTO monetary_supply (id, minted_supply, updated_at) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET minted_supply = ?, updated_at = ?'
+			'INSERT INTO monetary_supply (id, minted_franks_supply, minted_florens_supply, updated_at) VALUES (1, ?, 0, ?) ON CONFLICT(id) DO UPDATE SET minted_franks_supply = ?, updated_at = ?'
 		).run(mintedAfter, now, mintedAfter, now);
 
 		// Log operation
 		db.prepare(
 			`INSERT INTO monetary_operation 
-			(uuid, type, amount, account_uuid, reason, minted_supply_before, minted_supply_after, total_supply_before, total_supply_after, performed_by_uuid, performed_at)
-			VALUES (?, 'burn', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			(uuid, type, currency, amount, account_uuid, reason, minted_supply_before, minted_supply_after, total_supply_before, total_supply_after, performed_by_uuid, performed_at)
+			VALUES (?, 'burn', 'franks', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).run(
+			uuid,
+			opts.amount,
+			opts.account_uuid,
+			opts.reason,
+			mintedBefore,
+			mintedAfter,
+			totalBefore,
+			totalAfter,
+			opts.performed_by_uuid,
+			now
+		);
+	})();
+
+	return getMonetaryOperationByUuid(uuid)!;
+}
+
+/**
+ * Mint new florens (create currency) into an account
+ * Called by Federation when issuing Florens to a society
+ */
+export function mintFlorens(opts: {
+	amount: number;
+	account_uuid: string;
+	reason: string;
+	performed_by_uuid: string;
+}): MonetaryOperation {
+	if (opts.amount <= 0) {
+		throw new Error('Mint amount must be positive');
+	}
+
+	// Verify account exists
+	const account = db
+		.prepare('SELECT uuid FROM account WHERE uuid = ?')
+		.get(opts.account_uuid) as { uuid: string } | undefined;
+
+	if (!account) {
+		throw new Error('Account not found');
+	}
+
+	const uuid = randomUUID();
+	const now = new Date().toISOString();
+	const mintedBefore = getMintedSupply('florens');
+	const totalBefore = getTotalSupply();
+	const mintedAfter = mintedBefore + opts.amount;
+	const totalAfter = totalBefore + opts.amount;
+
+	db.transaction(() => {
+		// Credit the account
+		db.prepare('UPDATE account SET florens_balance = florens_balance + ? WHERE uuid = ?').run(
+			opts.amount,
+			opts.account_uuid
+		);
+
+		// Update minted supply
+		db.prepare(
+			'INSERT INTO monetary_supply (id, minted_franks_supply, minted_florens_supply, updated_at) VALUES (1, 0, ?, ?) ON CONFLICT(id) DO UPDATE SET minted_florens_supply = ?, updated_at = ?'
+		).run(mintedAfter, now, mintedAfter, now);
+
+		// Log operation
+		db.prepare(
+			`INSERT INTO monetary_operation 
+			(uuid, type, currency, amount, account_uuid, reason, minted_supply_before, minted_supply_after, total_supply_before, total_supply_after, performed_by_uuid, performed_at)
+			VALUES (?, 'mint', 'florens', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 		).run(
 			uuid,
 			opts.amount,

@@ -54,14 +54,16 @@ CREATE TABLE IF NOT EXISTS demurrage_operation (
 );
 
 CREATE TABLE IF NOT EXISTS monetary_supply (
-  id            INTEGER PRIMARY KEY CHECK (id = 1),
-  minted_supply INTEGER NOT NULL DEFAULT 0,
-  updated_at    TEXT NOT NULL
+  id                    INTEGER PRIMARY KEY CHECK (id = 1),
+  minted_franks_supply  INTEGER NOT NULL DEFAULT 0,
+  minted_florens_supply INTEGER NOT NULL DEFAULT 0,
+  updated_at            TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS monetary_operation (
   uuid                  TEXT PRIMARY KEY,
   type                  TEXT NOT NULL,
+  currency              TEXT NOT NULL CHECK (currency IN ('franks', 'florens')),
   amount                INTEGER NOT NULL,
   account_uuid          TEXT NOT NULL REFERENCES account(uuid),
   reason                TEXT NOT NULL,

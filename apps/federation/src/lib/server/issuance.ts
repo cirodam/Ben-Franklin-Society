@@ -1,7 +1,11 @@
 import { db } from './db.js';
 import { lookupSocietyByUuid } from './queries.js';
 import { recordFlorenIssuance } from './updates.js';
+import { queueFlorenMintCommand } from './outbox.js';
 import type { FoundingRecord } from './types.js';
+
+// Federation system UUID for performing operations
+const FEDERATION_SYSTEM_UUID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * Calculate Floren issuance based on member count
@@ -111,14 +115,25 @@ export function issueFlorenForMembers(params: {
 		return { success: false, error: recordResult.error };
 	}
 
-	// 9. TODO: Actually mint and distribute Florens to society's Community Bank
-	// This would involve:
-	// - Minting Florens in Federation's central bank wallet
-	// - Transferring to society's Community Bank endpoint
-	// - Waiting for confirmation
-	
-	return { 
-		success: true, 
+	// 9. Queue mint command for delivery to Community Bank
+	// Note: We don't know the Treasury UUID yet - the Community Bank will look it up by owner_uuid
+	// For now, we'll pass the society UUID and the bank will find the Treasury association
+	const commandUuid = queueFlorenMintCommand({
+		societyUuid: societyUuid,
+		payload: {
+			amount: issuanceAmount,
+			owner_uuid: 'treasury', // Community Bank will resolve this to Treasury association
+			reason: `floren_issuance:${newMembers}_new_members`,
+			performed_by_uuid: FEDERATION_SYSTEM_UUID
+		}
+	});
+
+	console.log(
+		`[issueFlorenForMembers] Queued ${issuanceAmount} Florens for ${society.handle} (${newMembers} new members). Command: ${commandUuid}`
+	);
+
+	return {
+		success: true,
 		amount: issuanceAmount,
 		newMembers
 	};

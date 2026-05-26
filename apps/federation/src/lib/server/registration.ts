@@ -2,6 +2,7 @@ import { db } from './db.js';
 import { verify } from 'crypto';
 import type { FoundingRecord } from './types.js';
 import { lookupSocietyByUuid } from './queries.js';
+import { issueFlorenForMembers } from './issuance.js';
 
 /**
  * Verify a founding record's cryptographic signature
@@ -86,6 +87,28 @@ export function registerSociety(params: {
 		JSON.stringify(foundingRecord),
 		foundedAt
 	);
+
+	// Issue initial Floren endowment if member count is available
+	if (foundingRecord.members && foundingRecord.members.length > 0) {
+		const memberCount = foundingRecord.members.length;
+		console.log(`[registerSociety] Issuing initial endowment for ${memberCount} members`);
+		
+		try {
+			const result = issueFlorenForMembers({
+				societyUuid: foundingRecord.child.uuid,
+				verifiedMemberCount: memberCount
+			});
+			
+			if (result.success) {
+				console.log(`[registerSociety] Successfully queued ${result.amount} Florens for ${foundingRecord.child.handle}`);
+			} else {
+				console.warn(`[registerSociety] Failed to issue endowment: ${result.error}`);
+			}
+		} catch (error) {
+			console.error(`[registerSociety] Error issuing endowment:`, error);
+			// Don't fail registration if issuance fails - can be retried later
+		}
+	}
 
 	return { success: true };
 }

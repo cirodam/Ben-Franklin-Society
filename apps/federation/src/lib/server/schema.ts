@@ -35,4 +35,22 @@ CREATE INDEX IF NOT EXISTS idx_societies_parent ON societies(parent_uuid);
 CREATE INDEX IF NOT EXISTS idx_societies_founded ON societies(founded_at);
 CREATE INDEX IF NOT EXISTS idx_societies_status ON societies(status);
 
+-- Floren Command Outbox: Queue of commands to be sent to Community Banks
+-- Transactional outbox pattern for reliable Floren issuance delivery
+CREATE TABLE IF NOT EXISTS floren_command_outbox (
+  uuid                TEXT PRIMARY KEY,
+  society_uuid        TEXT NOT NULL,
+  command_type        TEXT NOT NULL,
+  payload             TEXT NOT NULL,
+  created_at          TEXT NOT NULL,
+  delivered_at        TEXT NULL,
+  failed_attempts     INTEGER DEFAULT 0,
+  last_error          TEXT NULL,
+  next_retry_after    TEXT NULL,
+  FOREIGN KEY (society_uuid) REFERENCES societies(uuid)
+);
+
+CREATE INDEX IF NOT EXISTS idx_floren_outbox_delivery ON floren_command_outbox(delivered_at, next_retry_after);
+CREATE INDEX IF NOT EXISTS idx_floren_outbox_society ON floren_command_outbox(society_uuid);
+
 `;
