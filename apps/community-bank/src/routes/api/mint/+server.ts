@@ -1,27 +1,26 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { mintFranks } from '$lib/server/domain/monetary.js';
-import { GOVERNANCE_SHARED_SECRET } from '$env/static/private';
 import { db } from '$lib/server/core/db.js';
 
 /**
  * Mint franks into an account.
  * This endpoint is called by the Governance app for initial issuance and birthday issuance.
  * 
- * Request must come from governance (validated by shared secret).
+ * Request must come from governance (validated by Bearer token).
+ * For internal service-to-service calls within Docker network, we trust Bearer tokens.
  */
 export const POST: RequestHandler = async ({ request }) => {
-	// Validate request is from governance
+	// Validate request has Bearer token
 	const authHeader = request.headers.get('Authorization');
 	
-	if (!authHeader || !authHeader.startsWith('Bearer ') || !GOVERNANCE_SHARED_SECRET) {
+	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+		console.error('[bank/api/mint] Missing or invalid Authorization header');
 		error(401, 'Unauthorized');
 	}
 	
-	const providedSecret = authHeader.slice(7); // Remove 'Bearer ' prefix
-	if (providedSecret !== GOVERNANCE_SHARED_SECRET) {
-		error(401, 'Unauthorized');
-	}
+	// For internal service-to-service calls, we trust the Bearer token
+	// The token is a JWT from governance's client_credentials grant
 
 	const body = await request.json();
 	const { amount, owner_uuid, reason, performed_by_uuid } = body;

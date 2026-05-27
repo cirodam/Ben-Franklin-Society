@@ -18,9 +18,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 				return error(401, 'Invalid token');
 			}
 			
-			// Extract person UUID and session UUID from token claims
-			personUuid = (claims as any).person_uuid;
-			sessionUuid = (claims as any).sub; // session UUID
+			// Access token claims: sub = person UUID, session_uuid = session UUID
+			personUuid = claims.sub;
+			sessionUuid = claims.session_uuid; // Now available in access tokens
 			
 			if (!personUuid) {
 				return error(401, 'Invalid token claims');

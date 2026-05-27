@@ -67,6 +67,7 @@ export interface AccessTokenClaims {
 	jti: string;
 	client_id: string;
 	acting_as: string; // association UUID, or same as sub when acting as self
+	session_uuid: string; // session UUID for updating context
 	permissions: Array<{ app: string; permission: string }>;
 	scope: string;
 }
@@ -164,6 +165,7 @@ export function issueTokens(params: {
 		jti: crypto.randomUUID(),
 		client_id: params.clientId,
 		acting_as: params.actingAsUuid,
+		session_uuid: params.sessionUuid,
 		permissions: permissions.map((p) => ({ app: p.app, permission: p.permission })),
 		scope: params.scope,
 	};

@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		}
 		
 		// Context switched successfully on governance server
-		// Clear the local session cookie and redirect to force re-authentication
+		// Clear the local session - user will need to re-authenticate to get fresh tokens with new context
 		client.clearSession(cookies);
 		
 		// Return success JSON so the client can handle the redirect

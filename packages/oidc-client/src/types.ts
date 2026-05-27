@@ -30,6 +30,7 @@ export interface AccessTokenClaims {
 	jti: string;
 	client_id: string;
 	acting_as: string; // association UUID, or same as sub when acting as self
+	session_uuid: string; // session UUID for updating context
 	permissions: Array<{ app: string; permission: string }>;
 	scope: string;
 }
