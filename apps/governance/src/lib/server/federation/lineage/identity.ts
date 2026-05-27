@@ -27,6 +27,7 @@ export interface FoundingRecord {
 	founded_at: string;
 	parent_attestation: string;
 	signature: string; // Parent's signature over the record
+	members?: string[]; // Array of member person UUIDs (for Floren endowment calculation)
 }
 
 /**

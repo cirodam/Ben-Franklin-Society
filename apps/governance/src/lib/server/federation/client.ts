@@ -16,6 +16,14 @@ function getFederationEndpoint(): string {
 }
 
 /**
+ * Get all member UUIDs for this society (for Floren endowment calculation)
+ */
+function getAllMemberUuids(): string[] {
+	const result = db.prepare('SELECT uuid FROM person ORDER BY created_at').all() as { uuid: string }[];
+	return result.map(row => row.uuid);
+}
+
+/**
  * Register this society or a child society with the Federation
  */
 export async function registerWithFederation(params: {
@@ -32,9 +40,17 @@ export async function registerWithFederation(params: {
 		// Build the request body
 		const requestBody: any = {};
 		
+		// Get member list for Floren endowment calculation
+		const members = getAllMemberUuids();
+		console.log(`Including ${members.length} members in founding record for Floren issuance`);
+		
 		if (params.foundingRecord) {
 			// Child society with founding record
-			requestBody.founding_record = params.foundingRecord;
+			// Add members to the founding record
+			requestBody.founding_record = {
+				...params.foundingRecord,
+				members
+			};
 		} else {
 			// Root society - need to send identity directly
 			const identity = getIdentity();
@@ -57,7 +73,8 @@ export async function registerWithFederation(params: {
 				},
 				founded_at: new Date(identity.created_at * 1000).toISOString(),
 				parent_attestation: `The ${identity.handle} society is self-founded.`,
-				signature: '' // Self-founded societies don't have a parent signature
+				signature: '', // Self-founded societies don't have a parent signature
+				members
 			};
 		}
 		

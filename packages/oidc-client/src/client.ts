@@ -210,6 +210,13 @@ export class OidcClient {
 				refresh_token?: string;
 			};
 
+			// Validate session structure
+			if (!session.person_uuid || !session.uuid || typeof session.expires_at !== 'number') {
+				console.error('[oidc-client] Invalid session structure, clearing corrupt session');
+				cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
+				return null;
+			}
+
 			// Check if expired or about to expire (within 5 minutes)
 			const now = Math.floor(Date.now() / 1000);
 			const isExpired = session.expires_at < now;
@@ -218,13 +225,21 @@ export class OidcClient {
 			// If expired or expiring soon, try to refresh
 			if ((isExpired || isExpiringSoon) && refresh_token) {
 				try {
+					console.log('[oidc-client] Access token expiring, attempting refresh');
 					const newTokens = await this.refreshAccessToken(refresh_token);
 					await this.setSession(cookies, newTokens);
 					// Return the newly refreshed session
 					return await this.getSession(cookies);
 				} catch (refreshError) {
 					// Refresh failed, clear session
-					console.error('[oidc-client] Token refresh failed:', refreshError);
+					const errorMsg = refreshError instanceof Error ? refreshError.message : String(refreshError);
+					console.error('[oidc-client] Token refresh failed:', errorMsg);
+					
+					// If error is invalid_grant, the refresh token was revoked (e.g., context switched)
+					if (errorMsg.includes('invalid_grant')) {
+						console.log('[oidc-client] Refresh token revoked, clearing session for re-authentication');
+					}
+					
 					cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 					return null;
 				}
@@ -232,12 +247,14 @@ export class OidcClient {
 
 			// Token is still valid, no refresh needed
 			if (isExpired) {
+				console.log('[oidc-client] Session expired, clearing');
 				cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 				return null;
 			}
 
 			return session;
-		} catch {
+		} catch (parseError) {
+			console.error('[oidc-client] Failed to parse session cookie:', parseError);
 			cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 			return null;
 		}
@@ -260,20 +277,31 @@ export class OidcClient {
 	async getValidAccessToken(cookies: Cookies): Promise<string | null> {
 		const sessionCookie = cookies.get(COOKIE_NAME);
 		if (!sessionCookie) {
+			console.log('[oidc-client] getValidAccessToken: No session cookie found');
 			return null;
 		}
 
 		try {
 			const data = JSON.parse(sessionCookie);
 			if (!data.refresh_token) {
+				console.log('[oidc-client] getValidAccessToken: No refresh token in session');
 				return null;
 			}
 
 			// Use refresh token to get fresh access token
+			console.log('[oidc-client] getValidAccessToken: Requesting fresh access token');
 			const tokens = await this.refreshAccessToken(data.refresh_token);
 			return tokens.access_token;
 		} catch (err) {
-			console.error('[oidc-client] Failed to get valid access token:', err);
+			const errorMsg = err instanceof Error ? err.message : String(err);
+			console.error('[oidc-client] Failed to get valid access token:', errorMsg);
+			
+			// Clear corrupt session on error
+			if (errorMsg.includes('invalid_grant') || errorMsg.includes('JSON')) {
+				console.log('[oidc-client] Clearing corrupt session after error');
+				cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
+			}
+			
 			return null;
 		}
 	}

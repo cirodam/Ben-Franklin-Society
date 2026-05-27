@@ -30,9 +30,5 @@ export interface FoundingRecord {
 	founded_at: string;
 	parent_attestation: string;
 	signature: string;
-	members?: Array<{
-		name: string;
-		public_key: string;
-		joined_at: string;
-	}>;
+	members?: string[]; // Array of member person UUIDs (for counting, privacy-preserving)
 }
