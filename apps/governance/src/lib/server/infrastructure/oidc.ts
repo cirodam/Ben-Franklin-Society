@@ -2,6 +2,7 @@ import * as crypto from 'node:crypto';
 import type { KeyObject } from 'node:crypto';
 import { db } from '../db.js';
 import { resolvePermissions } from '../organization/associations.js';
+import { getAvailableContexts } from './auth.js';
 import { logAuditEvent } from './audit.js';
 
 // ---------------------------------------------------------------------------
@@ -80,6 +81,7 @@ export interface IdTokenClaims {
 	given_name: string;
 	family_name: string;
 	acting_as: string;
+	contexts?: Array<{ uuid: string; type: string; label: string }>;
 }
 
 function signJwt(payload: object): string {
@@ -176,6 +178,7 @@ export function issueTokens(params: {
 		given_name: person.given_name,
 		family_name: person.family_name,
 		acting_as: params.actingAsUuid,
+		contexts: getAvailableContexts(params.personUuid)
 	};
 
 	// Create refresh token
@@ -214,6 +217,76 @@ export function issueTokens(params: {
 		token_type: 'Bearer',
 		expires_in: ACCESS_TOKEN_TTL_SECS,
 		refresh_token: refreshToken,
+	};
+}
+
+/**
+ * Issue a service access token for server-to-server authentication
+ * Uses client credentials grant (OAuth 2.0)
+ */
+export function issueServiceToken(params: { clientId: string }): { access_token: string; token_type: 'Bearer'; expires_in: number } {
+	// Special case: governance issuing tokens for its own internal use
+	if (params.clientId === 'governance-internal') {
+		const iat = Math.floor(Date.now() / 1000);
+		const exp = iat + 3600;
+		const iss = issuerUrl();
+
+		const serviceTokenClaims = {
+			iss,
+			sub: 'governance', // governance as subject
+			aud: iss,
+			iat,
+			exp,
+			jti: crypto.randomUUID(),
+			client_id: 'governance-internal',
+			client_name: 'Governance Internal Service',
+			token_type: 'service',
+			scope: 'service',
+		};
+
+		return {
+			access_token: signJwt(serviceTokenClaims),
+			token_type: 'Bearer',
+			expires_in: 3600,
+		};
+	}
+
+	// Regular client credentials flow
+	const client = getClient(params.clientId);
+	if (!client) throw new Error(`Client not found: ${params.clientId}`);
+
+	const iat = Math.floor(Date.now() / 1000);
+	const exp = iat + 3600; // 1 hour for service tokens
+	const iss = issuerUrl();
+
+	// Service token claims (no user context)
+	const serviceTokenClaims = {
+		iss,
+		sub: client.uuid, // client UUID as subject
+		aud: iss, // audience is the issuer itself
+		iat,
+		exp,
+		jti: crypto.randomUUID(),
+		client_id: params.clientId,
+		client_name: client.name,
+		token_type: 'service', // Mark as service token
+		scope: 'service', // Service-level scope
+	};
+
+	// Log service token issuance
+	logAuditEvent({
+		eventType: 'oidc_service_token_issued',
+		actorUuid: client.uuid,
+		actingAsUuid: client.uuid,
+		sessionUuid: null,
+		success: true,
+		details: { clientId: params.clientId, clientName: client.name }
+	});
+
+	return {
+		access_token: signJwt(serviceTokenClaims),
+		token_type: 'Bearer',
+		expires_in: 3600,
 	};
 }
 

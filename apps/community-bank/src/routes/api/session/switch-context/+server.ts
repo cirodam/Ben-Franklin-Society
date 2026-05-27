@@ -9,11 +9,18 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
 		const client = getOidcClient();
 		const governanceUrl = client['config'].issuerUrl;
+		
+		// Get a valid access token for authentication
+		const accessToken = await client.getValidAccessToken(cookies);
+		if (!accessToken) {
+			return error(401, 'Not authenticated');
+		}
+		
 		const response = await fetch(`${governanceUrl}/api/session/switch-context`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Cookie': cookies.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+				'Authorization': `Bearer ${accessToken}`
 			},
 			body: JSON.stringify(body)
 		});

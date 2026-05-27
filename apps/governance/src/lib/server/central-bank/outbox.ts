@@ -7,7 +7,34 @@
 
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
-import { COMMUNITY_BANK_URL, GOVERNANCE_SHARED_SECRET } from '$env/static/private';
+import { getCommunityConfig } from '../infrastructure/config.js';
+import { issueServiceToken } from '../infrastructure/oidc.js';
+
+// Cached service token with expiration
+let cachedServiceToken: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Get a valid service access token for calling satellite apps
+ * Governance issues tokens for itself directly (it's the auth server)
+ */
+async function getServiceAccessToken(): Promise<string> {
+	// Return cached token if still valid (with 5min buffer)
+	if (cachedServiceToken && cachedServiceToken.expiresAt > Date.now() + 300000) {
+		return cachedServiceToken.token;
+	}
+
+	// Issue a service token for governance itself
+	// Use a special "governance-internal" client ID that doesn't need registration
+	const tokenResponse = issueServiceToken({ clientId: 'governance-internal' });
+	
+	// Cache the token
+	cachedServiceToken = {
+		token: tokenResponse.access_token,
+		expiresAt: Date.now() + (tokenResponse.expires_in * 1000)
+	};
+
+	return cachedServiceToken.token;
+}
 
 export interface BankCommand {
 	uuid: string;
@@ -120,8 +147,10 @@ export function recordFailedAttempt(uuid: string, error: string): void {
  * Attempt to deliver a single command to the bank
  */
 export async function deliverCommand(command: BankCommand): Promise<void> {
-	if (!COMMUNITY_BANK_URL || !GOVERNANCE_SHARED_SECRET) {
-		throw new Error('COMMUNITY_BANK_URL and GOVERNANCE_SHARED_SECRET must be configured');
+	const bankUrl = getCommunityConfig('bank_url');
+	
+	if (!bankUrl) {
+		throw new Error('Bank URL not configured');
 	}
 	
 	// Map command types to API endpoints
@@ -135,13 +164,16 @@ export async function deliverCommand(command: BankCommand): Promise<void> {
 		throw new Error(`Unknown command type: ${command.command_type}`);
 	}
 	
-	const endpoint = `${COMMUNITY_BANK_URL}${path}`;
+	const endpoint = `${bankUrl}${path}`;
+	
+	// Get service access token for authentication
+	const serviceToken = await getServiceAccessToken();
 	
 	const response = await fetch(endpoint, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${GOVERNANCE_SHARED_SECRET}`
+			'Authorization': `Bearer ${serviceToken}`
 		},
 		body: command.payload,
 		// Add timeout to avoid hanging

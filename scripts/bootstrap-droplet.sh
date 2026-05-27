@@ -132,6 +132,7 @@ else
   MAIL_OIDC_SECRET=$(openssl rand -hex 32)
   MARKETPLACE_OIDC_SECRET=$(openssl rand -hex 32)
   LIBRARY_OIDC_SECRET=$(openssl rand -hex 32)
+  GOVERNANCE_SHARED_SECRET=$(openssl rand -hex 32)
 
   # Generate Ed25519 OIDC signing key
   echo "Generating OIDC EdDSA signing key..."
@@ -162,6 +163,9 @@ BANK_OIDC_SECRET=$BANK_OIDC_SECRET
 MAIL_OIDC_SECRET=$MAIL_OIDC_SECRET
 MARKETPLACE_OIDC_SECRET=$MARKETPLACE_OIDC_SECRET
 LIBRARY_OIDC_SECRET=$LIBRARY_OIDC_SECRET
+
+# Shared secret for service-to-service authentication
+GOVERNANCE_SHARED_SECRET=$GOVERNANCE_SHARED_SECRET
 
 # Let's Encrypt email for SSL certificates
 ACME_EMAIL=${ACME_EMAIL}

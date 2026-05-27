@@ -20,13 +20,21 @@
 	</header>
 
 	<nav class="services-nav">
-		<a href="http://localhost:5174" class="service-link">Community Bank</a>
-		<span class="separator">•</span>
-		<a href="http://localhost:5175" class="service-link">Mail</a>
-		<span class="separator">•</span>
-		<a href="http://localhost:5176" class="service-link">Marketplace</a>
-		<span class="separator">•</span>
-		<a href="http://localhost:5177" class="service-link">Library</a>
+		{#if data.serviceUrls.bank}
+			<a href={data.serviceUrls.bank} class="service-link">Community Bank</a>
+			<span class="separator">•</span>
+		{/if}
+		{#if data.serviceUrls.mail}
+			<a href={data.serviceUrls.mail} class="service-link">Mail</a>
+			<span class="separator">•</span>
+		{/if}
+		{#if data.serviceUrls.marketplace}
+			<a href={data.serviceUrls.marketplace} class="service-link">Marketplace</a>
+			<span class="separator">•</span>
+		{/if}
+		{#if data.serviceUrls.library}
+			<a href={data.serviceUrls.library} class="service-link">Library</a>
+		{/if}
 	</nav>
 
 	{#if showForm}

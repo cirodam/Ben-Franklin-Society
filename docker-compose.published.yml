@@ -31,6 +31,9 @@ services:
       MAIL_URL: ${MAIL_URL:-https://mail.bfs.example.com}
       MARKETPLACE_URL: ${MARKETPLACE_URL:-https://marketplace.bfs.example.com}
       LIBRARY_URL: ${LIBRARY_URL:-https://library.bfs.example.com}
+      # Internal service-to-service communication
+      COMMUNITY_BANK_URL: http://community-bank:5174
+      GOVERNANCE_SHARED_SECRET: ${GOVERNANCE_SHARED_SECRET}
     volumes:
       - governance-data:/app/data
     networks:
@@ -51,6 +54,7 @@ services:
       PUBLIC_URL: ${BANK_URL:-https://bank.bfs.example.com}
       OIDC_CLIENT_ID: community-bank
       OIDC_CLIENT_SECRET: ${BANK_OIDC_SECRET}
+      GOVERNANCE_SHARED_SECRET: ${GOVERNANCE_SHARED_SECRET}
       NODE_ENV: production
       PORT: 5174
     volumes:

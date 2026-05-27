@@ -1,10 +1,17 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
 import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getCommunityConfig } from '$lib/server/infrastructure/config.js';
 
 export const load: PageServerLoad = async () => {
 	const posts = bulletin.getSocietyPosts();
-	return { posts };
+	const serviceUrls = {
+		bank: getCommunityConfig('bank_url') || '',
+		mail: getCommunityConfig('mail_url') || '',
+		marketplace: getCommunityConfig('marketplace_url') || '',
+		library: getCommunityConfig('library_url') || '',
+	};
+	return { posts, serviceUrls };
 };
 
 export const actions: Actions = {

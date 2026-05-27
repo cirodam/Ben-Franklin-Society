@@ -7,6 +7,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.session = null;
 
 	console.log('[community-bank/hooks] Request to:', event.url.pathname);
+	console.log('[community-bank/hooks] Cookie header:', event.request.headers.get('cookie') || 'NONE');
 
 	// API endpoints don't need OIDC session - they use their own auth
 	const isApiEndpoint = event.url.pathname.startsWith('/api/');

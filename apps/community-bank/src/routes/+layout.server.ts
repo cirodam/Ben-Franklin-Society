@@ -28,22 +28,8 @@ export const load: LayoutServerLoad = async ({ locals, url, cookies, fetch }) =>
 	
 	const governanceUrl = client['config'].issuerUrl;
 	
-	// Fetch available contexts from governance server
-	let availableContexts = [];
-	try {
-		const contextResponse = await fetch(`${governanceUrl}/api/session/contexts`, {
-			headers: {
-				'Cookie': cookies.getAll().map(c => `${c.name}=${c.value}`).join('; ')
-			}
-		});
-		
-		if (contextResponse.ok) {
-			const data = await contextResponse.json();
-			availableContexts = data.contexts ?? [];
-		}
-	} catch (err) {
-		console.error('[community-bank/layout] Failed to fetch contexts:', err);
-	}
+	// Get available contexts from session (embedded in ID token)
+	const availableContexts = session.contexts ?? [];
 
 	return { 
 		session, 

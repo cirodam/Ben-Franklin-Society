@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { exchangeAuthCode, exchangeRefreshToken, getClient, verifyClientSecret } from '$lib/server/infrastructure/oidc.js';
+import { exchangeAuthCode, exchangeRefreshToken, getClient, verifyClientSecret, issueServiceToken } from '$lib/server/infrastructure/oidc.js';
 import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -59,6 +59,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			const tokens = exchangeRefreshToken({ refreshToken, clientId });
 			return json(tokens, { headers: { 'Cache-Control': 'no-store' } });
+		} else if (grantType === 'client_credentials') {
+			// Service-to-service authentication using client credentials
+			// Same client_id and client_secret, but different grant type
+			const serviceToken = issueServiceToken({ clientId });
+			return json(serviceToken, { headers: { 'Cache-Control': 'no-store' } });
 		} else {
 			return json({ error: 'unsupported_grant_type' }, { status: 400 });
 		}

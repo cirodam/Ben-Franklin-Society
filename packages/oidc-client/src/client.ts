@@ -25,6 +25,26 @@ export class OidcClient {
 	}
 
 	/**
+	 * Get consistent cookie options for session cookie
+	 * Used for both setting and deleting to ensure proper cookie handling
+	 * 
+	 * NOTE: We do NOT set a domain attribute, allowing each subdomain to have
+	 * its own host-only cookie. This avoids browser security restrictions that
+	 * prevent subdomains from setting cookies for parent domains.
+	 */
+	private getSessionCookieOptions(maxAge?: number) {
+		const isProduction = process.env.NODE_ENV === 'production';
+		
+		return {
+			path: '/',
+			httpOnly: true,
+			sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
+			secure: isProduction,
+			...(maxAge !== undefined && { maxAge }),
+		};
+	}
+
+	/**
 	 * Initiate the OIDC login flow
 	 * Generates PKCE challenge and returns the authorization URL
 	 * The caller should redirect to this URL using SvelteKit's redirect()
@@ -34,10 +54,12 @@ export class OidcClient {
 		const state = randomBytes(16).toString('base64url');
 
 		// Store PKCE verifier and state in cookies (short-lived)
+		// Use sameSite='none' for cross-subdomain OAuth flows
 		const cookieOptions = {
 			path: '/',
 			httpOnly: true,
-			sameSite: 'lax' as const,
+			sameSite: 'none' as const,
+			secure: true, // Required for sameSite='none'
 			maxAge: 600, // 10 minutes
 		};
 
@@ -126,17 +148,48 @@ export class OidcClient {
 	}
 
 	/**
-	 * Store tokens in an encrypted cookie
+	 * Store session in cookie (claims only, not full JWTs)
+	 * This keeps the cookie small (<1KB) to avoid browser size limits (4KB)
 	 */
-	setSession(cookies: Cookies, tokens: TokenSet): void {
-		const sessionData = JSON.stringify(tokens);
-		cookies.set(COOKIE_NAME, sessionData, {
-			path: '/',
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: process.env.NODE_ENV === 'production',
-			maxAge: tokens.expires_in,
+	async setSession(cookies: Cookies, tokens: TokenSet): Promise<void> {
+		// Extract claims from tokens
+		const accessClaims = await verifyAccessToken(tokens.access_token, this.config.issuerUrl);
+		const idClaims = await verifyIdToken(tokens.id_token, this.config.issuerUrl);
+		
+		if (!accessClaims || !idClaims) {
+			throw new Error('Failed to verify tokens');
+		}
+		
+		// Store lightweight session data (claims + refresh token only)
+		const sessionData = JSON.stringify({
+			session: {
+				uuid: accessClaims.jti,
+				person_uuid: accessClaims.sub,
+				acting_as_uuid: accessClaims.acting_as,
+				handle: idClaims.handle,
+				given_name: idClaims.given_name,
+				family_name: idClaims.family_name,
+				permissions: accessClaims.permissions,
+				contexts: idClaims.contexts,
+				expires_at: accessClaims.exp,
+			},
+			refresh_token: tokens.refresh_token,
 		});
+		
+		const cookieOptions = this.getSessionCookieOptions(tokens.expires_in);
+		console.log('[oidc-client] Setting session cookie with options:', {
+			cookieName: COOKIE_NAME,
+			expires_in: tokens.expires_in,
+			dataLength: sessionData.length,
+			cookieOptions,
+			isProduction: process.env.NODE_ENV === 'production'
+		});
+		cookies.set(COOKIE_NAME, sessionData, cookieOptions);
+		console.log('[oidc-client] Cookie set operation completed');
+		
+		// Verify the cookie was set by trying to read it back
+		const verification = cookies.get(COOKIE_NAME);
+		console.log('[oidc-client] Verification - cookie readable immediately after set:', !!verification);
 	}
 
 	/**
@@ -146,99 +199,81 @@ export class OidcClient {
 	 */
 	async getSession(cookies: Cookies): Promise<Session | null> {
 		const sessionData = cookies.get(COOKIE_NAME);
+		console.log('[oidc-client] getSession called, cookie found:', !!sessionData);
 		if (!sessionData) {
 			return null;
 		}
 
 		try {
-			const tokens = JSON.parse(sessionData) as TokenSet;
+			const { session, refresh_token } = JSON.parse(sessionData) as {
+				session: Session;
+				refresh_token?: string;
+			};
 
-			// Verify access token
-			const accessClaims = await verifyAccessToken(tokens.access_token, this.config.issuerUrl);
-			
 			// Check if expired or about to expire (within 5 minutes)
 			const now = Math.floor(Date.now() / 1000);
-			const isExpired = !accessClaims || accessClaims.exp < now;
-			const isExpiringSoon = accessClaims && accessClaims.exp < now + 300; // 5 minutes
+			const isExpired = session.expires_at < now;
+			const isExpiringSoon = session.expires_at < now + 300; // 5 minutes
 
 			// If expired or expiring soon, try to refresh
-			if ((isExpired || isExpiringSoon) && tokens.refresh_token) {
+			if ((isExpired || isExpiringSoon) && refresh_token) {
 				try {
-					const newTokens = await this.refreshAccessToken(tokens.refresh_token);
-					this.setSession(cookies, newTokens);
-					// Parse the new tokens and continue
-					const newAccessClaims = await verifyAccessToken(newTokens.access_token, this.config.issuerUrl);
-					if (!newAccessClaims) {
-						cookies.delete(COOKIE_NAME, { path: '/' });
-						return null;
-					}
-					const newIdClaims = await verifyIdToken(newTokens.id_token, this.config.issuerUrl);
-					if (!newIdClaims) {
-						cookies.delete(COOKIE_NAME, { path: '/' });
-						return null;
-					}
-					return {
-						uuid: newAccessClaims.jti,
-						person_uuid: newAccessClaims.sub,
-						acting_as_uuid: newAccessClaims.acting_as,
-						handle: newIdClaims.handle,
-						given_name: newIdClaims.given_name,
-						family_name: newIdClaims.family_name,
-						permissions: newAccessClaims.permissions,
-						expires_at: newAccessClaims.exp,
-					};
+					const newTokens = await this.refreshAccessToken(refresh_token);
+					await this.setSession(cookies, newTokens);
+					// Return the newly refreshed session
+					return await this.getSession(cookies);
 				} catch (refreshError) {
 					// Refresh failed, clear session
 					console.error('[oidc-client] Token refresh failed:', refreshError);
-					cookies.delete(COOKIE_NAME, { path: '/' });
+					cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 					return null;
 				}
 			}
 
 			// Token is still valid, no refresh needed
-			if (!accessClaims) {
-				cookies.delete(COOKIE_NAME, { path: '/' });
+			if (isExpired) {
+				cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 				return null;
 			}
 
-			// Verify ID token
-			const idClaims = await verifyIdToken(tokens.id_token, this.config.issuerUrl);
-			if (!idClaims) {
-				cookies.delete(COOKIE_NAME, { path: '/' });
-				return null;
-			}
-
-			// Build session object
-			return {
-				uuid: accessClaims.jti,
-				person_uuid: accessClaims.sub,
-				acting_as_uuid: accessClaims.acting_as,
-				handle: idClaims.handle,
-				given_name: idClaims.given_name,
-				family_name: idClaims.family_name,
-				permissions: accessClaims.permissions,
-				expires_at: accessClaims.exp,
-			};
+			return session;
 		} catch {
-			cookies.delete(COOKIE_NAME, { path: '/' });
+			cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 			return null;
 		}
 	}
 
 	/**
 	 * Get the access token from the session cookie
-	 * Returns null if no valid session exists
+	 * Note: We no longer store full access tokens in cookies
+	 * This method is deprecated and returns null
+	 * @deprecated Use getSession() to get session claims instead
 	 */
 	getAccessToken(cookies: Cookies): string | null {
-		const sessionData = cookies.get(COOKIE_NAME);
-		if (!sessionData) {
+		return null;
+	}
+
+	/**
+	 * Get a valid access token for server-to-server API calls
+	 * Uses the stored refresh token to obtain a fresh access token
+	 */
+	async getValidAccessToken(cookies: Cookies): Promise<string | null> {
+		const sessionCookie = cookies.get(COOKIE_NAME);
+		if (!sessionCookie) {
 			return null;
 		}
 
 		try {
-			const tokens = JSON.parse(sessionData) as TokenSet;
+			const data = JSON.parse(sessionCookie);
+			if (!data.refresh_token) {
+				return null;
+			}
+
+			// Use refresh token to get fresh access token
+			const tokens = await this.refreshAccessToken(data.refresh_token);
 			return tokens.access_token;
-		} catch {
+		} catch (err) {
+			console.error('[oidc-client] Failed to get valid access token:', err);
 			return null;
 		}
 	}
@@ -270,7 +305,7 @@ export class OidcClient {
 	 * Clear the session (logout)
 	 */
 	clearSession(cookies: Cookies): void {
-		cookies.delete(COOKIE_NAME, { path: '/' });
+		cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 		cookies.delete(PKCE_COOKIE_NAME, { path: '/' });
 		cookies.delete(STATE_COOKIE_NAME, { path: '/' });
 	}

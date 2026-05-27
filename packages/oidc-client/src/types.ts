@@ -44,6 +44,7 @@ export interface IdTokenClaims {
 	given_name: string;
 	family_name: string;
 	acting_as: string;
+	contexts?: Array<{ uuid: string; type: string; label: string }>;
 }
 
 export interface Session {
@@ -54,6 +55,7 @@ export interface Session {
 	given_name: string;
 	family_name: string;
 	permissions: Array<{ app: string; permission: string }>;
+	contexts?: Array<{ uuid: string; type: string; label: string }>;
 	expires_at: number; // Unix timestamp
 }
 
