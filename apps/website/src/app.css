@@ -1,0 +1,103 @@
+/* Import dignified serif fonts */
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English&family=IM+Fell+English+SC&family=Libre+Baskerville&display=swap');
+
+:root {
+	--color-bg: #ffffff;
+	--color-text: #1a1a1a;
+	--color-primary: #2563eb;
+	--color-secondary: #64748b;
+	--color-border: #e5e7eb;
+	--max-width: 1200px;
+	--font-display: 'IM Fell English', serif;
+	--font-prose: 'Libre Baskerville', Georgia, serif;
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: var(--font-prose);
+	line-height: 1.6;
+	color: var(--color-text);
+	background: var(--color-bg);
+}
+
+a {
+	color: var(--color-primary);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-display);
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 1rem;
+}
+
+h1 {
+	font-size: 2.5rem;
+}
+
+h2 {
+	font-size: 2rem;
+	margin-top: 2rem;
+}
+
+h3 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+p {
+	margin-bottom: 1rem;
+}
+
+ul,
+ol {
+	margin-left: 2rem;
+	margin-bottom: 1rem;
+}
+
+li {
+	margin-bottom: 0.5rem;
+}
+
+code {
+	font-family: 'Courier New', Courier, monospace;
+	background: #f3f4f6;
+	padding: 0.125rem 0.25rem;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+.container {
+	max-width: var(--max-width);
+	margin: 0 auto;
+	padding: 0 2rem;
+}
+
+@media (max-width: 768px) {
+	h1 {
+		font-size: 2rem;
+	}
+
+	h2 {
+		font-size: 1.5rem;
+	}
+
+	.container {
+		padding: 0 1rem;
+	}
+}

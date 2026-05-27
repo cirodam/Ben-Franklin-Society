@@ -1,4 +1,4 @@
-import { getDb } from '$lib/server/db.js';
+import { db } from '$lib/server/core/db.js';
 import { getConfig } from '$lib/server/config.js';
 
 interface HealthCheck {
@@ -24,7 +24,6 @@ export async function GET() {
 
 	// Test database connectivity
 	try {
-		const db = getDb();
 		const result = db.prepare('SELECT 1 as test').get() as { test: number } | undefined;
 		if (result?.test !== 1) {
 			checks.checks.database = { status: 'error', message: 'Database query returned unexpected result' };

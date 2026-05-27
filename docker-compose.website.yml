@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  website:
+    image: cirodam/ben-franklin-society-website:latest
+    container_name: bfs-website
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge

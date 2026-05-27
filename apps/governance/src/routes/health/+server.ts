@@ -1,5 +1,5 @@
-import { getDb } from '$lib/server/db.js';
-import { getOidcPrivateKey } from '$lib/server/infrastructure/oidc.js';
+import { db } from '$lib/server/db.js';
+import { getKeyPair } from '$lib/server/infrastructure/oidc.js';
 
 interface HealthCheck {
 	status: 'ok' | 'error';
@@ -22,7 +22,6 @@ export async function GET() {
 
 	// Test database connectivity
 	try {
-		const db = getDb();
 		const result = db.prepare('SELECT 1 as test').get() as { test: number } | undefined;
 		if (result?.test !== 1) {
 			checks.checks.database = { status: 'error', message: 'Database query returned unexpected result' };
@@ -36,8 +35,8 @@ export async function GET() {
 
 	// Test OIDC key availability
 	try {
-		const privateKey = getOidcPrivateKey();
-		if (!privateKey) {
+		const keyPair = getKeyPair();
+		if (!keyPair || !keyPair.privateKey) {
 			checks.checks.oidcKeys = { status: 'error', message: 'OIDC private key not found' };
 			checks.status = 'error';
 		}

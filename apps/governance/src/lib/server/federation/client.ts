@@ -19,7 +19,7 @@ function getFederationEndpoint(): string {
  * Get all member UUIDs for this society (for Floren endowment calculation)
  */
 function getAllMemberUuids(): string[] {
-	const result = db.prepare('SELECT uuid FROM person ORDER BY created_at').all() as { uuid: string }[];
+	const result = db.prepare('SELECT uuid FROM person ORDER BY joined_at').all() as { uuid: string }[];
 	return result.map(row => row.uuid);
 }
 
