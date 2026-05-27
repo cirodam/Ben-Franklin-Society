@@ -8,6 +8,7 @@ import { createDeliberationRule } from '$lib/server/governance/deliberation-rule
 import { ALL_PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { setInitialCommunityConfig } from '$lib/server/infrastructure/config.js';
 import { db } from '$lib/server/db.js';
+import { env } from '$env/dynamic/private';
 import { coreAssociations } from '../../../scripts/seed-data/core-associations.js';
 import { services } from '../../../scripts/seed-data/services.js';
 import { colleges } from '../../../scripts/seed-data/colleges.js';
@@ -110,6 +111,20 @@ export const actions: Actions = {
 		setInitialCommunityConfig('society_latitude', '0.0', 'Decimal latitude of the society\'s primary location');
 		setInitialCommunityConfig('society_longitude', '0.0', 'Decimal longitude of the society\'s primary location');
 		setInitialCommunityConfig('federation_radius_km', '50', 'Default radius in kilometers for browsing neighboring societies');
+
+		// Service URLs for inter-app communication
+		if (env.BANK_URL) {
+			setInitialCommunityConfig('bank_url', env.BANK_URL, 'URL of the community bank service');
+		}
+		if (env.MAIL_URL) {
+			setInitialCommunityConfig('mail_url', env.MAIL_URL, 'URL of the mail service');
+		}
+		if (env.MARKETPLACE_URL) {
+			setInitialCommunityConfig('marketplace_url', env.MARKETPLACE_URL, 'URL of the marketplace service');
+		}
+		if (env.LIBRARY_URL) {
+			setInitialCommunityConfig('library_url', env.LIBRARY_URL, 'URL of the library service');
+		}
 
 		// Seed core system associations using modular seeders
 		console.log('\n🌱 Seeding system associations...');
