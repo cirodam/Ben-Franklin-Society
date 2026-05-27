@@ -89,7 +89,10 @@ export class OidcClient {
 		}
 
 		// Exchange authorization code for tokens
-		const tokenResponse = await fetch(`${this.config.issuerUrl}/oauth/token`, {
+		const tokenUrl = `${this.config.issuerUrl}/oauth/token`;
+		console.log(`[oidc-client] Token exchange URL: ${tokenUrl}`);
+		
+		const tokenResponse = await fetch(tokenUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 			body: new URLSearchParams({
@@ -103,8 +106,14 @@ export class OidcClient {
 		});
 
 		if (!tokenResponse.ok) {
-			const error = await tokenResponse.json();
-			throw new Error(`Token exchange failed: ${error.error || tokenResponse.status}`);
+			const responseText = await tokenResponse.text();
+			console.error(`[oidc-client] Token exchange failed (${tokenResponse.status}):`, responseText);
+			try {
+				const error = JSON.parse(responseText);
+				throw new Error(`Token exchange failed: ${error.error || tokenResponse.status}`);
+			} catch {
+				throw new Error(`Token exchange failed (${tokenResponse.status}): ${responseText.substring(0, 200)}`);
+			}
 		}
 
 		const tokens = (await tokenResponse.json()) as TokenSet;

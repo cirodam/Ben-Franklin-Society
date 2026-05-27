@@ -1,0 +1,819 @@
+Building and publishing BFS images to Docker Hub
+Username: cirodam
+Version: latest
+
+==========================================
+Building: governance
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  53.47MB
+Step 1/38 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 3/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 4/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 5/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 13d7481279fc
+Step 6/38 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> f5dba47a0976
+Step 7/38 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> bbcc3847f66c
+Step 8/38 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 43175f5d5634
+Step 9/38 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 15e329bd8621
+Step 10/38 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> cdca941e680a
+Step 11/38 : COPY apps/governance/package.json ./apps/governance/
+ ---> Using cache
+ ---> 7216159d3074
+Step 12/38 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> 36162c0e7c28
+Step 13/38 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 14/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 15/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 16/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 17/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> fe9b7eeabcc8
+Step 18/38 : COPY packages ./packages
+ ---> Using cache
+ ---> f0232ba53634
+Step 19/38 : COPY apps/governance ./apps/governance
+ ---> Using cache
+ ---> 720af64cdf41
+Step 20/38 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 97505290ebc8
+Step 21/38 : WORKDIR /app/apps/governance
+ ---> Using cache
+ ---> bbf3ac2bf5ea
+Step 22/38 : RUN pnpm build
+ ---> Using cache
+ ---> 7b4b4e8d7087
+Step 23/38 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 24/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 25/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 26/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 27/38 : RUN mkdir -p /app/data/documents
+ ---> Using cache
+ ---> 537641fd2f30
+Step 28/38 : COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+ ---> Using cache
+ ---> 3e487e753fc4
+Step 29/38 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> ded2895e82a9
+Step 30/38 : COPY --from=builder /app/apps/governance/package.json ./apps/governance/
+ ---> Using cache
+ ---> dc07db3cac52
+Step 31/38 : COPY --from=builder /app/apps/governance/build ./apps/governance/build
+ ---> Using cache
+ ---> a3f935c1a0ad
+Step 32/38 : RUN pnpm install --frozen-lockfile --prod
+ ---> Using cache
+ ---> 033655b2d32d
+Step 33/38 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> f42f5a68e048
+Step 34/38 : ENV PORT=5173
+ ---> Using cache
+ ---> 2f4763ed517f
+Step 35/38 : ENV DATABASE_PATH=/app/data/governance.db
+ ---> Using cache
+ ---> 791b42935df6
+Step 36/38 : ENV DOCUMENTS_PATH=/app/data/documents
+ ---> Using cache
+ ---> c245e71a0663
+Step 37/38 : EXPOSE 5173
+ ---> Using cache
+ ---> c302db8f6f70
+Step 38/38 : CMD ["node", "apps/governance/build"]
+ ---> Using cache
+ ---> 9e00afb9a944
+Successfully built 9e00afb9a944
+Successfully tagged cirodam/ben-franklin-society-governance:latest
+
+Pushing: cirodam/ben-franklin-society-governance:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-governance]
+9cb5cfaab5f5: Preparing
+ec5d2326b560: Preparing
+0bd6c6df3309: Preparing
+e8e4939fb46e: Preparing
+2b4c9ecb8fc4: Preparing
+700f0acce846: Preparing
+1dab0ab1749e: Preparing
+4b5498257823: Preparing
+6500f0ae6e38: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+4b5498257823: Waiting
+6500f0ae6e38: Waiting
+0e2b4d22f01d: Waiting
+7e9cf1ccb68e: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+700f0acce846: Waiting
+1dab0ab1749e: Waiting
+0bd6c6df3309: Layer already exists
+9cb5cfaab5f5: Layer already exists
+ec5d2326b560: Layer already exists
+2b4c9ecb8fc4: Layer already exists
+e8e4939fb46e: Layer already exists
+1dab0ab1749e: Layer already exists
+700f0acce846: Layer already exists
+0e2b4d22f01d: Layer already exists
+6500f0ae6e38: Layer already exists
+4b5498257823: Layer already exists
+1f8b21f3390a: Layer already exists
+7e9cf1ccb68e: Layer already exists
+29df493baa13: Layer already exists
+latest: digest: sha256:2354a9c1236d2633eb7afedd72a7cbca251affe4c851a086ba8a396cd66c6ae1 size: 3044
+✓ Published governance
+
+==========================================
+Building: community-bank
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  53.47MB
+Step 1/38 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 3/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 4/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 5/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 13d7481279fc
+Step 6/38 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> f5dba47a0976
+Step 7/38 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> bbcc3847f66c
+Step 8/38 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 43175f5d5634
+Step 9/38 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 15e329bd8621
+Step 10/38 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> cdca941e680a
+Step 11/38 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> 4b80a00b3c6f
+Step 12/38 : COPY apps/community-bank/package.json ./apps/community-bank/
+ ---> Using cache
+ ---> 812c0fdae13a
+Step 13/38 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> 0ff07ac99c01
+Step 14/38 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 16/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 17/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 18/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> fe9b7eeabcc8
+Step 19/38 : COPY packages ./packages
+ ---> Using cache
+ ---> f0232ba53634
+Step 20/38 : COPY apps/community-bank ./apps/community-bank
+ ---> Using cache
+ ---> 4087ab7ac705
+Step 21/38 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 630955be97f9
+Step 22/38 : WORKDIR /app/apps/community-bank
+ ---> Using cache
+ ---> bfddb79dbf71
+Step 23/38 : RUN pnpm build
+ ---> Using cache
+ ---> 19bf577e997f
+Step 24/38 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 26/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 27/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 28/38 : RUN mkdir -p /app/data
+ ---> Using cache
+ ---> a06900869f89
+Step 29/38 : COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+ ---> Using cache
+ ---> d34933031e59
+Step 30/38 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> a5470fa7f288
+Step 31/38 : COPY --from=builder /app/apps/community-bank/package.json ./apps/community-bank/
+ ---> Using cache
+ ---> 8eccb681344c
+Step 32/38 : COPY --from=builder /app/apps/community-bank/build ./apps/community-bank/build
+ ---> Using cache
+ ---> 9a04b2ac2070
+Step 33/38 : RUN pnpm install --frozen-lockfile --prod
+ ---> Using cache
+ ---> 26f424aebc58
+Step 34/38 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> a65557dfac50
+Step 35/38 : ENV PORT=5174
+ ---> Using cache
+ ---> 10f3f2a804b0
+Step 36/38 : ENV DATABASE_PATH=/app/data/bank.db
+ ---> Using cache
+ ---> 5b5cce85596a
+Step 37/38 : EXPOSE 5174
+ ---> Using cache
+ ---> 4fc9f01bbdd4
+Step 38/38 : CMD ["node", "apps/community-bank/build"]
+ ---> Using cache
+ ---> 0505a93e1c41
+Successfully built 0505a93e1c41
+Successfully tagged cirodam/ben-franklin-society-community-bank:latest
+
+Pushing: cirodam/ben-franklin-society-community-bank:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-community-bank]
+0485830a19e2: Preparing
+f21055dcc705: Preparing
+8f216827d99d: Preparing
+444c08be1aad: Preparing
+18c1b13ab3f9: Preparing
+73db8bf1c78f: Preparing
+1dab0ab1749e: Preparing
+4b5498257823: Preparing
+6500f0ae6e38: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+73db8bf1c78f: Waiting
+1dab0ab1749e: Waiting
+4b5498257823: Waiting
+6500f0ae6e38: Waiting
+0e2b4d22f01d: Waiting
+7e9cf1ccb68e: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+444c08be1aad: Layer already exists
+18c1b13ab3f9: Layer already exists
+8f216827d99d: Layer already exists
+f21055dcc705: Layer already exists
+0485830a19e2: Layer already exists
+73db8bf1c78f: Layer already exists
+6500f0ae6e38: Layer already exists
+0e2b4d22f01d: Layer already exists
+4b5498257823: Layer already exists
+1dab0ab1749e: Layer already exists
+29df493baa13: Layer already exists
+1f8b21f3390a: Layer already exists
+7e9cf1ccb68e: Layer already exists
+latest: digest: sha256:9cdda50e7613d7bd23d8c8a1181c0aa11b4689810faacdc6a835a9789507afe6 size: 3043
+✓ Published community-bank
+
+==========================================
+Building: mail
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  53.47MB
+Step 1/38 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 3/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 4/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 5/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 13d7481279fc
+Step 6/38 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> f5dba47a0976
+Step 7/38 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> bbcc3847f66c
+Step 8/38 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 43175f5d5634
+Step 9/38 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 15e329bd8621
+Step 10/38 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> cdca941e680a
+Step 11/38 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> 4b80a00b3c6f
+Step 12/38 : COPY apps/mail/package.json ./apps/mail/
+ ---> Using cache
+ ---> 934983497970
+Step 13/38 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> c6debcfb3ffb
+Step 14/38 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 16/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 17/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 18/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> fe9b7eeabcc8
+Step 19/38 : COPY packages ./packages
+ ---> Using cache
+ ---> f0232ba53634
+Step 20/38 : COPY apps/mail ./apps/mail
+ ---> Using cache
+ ---> efc3d83a176e
+Step 21/38 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 3c220fd1036f
+Step 22/38 : WORKDIR /app/apps/mail
+ ---> Using cache
+ ---> ccce44e9fe85
+Step 23/38 : RUN pnpm build
+ ---> Using cache
+ ---> 09b77e49562b
+Step 24/38 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 26/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 27/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 28/38 : RUN mkdir -p /app/data
+ ---> Using cache
+ ---> a06900869f89
+Step 29/38 : COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+ ---> Using cache
+ ---> d34933031e59
+Step 30/38 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> a5470fa7f288
+Step 31/38 : COPY --from=builder /app/apps/mail/package.json ./apps/mail/
+ ---> Using cache
+ ---> 700215718557
+Step 32/38 : COPY --from=builder /app/apps/mail/build ./apps/mail/build
+ ---> Using cache
+ ---> 2004f301de05
+Step 33/38 : RUN pnpm install --frozen-lockfile --prod
+ ---> Using cache
+ ---> c201d41b31c2
+Step 34/38 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> 15fc2cfd23f5
+Step 35/38 : ENV PORT=5175
+ ---> Using cache
+ ---> 78c756b6c94d
+Step 36/38 : ENV DATABASE_PATH=/app/data/mail.db
+ ---> Using cache
+ ---> fd2afc8e3cf0
+Step 37/38 : EXPOSE 5175
+ ---> Using cache
+ ---> 76c60ea513eb
+Step 38/38 : CMD ["node", "apps/mail/build"]
+ ---> Using cache
+ ---> c0fde4c0718e
+Successfully built c0fde4c0718e
+Successfully tagged cirodam/ben-franklin-society-mail:latest
+
+Pushing: cirodam/ben-franklin-society-mail:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-mail]
+2f6b8e4aa919: Preparing
+8006bcc188ec: Preparing
+8637144caa11: Preparing
+444c08be1aad: Preparing
+18c1b13ab3f9: Preparing
+73db8bf1c78f: Preparing
+1dab0ab1749e: Preparing
+4b5498257823: Preparing
+6500f0ae6e38: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+6500f0ae6e38: Waiting
+7e9cf1ccb68e: Waiting
+73db8bf1c78f: Waiting
+1dab0ab1749e: Waiting
+4b5498257823: Waiting
+0e2b4d22f01d: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+444c08be1aad: Layer already exists
+8006bcc188ec: Layer already exists
+2f6b8e4aa919: Layer already exists
+8637144caa11: Layer already exists
+18c1b13ab3f9: Layer already exists
+6500f0ae6e38: Layer already exists
+4b5498257823: Layer already exists
+73db8bf1c78f: Layer already exists
+0e2b4d22f01d: Layer already exists
+1dab0ab1749e: Layer already exists
+29df493baa13: Layer already exists
+1f8b21f3390a: Layer already exists
+7e9cf1ccb68e: Layer already exists
+latest: digest: sha256:b4b68ad067e7ae1d5c1bfb229ed2cd6ce2552f372316064b6033da5a5ae2767b size: 3043
+✓ Published mail
+
+==========================================
+Building: marketplace
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  53.47MB
+Step 1/38 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 3/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 4/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 5/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 13d7481279fc
+Step 6/38 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> f5dba47a0976
+Step 7/38 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> bbcc3847f66c
+Step 8/38 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 43175f5d5634
+Step 9/38 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 15e329bd8621
+Step 10/38 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> cdca941e680a
+Step 11/38 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> 4b80a00b3c6f
+Step 12/38 : COPY apps/marketplace/package.json ./apps/marketplace/
+ ---> Using cache
+ ---> 9036551dd8c9
+Step 13/38 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> f0a9989335de
+Step 14/38 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 16/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 17/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 18/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> fe9b7eeabcc8
+Step 19/38 : COPY packages ./packages
+ ---> Using cache
+ ---> f0232ba53634
+Step 20/38 : COPY apps/marketplace ./apps/marketplace
+ ---> Using cache
+ ---> 58d6c18e4af5
+Step 21/38 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 6cb67e0f2b2a
+Step 22/38 : WORKDIR /app/apps/marketplace
+ ---> Using cache
+ ---> 9378eabe584a
+Step 23/38 : RUN pnpm build
+ ---> Using cache
+ ---> 715f1ff99df9
+Step 24/38 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 26/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 27/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 28/38 : RUN mkdir -p /app/data
+ ---> Using cache
+ ---> a06900869f89
+Step 29/38 : COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+ ---> Using cache
+ ---> d34933031e59
+Step 30/38 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> a5470fa7f288
+Step 31/38 : COPY --from=builder /app/apps/marketplace/package.json ./apps/marketplace/
+ ---> Using cache
+ ---> ed189481a0d9
+Step 32/38 : COPY --from=builder /app/apps/marketplace/build ./apps/marketplace/build
+ ---> Using cache
+ ---> 141af032485b
+Step 33/38 : RUN pnpm install --frozen-lockfile --prod
+ ---> Using cache
+ ---> 035e7b40f0b0
+Step 34/38 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> 74d8d5881569
+Step 35/38 : ENV PORT=5176
+ ---> Using cache
+ ---> bbcd9365c713
+Step 36/38 : ENV DATABASE_PATH=/app/data/marketplace.db
+ ---> Using cache
+ ---> e4f595f7c54d
+Step 37/38 : EXPOSE 5176
+ ---> Using cache
+ ---> fc36ec031d34
+Step 38/38 : CMD ["node", "apps/marketplace/build"]
+ ---> Using cache
+ ---> 776ecc6f91b1
+Successfully built 776ecc6f91b1
+Successfully tagged cirodam/ben-franklin-society-marketplace:latest
+
+Pushing: cirodam/ben-franklin-society-marketplace:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-marketplace]
+096bdcf3cb13: Preparing
+da0ec63055d2: Preparing
+7567ca4c07e2: Preparing
+444c08be1aad: Preparing
+18c1b13ab3f9: Preparing
+73db8bf1c78f: Preparing
+1dab0ab1749e: Preparing
+4b5498257823: Preparing
+6500f0ae6e38: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+73db8bf1c78f: Waiting
+1dab0ab1749e: Waiting
+4b5498257823: Waiting
+6500f0ae6e38: Waiting
+0e2b4d22f01d: Waiting
+7e9cf1ccb68e: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+da0ec63055d2: Layer already exists
+444c08be1aad: Layer already exists
+18c1b13ab3f9: Layer already exists
+096bdcf3cb13: Layer already exists
+7567ca4c07e2: Layer already exists
+73db8bf1c78f: Layer already exists
+4b5498257823: Layer already exists
+0e2b4d22f01d: Layer already exists
+1dab0ab1749e: Layer already exists
+6500f0ae6e38: Layer already exists
+29df493baa13: Layer already exists
+7e9cf1ccb68e: Layer already exists
+1f8b21f3390a: Layer already exists
+latest: digest: sha256:3d267be18c30487327e3c65da3c115f0a86eb4076f95c4fc87a34760e842e8d3 size: 3043
+✓ Published marketplace
+
+==========================================
+Building: library
+==========================================
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  53.47MB
+Step 1/38 : FROM node:22-alpine AS deps
+ ---> 04a4709b55a8
+Step 2/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 3/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 4/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 5/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc .pnpm-approvals ./
+ ---> Using cache
+ ---> 13d7481279fc
+Step 6/38 : COPY packages/crypto/package.json ./packages/crypto/
+ ---> Using cache
+ ---> f5dba47a0976
+Step 7/38 : COPY packages/db/package.json ./packages/db/
+ ---> Using cache
+ ---> bbcc3847f66c
+Step 8/38 : COPY packages/events/package.json ./packages/events/
+ ---> Using cache
+ ---> 43175f5d5634
+Step 9/38 : COPY packages/types/package.json ./packages/types/
+ ---> Using cache
+ ---> 15e329bd8621
+Step 10/38 : COPY packages/ui/package.json ./packages/ui/
+ ---> Using cache
+ ---> cdca941e680a
+Step 11/38 : COPY packages/oidc-client/package.json ./packages/oidc-client/
+ ---> Using cache
+ ---> 4b80a00b3c6f
+Step 12/38 : COPY apps/library/package.json ./apps/library/
+ ---> Using cache
+ ---> 9de37001465c
+Step 13/38 : RUN pnpm install --frozen-lockfile || (pnpm approve-builds argon2 better-sqlite3 esbuild && pnpm install --frozen-lockfile)
+ ---> Using cache
+ ---> f99e3dbcf5c1
+Step 14/38 : FROM node:22-alpine AS builder
+ ---> 04a4709b55a8
+Step 15/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 16/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 17/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 18/38 : COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
+ ---> Using cache
+ ---> fe9b7eeabcc8
+Step 19/38 : COPY packages ./packages
+ ---> Using cache
+ ---> f0232ba53634
+Step 20/38 : COPY apps/library ./apps/library
+ ---> Using cache
+ ---> 9f7d6f7c9343
+Step 21/38 : RUN pnpm install --frozen-lockfile
+ ---> Using cache
+ ---> 7cbea8c70410
+Step 22/38 : WORKDIR /app/apps/library
+ ---> Using cache
+ ---> 2029e80fbd6d
+Step 23/38 : RUN pnpm build
+ ---> Using cache
+ ---> ac6f5c31fdc7
+Step 24/38 : FROM node:22-alpine AS runner
+ ---> 04a4709b55a8
+Step 25/38 : RUN apk add --no-cache libc6-compat python3 make g++
+ ---> Using cache
+ ---> 2dd4610cbbf7
+Step 26/38 : WORKDIR /app
+ ---> Using cache
+ ---> 9788054fd6bb
+Step 27/38 : RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+ ---> Using cache
+ ---> 529a9ed64b02
+Step 28/38 : RUN mkdir -p /app/data/buckets
+ ---> Using cache
+ ---> 1440e68d2d12
+Step 29/38 : COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+ ---> Using cache
+ ---> 7cb83db7331c
+Step 30/38 : COPY --from=builder /app/packages ./packages
+ ---> Using cache
+ ---> 5ce86036d87f
+Step 31/38 : COPY --from=builder /app/apps/library/package.json ./apps/library/
+ ---> Using cache
+ ---> 84bca6b5acfa
+Step 32/38 : COPY --from=builder /app/apps/library/build ./apps/library/build
+ ---> Using cache
+ ---> ae84860d37af
+Step 33/38 : RUN pnpm install --frozen-lockfile --prod
+ ---> Using cache
+ ---> 0b3db7c3195b
+Step 34/38 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> 23cd81aff0f0
+Step 35/38 : ENV PORT=5177
+ ---> Using cache
+ ---> 520699af6c91
+Step 36/38 : ENV DATABASE_PATH=/app/data/library.db
+ ---> Using cache
+ ---> 524ff2440f4d
+Step 37/38 : EXPOSE 5177
+ ---> Using cache
+ ---> 568f33e70b1f
+Step 38/38 : CMD ["node", "apps/library/build"]
+ ---> Using cache
+ ---> a6f91bf712f3
+Successfully built a6f91bf712f3
+Successfully tagged cirodam/ben-franklin-society-library:latest
+
+Pushing: cirodam/ben-franklin-society-library:latest
+The push refers to repository [docker.io/cirodam/ben-franklin-society-library]
+56d0bb12f0a4: Preparing
+11806e71417d: Preparing
+c58907dde361: Preparing
+e85a97c28292: Preparing
+66b4218f5e30: Preparing
+29b98a83762e: Preparing
+1dab0ab1749e: Preparing
+4b5498257823: Preparing
+6500f0ae6e38: Preparing
+0e2b4d22f01d: Preparing
+7e9cf1ccb68e: Preparing
+1f8b21f3390a: Preparing
+29df493baa13: Preparing
+4b5498257823: Waiting
+6500f0ae6e38: Waiting
+0e2b4d22f01d: Waiting
+7e9cf1ccb68e: Waiting
+1f8b21f3390a: Waiting
+29df493baa13: Waiting
+29b98a83762e: Waiting
+1dab0ab1749e: Waiting
+11806e71417d: Layer already exists
+66b4218f5e30: Layer already exists
+e85a97c28292: Layer already exists
+56d0bb12f0a4: Layer already exists
+c58907dde361: Layer already exists
+4b5498257823: Layer already exists
+1dab0ab1749e: Layer already exists
+6500f0ae6e38: Layer already exists
+29b98a83762e: Layer already exists
+0e2b4d22f01d: Layer already exists
+1f8b21f3390a: Layer already exists
+7e9cf1ccb68e: Layer already exists
+29df493baa13: Layer already exists
+latest: digest: sha256:c01ff8c1b1cef67e0751fd3cb0c6f11c16f49f7e589be34ca10d310526d47ae0 size: 3043
+✓ Published library
+
+==========================================
+All images published successfully!
+==========================================
+
+Images published:
+  - cirodam/ben-franklin-society-governance:latest
+  - cirodam/ben-franklin-society-community-bank:latest
+  - cirodam/ben-franklin-society-mail:latest
+  - cirodam/ben-franklin-society-marketplace:latest
+  - cirodam/ben-franklin-society-library:latest
