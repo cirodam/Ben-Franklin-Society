@@ -11,39 +11,38 @@
 
 	<p>
 		A Ben Franklin Society is a group of people who organize to meet each other's essential
-		needs—food, housing, healthcare—while governing themselves democratically. These aren't
+		needs (food, housing, healthcare) while governing themselves democratically. These aren't
 		separate goals. They're inseparable. Democracy doesn't work when people are struggling to
-		survive, and mutual aid doesn't scale without democratic coordination.
+		survive, and taking care of each other doesn't scale without democratic coordination.
 	</p>
 
 	<p>
 		Working together to meet each other's needs isn't a new or radical idea. For most of human
-		history, this is how communities functioned. Before the New Deal, mutual aid societies were
-		everywhere in America—immigrant groups, labor organizations, fraternal orders. People pooled
+		history, this is how communities functioned. Before the New Deal, cooperative societies were
+		everywhere in America: immigrant groups, labor organizations, fraternal orders. People pooled
 		their resources, took care of each other when times were hard, and made sure everyone had what
 		they needed. It wasn't charity. It was reciprocal. Everyone contributed what they could, and
 		everyone received support when they needed it. What's actually radical is the world we live in
-		now—where every person is expected to handle every problem alone, and if you can't, you're
+		now, where every person is expected to handle every problem alone, and if you can't, you're
 		considered a failure.
 	</p>
 
 	<p>
 		Democratic self-governance means people taking direct responsibility for the decisions that
 		affect their lives, not just voting every few years for the lesser of two evils. Alexis de
-		Tocqueville called this the "art of association"—Americans forming voluntary groups to solve
-		problems together without waiting for authority to tell them what to do. That was the
-		foundation of American democracy. Not representatives in distant capitals, but people
-		cooperating and governing themselves at the local level. We've lost that capacity, but it
-		hasn't disappeared. We just need to relearn it.
+		Tocqueville called this the "art of association": Americans forming voluntary groups to solve
+		problems together through cooperation. That was the foundation of American democracy. Not
+		representatives in distant capitals, but people cooperating and governing themselves at the
+		local level. We've lost that capacity, but it hasn't disappeared. We just need to relearn it.
 	</p>
 
 	<p>
 		This isn't theoretical. It's happened before. During the 1890s, American democracy was
 		breaking down. Farmers were getting crushed by monopolies and corrupt institutions. They didn't
 		just wait around to vote for the lesser of two evils. They organized. They built cooperatives
-		to survive—pooling resources, cutting out exploitative middlemen, taking care of each other.
+		to survive: pooling resources, cutting out exploitative middlemen, taking care of each other.
 		At the same time, they created a grassroots political movement that eventually forced major
-		democratic reforms. They combined mutual aid with political organizing because they understood
+		democratic reforms. They combined economic cooperation with political organizing because they understood
 		you can't have one without the other. When your institutions fail you, you don't fix it by
 		voting every few years. You fix it by taking direct responsibility for both your survival and
 		your democracy.
@@ -55,14 +54,15 @@
 	article {
 		max-width: 700px;
 		margin: 0 auto;
-		padding: 2rem 0;
+		padding: 0 0 2rem 0;
 	}
 
 	h1 {
 		font-family: var(--font-prose);
 		font-size: 2.5rem;
 		line-height: 1.2;
-		margin-bottom: 2rem;
+		margin-top: 0;
+		margin-bottom: 5rem;
 		text-align: center;
 	}
 

@@ -19,7 +19,7 @@
 
 <footer>
 	<div class="container">
-		<p>&copy; {new Date().getFullYear()} Ben Franklin Society. The Work Shall Not Be Lost.</p>
+		<p>&copy; {new Date().getFullYear()} Ben Franklin Society</p>
 	</div>
 </footer>
 
