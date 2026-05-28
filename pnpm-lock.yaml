@@ -64,6 +64,43 @@ importers:
         specifier: ^6.0.0
         version: 6.4.2(@types/node@25.6.2)(tsx@4.21.0)
 
+  apps/education:
+    dependencies:
+      '@bfs/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@node-rs/bcrypt':
+        specifier: ^1.10.0
+        version: 1.10.7
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
+      nanoid:
+        specifier: ^5.0.0
+        version: 5.1.11
+    devDependencies:
+      '@sveltejs/adapter-node':
+        specifier: ^5.0.0
+        version: 5.5.4(@sveltejs/kit@2.59.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.5)(vite@6.4.2(@types/node@25.6.2)(tsx@4.21.0)))(svelte@5.55.5)(typescript@5.9.3)(vite@6.4.2(@types/node@25.6.2)(tsx@4.21.0)))
+      '@sveltejs/kit':
+        specifier: ^2.0.0
+        version: 2.59.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.55.5)(vite@6.4.2(@types/node@25.6.2)(tsx@4.21.0)))(svelte@5.55.5)(typescript@5.9.3)(vite@6.4.2(@types/node@25.6.2)(tsx@4.21.0))
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^5.0.0
+        version: 5.1.1(svelte@5.55.5)(vite@6.4.2(@types/node@25.6.2)(tsx@4.21.0))
+      svelte:
+        specifier: ^5.0.0
+        version: 5.55.5
+      tslib:
+        specifier: ^2.4.1
+        version: 2.8.1
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.2(@types/node@25.6.2)(tsx@4.21.0)
+
   apps/federal-bank:
     dependencies:
       '@bfs/crypto':
@@ -461,6 +498,15 @@ importers:
 
 packages:
 
+  '@emnapi/core@1.10.0':
+    resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
+
+  '@emnapi/runtime@1.10.0':
+    resolution: {integrity: sha512-ewvYlk86xUoGI0zQRNq/mC+16R1QeDlKQy21Ki3oSYXNgLb45GV1P6A0M+/s6nyCuNDqe5VpaY84BzXGwVbwFA==}
+
+  '@emnapi/wasi-threads@1.2.1':
+    resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
+
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
 
@@ -792,6 +838,96 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@napi-rs/wasm-runtime@0.2.12':
+    resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
+
+  '@node-rs/bcrypt-android-arm-eabi@1.10.7':
+    resolution: {integrity: sha512-8dO6/PcbeMZXS3VXGEtct9pDYdShp2WBOWlDvSbcRwVqyB580aCBh0BEFmKYtXLzLvUK8Wf+CG3U6sCdILW1lA==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [android]
+
+  '@node-rs/bcrypt-android-arm64@1.10.7':
+    resolution: {integrity: sha512-UASFBS/CucEMHiCtL/2YYsAY01ZqVR1N7vSb94EOvG5iwW7BQO06kXXCTgj+Xbek9azxixrCUmo3WJnkJZ0hTQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [android]
+
+  '@node-rs/bcrypt-darwin-arm64@1.10.7':
+    resolution: {integrity: sha512-DgzFdAt455KTuiJ/zYIyJcKFobjNDR/hnf9OS7pK5NRS13Nq4gLcSIIyzsgHwZHxsJWbLpHmFc1H23Y7IQoQBw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@node-rs/bcrypt-darwin-x64@1.10.7':
+    resolution: {integrity: sha512-SPWVfQ6sxSokoUWAKWD0EJauvPHqOGQTd7CxmYatcsUgJ/bruvEHxZ4bIwX1iDceC3FkOtmeHO0cPwR480n/xA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@node-rs/bcrypt-freebsd-x64@1.10.7':
+    resolution: {integrity: sha512-gpa+Ixs6GwEx6U6ehBpsQetzUpuAGuAFbOiuLB2oo4N58yU4AZz1VIcWyWAHrSWRs92O0SHtmo2YPrMrwfBbSw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@node-rs/bcrypt-linux-arm-gnueabihf@1.10.7':
+    resolution: {integrity: sha512-kYgJnTnpxrzl9sxYqzflobvMp90qoAlaX1oDL7nhNTj8OYJVDIk0jQgblj0bIkjmoPbBed53OJY/iu4uTS+wig==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+
+  '@node-rs/bcrypt-linux-arm64-gnu@1.10.7':
+    resolution: {integrity: sha512-7cEkK2RA+gBCj2tCVEI1rDSJV40oLbSq7bQ+PNMHNI6jCoXGmj9Uzo7mg7ZRbNZ7piIyNH5zlJqutjo8hh/tmA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@node-rs/bcrypt-linux-arm64-musl@1.10.7':
+    resolution: {integrity: sha512-X7DRVjshhwxUqzdUKDlF55cwzh+wqWJ2E/tILvZPboO3xaNO07Um568Vf+8cmKcz+tiZCGP7CBmKbBqjvKN/Pw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@node-rs/bcrypt-linux-x64-gnu@1.10.7':
+    resolution: {integrity: sha512-LXRZsvG65NggPD12hn6YxVgH0W3VR5fsE/o1/o2D5X0nxKcNQGeLWnRzs5cP8KpoFOuk1ilctXQJn8/wq+Gn/Q==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@node-rs/bcrypt-linux-x64-musl@1.10.7':
+    resolution: {integrity: sha512-tCjHmct79OfcO3g5q21ME7CNzLzpw1MAsUXCLHLGWH+V6pp/xTvMbIcLwzkDj6TI3mxK6kehTn40SEjBkZ3Rog==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+
+  '@node-rs/bcrypt-wasm32-wasi@1.10.7':
+    resolution: {integrity: sha512-4qXSihIKeVXYglfXZEq/QPtYtBUvR8d3S85k15Lilv3z5B6NSGQ9mYiNleZ7QHVLN2gEc5gmi7jM353DMH9GkA==}
+    engines: {node: '>=14.0.0'}
+    cpu: [wasm32]
+
+  '@node-rs/bcrypt-win32-arm64-msvc@1.10.7':
+    resolution: {integrity: sha512-FdfUQrqmDfvC5jFhntMBkk8EI+fCJTx/I1v7Rj+Ezlr9rez1j1FmuUnywbBj2Cg15/0BDhwYdbyZ5GCMFli2aQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@node-rs/bcrypt-win32-ia32-msvc@1.10.7':
+    resolution: {integrity: sha512-lZLf4Cx+bShIhU071p5BZft4OvP4PGhyp542EEsb3zk34U5GLsGIyCjOafcF/2DGewZL6u8/aqoxbSuROkgFXg==}
+    engines: {node: '>= 10'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@node-rs/bcrypt-win32-x64-msvc@1.10.7':
+    resolution: {integrity: sha512-hdw7tGmN1DxVAMTzICLdaHpXjy+4rxaxnBMgI8seG1JL5e3VcRGsd1/1vVDogVp2cbsmgq+6d6yAY+D9lW/DCg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+
+  '@node-rs/bcrypt@1.10.7':
+    resolution: {integrity: sha512-1wk0gHsUQC/ap0j6SJa2K34qNhomxXRcEe3T8cI5s+g6fgHBgLTN7U9LzWTG/HE6G4+2tWWLeCabk1wiYGEQSA==}
+    engines: {node: '>= 10'}
+
   '@phc/format@1.0.0':
     resolution: {integrity: sha512-m7X9U6BG2+J+R1lSOdCiITLLrxm+cWlNI3HUFA92oLO77ObGNzaKdh8pMLqdZcshtkKuV84olNNXDfMc4FezBQ==}
     engines: {node: '>=10'}
@@ -1039,6 +1175,9 @@ packages:
     cpu: [arm64]
     os: [win32]
 
+  '@tybys/wasm-util@0.10.2':
+    resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
+
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
@@ -1279,6 +1418,11 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanoid@5.1.11:
+    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+
   napi-build-utils@2.0.0:
     resolution: {integrity: sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==}
 
@@ -1514,6 +1658,22 @@ packages:
 
 snapshots:
 
+  '@emnapi/core@1.10.0':
+    dependencies:
+      '@emnapi/wasi-threads': 1.2.1
+      tslib: 2.8.1
+    optional: true
+
+  '@emnapi/runtime@1.10.0':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
+  '@emnapi/wasi-threads@1.2.1':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
   '@epic-web/invariant@1.0.0': {}
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -1690,6 +1850,74 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@napi-rs/wasm-runtime@0.2.12':
+    dependencies:
+      '@emnapi/core': 1.10.0
+      '@emnapi/runtime': 1.10.0
+      '@tybys/wasm-util': 0.10.2
+    optional: true
+
+  '@node-rs/bcrypt-android-arm-eabi@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-android-arm64@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-darwin-arm64@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-darwin-x64@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-freebsd-x64@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-linux-arm-gnueabihf@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-linux-arm64-gnu@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-linux-arm64-musl@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-linux-x64-gnu@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-linux-x64-musl@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-wasm32-wasi@1.10.7':
+    dependencies:
+      '@napi-rs/wasm-runtime': 0.2.12
+    optional: true
+
+  '@node-rs/bcrypt-win32-arm64-msvc@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-win32-ia32-msvc@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt-win32-x64-msvc@1.10.7':
+    optional: true
+
+  '@node-rs/bcrypt@1.10.7':
+    optionalDependencies:
+      '@node-rs/bcrypt-android-arm-eabi': 1.10.7
+      '@node-rs/bcrypt-android-arm64': 1.10.7
+      '@node-rs/bcrypt-darwin-arm64': 1.10.7
+      '@node-rs/bcrypt-darwin-x64': 1.10.7
+      '@node-rs/bcrypt-freebsd-x64': 1.10.7
+      '@node-rs/bcrypt-linux-arm-gnueabihf': 1.10.7
+      '@node-rs/bcrypt-linux-arm64-gnu': 1.10.7
+      '@node-rs/bcrypt-linux-arm64-musl': 1.10.7
+      '@node-rs/bcrypt-linux-x64-gnu': 1.10.7
+      '@node-rs/bcrypt-linux-x64-musl': 1.10.7
+      '@node-rs/bcrypt-wasm32-wasi': 1.10.7
+      '@node-rs/bcrypt-win32-arm64-msvc': 1.10.7
+      '@node-rs/bcrypt-win32-ia32-msvc': 1.10.7
+      '@node-rs/bcrypt-win32-x64-msvc': 1.10.7
 
   '@phc/format@1.0.0': {}
 
@@ -1934,6 +2162,11 @@ snapshots:
   '@turbo/windows-arm64@2.9.12':
     optional: true
 
+  '@tybys/wasm-util@0.10.2':
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
   '@types/better-sqlite3@7.6.13':
     dependencies:
       '@types/node': 22.19.18
@@ -2170,6 +2403,8 @@ snapshots:
   ms@2.1.3: {}
 
   nanoid@3.3.12: {}
+
+  nanoid@5.1.11: {}
 
   napi-build-utils@2.0.0: {}
 

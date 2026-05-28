@@ -16,7 +16,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		const { tokens, returnPath } = await getOidcClient().handleCallback(code, state, cookies);
 		
 		console.log('[marketplace/oauth/callback] Token exchange successful, setting session');
-		getOidcClient().setSession(cookies, tokens);
+		await getOidcClient().setSession(cookies, tokens);
 		
 		console.log('[marketplace/oauth/callback] Redirecting to:', returnPath);
 		redirect(302, returnPath);

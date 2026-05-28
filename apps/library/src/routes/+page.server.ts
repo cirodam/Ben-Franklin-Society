@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	}
 
 	// Get access token for API calls
-	const accessToken = getOidcClient().getAccessToken(cookies);
+	const accessToken = await getOidcClient().getValidAccessToken(cookies);
 	if (!accessToken) {
 		throw error(401, 'No access token available');
 	}
