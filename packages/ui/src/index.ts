@@ -34,5 +34,9 @@ export { default as ArticleEditor } from './documents/ArticleEditor.svelte';
 export { default as MotionEditor } from './documents/MotionEditor.svelte';
 export { default as GoverningDocEditor } from './documents/GoverningDocEditor.svelte';
 
+// Unified Document Components (view + edit)
+export { default as MotionDocument } from './documents/MotionDocument.svelte';
+export { default as GoverningDocument } from './documents/GoverningDocument.svelte';
+
 // Utilities
 export * from './utils/date.js';

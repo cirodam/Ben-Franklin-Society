@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
 	import ProseDocumentView from './views/ProseDocumentView.svelte';
 	import ContractDocumentView from './views/ContractDocumentView.svelte';
-	import MotionDocumentView from './views/MotionDocumentView.svelte';
-	import { Modal } from '@bfs/ui';
+	import { MotionDocument, GoverningDocument, Modal } from '@bfs/ui';
+	import type { MotionDocument as MotionDocType, GoverningDocument as GoverningDocType } from '@bfs/types';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,37 +13,71 @@
 	let showChangeOwnerModal = $state(false);
 	let selectedOwnerUuid = $state('');
 	let isSubmitting = $state(false);
+
+	async function handleSave(updates: Partial<MotionDocType | GoverningDocType>) {
+		const updatedDoc = { ...doc, ...updates, updated_at: new Date().toISOString() };
+		
+		const formData = new FormData();
+		formData.append('document', JSON.stringify(updatedDoc));
+
+		const response = await fetch('?/updateDocument', {
+			method: 'POST',
+			body: formData
+		});
+
+		if (!response.ok) {
+			throw new Error('Save failed');
+		}
+
+		// Reload page to see updated document
+		window.location.reload();
+	}
 </script>
 
 <svelte:head>
 	<style>
+		:global(.app-shell__main) {
+			background: linear-gradient(135deg, #e8e4d9 0%, #d4cfc0 100%) !important;
+		}
+		:global(.app-shell__content) {
+			padding: 0 !important;
+		}
 		html {
 			scroll-behavior: smooth;
 		}
 	</style>
 </svelte:head>
 
-<div class="document-controls">
-	<a href="/library" class="back">← Society Code</a>
-	{#if canEdit && (documentType === 'motion' || documentType === 'governing')}
-		<a href="/library/{doc.slug}/edit" class="edit-link">Edit</a>
-	{/if}
-	{#if canChangeOwner}
-		<button type="button" class="change-owner-btn" onclick={() => showChangeOwnerModal = true}>
-			Change Owner
-		</button>
-	{/if}
-</div>
+<div class="document-page">
+	<div class="document-controls">
+		<a href="/library" class="back">← Society Code</a>
+		{#if canChangeOwner}
+			<button type="button" class="change-owner-btn" onclick={() => showChangeOwnerModal = true}>
+				Change Owner
+			</button>
+		{/if}
+	</div>
 
-{#if documentType === 'prose'}
-	<ProseDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ProseDocument} />
-{:else if documentType === 'contract'}
-	<ContractDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ContractDocument} />
-{:else if documentType === 'motion'}
-	<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} {canEdit} />
-{:else}
-	<GoverningDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').GoverningDocument} {canEdit} />
-{/if}
+	<div class="document-wrapper">
+		{#if documentType === 'prose'}
+			<ProseDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ProseDocument} />
+		{:else if documentType === 'contract'}
+			<ContractDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ContractDocument} />
+		{:else if documentType === 'motion'}
+			<MotionDocument
+				motion={doc as unknown as MotionDocType}
+				editable={canEdit}
+				onSave={handleSave}
+			/>
+		{:else if documentType === 'governing'}
+			<GoverningDocument
+				document={doc as unknown as GoverningDocType}
+				editable={canEdit}
+				onSave={handleSave}
+			/>
+		{/if}
+	</div>
+</div>
 
 <Modal bind:open={showChangeOwnerModal} title="Change Document Owner">
 	<form 
@@ -86,6 +119,19 @@
 </Modal>
 
 <style>
+	.document-page {
+		min-height: 100vh;
+		padding: var(--space-8, 2rem);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6, 1.5rem);
+	}
+
+	.document-wrapper {
+		display: flex;
+		justify-content: center;
+	}
+
 	.document-controls {
 		max-width: 1000px;
 		margin: 0 auto var(--space-6);

@@ -261,5 +261,55 @@ export const actions: Actions = {
 		} catch (err) {
 			return fail(500, { error: (err as Error).message });
 		}
+	},
+
+	updateDocument: async ({ params, request, locals }) => {
+		const data = await request.formData();
+		const documentJson = data.get('document') as string;
+		
+		if (!documentJson) {
+			return fail(400, { error: 'Document data is required' });
+		}
+
+		try {
+			const document = JSON.parse(documentJson);
+			
+			// Check document type and permissions
+			const item = db
+				.prepare('SELECT type FROM library_item WHERE slug = ?')
+				.get(params.slug) as { type: string } | undefined;
+
+			if (!item) {
+				return fail(404, { error: 'Document not found' });
+			}
+
+			if (item.type === 'motion') {
+				// Check motion permissions
+				const canEdit = document.content.status === 'draft' && 
+					locals.person?.uuid === document.content.introducer_uuid;
+				
+				if (!canEdit) {
+					return fail(403, { error: 'Permission denied' });
+				}
+
+				const { saveMotion } = await import('$lib/server/documents/society-motions.js');
+				saveMotion(document);
+			} else if (item.type === 'governing') {
+				// Check governing doc permissions
+				if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+					return fail(403, { error: 'Permission denied' });
+				}
+
+				const { saveGoverningDocument } = await import('$lib/server/documents/society-governing.js');
+				saveGoverningDocument(document);
+			} else {
+				return fail(400, { error: 'Document type not supported for updates' });
+			}
+
+			return { success: true };
+		} catch (err) {
+			console.error('Error updating document:', err);
+			return fail(500, { error: (err as Error).message });
+		}
 	}
 };

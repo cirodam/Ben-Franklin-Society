@@ -14,6 +14,9 @@ const COOKIE_NAME = 'oidc_session';
 const PKCE_COOKIE_NAME = 'oidc_pkce';
 const STATE_COOKIE_NAME = 'oidc_state';
 
+// In-memory cache for access tokens (keyed by session UUID)
+const accessTokenCache = new Map<string, { token: string; expires_at: number }>();
+
 /**
  * OIDC Client for satellite applications
  */
@@ -160,7 +163,8 @@ export class OidcClient {
 			throw new Error('Failed to verify tokens');
 		}
 		
-		// Store lightweight session data (claims + refresh token only)
+		// Store session data (claims + refresh token only)
+		// DO NOT store access_token - it's too large and would exceed 4KB cookie limit
 		const sessionData = JSON.stringify({
 			session: {
 				uuid: accessClaims.jti,
@@ -272,7 +276,7 @@ export class OidcClient {
 
 	/**
 	 * Get a valid access token for server-to-server API calls
-	 * Uses the stored refresh token to obtain a fresh access token
+	 * Uses in-memory cache to avoid excessive refreshes
 	 */
 	async getValidAccessToken(cookies: Cookies): Promise<string | null> {
 		const sessionCookie = cookies.get(COOKIE_NAME);
@@ -283,14 +287,41 @@ export class OidcClient {
 
 		try {
 			const data = JSON.parse(sessionCookie);
-			if (!data.refresh_token) {
-				console.log('[oidc-client] getValidAccessToken: No refresh token in session');
+			const { session, refresh_token } = data;
+			
+			if (!refresh_token || !session.uuid) {
+				console.log('[oidc-client] getValidAccessToken: No refresh token or session UUID');
 				return null;
 			}
 
-			// Use refresh token to get fresh access token
-			console.log('[oidc-client] getValidAccessToken: Requesting fresh access token');
-			const tokens = await this.refreshAccessToken(data.refresh_token);
+			// Check in-memory cache first
+			const cached = accessTokenCache.get(session.uuid);
+			if (cached) {
+				const now = Math.floor(Date.now() / 1000);
+				// Use cached token if it won't expire in the next 60 seconds
+				if (cached.expires_at > now + 60) {
+					return cached.token;
+				}
+			}
+
+			// Not cached or expired, refresh it
+			console.log('[oidc-client] getValidAccessToken: Refreshing access token');
+			const tokens = await this.refreshAccessToken(refresh_token);
+			
+			// Cache the new access token
+			const accessClaims = await verifyAccessToken(tokens.access_token, this.config.issuerUrl);
+			if (accessClaims) {
+				accessTokenCache.set(session.uuid, {
+					token: tokens.access_token,
+					expires_at: accessClaims.exp
+				});
+			}
+			
+			// If refresh token changed, update session
+			if (tokens.refresh_token !== refresh_token) {
+				await this.setSession(cookies, tokens);
+			}
+			
 			return tokens.access_token;
 		} catch (err) {
 			const errorMsg = err instanceof Error ? err.message : String(err);
@@ -333,6 +364,19 @@ export class OidcClient {
 	 * Clear the session (logout)
 	 */
 	clearSession(cookies: Cookies): void {
+		// Clear access token from cache
+		const sessionCookie = cookies.get(COOKIE_NAME);
+		if (sessionCookie) {
+			try {
+				const data = JSON.parse(sessionCookie);
+				if (data.session?.uuid) {
+					accessTokenCache.delete(data.session.uuid);
+				}
+			} catch {
+				// Ignore parse errors on logout
+			}
+		}
+		
 		cookies.delete(COOKIE_NAME, this.getSessionCookieOptions());
 		cookies.delete(PKCE_COOKIE_NAME, { path: '/' });
 		cookies.delete(STATE_COOKIE_NAME, { path: '/' });

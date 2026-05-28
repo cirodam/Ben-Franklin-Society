@@ -18,16 +18,17 @@
 	let body = $state(section.body);
 	let rationale = $state(section.rationale || '');
 
-	// Update parent when values change
-	$effect(() => {
+	// Update parent when user finishes editing
+	function handleUpdate() {
 		onUpdate({ title, body, rationale: rationale || undefined });
-	});
+	}
 </script>
 
 <div class="section-editor">
 	<div class="section-editor__header">
 		<Input
 			bind:value={title}
+			onblur={handleUpdate}
 			placeholder="Section title"
 			class="section-editor__title"
 		/>
@@ -43,6 +44,7 @@
 		<Textarea
 			id="body"
 			bind:value={body}
+			onblur={handleUpdate}
 			placeholder="Section content..."
 			rows={8}
 		/>
@@ -53,6 +55,7 @@
 		<Textarea
 			id="rationale"
 			bind:value={rationale}
+			onblur={handleUpdate}
 			placeholder="Explanation or reasoning for this section..."
 			rows={3}
 		/>

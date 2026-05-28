@@ -31,7 +31,8 @@ export const load: PageServerLoad = async ({ params, locals, cookies }) => {
 
 	return {
 		session: locals.session,
-		buckets
+		buckets,
+		documentType: params.type as ValidDocumentType
 	};
 };
 

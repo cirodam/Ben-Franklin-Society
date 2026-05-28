@@ -1,73 +1,29 @@
 <script lang="ts">
-	import { PageHeader } from '@bfs/ui';
-	import { MotionEditor, GoverningDocEditor } from '@bfs/ui';
-	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
-	import type { MotionDocument, GoverningDocument } from '@bfs/types';
 
 	let { data }: { data: PageData } = $props();
 
-	const docType = data.documentType;
-	
-	// State for the document being edited
-	let document = $state<MotionDocument | GoverningDocument>(
-		JSON.parse(JSON.stringify(data.document))
-	);
-	
-	function handleUpdate(updated: MotionDocument | GoverningDocument) {
-		document = updated;
+	// Redirect to the view page - editing is now inline
+	if (typeof window !== 'undefined') {
+		goto(`/library/${data.document.slug}`);
 	}
 </script>
 
-<div class="page">
-	<PageHeader 
-		title="Edit {docType === 'motion' ? 'Motion' : 'Governing Document'}"
-		description={document.title}
-	/>
-
-	<form method="POST" action="?/save" use:enhance={() => {
-		return async ({ result }) => {
-			if (result.type === 'success') {
-				goto(`/library/${document.slug}`);
-			}
-		};
-	}}>
-		<input type="hidden" name="document" value={JSON.stringify(document)} />
-		
-		<div class="editor-container">
-			{#if docType === 'motion'}
-				<MotionEditor 
-					motion={document as MotionDocument} 
-					onUpdate={handleUpdate}
-					readonly={false}
-				/>
-			{:else if docType === 'governing'}
-				<GoverningDocEditor 
-					document={document as GoverningDocument} 
-					onUpdate={handleUpdate}
-					readonly={false}
-				/>
-			{/if}
-		</div>
-
-		<div class="form-actions">
-			<button type="button" class="btn" onclick={() => goto(`/library/${document.slug}`)}>
-				Cancel
-			</button>
-			<button type="submit" class="btn btn--primary">
-				Save Changes
-			</button>
-		</div>
-	</form>
+<div class="redirecting">
+	<p>Redirecting to document view...</p>
 </div>
 
 <style>
-	.page {
+	.redirecting {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-6);
-		max-width: 900px;
+		align-items: center;
+		justify-content: center;
+		min-height: 50vh;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		color: var(--ink-mid);
+	}
+</style>
 		margin: 0 auto;
 		padding-bottom: var(--space-8);
 	}

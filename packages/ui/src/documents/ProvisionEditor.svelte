@@ -19,26 +19,28 @@
 	let text = $state(provision.text);
 	let reasoning = $state(provision.reasoning || '');
 
-	// Update parent when values change
-	$effect(() => {
+	// Update parent when user finishes editing (on blur)
+	function handleUpdate() {
 		onUpdate({
 			number,
 			title: title || undefined,
 			text,
 			reasoning: reasoning || undefined
 		});
-	});
+	}
 </script>
 
 <div class="provision-editor">
 	<div class="provision-editor__header">
 		<Input
 			bind:value={number}
+			onblur={handleUpdate}
 			placeholder="Number (e.g., '1', '1.a')"
 			class="provision-editor__number"
 		/>
 		<Input
 			bind:value={title}
+			onblur={handleUpdate}
 			placeholder="Title (optional)"
 			class="provision-editor__title"
 		/>
@@ -54,6 +56,7 @@
 		<Textarea
 			id="text"
 			bind:value={text}
+			onblur={handleUpdate}
 			placeholder="The provision content..."
 			rows={6}
 		/>
@@ -64,6 +67,7 @@
 		<Textarea
 			id="reasoning"
 			bind:value={reasoning}
+			onblur={handleUpdate}
 			placeholder="Rationale for this provision..."
 			rows={3}
 		/>

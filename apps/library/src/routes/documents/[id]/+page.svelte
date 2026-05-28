@@ -1,37 +1,17 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
-	import { MotionEditor, GoverningDocEditor } from '@bfs/ui';
-	import type { MotionDocument, GoverningDocument } from '@bfs/types';
+	import { MotionDocument, GoverningDocument } from '@bfs/ui';
+	import type { MotionDocument as MotionDocType, GoverningDocument as GoverningDocType } from '@bfs/types';
 	import { goto } from '$app/navigation';
 
 	const { data } = $props<{ data: PageData }>();
 
 	let document = $state(data.document);
 	let saving = $state(false);
-	let saveStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
-	let editorRef: any;
 
-	// Auto-save debouncing
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-
-	function scheduleSave() {
-		if (saveTimeout) {
-			clearTimeout(saveTimeout);
-		}
-		saveTimeout = setTimeout(() => {
-			handleSave();
-		}, 2000); // Auto-save after 2 seconds of no changes
-	}
-
-	async function handleSave() {
-		// Get current state from editor
-		if (editorRef) {
-			const updates = editorRef.getUpdates();
-			document = { ...document, ...updates, updated_at: new Date().toISOString() };
-		}
-
+	async function handleSave(updates: Partial<MotionDocType | GoverningDocType>) {
+		document = { ...document, ...updates, updated_at: new Date().toISOString() };
 		saving = true;
-		saveStatus = 'saving';
 
 		try {
 			const formData = new FormData();
@@ -44,19 +24,12 @@
 
 			const result = await response.json();
 
-			if (result.type === 'success') {
-				saveStatus = 'saved';
-				setTimeout(() => {
-					if (saveStatus === 'saved') {
-						saveStatus = 'idle';
-					}
-				}, 2000);
-			} else {
-				saveStatus = 'error';
+			if (result.type !== 'success') {
+				throw new Error('Save failed');
 			}
 		} catch (err) {
 			console.error('Failed to save document:', err);
-			saveStatus = 'error';
+			throw err;
 		} finally {
 			saving = false;
 		}
@@ -67,37 +40,35 @@
 	}
 </script>
 
-<div class="document-workspace">
-	<header class="workspace-header">
-		<div class="header-left">
-			<button onclick={handleBack} class="btn btn--sm">
-				← back to library
-			</button>
-		</div>
-		<div class="header-center">
-			<h1 class="workspace-title">{document.title || 'Untitled Document'}</h1>
-			<span class="document-type-badge">{document.type}</span>
-		</div>
-		<div class="header-right">
-			{#if saveStatus === 'saving'}
-				<span class="save-status saving">saving...</span>
-			{:else if saveStatus === 'saved'}
-				<span class="save-status saved">saved</span>
-			{:else if saveStatus === 'error'}
-				<span class="save-status error">error saving</span>
-			{:else}
-				<button onclick={handleSave} class="btn btn--primary btn--sm" disabled={saving}>
-					save
-				</button>
-			{/if}
-		</div>
-	</header>
+<svelte:head>
+	<style>
+		:global(.app-shell__main) {
+			background: linear-gradient(135deg, #e8e4d9 0%, #d4cfc0 100%) !important;
+		}
+		:global(.app-shell__content) {
+			padding: 0 !important;
+		}
+	</style>
+</svelte:head>
 
-	<div class="workspace-content">
+<div class="document-page">
+	<button onclick={handleBack} class="back-button">
+		← back to library
+	</button>
+
+	<div class="document-wrapper">
 		{#if document.type === 'motion'}
-			<MotionEditor bind:this={editorRef} motion={document as MotionDocument} />
+			<MotionDocument
+				motion={document as MotionDocType}
+				editable={true}
+				onSave={handleSave}
+			/>
 		{:else if document.type === 'governing'}
-			<GoverningDocEditor bind:this={editorRef} document={document as GoverningDocument} />
+			<GoverningDocument
+				document={document as GoverningDocType}
+				editable={true}
+				onSave={handleSave}
+			/>
 		{:else}
 			<div class="unsupported">
 				<p>Unsupported document type: {document.type}</p>
@@ -108,89 +79,51 @@
 </div>
 
 <style>
-	.document-workspace {
+	.document-page {
+		min-height: 100vh;
+		padding: var(--space-8, 2rem);
 		display: flex;
 		flex-direction: column;
-		height: 100vh;
-		background: var(--paper);
+		gap: var(--space-6, 1.5rem);
 	}
 
-	.workspace-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: var(--space-4) var(--space-6);
-		border-bottom: 1px solid var(--border);
-		background: var(--paper);
-	}
-
-	.header-left,
-	.header-right {
-		flex: 0 0 200px;
-	}
-
-	.header-center {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-3);
-	}
-
-	.workspace-title {
-		font-family: var(--font-display);
-		font-size: 1.5rem;
-		color: var(--ink);
-		margin: 0;
-	}
-
-	.document-type-badge {
-		font-family: var(--font-label);
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		padding: 0.125rem var(--space-2);
-		background: var(--tint-green);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		color: var(--ink-muted);
-		white-space: nowrap;
-	}
-
-	.save-status {
-		font-family: var(--font-label);
+	.back-button {
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: 0.875rem;
-		padding: var(--space-2) var(--space-3);
+		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		border: 1px solid rgba(45, 90, 79, 0.3);
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.8);
+		color: #2d5a4f;
+		cursor: pointer;
+		transition: all 0.15s;
+		align-self: flex-start;
 	}
 
-	.save-status.saving {
-		color: var(--ink-muted);
+	.back-button:hover {
+		background: white;
+		border-color: rgba(45, 90, 79, 0.5);
 	}
 
-	.save-status.saved {
-		color: var(--green);
-	}
-
-	.save-status.error {
-		color: var(--red);
-	}
-
-	.workspace-content {
-		flex: 1;
-		overflow: auto;
-		padding: var(--space-6);
+	.document-wrapper {
+		display: flex;
+		justify-content: center;
 	}
 
 	.unsupported {
-		font-family: var(--font-prose);
-		padding: var(--space-6);
+		max-width: 1000px;
+		margin: 0 auto;
+		padding: var(--space-8, 2rem);
+		background: white;
+		border-radius: 4px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	}
 
 	.unsupported pre {
 		font-family: monospace;
-		background: var(--tint-gray);
-		padding: var(--space-4);
-		border-radius: var(--radius-sm);
+		background: #f5f5f5;
+		padding: var(--space-4, 1rem);
+		border-radius: 4px;
 		overflow: auto;
 	}
 </style>

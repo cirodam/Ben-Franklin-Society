@@ -3,10 +3,11 @@
 	import { MotionEditor, GoverningDocEditor } from '@bfs/ui';
 	import type { MotionDocument, GoverningDocument } from '@bfs/types';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 
 	const { data } = $props<{ data: PageData }>();
-	const documentType = $page.params.type as 'motion' | 'governing';
+	
+	// Get document type from server load function
+	const documentType = data.documentType;
 
 	// Initialize empty document - capture initial values
 	const initialActingAsUuid = data.session.acting_as_uuid;

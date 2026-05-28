@@ -18,23 +18,26 @@
 	let title = $state(article.title);
 	let sections = $state<Section[]>(article.sections);
 
-	// Update parent when values change
-	$effect(() => {
+	// Update parent when user finishes editing
+	function handleUpdate() {
 		onUpdate({ number, title, sections });
-	});
+	}
 
 	function addSection() {
 		sections = [...sections, { title: '', body: '', rationale: undefined }];
+		handleUpdate();
 	}
 
 	function updateSection(index: number, updates: Partial<Section>) {
 		sections = sections.map((s, i) =>
 			i === index ? { ...s, ...updates } : s
 		);
+		handleUpdate();
 	}
 
 	function deleteSection(index: number) {
 		sections = sections.filter((_, i) => i !== index);
+		handleUpdate();
 	}
 </script>
 
@@ -42,11 +45,13 @@
 	<div class="article-editor__header">
 		<Input
 			bind:value={number}
+			onblur={handleUpdate}
 			placeholder="Article number (e.g., 'I', 'II')"
 			class="article-editor__number"
 		/>
 		<Input
 			bind:value={title}
+			onblur={handleUpdate}
 			placeholder="Article title"
 			class="article-editor__title"
 		/>
