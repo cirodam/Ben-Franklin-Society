@@ -75,7 +75,7 @@ Requires admin permission in Community Bank Service.
 ---
 
 ## Phase 6 — Inter-Society Transfers *(deferred)*
-**Goal**: Franks can move between societies via correspondent banking.
+**Goal**: Florens can move between societies via correspondent banking.
 
 Defer until Phases 1–5 are solid.
 
@@ -83,9 +83,10 @@ Defer until Phases 1–5 are solid.
 - [ ] `neighboring_society` table and contact discovery via Federation
 - [ ] Outbound transfer: sign payload, send to neighbor, await signed acknowledgement, post debit
 - [ ] Inbound transfer: verify signature, credit recipient + clearinghouse account, return signed ack
-- [ ] Pending transfer hold (soft hold on sender balance while awaiting ack)
+- [ ] Pending transfer hold (soft hold on sender Floren balance while awaiting ack)
 - [ ] Federation reporting (async, both societies report completed transfer)
 - [ ] Peer gossip fallback for federation-unavailable contact discovery
+- [ ] UI enforcement: only allow Florens for cross-society transfers (Franks are locally tied)
 
 ---
 

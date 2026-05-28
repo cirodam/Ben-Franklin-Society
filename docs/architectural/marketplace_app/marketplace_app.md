@@ -131,12 +131,14 @@ The app receives federated listings from the clearinghouse and stores them local
 When a buyer purchases a federated listing from another society's seller, the transaction must cross societies. The flow:
 
 1. Buyer initiates purchase in their society's Marketplace app
-2. The app routes the transfer request through the clearinghouse to the seller's society
-3. The seller's society's Community Bank executes the Frank credit to the seller
-4. The buyer's Community Bank executes the Frank debit from the buyer
-5. Frank settlement between societies runs through the clearinghouse inter-society settlement mechanism
+2. The app routes the **Floren** transfer request through the clearinghouse to the seller's society
+3. The seller's society's Community Bank executes the Floren credit to the seller
+4. The buyer's Community Bank executes the Floren debit from the buyer
+5. Floren settlement between societies runs through the clearinghouse inter-society settlement mechanism
 
-Cross-society Frank settlement is a clearinghouse responsibility, not a Marketplace responsibility. The Marketplace app only needs to communicate the intent; the clearinghouse and Community Banks handle the money.
+Cross-society Floren settlement is a clearinghouse responsibility, not a Marketplace responsibility. The Marketplace app only needs to communicate the intent; the clearinghouse and Community Banks handle the money.
+
+**Note:** Only Florens can be used for cross-society purchases. Franks are locally tied and cannot leave their issuing society. The Marketplace UI enforces this: when purchasing from a seller in another society, only the Floren balance is available for payment.
 
 ---
 

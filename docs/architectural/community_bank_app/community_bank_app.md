@@ -6,7 +6,17 @@
 
 ## Overview
 
-The Community Bank app is the member-facing financial utility for the society. It holds Frank accounts, processes transactions, maintains the authoritative ledger, and executes all scheduled transfers — payroll, dues, Social Insurance Fund allowances, issuance, and demurrage.
+The Community Bank app is the member-facing financial utility for the society. It maintains accounts with both **Frank** (local) and **Floren** (federal) balances, processes transactions, maintains the authoritative ledger, and executes all scheduled transfers — payroll, dues, Social Insurance Fund allowances, issuance, and demurrage.
+
+**Dual Currency Model:**
+- **Franks** are locally tied — issued by the society, used only within the society, subject to demurrage
+- **Florens** are the federal trade currency — can be sent/received across societies, no demurrage
+- Every account holds both currency types; transactions specify which currency to use
+
+**Offline-First Design:**
+The Community Bank is designed to **operate completely independently of the internet**. Physical branches using passbooks, transaction slips, and paper ledgers can function for extended periods without digital systems. The digital system is a convenience and efficiency tool, not a dependency. See [Offline Branch Operations](offline_branch_operations.md) for complete design.
+
+This document focuses primarily on the digital implementation and Frank-specific features (issuance, demurrage, scheduled transfers). For inter-society Floren transfers, see [Inter-Society Banking](../inter_society_banking.md).
 
 It is an OIDC relying party: all authentication is delegated to the Governance app. It has no user registry of its own — accounts are keyed to principal UUIDs provided by Governance.
 
@@ -16,7 +26,7 @@ The Community Bank is administered by the **Community Bank Service**. Members of
 
 ## Accounts
 
-Every principal — member or association — has exactly one Frank account. Accounts are created automatically when Governance fires a `member.created` or `association.created` event. They are not created on first login; they exist from the moment the principal is registered.
+Every principal — member or association — has exactly one account that holds both Frank and Floren balances. Accounts are created automatically when Governance fires a `member.created` or `association.created` event. They are not created on first login; they exist from the moment the principal is registered.
 
 ### Account Record
 
@@ -24,11 +34,12 @@ Every principal — member or association — has exactly one Frank account. Acc
 |---|---|
 | `uuid` | The principal's UUID from Governance — the account's stable identifier |
 | `handle` | Cached from Governance for display; not used as a key |
-| `balance` | Current Frank balance (integer; Franks are not subdivided) |
+| `franks_balance` | Current Frank balance (integer; Franks are not subdivided) |
+| `florens_balance` | Current Floren balance (integer; Florens are not subdivided) |
 | `status` | `active`, `frozen` |
 | `created_at` | Timestamp of account creation |
 
-Handles are cached for display only. All internal references use UUIDs. If a principal changes their handle, the account record is updated on the next session that touches it; the balance and history are unaffected.
+Handles are cached for display only. All internal references use UUIDs. If a principal changes their handle, the account record is updated on the next session that touches it; the balances and history are unaffected.
 
 ### Special Accounts
 
@@ -166,22 +177,31 @@ Events are processed idempotently. If an event is received more than once (e.g. 
 
 ## Teller Operations
 
-The Community Bank has an in-person component. Tellers staff the physical marketplace and any other designated locations where members conduct Frank transactions face-to-face using physical transaction slips. The app supports this through a dedicated teller mode.
+The Community Bank has an in-person component. Tellers staff physical branches where members conduct transactions face-to-face using physical transaction slips and passbooks. The app supports this through a dedicated teller mode for when digital systems are available.
+
+**Dual operation modes:**
+- **Online teller mode:** Digital system with teller permissions, immediate ledger updates
+- **Offline branch operation:** Paper passbooks and slips, reconciled later when connectivity returns
+
+For complete offline branch design including passbooks, physical slips, scrip systems, and reconciliation procedures, see [Offline Branch Operations](offline_branch_operations.md).
+
+This section covers the **digital teller interface** used when the system is online.
 
 ### Teller Permission
 
 `teller` is a named permission published by the Community Bank app. The Community Bank Service assigns it to members staffing the teller role via Governance roles. A session carrying the `teller` permission gains access to the teller interface. No other mechanism grants teller access.
 
-### Teller Interface
+### Teller Interface (Online Mode)
 
 The teller interface is a distinct UI mode within the app — not a separate application. A member with the `teller` permission sees a teller-mode option on login. In teller mode, a teller can:
 
 - **Look up any account by handle** — view the current balance and recent transaction history
-- **Enter a slip transaction** — record a transfer from a physical slip, providing both parties' handles, the amount, and the slip serial number
-- **Print a slip** — generate a printable transaction slip for an online transfer initiated at the teller station (e.g. a member who doesn't have a personal device)
+- **Enter a slip transaction** — record a transfer from a physical slip (when reconciling offline slips), providing both parties' handles, the amount, and the slip serial number
+- **Process live transactions** — execute transfers on behalf of members present at the counter
+- **Print receipts** — generate printable transaction receipts for member records
 - **View the slip entry log** — all slip transactions entered during the current session, for end-of-session review
 
-Tellers act under system authority for the specific purpose of entering slip transactions — they are not initiating transfers on behalf of either party, they are recording a transaction that already occurred on paper. The slip serial number is required; the teller cannot save a slip entry without it.
+Tellers act under system authority for the specific purpose of entering slip transactions — they are not initiating transfers on behalf of either party, they are recording a transaction that already occurred (online or offline). When entering offline slips, the slip serial number is required; the teller cannot save a slip entry without it.
 
 ### Slip Serial Numbers
 
@@ -189,9 +209,21 @@ Physical transaction slips are pre-numbered by the Community Bank Service before
 
 The numbering scheme, slip format, and distribution process are operational matters for the Community Bank Service, not defined by the app. The app only requires that a serial number be provided at entry time.
 
+### Slip Entry and Reconciliation
+
+When entering slips from an offline period:
+1. Teller accesses "offline slip entry" mode
+2. For each slip: enters serial number, validates not already entered
+3. Enters transaction details: from, to, currency, amount, date, memo
+4. System validates and creates transaction record
+5. Marks slip as entered in `physical_slip` table
+6. At end of session: generates reconciliation batch report
+
+The system automatically flags conflicts between paper and digital records for administrator review. See [Offline Branch Operations](offline_branch_operations.md) for complete reconciliation procedures.
+
 ### Physical Slip as Parallel Record
 
-The physical slip record and the digital ledger are parallel records of the same economic activity. The ledger is the authoritative record when it is current. The slips are the authoritative record when the ledger has not yet caught up. Full slip-reconciliation and offline operation design is deferred to a later design phase.
+The physical slip record and the digital ledger are parallel records of the same economic activity. **During offline periods, the paper record is authoritative.** The digital ledger is corrected to match properly executed paper transactions when connectivity returns. When online, both records are created simultaneously for redundancy and member receipts.
 
 ---
 

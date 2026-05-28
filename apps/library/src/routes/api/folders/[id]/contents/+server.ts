@@ -31,13 +31,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify access
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to access this folder');
-		}
-
-		// Get subfolders and files
-		const subfolders = listFolders(folder.bucket_id, folderId);
+	// Verify access (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
 		const files = listFiles(folder.bucket_id, folderId);
 
 		return json({

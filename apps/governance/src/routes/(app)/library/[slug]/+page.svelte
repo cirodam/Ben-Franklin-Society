@@ -3,8 +3,9 @@
 	import type { PageData } from './$types.js';
 	import ProseDocumentView from './views/ProseDocumentView.svelte';
 	import ContractDocumentView from './views/ContractDocumentView.svelte';
-	import { MotionDocument, GoverningDocument, Modal } from '@bfs/ui';
-	import type { MotionDocument as MotionDocType, GoverningDocument as GoverningDocType } from '@bfs/types';
+	import MotionDocumentView from './views/MotionDocumentView.svelte';
+	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
+	import { Modal } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -13,25 +14,6 @@
 	let showChangeOwnerModal = $state(false);
 	let selectedOwnerUuid = $state('');
 	let isSubmitting = $state(false);
-
-	async function handleSave(updates: Partial<MotionDocType | GoverningDocType>) {
-		const updatedDoc = { ...doc, ...updates, updated_at: new Date().toISOString() };
-		
-		const formData = new FormData();
-		formData.append('document', JSON.stringify(updatedDoc));
-
-		const response = await fetch('?/updateDocument', {
-			method: 'POST',
-			body: formData
-		});
-
-		if (!response.ok) {
-			throw new Error('Save failed');
-		}
-
-		// Reload page to see updated document
-		window.location.reload();
-	}
 </script>
 
 <svelte:head>
@@ -64,17 +46,9 @@
 		{:else if documentType === 'contract'}
 			<ContractDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ContractDocument} />
 		{:else if documentType === 'motion'}
-			<MotionDocument
-				motion={doc as unknown as MotionDocType}
-				editable={canEdit}
-				onSave={handleSave}
-			/>
+			<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} canEdit={canEdit} />
 		{:else if documentType === 'governing'}
-			<GoverningDocument
-				document={doc as unknown as GoverningDocType}
-				editable={canEdit}
-				onSave={handleSave}
-			/>
+			<GoverningDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').GoverningDocument} canEdit={canEdit} />
 		{/if}
 	</div>
 </div>
@@ -163,7 +137,6 @@
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
-	.edit-link,
 	.change-owner-btn {
 		display: inline-flex;
 		align-items: center;
@@ -180,7 +153,6 @@
 		cursor: pointer;
 	}
 
-	.edit-link:hover,
 	.change-owner-btn:hover {
 		background: var(--paper);
 		color: var(--gold);

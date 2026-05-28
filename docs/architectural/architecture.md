@@ -7,6 +7,7 @@
 
 - **Comprehension before velocity.** Code is written one component at a time. Before a component is built, its purpose and design are understood. Nothing is generated in bulk and accepted without review. Small, reviewable increments.
 - **Real institutions first.** Before any screen or API is designed, the question is: what does this institution actually need to do in the real world? The Assembly meets and votes in a room. The Community Bank is where people's money lives. Colleges credential practitioners who have careers at stake. The software maps onto those real activities — it is a tool for institutions, not a simulation of them.
+- **Offline-first operation.** Digital systems are a convenience, not a dependency. Every core function must work with paper records, in-person verification, and physical tokens. The internet can disappear for weeks and the society continues functioning.
 
 ---
 
@@ -98,9 +99,13 @@ The hub of the system. Runs the OIDC identity provider and serves as the authori
 See [governance_app/governance_app.md](governance_app/governance_app.md) for the full design.
 
 ### Community Bank App *(OIDC relying party)*
-The member-facing financial utility. Holds Frank accounts, processes transactions, and maintains the authoritative ledger. Payroll, dues, Social Insurance Fund allowances, issuance, and demurrage all run as scheduled transfers — the same primitive, different direction and authorization. Administered by the **Community Bank Service**.
+The member-facing financial utility. Holds Frank and Floren accounts, processes transactions, and maintains the authoritative ledger. Payroll, dues, Social Insurance Fund allowances, issuance, and demurrage all run as scheduled transfers — the same primitive, different direction and authorization.
 
-See [community_bank_app/community_bank_app.md](community_bank_app/community_bank_app.md) for the full design.
+**Offline-first design:** Operates with physical branches using passbooks and transaction slips. Can function for extended periods without internet access. Paper records are authoritative during offline operation; digital ledger reconciles when connectivity returns.
+
+Administered by the **Community Bank Service**.
+
+See [community_bank_app/community_bank_app.md](community_bank_app/community_bank_app.md) for the full design and [community_bank_app/offline_branch_operations.md](community_bank_app/offline_branch_operations.md) for offline branch operations.
 
 ### Mail App *(OIDC relying party)*
 Internal society messaging using handles as addresses. Intra-society delivery is local; inter-society mail is delivered peer-to-peer between societies. Unknown societies are discovered via the Federation before first contact. Mailboxes are provisioned for all principals — members and associations alike. Administered by the **Communications Service**.
@@ -120,7 +125,7 @@ The Federation operates at the federation tier — one instance for the whole ne
 
 **What the Federation does:**
 - **Society directory** — the authoritative registry of all societies in the federation. Each entry holds the society's handle, endpoint, public key, and coordinates. Society handles are globally unique by virtue of being registered here. Societies query the directory on demand to discover contact details for societies they haven't previously interacted with, then communicate directly and cache the result locally in `neighboring_society`. The Federation also notifies nearby societies when a new one registers. If the Federation is unreachable, a society may ask a known peer for contact details; peer-provided details are accepted provisionally and verified against the directory when it is next reachable.
-- **Clearinghouse** — tracks net Frank positions between societies and issues rebalancing instructions when imbalances grow large. Does not hold Franks; all balances live in local ledgers.
+- **Clearinghouse** — tracks net Floren positions between societies and issues rebalancing guidance when imbalances grow large. Does not hold Florens; all balances live in local ledgers. Franks are locally tied and do not move between societies.
 - **Federation membership** — maintains the allow-list of active societies. Can revoke federation membership for persistent abuse.
 
 **What the Federation does not do:**

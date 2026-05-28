@@ -125,25 +125,11 @@
 					</a>
 				{/if}
 				<button 
-					onclick={onStartMove} 
-					class="btn btn--secondary" 
-					style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
-				>
-					Move
-				</button>
-				<button 
 					onclick={onStartRename} 
 					class="btn btn--secondary" 
 					style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
 				>
 					Rename
-				</button>
-				<button 
-					onclick={onDelete} 
-					class="btn btn--secondary" 
-					style="font-size: 0.75rem; padding: 0.25rem 0.5rem;"
-				>
-					Delete
 				</button>
 			</div>
 		{/if}

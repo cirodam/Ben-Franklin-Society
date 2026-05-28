@@ -130,7 +130,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const assemblyRules = getDocumentBySlug('assembly-rules');
 
 	// Get user's draft motions that can be introduced
-	const draftMotions = actingAs ? listMotions({ owner_uuid: actingAs, status: 'draft' }) : [];
+	// Include both motions owned by acting_as_uuid and person_uuid
+	const draftMotions = locals.session 
+		? listMotions({ status: 'draft' }).filter(m => 
+			m.owner_uuid === locals.session.acting_as_uuid || 
+			m.owner_uuid === locals.session.person_uuid
+		)
+		: [];
 
 	return {
 		association,
@@ -188,6 +194,7 @@ export const actions: Actions = {
 	introduceMotion: async ({ request, locals }) => {
 		if (!locals.session) return fail(401, { message: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;
+		const personUuid = locals.session.person_uuid;
 
 		const association = getAssociationByHandle('general-assembly');
 		if (!association) return fail(404, { message: 'General Assembly not found' });
@@ -200,7 +207,10 @@ export const actions: Actions = {
 		// Load the motion and verify ownership
 		const motion = getMotionBySlug(motion_slug);
 		if (!motion) return fail(404, { message: 'Motion not found' });
-		if (motion.owner_uuid !== actingAs) return fail(403, { message: 'You can only introduce your own motions' });
+		// Check ownership: draft motions are owned by the person, not the association
+		if (motion.owner_uuid !== personUuid && motion.owner_uuid !== actingAs) {
+			return fail(403, { message: 'You can only introduce your own motions' });
+		}
 		if (motion.content.status !== 'draft') return fail(400, { message: 'Only draft motions can be introduced' });
 
 		// Update motion with body info and transfer ownership to the General Assembly

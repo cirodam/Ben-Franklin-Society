@@ -6,9 +6,13 @@
 
 ## Overview
 
-Franks are fungible across all Ben Franklin Society communities. A member of Society A can send Franks directly to a member of Society B, and 1 Frank is worth 1 Frank regardless of which society issued it.
+**Florens** are fungible across all Ben Franklin Society communities. A member of Society A can send Florens directly to a member of Society B, and 1 Floren is worth 1 Floren regardless of which society the members belong to.
 
-The system uses a **correspondent banking model**: each Community Bank maintains a special Clearinghouse Account that acts as a running tab of the society's net position across all inter-society activity. The Federation's clearinghouse service tracks net bilateral positions and issues rebalancing instructions when imbalances grow large. Societies communicate directly for transfers; the Federation handles reconciliation and rebalancing, not individual transaction routing.
+**Franks are locally tied** — they exist only within their issuing society. Philadelphia Franks cannot be sent to Boston. Athens Franks cannot be sent to Atlanta. This geographic constraint protects local money supplies from trade-induced depletion while Florens provide the inter-society payment medium.
+
+> **Important:** This document describes inter-society banking **for Florens only**. All mechanisms described here — clearinghouse accounts, imbalance fees, circuit breakers, bilateral positions — apply exclusively to Floren transfers between societies. Franks remain within their issuing society and are governed solely by local Community Bank policy.
+
+The system uses a **correspondent banking model**: each Community Bank maintains a special Clearinghouse Account that tracks the society's net Floren position across all inter-society activity. The Federation's clearinghouse service tracks net bilateral positions and issues rebalancing guidance when imbalances grow large. Societies communicate directly for transfers; the Federation handles reconciliation and rebalancing, not individual transaction routing.
 
 This model is designed to be:
 - **Resilient** — if the Federation is offline, transfers still settle between the two societies and are reconciled when it returns.
@@ -22,12 +26,13 @@ This model is designed to be:
 Every Community Bank has exactly one Clearinghouse Account. It is an ordinary account in the data model — a row in `account` — but carries special significance:
 
 - Its `principal_uuid` is the society's own UUID (registered at the Federation)
-- It functions like a nostro account in correspondent banking: its balance reflects the society's net position against the federation as a whole
-- A **negative balance** means the society has been a net exporter of Franks (sent more out than received) — it is in deficit
-- A **positive balance** means the society has received more than it has sent — it is in surplus
+- It functions like a nostro account in correspondent banking: its **Floren balance** reflects the society's net Floren position against the federation as a whole
+- A **negative Floren balance** means the society has been a net exporter of Florens (sent more out than received) — it is in deficit
+- A **positive Floren balance** means the society has received more than it has sent — it is in surplus
 - There is one Clearinghouse Account per society, not one per neighbor pair — the bilateral positions are tracked by the Federation, not locally
+- The account's **Frank balance is always zero** — Franks cannot move between societies
 
-When a member sends Franks to another society, both the sender's account and the Clearinghouse Account are debited. When a member receives Franks from another society, both the recipient's account and the Clearinghouse Account are credited. The Clearinghouse Account balance is the live, continuously-updated net position.
+When a member sends Florens to another society, both the sender's Floren balance and the Clearinghouse Account's Floren balance are debited. When a member receives Florens from another society, both the recipient's Floren balance and the Clearinghouse Account's Floren balance are credited. The Clearinghouse Account Floren balance is the live, continuously-updated net position.
 
 ---
 
@@ -48,36 +53,36 @@ Every inter-society message — transfer requests, acknowledgements, reconciliat
 
 When both societies know each other (both appear in each other's `neighboring_society` table):
 
-1. **Initiation** — the sender enters a transfer to `handle@remote-society` in their Community Bank UI. The app looks up `remote-society` in `neighboring_society` to get the endpoint and confirms the neighbor is reachable.
+1. **Initiation** — the sender enters a **Floren** transfer to `handle@remote-society` in their Community Bank UI. The UI enforces currency selection: Florens only for inter-society transfers. The app looks up `remote-society` in `neighboring_society` to get the endpoint and confirms the neighbor is reachable.
 
 2. **Fee calculation and deduction** — Society A calculates imbalance fee (if applicable):
-   - Checks bilateral position with Society B
+   - Checks bilateral Floren position with Society B
    - If outside balanced zone and past grace period: calculates daily fee on excess
    - Deducts Society A's share from transfer amount
    - Forwards fee to Federation pool
    - Updates transfer payload with gross amount, fee, and net amount
 
-3. **Send** — Society A signs the transfer payload (sender UUID, recipient handle, gross amount, fee deducted, net amount, bilateral position, timestamp, nonce) with its private key and sends it directly to Society B's Community Bank API.
+3. **Send** — Society A signs the transfer payload (sender UUID, recipient handle, gross amount, fee deducted, net amount, bilateral Floren position, timestamp, nonce) with its private key and sends it directly to Society B's Community Bank API.
 
 4. **Receipt, verification, and credit** — Society B verifies the signature. If valid, it:
-   - Independently calculates expected imbalance fee based on bilateral position
+   - Independently calculates expected imbalance fee based on bilateral Floren position
    - Verifies Society A's fee calculation matches (rejects if wrong)
    - Deducts Society B's share of imbalance fee from net amount
    - Forwards Society B's fee to Federation pool
    - Resolves the recipient handle to a local `account`
-   - Credits the recipient's account: +final amount (after both fees)
-   - Credits Society B's Clearinghouse Account: +final amount
-   - Records an `inter_society_transfer` row (`status = received`)
+   - Credits the recipient's Floren balance: +final amount (after both fees)
+   - Credits Society B's Clearinghouse Account Floren balance: +final amount
+   - Records an `inter_society_transfer` row (`status = received`, `currency = florens`)
    - Returns a signed acknowledgement to Society A with final credited amount
 
 5. **Debit** — Society A receives and verifies the acknowledgement. It then:
-   - Debits the sender's account: −gross amount
-   - Debits Society A's Clearinghouse Account: −gross amount
-   - Records an `inter_society_transfer` row (`status = settled`)
+   - Debits the sender's Floren balance: −gross amount
+   - Debits Society A's Clearinghouse Account Floren balance: −gross amount
+   - Records an `inter_society_transfer` row (`status = settled`, `currency = florens`)
 
 6. **Reporting** — both societies independently report the completed transfer to the Federation (asynchronously). The Federation cross-verifies that both reports match and that fees were correctly calculated and forwarded.
 
-The debit does not happen until the signed acknowledgement is received. The sender's Franks are not debited speculatively — if Society B is offline or rejects the transfer, nothing changes on Society A's ledger. Fee verification failure is treated like signature verification failure: immediate rejection.
+The debit does not happen until the signed acknowledgement is received. The sender's Florens are not debited speculatively — if Society B is offline or rejects the transfer, nothing changes on Society A's ledger. Fee verification failure is treated like signature verification failure: immediate rejection.
 
 ---
 
@@ -134,7 +139,7 @@ A well-functioning pair of societies should have zero discrepancies. Discrepanci
 
 ## Rebalancing: Bilateral Bancor Mechanism
 
-Large bilateral imbalances are economically unhealthy: surplus societies accumulate unused Franks while deficit societies face liquidity constraints. Inspired by Keynes's Bancor proposal, the system applies **symmetric pressure** on both surplus and deficit positions to encourage gradual rebalancing.
+Large bilateral Floren imbalances are economically unhealthy: surplus societies accumulate unused Florens while deficit societies face liquidity constraints. Inspired by Keynes's Bancor proposal, the system applies **symmetric pressure** on both surplus and deficit positions to encourage gradual rebalancing.
 
 ### The Problem with One-Sided Pressure
 
@@ -152,9 +157,9 @@ Each bilateral relationship has a **balanced trade zone** centered on zero. Posi
 
 **Balanced zones by relationship maturity:**
 ```
-New relationship (<1 year):     ±10,000 Franks (narrow tolerance)
-Established relationship (1-5): ±25,000 Franks (moderate tolerance)  
-Mature relationship (5+):       ±50,000 Franks (wide tolerance)
+New relationship (<1 year):     ±10,000 Florens (narrow tolerance)
+Established relationship (1-5): ±25,000 Florens (moderate tolerance)  
+Mature relationship (5+):       ±50,000 Florens (wide tolerance)
 ```
 
 **Grace period:** 90 days outside balanced zone before fees begin. Short-term imbalances are normal and healthy.
@@ -165,8 +170,8 @@ Mature relationship (5+):       ±50,000 Franks (wide tolerance)
 
 **Imbalance fee calculation (monthly):**
 ```javascript
-function calculateBilateralImbalanceFee(position, balancedZone, daysImbalanced) {
-  const imbalance = Math.abs(position);
+function calculateBilateralImbalanceFee(florenPosition, balancedZone, daysImbalanced) {
+  const imbalance = Math.abs(florenPosition);
   
   // No fee within balanced zone
   if (imbalance <= balancedZone) return 0;
@@ -196,20 +201,20 @@ function calculateBilateralImbalanceFee(position, balancedZone, daysImbalanced) 
 
 **Example: Atlanta ↔ Columbus**
 ```
-Bilateral position:
-- Atlanta: -85,000 Franks (deficit)
-- Columbus: +85,000 Franks (surplus)
+Bilateral Floren position:
+- Atlanta: -85,000 Florens (deficit)
+- Columbus: +85,000 Florens (surplus)
 
-Balanced zone for mature relationship: ±50,000
-Imbalance: 85,000 (outside zone by 35,000)
+Balanced zone for mature relationship: ±50,000 Florens
+Imbalance: 85,000 Florens (outside zone by 35,000)
 Days imbalanced: 120 days (past grace period)
 
-Monthly imbalance fee: 35,000 × 0.5% = 175 Franks
+Monthly imbalance fee: 35,000 × 0.5% = 175 Florens
 
 BOTH societies pay:
-- Atlanta pays 175 Franks/month to Federation pool
-- Columbus pays 175 Franks/month to Federation pool
-- Total: 350 Franks/month collected from imbalanced pair
+- Atlanta pays 175 Florens/month to Federation pool
+- Columbus pays 175 Florens/month to Federation pool
+- Total: 350 Florens/month collected from imbalanced pair
 ```
 
 ### Where Do Fees Go?
@@ -221,11 +226,11 @@ BOTH societies pay:
 
 **Example distribution:**
 ```
-Month's collection: 50,000 Franks from various imbalanced pairs
+Month's collection: 50,000 Florens from various imbalanced pairs
 
 Societies with all relationships in balanced zone:
-- Philadelphia: 12 balanced relationships → 12/200 = 6% → 3,000 Franks
-- Boston: 8 balanced relationships → 8/200 = 4% → 2,000 Franks
+- Philadelphia: 12 balanced relationships → 12/200 = 6% → 3,000 Florens
+- Boston: 8 balanced relationships → 8/200 = 4% → 2,000 Florens
 - Denver: 10 balanced relationships → 10/200 = 5% → 2,500 Franks
 ...
 
@@ -241,15 +246,15 @@ Each society rewards proportional to balanced trade maintenance
 
 ### How Fees Create Rebalancing Pressure
 
-**On deficit society (Atlanta at -85k):**
-- Pays 175 Franks/month demurrage
+**On deficit society (Atlanta at -85k Florens):**
+- Pays 175 Florens/month demurrage
 - Incentivized to: export more goods/services to Columbus, reduce imports from Columbus
-- Or: negotiate direct Frank transfer from surplus elsewhere
+- Or: negotiate direct Floren transfer from surplus elsewhere
 - Or: accept short-term credit line with Columbus (interest cheaper than demurrage)
 
-**On surplus society (Columbus at +85k):**
-- Pays 175 Franks/month demurrage
-- Has 85k Franks "sitting idle" earning negative return
+**On surplus society (Columbus at +85k Florens):**
+- Pays 175 Florens/month demurrage
+- Has 85k Florens "sitting idle" earning negative return
 - Incentivized to: import more from Atlanta, invest in Atlanta businesses, extend credit line to Atlanta
 - Or: transfer surplus to a society where Columbus has deficit (network-wide rebalancing)
 
@@ -259,19 +264,19 @@ Each society rewards proportional to balanced trade maintenance
 
 **1. Natural trade adjustment:**
 ```
-Atlanta increases exports to Columbus (earns Franks)
-Columbus increases imports from Atlanta (spends Franks)
+Atlanta increases exports to Columbus (earns Florens)
+Columbus increases imports from Atlanta (spends Florens)
 → Position drifts toward balance
 → Fees decrease, then disappear when back in balanced zone
 ```
 
-**2. Direct Frank transfer (debt settlement):**
+**2. Direct Floren transfer (debt settlement):**
 ```
-Columbus has surplus Franks sitting idle, paying demurrage
+Columbus has surplus Florens sitting idle, paying demurrage
 Atlanta wants to reduce deficit to stop demurrage
 
 Negotiation:
-- Columbus transfers 35,000 Franks to Atlanta (gift or loan)
+- Columbus transfers 35,000 Florens to Atlanta (gift or loan)
 - Atlanta's position: -85k → -50k (back in balanced zone)
 - Columbus's position: +85k → +50k (back in balanced zone)
 - Both stop paying demurrage
@@ -284,16 +289,16 @@ Atlanta surplus with Denver: +60k (paying demurrage on other side)
 Columbus deficit with Denver: -40k
 
 Solution:
-- Atlanta sends 35k Franks to Columbus (fixes Atlanta-Columbus)
-- Denver sends 25k Franks to Columbus (fixes Denver-Columbus)
-- Atlanta sends 25k Franks to Denver (fixes Atlanta-Denver)
+- Atlanta sends 35k Florens to Columbus (fixes Atlanta-Columbus)
+- Denver sends 25k Florens to Columbus (fixes Denver-Columbus)
+- Atlanta sends 25k Florens to Denver (fixes Atlanta-Denver)
 → All three pairs closer to balance
 → Federation can help discover/coordinate these triangular settlements
 ```
 
 **4. Credit line with interest:**
 ```
-Columbus extends 35k Frank credit line to Atlanta
+Columbus extends 35k Floren credit line to Atlanta
 - Interest: 1.5%/month (cheaper than 2× demurrage)
 - Term: 6 months
 - Effect: Position improves immediately, Atlanta pays interest instead of demurrage
@@ -307,19 +312,19 @@ The imbalance fee is **not billed** — it's **automatically deducted from every
 
 **How it works:**
 
-When Atlanta sends 1000 Franks to Columbus (position: -80k, 30k outside ±50k balanced zone):
+When Atlanta sends 1000 Florens to Columbus (position: -80k, 30k outside ±50k balanced zone):
 
 ```
 Step 1: Atlanta's bank calculates daily imbalance fee
-- Position: -80,000 Franks (30,000 excess beyond ±50k zone)
-- Atlanta's daily fee: 30,000 × 0.5% / 30 days = ~5 Franks/day
-- Atlanta pays half: 2.5 Franks (Columbus pays other half)
+- Position: -80,000 Florens (30,000 excess beyond ±50k zone)
+- Atlanta's daily fee: 30,000 × 0.5% / 30 days = ~5 Florens/day
+- Atlanta pays half: 2.5 Florens (Columbus pays other half)
 
 Step 2: Atlanta's bank deducts fee from transfer
-- Transfer amount: 1000 Franks
-- Atlanta's fee deduction: -2.5 Franks
-- Net sent to Columbus: 997.5 Franks
-- Fee forwarded to Federation pool: 2.5 Franks
+- Transfer amount: 1000 Florens
+- Atlanta's fee deduction: -2.5 Florens
+- Net sent to Columbus: 997.5 Florens
+- Fee forwarded to Federation pool: 2.5 Florens
 
 Step 3: Transfer payload sent to Columbus
 {
@@ -334,25 +339,25 @@ Step 3: Transfer payload sent to Columbus
 }
 
 Step 4: Columbus's bank verifies and deducts its own fee
-- Recalculates: position +80k, 30k excess, Columbus owes 2.5 Franks/day
+- Recalculates: position +80k, 30k excess, Columbus owes 2.5 Florens/day
 - Verifies Atlanta's calculation matches
-- Deducts Columbus's share: 997.5 - 2.5 = 995 Franks
-- Credits recipient bob@columbus: 995 Franks
-- Forwards Columbus's fee to Federation: 2.5 Franks
+- Deducts Columbus's share: 997.5 - 2.5 = 995 Florens
+- Credits recipient bob@columbus: 995 Florens
+- Forwards Columbus's fee to Federation: 2.5 Florens
 
 Step 5: Both banks report to Federation
-- Total collected: 5 Franks (2.5 from Atlanta + 2.5 from Columbus)
+- Total collected: 5 Florens (2.5 from Atlanta + 2.5 from Columbus)
 - Added to monthly rebalancing pool
 - Federation tracks for end-of-month distribution
 ```
 
 **Recipient sees:**
 ```
-Transfer from alice@atlanta: 995 Franks
-  Gross amount: 1000 Franks
-  Atlanta imbalance fee: -2.5 Franks
-  Columbus imbalance fee: -2.5 Franks
-  Net received: 995 Franks
+Transfer from alice@atlanta: 995 Florens
+  Gross amount: 1000 Florens
+  Atlanta imbalance fee: -2.5 Florens
+  Columbus imbalance fee: -2.5 Florens
+  Net received: 995 Florens
 ```
 
 **Why this is structural:**
@@ -368,18 +373,18 @@ Transfer from alice@atlanta: 995 Franks
 **Properties:**
 
 - **Grace period still applies**: first 90 days outside balanced zone have zero fee deduction
-- **Small transfers protected**: minimum fee is 0.01 Franks (transfers <2 Franks have negligible fees)
-- **Same total fee regardless of splitting**: sending 1000 Franks as 1 transfer or 100×10 Frank transfers costs the same total fee
-- **Real-time calculation**: based on current bilateral position at moment of transfer
+- **Small transfers protected**: minimum fee is 0.01 Florens (transfers <2 Florens have negligible fees)
+- **Same total fee regardless of splitting**: sending 1000 Florens as 1 transfer or 100×10 Floren transfers costs the same total fee
+- **Real-time calculation**: based on current bilateral Floren position at moment of transfer
 - **Automatic forwarding**: both banks forward collected fees to Federation immediately
 
 **Example: Imbalance gets worse**
 
 If position drifts to -95k (45k excess beyond ±50k):
 ```
-Daily fee rises to: 45,000 × 0.75% / 30 days ≈ 11.25 Franks/day
-Per-transfer fee on 1000 Franks: 11.25/2 ≈ 5.6 Franks from Atlanta, 5.6 from Columbus
-Recipient receives: 1000 - 5.6 - 5.6 = 988.8 Franks
+Daily fee rises to: 45,000 × 0.75% / 30 days ≈ 11.25 Florens/day
+Per-transfer fee on 1000 Florens: 11.25/2 ≈ 5.6 Florens from Atlanta, 5.6 from Columbus
+Recipient receives: 1000 - 5.6 - 5.6 = 988.8 Florens
 
 Every transfer now 1.1% more expensive
 Strong incentive to rebalance before position worsens
@@ -389,8 +394,8 @@ Strong incentive to rebalance before position worsens
 
 If societies rebalance to -45k (inside ±50k zone):
 ```
-Imbalance fee: 0 Franks
-Transfer of 1000 Franks delivers full 1000 Franks
+Imbalance fee: 0 Florens
+Transfer of 1000 Florens delivers full 1000 Florens
 No friction, normal trading resumes
 Both societies stop hemorrhaging fees
 ```
@@ -441,8 +446,8 @@ The imbalance fees work alongside circuit breakers:
 **Example:**
 ```
 Atlanta ↔ Columbus:
-- Bilateral limit: -100,000 (hard stop)
-- Balanced zone: ±50,000 (fee-free)
+- Bilateral limit: -100,000 Florens (hard stop)
+- Balanced zone: ±50,000 Florens (fee-free)
 - Grace period: 90 days
 
 Atlanta drifts to -60k:
@@ -450,12 +455,12 @@ Atlanta drifts to -60k:
 → No fees yet, no transfer blocks
 
 Day 90 at -60k:
-→ Imbalance fees begin: ~50 Franks/month
+→ Imbalance fees begin: ~50 Florens/month
 → Still plenty of room before -100k hard limit
 → Gradual pressure to rebalance
 
 Atlanta drifts to -95k:
-→ Imbalance fees: ~450 Franks/month (painful)
+→ Imbalance fees: ~450 Florens/month (painful)
 → Approaching -100k hard limit
 → Strong incentive to act before hitting limit
 
@@ -534,9 +539,9 @@ This design requires the following additions or extensions to the existing data 
 ### In Governance (`neighboring_society` — already planned)
 Extensions needed for circuit breakers and Bancor rebalancing:
 - `public_key_cache` — the neighbor's public key, cached locally for signature verification
-- `bilateral_deficit_limit` — maximum negative balance with this neighbor (default: 100,000 Franks)
-- `bilateral_deficit_warning` — warning threshold (default: 75,000 Franks)
-- `balanced_zone_limit` — fee-free zone around zero (default: 50,000 Franks for mature relationships)
+- `bilateral_deficit_limit` — maximum negative Floren balance with this neighbor (default: 100,000 Florens)
+- `bilateral_deficit_warning` — warning threshold (default: 75,000 Florens)
+- `balanced_zone_limit` — fee-free zone around zero for Florens (default: 50,000 Florens for mature relationships)
 - `relationship_established_at` — when relationship began (determines balanced_zone_limit)
 
 ### In Community Bank (new table: `inter_society_transfer`)
@@ -550,7 +555,8 @@ One row per inter-society transfer, on both the sending and receiving side.
 | `remote_society_handle` | TEXT | The counterparty society |
 | `local_account_uuid` | TEXT | FK → `account.uuid` — the sender's or recipient's local account |
 | `clearinghouse_account_uuid` | TEXT | FK → `account.uuid` — this society's Clearinghouse Account |
-| `gross_amount` | INTEGER | In Franks — original transfer amount before fees |
+| `currency` | TEXT | Always `florens` for inter-society transfers |
+| `gross_amount` | INTEGER | In Florens — original transfer amount before fees |
 | `our_imbalance_fee` | INTEGER | Fee deducted by our society for bilateral imbalance |
 | `their_imbalance_fee` | INTEGER | Fee deducted by counterparty society (reported in acknowledgement) |
 | `net_amount` | INTEGER | Final amount after both fees: gross_amount - our_fee - their_fee |
@@ -564,19 +570,21 @@ One row per inter-society transfer, on both the sending and receiving side.
 ### In Community Bank (Clearinghouse Account)
 The Clearinghouse Account is an ordinary `account` row. Its `name` is `Clearinghouse` and its `principal_uuid` is the society's own UUID. No new table is needed — just a known special account like Treasury.
 
+**Key property:** The account tracks both Frank and Floren balances, but **the Frank balance is always zero** because Franks cannot move between societies. Only the Floren balance is meaningful for inter-society settlement.
+
 ### In Community Bank (new table: `bilateral_position`)
-Tracks the net position with each trading partner for Bancor rebalancing.
+Tracks the net Floren position with each trading partner for Bancor rebalancing.
 
 | Column | Type | Description |
 |---|---|---|
 | `neighbor_handle` | TEXT | PRIMARY KEY — the counterparty society |
-| `current_balance` | INTEGER | Net position: positive = surplus, negative = deficit (in Franks) |
-| `balance_zone_limit` | INTEGER | Fee-free band around zero (±50,000 for mature relationships) |
-| `first_imbalanced_at` | DATETIME | When position first exceeded balanced_zone_limit (NULL if in zone) |
+| `current_balance` | INTEGER | Net Floren position: positive = surplus, negative = deficit (in Florens) |
+| `balance_zone_limit` | INTEGER | Fee-free band around zero (±50,000 Florens for mature relationships) |
+| `first_imbalanced_at` | DATETIME | When Floren position first exceeded balanced_zone_limit (NULL if in zone) |
 | `grace_period_expires_at` | DATETIME | When imbalance fees begin (90 days after first_imbalanced_at) |
 | `last_updated_at` | DATETIME | When balance was last recalculated |
 
-This is a derived/cached table — the authoritative balance is the Clearinghouse Account. Updated after each inter-society transfer.
+This is a derived/cached table — the authoritative balance is the Clearinghouse Account's Floren balance. Updated after each inter-society transfer.
 
 ### In Community Bank (new table: `imbalance_fee`)
 Tracks monthly imbalance fees assessed for Bancor rebalancing.
@@ -586,10 +594,10 @@ Tracks monthly imbalance fees assessed for Bancor rebalancing.
 | `uuid` | TEXT | PRIMARY KEY |
 | `billing_period` | TEXT | Month assessed (YYYY-MM format) |
 | `neighbor_handle` | TEXT | The counterparty in the imbalanced pair |
-| `position_at_assessment` | INTEGER | Balance at time of assessment (in Franks) |
-| `excess_over_zone` | INTEGER | Amount beyond balanced_zone_limit |
+| `position_at_assessment` | INTEGER | Floren balance at time of assessment (in Florens) |
+| `excess_over_zone` | INTEGER | Florens beyond balanced_zone_limit |
 | `days_imbalanced` | INTEGER | Days outside balanced zone |
-| `fee_amount` | INTEGER | Demurrage fee in Franks |
+| `fee_amount` | INTEGER | Demurrage fee in Florens |
 | `assessed_at` | DATETIME | When fee was calculated |
 | `paid_at` | DATETIME | When transferred to Federation pool (NULL if unpaid) |
 | `transaction_uuid` | TEXT | FK → `transaction.uuid` — ledger entry for fee payment |
@@ -660,19 +668,19 @@ While the security properties above prevent fraud, they do not prevent a society
 
 ### 1. Bilateral Credit Limits
 
-Each pair of societies establishes a **maximum bilateral deficit** — the largest negative balance one society will accept from the other.
+Each pair of societies establishes a **maximum bilateral deficit** — the largest negative Floren balance one society will accept from the other.
 
 **How it works:**
 ```
-Atlanta ↔ Columbus bilateral limit: -50,000 Franks
+Atlanta ↔ Columbus bilateral limit: -50,000 Florens
 
-Current position: Atlanta owes Columbus 35,000 Franks
+Current position: Atlanta owes Columbus 35,000 Florens
 
-Atlanta member tries to send 20,000 Franks to Columbus member
+Atlanta member tries to send 20,000 Florens to Columbus member
 → Would put Atlanta at -55,000 (exceeds -50,000 limit)
 → Transfer REJECTED by Atlanta's bank before even sending
 
-Columbus cannot extract more than 50,000 Franks net from Atlanta
+Columbus cannot extract more than 50,000 Florens net from Atlanta
 ```
 
 **Key properties:**
@@ -688,8 +696,8 @@ Columbus cannot extract more than 50,000 Franks net from Atlanta
 ALTER TABLE neighboring_society ADD COLUMN bilateral_deficit_limit INTEGER DEFAULT 100000;
 ALTER TABLE neighboring_society ADD COLUMN bilateral_deficit_warning INTEGER DEFAULT 75000;
 
--- Check before transfer
-SELECT clearinghouse_balance_with_neighbor('columbus') < bilateral_deficit_limit;
+-- Check before transfer (Floren balance only)
+SELECT clearinghouse_florens_balance_with_neighbor('columbus') < bilateral_deficit_limit;
 ```
 
 **Benefits:**

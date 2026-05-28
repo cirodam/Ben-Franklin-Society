@@ -1,39 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
-	import { MotionDocument, GoverningDocument } from '@bfs/ui';
-	import type { MotionDocument as MotionDocType, GoverningDocument as GoverningDocType } from '@bfs/types';
+	import type { MotionDocument, GoverningDocument } from '@bfs/types';
+	import MotionDocumentView from './views/MotionDocumentView.svelte';
+	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
 	import { goto } from '$app/navigation';
 
 	const { data } = $props<{ data: PageData }>();
 
-	let document = $state(data.document);
-	let saving = $state(false);
-
-	async function handleSave(updates: Partial<MotionDocType | GoverningDocType>) {
-		document = { ...document, ...updates, updated_at: new Date().toISOString() };
-		saving = true;
-
-		try {
-			const formData = new FormData();
-			formData.append('document', JSON.stringify(document));
-
-			const response = await fetch('?/save', {
-				method: 'POST',
-				body: formData
-			});
-
-			const result = await response.json();
-
-			if (result.type !== 'success') {
-				throw new Error('Save failed');
-			}
-		} catch (err) {
-			console.error('Failed to save document:', err);
-			throw err;
-		} finally {
-			saving = false;
-		}
-	}
+	const document = $derived(data.document);
 
 	function handleBack() {
 		goto('/');
@@ -58,16 +32,14 @@
 
 	<div class="document-wrapper">
 		{#if document.type === 'motion'}
-			<MotionDocument
-				motion={document as MotionDocType}
-				editable={true}
-				onSave={handleSave}
+			<MotionDocumentView 
+				document={document as MotionDocument}
+				canEdit={true}
 			/>
 		{:else if document.type === 'governing'}
-			<GoverningDocument
-				document={document as GoverningDocType}
-				editable={true}
-				onSave={handleSave}
+			<GoverningDocumentView 
+				document={document as GoverningDocument}
+				canEdit={true}
 			/>
 		{:else}
 			<div class="unsupported">
@@ -81,7 +53,7 @@
 <style>
 	.document-page {
 		min-height: 100vh;
-		padding: var(--space-8, 2rem);
+		padding: var(--space-12, 3rem) var(--space-8, 2rem);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6, 1.5rem);
@@ -108,6 +80,7 @@
 	.document-wrapper {
 		display: flex;
 		justify-content: center;
+		padding: 0 var(--space-4, 1rem);
 	}
 
 	.unsupported {

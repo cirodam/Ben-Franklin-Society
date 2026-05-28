@@ -30,13 +30,8 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify user has access to this bucket
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to delete folders in this bucket');
-		}
-
-		// Delete folder
-		deleteFolder(folderId);
+	// Verify user has access to this bucket (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
 
 		return new Response(null, { status: 204 });
 	} catch (err: any) {
@@ -73,13 +68,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify user has access to this bucket
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to update folders in this bucket');
-		}
-
-		const data = await request.json();
-
+	// Verify user has access to this bucket (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
 		if (!data.name) {
 			throw error(400, 'name is required');
 		}

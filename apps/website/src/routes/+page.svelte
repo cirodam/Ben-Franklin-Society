@@ -10,43 +10,45 @@
 	<h1>What is a Ben Franklin Society?</h1>
 
 	<p>
-		A Ben Franklin Society is many things, but primarily it's a mutual aid society. It's a community of 
-        people that work together to meet each others essential needs. Before the New Deal, groups like this
-        were quite common in the US. They provided things like insurance, healthcare, and financial services 
-        to their members. A Ben Franklin Society is an attempt to breathe life back into this idea and to build
-        something ready to meet the crises that we face today.    
+		A Ben Franklin Society is a group of people who organize to meet each other's essential
+		needs—food, housing, healthcare—while governing themselves democratically. These aren't
+		separate goals. They're inseparable. Democracy doesn't work when people are struggling to
+		survive, and mutual aid doesn't scale without democratic coordination.
 	</p>
 
-    <p>
-        Americans are intelligent, resourceful, and generous people. The challenges facing the nation today don't 
-        reflect poorly on the their character. They reflect the reality that our existing institutions are quite old, 
-        and they're facing challenges today that their designers never could have anticipated. We shouldn't abandon our
-        institutions, but the day may come where we can no longer rely on them. It's for that reason that we need to build
-        alternatives now. We have to build our own institutions that are fit to meet the challenges of our time.
-    </p>
-
-    <p>
-        When disaster strikes, ordinary people don't panic, loot, or descend into chaos. They spontaneously organize, cooperate, 
-        and create improvised communities of mutual aid. In crisis, people default to cooperation, not conflict. A Ben Franklin 
-        Society is intended to be a scaffold for that cooperation. There is so much potential in ordinary people, and a Ben Franklin
-        Society is intended to give them a way to realize it.
-    </p>
-
-    <p>
-        This isn't a paid product. It's not a startup or a business. I'm not trying to sell you something. This is an idea, born out
-        of a belief in the good nature, resilience, and integrity of the American people.
-    </p>
-
-	<hr />
-
-	<p class="closing">
-		This is experimental software. It is not production-ready. But if you're looking for an exit—if
-		you want to build something different—this is a place to start. See the <a href="/faq">FAQ</a>
-		or visit the
-		<a href="https://github.com/cirodam/Ben-Franklin-Society" target="_blank"
-			>GitHub repository</a
-		>.
+	<p>
+		Working together to meet each other's needs isn't a new or radical idea. For most of human
+		history, this is how communities functioned. Before the New Deal, mutual aid societies were
+		everywhere in America—immigrant groups, labor organizations, fraternal orders. People pooled
+		their resources, took care of each other when times were hard, and made sure everyone had what
+		they needed. It wasn't charity. It was reciprocal. Everyone contributed what they could, and
+		everyone received support when they needed it. What's actually radical is the world we live in
+		now—where every person is expected to handle every problem alone, and if you can't, you're
+		considered a failure.
 	</p>
+
+	<p>
+		Democratic self-governance means people taking direct responsibility for the decisions that
+		affect their lives, not just voting every few years for the lesser of two evils. Alexis de
+		Tocqueville called this the "art of association"—Americans forming voluntary groups to solve
+		problems together without waiting for authority to tell them what to do. That was the
+		foundation of American democracy. Not representatives in distant capitals, but people
+		cooperating and governing themselves at the local level. We've lost that capacity, but it
+		hasn't disappeared. We just need to relearn it.
+	</p>
+
+	<p>
+		This isn't theoretical. It's happened before. During the 1890s, American democracy was
+		breaking down. Farmers were getting crushed by monopolies and corrupt institutions. They didn't
+		just wait around to vote for the lesser of two evils. They organized. They built cooperatives
+		to survive—pooling resources, cutting out exploitative middlemen, taking care of each other.
+		At the same time, they created a grassroots political movement that eventually forced major
+		democratic reforms. They combined mutual aid with political organizing because they understood
+		you can't have one without the other. When your institutions fail you, you don't fix it by
+		voting every few years. You fix it by taking direct responsibility for both your survival and
+		your democracy.
+	</p>
+
 </article>
 
 <style>

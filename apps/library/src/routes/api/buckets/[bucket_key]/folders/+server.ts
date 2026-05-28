@@ -15,8 +15,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 	const bucketKey = params.bucket_key;
 
-	// Parse bucket key
-	const [ownerType, ownerId] = bucketKey.split('-', 2);
+	// Parse bucket key (split on first dash only, since owner_id may contain dashes)
+	const dashIndex = bucketKey.indexOf('-');
+	const ownerType = bucketKey.substring(0, dashIndex);
+	const ownerId = bucketKey.substring(dashIndex + 1);
 	if (ownerType !== 'user' && ownerType !== 'association') {
 		throw error(400, 'Invalid bucket_key format');
 	}
@@ -28,13 +30,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify access
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to access this bucket');
-		}
-
-		// List folders
-		const folders = listRootFolders(bucket.id);
+	// Verify access (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
 
 		return json({ folders });
 	} catch (err: any) {

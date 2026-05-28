@@ -88,7 +88,7 @@ Benjamin Franklin served as the first Postmaster General of the United States an
 
 **§27. Federation Post.** The Courier Service shall coordinate with the courier services of other Ben Franklin Societies to enable mail and package delivery between societies. A federation whose member societies can communicate and exchange goods reliably is a more integrated and resilient federation. The College of the Post shall develop inter-society delivery protocols in coordination with other societies' Colleges of the Post.
 
-**§28. Transaction Slip Exchange.** Inter-society Frank transactions generate transaction slips that must reach the appropriate Community Banks for ledger reconciliation and clearinghouse settlement. The Courier Service shall coordinate with other societies' courier services on inter-society transaction slip delivery — establishing reliable exchange points and handoff protocols.
+**§28. Transaction Slip Exchange.** Inter-society Floren transactions generate transaction slips that must reach the appropriate Community Banks for ledger reconciliation and clearinghouse settlement. The Courier Service shall coordinate with other societies' courier services on inter-society transaction slip delivery — establishing reliable exchange points and handoff protocols. (Franks are locally tied and do not move between societies; only Florens require inter-society settlement.)
 
 **§29. External Post.** The Courier Service shall coordinate with external postal systems for mail and packages that originate outside the community or are addressed to destinations beyond the federation. External postal relationships shall be maintained while community courier capacity is developed, so that members can send and receive from the broader world.
 

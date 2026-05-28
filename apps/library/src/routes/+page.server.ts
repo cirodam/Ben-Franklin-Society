@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		throw error(401, 'No access token available');
 	}
 
-	const buckets = await getUserBuckets(locals.session.acting_as_uuid, accessToken);
+	const buckets = await getUserBuckets(locals.session.person_uuid, accessToken);
 	if (buckets.length === 0) {
 		return {
 			session: locals.session,
@@ -44,7 +44,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		: buckets[0];
 
 	// Verify user has access to this bucket
-	if (currentBucket && !(await canAccessBucket(locals.session.acting_as_uuid, currentBucket, accessToken))) {
+	if (currentBucket && !(await canAccessBucket(locals.session.person_uuid, currentBucket, accessToken))) {
 		throw error(403, 'Not authorized to access this bucket');
 	}
 

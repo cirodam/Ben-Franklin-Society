@@ -4,6 +4,8 @@ import { LibraryClient, downloadFileAsBuffer } from '$lib/library-client.js';
 import type { MotionDocument } from '@bfs/types';
 import { saveMotion } from '$lib/server/documents/society-motions.js';
 import { randomUUID } from 'node:crypto';
+import { issueTokens } from '$lib/server/infrastructure/oidc.js';
+import { db } from '$lib/server/db.js';
 
 /**
  * Import a motion from the Library app into Governance
@@ -18,7 +20,7 @@ import { randomUUID } from 'node:crypto';
  * 4. Create motion record in governance database
  * 5. Return motion UUID
  */
-export const POST: RequestHandler = async ({ request, locals, cookies }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.session) {
 		return error(401, 'Not authenticated');
 	}
@@ -31,16 +33,28 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 			return error(400, 'Missing or invalid library_file_id');
 		}
 
-		// Get JWT token from session
-		// The oidc_session cookie contains the JWT
-		const oidcSession = cookies.get('oidc_session');
-		if (!oidcSession) {
-			return error(401, 'No OIDC session found');
+		// Get the library client ID from database
+		const libraryClient = db
+			.prepare('SELECT client_id FROM oidc_client WHERE name = ?')
+			.get('Library') as { client_id: string } | undefined;
+		
+		if (!libraryClient) {
+			console.error('[import-motion] Library OIDC client not registered');
+			return error(500, 'Library service not configured');
 		}
+
+		// Generate a fresh JWT access token for the library API call
+		const tokens = issueTokens({
+			personUuid: locals.session.person_uuid,
+			sessionUuid: locals.session.uuid,
+			actingAsUuid: locals.session.acting_as_uuid,
+			clientId: libraryClient.client_id,
+			scope: 'openid profile',
+		});
 
 		// Download file from library
 		const { buffer, contentType, filename } = await downloadFileAsBuffer(
-			oidcSession,
+			tokens.access_token,
 			libraryFileId
 		);
 
@@ -67,6 +81,8 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 		const governanceMotion: MotionDocument = {
 			...document,
 			uuid: randomUUID(),
+			// Set owner to the current user (person who is importing it)
+			owner_uuid: locals.session.person_uuid,
 			// Track the original library file
 			source_library_file_id: libraryFileId,
 			// Reset timestamps for governance copy

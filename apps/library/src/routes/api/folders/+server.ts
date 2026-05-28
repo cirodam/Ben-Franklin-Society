@@ -25,8 +25,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw error(400, 'name is required');
 		}
 
-		// Parse bucket key
-		const [ownerType, ownerId] = bucket_key.split('-', 2);
+		// Parse bucket key (split on first dash only, since owner_id may contain dashes)
+		const dashIndex = bucket_key.indexOf('-');
+		const ownerType = bucket_key.substring(0, dashIndex);
+		const ownerId = bucket_key.substring(dashIndex + 1);
 		if (ownerType !== 'user' && ownerType !== 'association') {
 			throw error(400, 'Invalid bucket_key format');
 		}
@@ -37,23 +39,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify ownership
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to create folders in this bucket');
-		}
-
-		// Create folder
-		const folder = createFolder({
-			bucketId: bucket.id,
-			parentFolderId: parent_folder_id || undefined,
-			name,
-			createdBy: session.acting_as_uuid,
-		});
-
-		return json(folder, { status: 201 });
-	} catch (err: any) {
-		console.error('[library/api/folders] Create error:', err);
-		if (err.status) throw err;
-		throw error(500, err.message || 'Failed to create folder');
+	// Verify ownership (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
+		throw error(403, 'Not authorized to create folders in this bucket');
 	}
+
+	// Create folder
+	const folder = createFolder({
+		bucketId: bucket.id,
+		parentFolderId: parent_folder_id || undefined,
+		name,
+		createdBy: session.person_uuid,
 };

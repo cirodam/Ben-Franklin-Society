@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { MotionDocument, Provision } from '$lib/server/documents/library-types.js';
+	import type { MotionDocument, Provision } from '@bfs/types';
 	import DocumentView from './DocumentView.svelte';
 
 	let { 

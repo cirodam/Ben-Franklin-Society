@@ -25,6 +25,10 @@ export function getOidcConfig() {
 	};
 }
 
+export function getIssuerUrl(): string {
+	return getConfig('oidc_governance_url') ?? env.GOVERNANCE_URL ?? 'http://localhost:5173';
+}
+
 export function setOidcConfig(config: {
 	governanceUrl: string;
 	clientId: string;

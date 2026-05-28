@@ -30,8 +30,8 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify user has access to this bucket
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
+		// Verify user has access to this bucket (user buckets use person_uuid)
+		if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
 			throw error(403, 'Not authorized to access this file');
 		}
 
@@ -80,16 +80,16 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify user has access to this bucket
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to delete this file');
-		}
+	// Verify user has access to this bucket (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
+		throw error(403, 'Not authorized to delete this file');
+	}
 
-		// Delete file
-		await deleteFile(fileId);
+	// Delete file
+	await deleteFile(fileId);
 
-		return new Response(null, { status: 204 });
-	} catch (err: any) {
+	return new Response(null, { status: 204 });
+} catch (err: any) {
 		console.error('[library/api/files/[id]] Delete error:', err);
 		if (err.status) throw err; // Re-throw SvelteKit errors
 		throw error(500, 'Failed to delete file');
@@ -123,14 +123,12 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-		// Verify user has access to this bucket
-		if (bucket.owner_type === 'user' && bucket.owner_id !== session.acting_as_uuid) {
-			throw error(403, 'Not authorized to update this file');
-		}
+	// Verify user has access to this bucket (user buckets use person_uuid)
+	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {		throw error(403, 'Not authorized to update this file');
+	}
 
-		const data = await request.json();
-		let updatedFile = file;
-
+	const data = await request.json();
+	let updatedFile = file;
 		// Handle move operation
 		if ('folder_id' in data) {
 			const newFolderId = data.folder_id === null ? null : parseInt(data.folder_id, 10);

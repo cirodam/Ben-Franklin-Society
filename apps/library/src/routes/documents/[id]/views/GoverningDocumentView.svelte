@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import DocumentView from './DocumentView.svelte';
-	import type { GoverningDocument, SeniorityLevel } from '$lib/server/documents/library-types.js';
+	import type { GoverningDocument, SeniorityLevel } from '@bfs/types';
 
 	let { document: doc, canEdit = false }: { document: GoverningDocument; canEdit?: boolean } = $props();
 

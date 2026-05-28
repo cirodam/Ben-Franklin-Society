@@ -102,9 +102,11 @@ If a society dissolves entirely — members choosing to disperse into other comm
 
 Participation in both federation insurance funds is **compulsory** for all registered societies. It is a condition of membership.
 
-Both funds operate on the same monetary mechanism: they mint Franks to meet approved claims, then destroy Franks gradually through post-event premiums as the supply returns to baseline. Because Franks are fungible across all societies, federation-level minting dilutes purchasing power slightly across the entire network — the cost of the crisis is shared, at low intensity, by everyone. The minting cap is the constitutional constraint that keeps this acceptable.
+Both funds operate on the same monetary mechanism: they mint **Florens** to meet approved claims, then destroy Florens gradually through post-event premiums as the supply returns to baseline. Because Florens are fungible across all societies, federation-level minting dilutes purchasing power slightly across the entire network — the cost of the crisis is shared, at low intensity, by everyone. The minting cap is the constitutional constraint that keeps this acceptable.
 
-Each fund has its own Central Bank account at the Federation tier — its balance reflects the outstanding minted supply, returning toward zero as premiums destroy what was issued.
+Each fund has its own account at the Federal Bank — its balance reflects the outstanding minted supply, returning toward zero as premiums destroy what was issued.
+
+**Why Florens, not Franks:** Emergency claims must be payable across societies (e.g., relocating a community, treating members at hospitals in other societies). Franks are locally tied and cannot cross societies. The Federation mints Florens, which can be spent anywhere in the network, ensuring claim recipients have full mobility of the funds.
 
 **Claims are a signal, not just a transaction.** Filing a claim means something has gone wrong somewhere — a healthcare system under strain, a community in an untenable location, an infrastructure failure. The fund covers the immediate need, but the Committee is obligated to identify the root cause and determine whether corrective action is warranted. A society that files repeated claims in the same category is expected to act on the underlying problem. The Federation's role is not just to pay — it is to help member societies understand what their claims are telling them and support them in addressing it. Continued membership may be conditioned on a society demonstrating good-faith efforts to remediate known, recurring causes.
 
@@ -149,13 +151,13 @@ When a society submits a relocation claim:
 
 ## Transparency
 
-Individual members have a reasonable expectation of financial privacy. Their Frank balances and transaction histories are held locally at their society and are not published to the federation.
+Individual members have a reasonable expectation of financial privacy. Their Frank and Floren balances and transaction histories are held locally at their society and are not published to the federation.
 
 Societies are public actors and have no equivalent privacy claim. The following are publicly visible to any member of any society, and to anyone else:
 
-- Every society's net Frank position as tracked by the clearinghouse
-- Every society's Federal Bank deposits and withdrawals
-- Inter-society association accounts and their Frank flows
+- Every society's net Floren position as tracked by the clearinghouse
+- Every society's Federal Bank deposits and withdrawals (in Florens)
+- Inter-society association accounts and their Floren flows
 - Insurance fund balances, contribution rates, and claim histories (with the claiming society identified)
 - Federation Assembly and Committee motions, votes, and findings
 - Compliance reviews and their outcomes
@@ -182,22 +184,22 @@ Unregistered bilateral arrangements between societies are also permitted — the
 
 ## Federal Bank
 
-The Federal Bank is the financial institution of the federation tier. It is the Community Bank equivalent for societies and inter-society associations — same Frank currency, same ledger primitive, different membership.
+The Federal Bank is the financial institution of the federation tier. It operates with **Florens** (the federal trade currency), not Franks. Franks are locally tied to their issuing societies; the Federal Bank handles accounts for societies and inter-society associations that need to transact across the network.
 
 **Account holders:**
 - Registered member societies
 - Registered inter-society associations
 
 **Functions:**
-- **Payroll for joint operations** — an inter-society association running a hospital, a regional utility, or shared infrastructure pays its workers' home societies via scheduled transfers from its Federal Bank account. Each home society's Community Bank then credits the individual member's account. The worker is always paid in Franks at their home society; the Federal Bank never holds accounts for individuals.
-- **Capital for joint projects** — societies and associations deposit Franks to fund shared investments. The Federal Bank holds the pooled capital and disburses it per the association's governance decisions.
+- **Payroll for joint operations** — an inter-society association running a hospital, a regional utility, or shared infrastructure pays its workers' home societies via scheduled Floren transfers from its Federal Bank account. Each home society's Community Bank then credits the individual member's Floren balance. Workers receive Florens (usable across the federation), not Franks from their local society. The Federal Bank never holds accounts for individuals.
+- **Capital for joint projects** — societies and associations deposit Florens to fund shared investments. The Federal Bank holds the pooled capital and disburses it per the association's governance decisions.
 - **Insurance fund custody** — the Federation Health Fund and Federation Relocation Fund hold their accounts at the Federal Bank rather than at a designated member society. This makes the funds neutral and not dependent on any one society's continued participation.
 
 The Federal Bank is a **separate deployment** from the Federation app — its own process, its own SQLite database, same Litestream replication model. It is governed by the Federation Assembly under delegated day-to-day authority to the Committee.
 
-Frank balances at the Federal Bank count toward the federation-wide supply and are subject to the same demurrage rules as all other Frank holdings, unless the Assembly exempts specific accounts (such as the insurance fund reserves) by motion.
+Floren balances at the Federal Bank are not subject to demurrage (Florens have no demurrage). The Federal Bank's Floren holdings are part of the network-wide Floren supply tracking.
 
-**The Federal Bank reports all flows to the clearinghouse.** Every deposit and withdrawal — by which society, for which association, in what amount — is visible to the clearinghouse and included in net position calculations. The clearinghouse tracks Frank flows through the Federal Bank the same way it tracks direct inter-society transfers. A bilateral imbalance does not disappear by routing Franks through a joint association. Societies cannot use the Federal Bank to obscure flows that would otherwise trigger rebalancing review.
+**The Federal Bank reports all flows to the clearinghouse.** Every deposit and withdrawal — by which society, for which association, in what amount — is visible to the clearinghouse and included in net position calculations. The clearinghouse tracks Floren flows through the Federal Bank the same way it tracks direct inter-society transfers. A bilateral imbalance does not disappear by routing Florens through a joint association. Societies cannot use the Federal Bank to obscure flows that would otherwise trigger rebalancing review.
 
 ---
 
@@ -223,11 +225,13 @@ The directory is **publicly readable** — any member of any society, and anyone
 
 ### Clearinghouse
 
-Tracks net Frank positions between societies. Periodically reconciles transfer reports from both sides of inter-society transactions and flags discrepancies for human review. Issues rebalancing instructions to societies with large net imbalances.
+Tracks net Floren positions between societies. Periodically reconciles transfer reports from both sides of inter-society transactions and flags discrepancies for human review. Issues rebalancing guidance to societies with large net imbalances.
 
-The clearinghouse does not hold Franks. All Frank balances live in local ledgers. The clearinghouse is an auditor and coordinator, not a custodian.
+The clearinghouse does not hold Florens. All Floren balances live in local ledgers (in each society's Community Bank). The clearinghouse is an auditor and coordinator, not a custodian.
 
 If the Federation is offline, bilateral reconciliation can proceed directly between two societies using their own transfer logs, and rebalancing can be arranged by administrator agreement. The Federation catches up when it returns.
+
+**Note:** Franks are locally tied and never leave their issuing society, so the clearinghouse only tracks Floren flows between societies.
 
 ### Membership
 

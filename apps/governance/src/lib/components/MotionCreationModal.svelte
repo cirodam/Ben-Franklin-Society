@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 	import { Button, Textarea, Input } from '@bfs/ui';
 	import type { MotionDocument } from '$lib/server/documents/library-types.js';
 	
@@ -13,19 +15,99 @@
 		draftMotions?: MotionDocument[];
 	} = $props();
 
-	let mode = $state<'create' | 'introduce'>('create');
+	interface LibraryFile {
+		id: number;
+		filename: string;
+		path: string;
+		size_bytes: number;
+		uploaded_at: string;
+	}
+
+	let mode = $state<'create' | 'introduce' | 'library'>('create');
 	let selectedMotion = $state<string>('');
+	let selectedLibraryFile = $state<number | null>(null);
+	let libraryFiles = $state<LibraryFile[]>([]);
+	let loadingLibraryFiles = $state(false);
+	let libraryError = $state<string | null>(null);
+	let importingFromLibrary = $state(false);
+
+	// Load library files when library mode is selected
+	$effect(() => {
+		if (mode === 'library' && libraryFiles.length === 0 && !loadingLibraryFiles) {
+			loadLibraryFiles();
+		}
+	});
+
+	async function loadLibraryFiles() {
+		loadingLibraryFiles = true;
+		libraryError = null;
+		try {
+			const response = await fetch('/api/library/list-motion-files');
+			if (!response.ok) {
+				throw new Error('Failed to load library files');
+			}
+			const data = await response.json();
+			libraryFiles = data.files || [];
+		} catch (err: any) {
+			console.error('Error loading library files:', err);
+			libraryError = err.message || 'Failed to load library files';
+		} finally {
+			loadingLibraryFiles = false;
+		}
+	}
+
+	async function importFromLibrary(e: Event) {
+		e.preventDefault();
+		if (!selectedLibraryFile) return;
+
+		importingFromLibrary = true;
+		try {
+			// Step 1: Import motion from library into governance
+			const importResponse = await fetch('/api/library/import-motion', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ library_file_id: selectedLibraryFile })
+			});
+
+			if (!importResponse.ok) {
+				const errorData = await importResponse.json();
+				throw new Error(errorData.message || 'Failed to import motion');
+			}
+
+			const { motion_uuid, slug } = await importResponse.json();
+
+			// Step 2: Reload page data to include the new draft, then switch to "From Drafts" tab
+			await invalidateAll();
+			mode = 'introduce';
+			selectedLibraryFile = null;
+			libraryFiles = [];
+		} catch (err: any) {
+			console.error('Error importing from library:', err);
+			alert(err.message || 'Failed to import motion from library');
+		} finally {
+			importingFromLibrary = false;
+		}
+	}
 
 	function closeModal() {
 		show = false;
 		selectedMotion = '';
+		selectedLibraryFile = null;
 		mode = 'create';
+		libraryFiles = [];
+		libraryError = null;
 	}
 
 	function handleOverlayClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
 			closeModal();
 		}
+	}
+
+	function formatFileSize(bytes: number): string {
+		if (bytes < 1024) return bytes + ' B';
+		if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+		return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 	}
 </script>
 
@@ -37,24 +119,29 @@
 				<button type="button" class="modal__close" onclick={closeModal}>×</button>
 			</div>
 
-			{#if draftMotions.length > 0}
-				<div class="mode-tabs">
-					<button 
-						class="mode-tab"
-						class:active={mode === 'create'}
-						onclick={() => mode = 'create'}
-					>
-						Create New
-					</button>
-					<button 
-						class="mode-tab"
-						class:active={mode === 'introduce'}
-						onclick={() => mode = 'introduce'}
-					>
-						From Drafts ({draftMotions.length})
-					</button>
-				</div>
-			{/if}
+		<div class="mode-tabs">
+			<button 
+				class="mode-tab"
+				class:active={mode === 'create'}
+				onclick={() => mode = 'create'}
+			>
+				Create New
+			</button>
+			<button 
+				class="mode-tab"
+				class:active={mode === 'introduce'}
+				onclick={() => mode = 'introduce'}
+			>
+				From Drafts {#if draftMotions.length > 0}({draftMotions.length}){/if}
+			</button>
+			<button 
+				class="mode-tab"
+				class:active={mode === 'library'}
+				onclick={() => mode = 'library'}
+			>
+				From Library
+			</button>
+		</div>
 
 			{#if mode === 'create'}
 				<form method="POST" action="?/createAndIntroduce" use:enhance>
@@ -89,35 +176,89 @@
 						<Button type="submit">Introduce Motion</Button>
 					</div>
 				</form>
-			{:else}
+			{:else if mode === 'introduce'}
 				<form method="POST" action="?/introduceMotion" use:enhance>
 					<div class="motion-list">
-						{#each draftMotions as motion}
-							<label class="motion-card">
-								<input 
-									type="radio" 
-									name="motion_slug" 
-									value={motion.slug}
-									bind:group={selectedMotion}
-								/>
-								<div class="motion-card__content">
-									<div class="motion-card__title">{motion.title}</div>
-									{#if motion.content.provisions.length > 0}
-										<div class="motion-card__preview">
-											{motion.content.provisions[0].text.slice(0, 150)}{motion.content.provisions[0].text.length > 150 ? '...' : ''}
+						{#if draftMotions.length === 0}
+							<div class="empty-state">
+								<p>No draft motions available.</p>
+								<p class="empty-state__hint">Create a draft motion first, then introduce it here.</p>
+							</div>
+						{:else}
+							{#each draftMotions as motion}
+								<label class="motion-card">
+									<input 
+										type="radio" 
+										name="motion_slug" 
+										value={motion.slug}
+										bind:group={selectedMotion}
+									/>
+									<div class="motion-card__content">
+										<div class="motion-card__title">{motion.title}</div>
+										{#if motion.content.provisions.length > 0}
+											<div class="motion-card__preview">
+												{motion.content.provisions[0].text.slice(0, 150)}{motion.content.provisions[0].text.length > 150 ? '...' : ''}
+											</div>
+										{/if}
+										<div class="motion-card__meta">
+											Created {new Date(motion.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
 										</div>
-									{/if}
-									<div class="motion-card__meta">
-										Created {new Date(motion.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
 									</div>
-								</div>
-							</label>
-						{/each}
+								</label>
+							{/each}
+						{/if}
 					</div>
 					
 					<div class="modal__actions">
 						<Button variant="secondary" onclick={closeModal}>Cancel</Button>
 						<Button type="submit" disabled={!selectedMotion}>Introduce Motion</Button>
+					</div>
+				</form>
+			{:else if mode === 'library'}
+				<form onsubmit={importFromLibrary}>
+					<div class="motion-list">
+						{#if loadingLibraryFiles}
+							<div class="empty-state">
+								<p>Loading your library files...</p>
+							</div>
+						{:else if libraryError}
+							<div class="empty-state error">
+								<p>Error: {libraryError}</p>
+								<Button variant="secondary" onclick={loadLibraryFiles}>Retry</Button>
+							</div>
+						{:else if libraryFiles.length === 0}
+							<div class="empty-state">
+								<p>No motion files found in your library.</p>
+								<p class="empty-state__hint">Upload JSON motion files to your library bucket to import them here.</p>
+							</div>
+						{:else}
+							{#each libraryFiles as file}
+								<label class="motion-card">
+									<input 
+										type="radio" 
+										name="library_file_id" 
+										value={file.id}
+										bind:group={selectedLibraryFile}
+									/>
+									<div class="motion-card__content">
+										<div class="motion-card__title">{file.filename}</div>
+										<div class="motion-card__preview">
+											{file.path}
+										</div>
+										<div class="motion-card__meta">
+											{formatFileSize(file.size_bytes)} • Uploaded {new Date(file.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+										</div>
+									</div>
+								</label>
+							{/each}
+						{/if}
+					</div>
+					
+					<div class="modal__actions">
+						<Button variant="secondary" onclick={closeModal}>Cancel</Button>
+						<Button type="submit" disabled={!selectedLibraryFile || importingFromLibrary}>
+							{importingFromLibrary ? 'Importing...' : 'Import & View'}
+						</Button>
 					</div>
 				</form>
 			{/if}
@@ -294,10 +435,18 @@
 		text-align: center;
 	}
 
+	.empty-state.error {
+		color: var(--rust);
+	}
+
 	.empty-state p {
 		font-family: var(--font-prose);
 		color: var(--ink-mid);
 		margin-bottom: var(--space-2);
+	}
+
+	.empty-state.error p {
+		color: var(--rust);
 	}
 
 	.empty-state__hint {

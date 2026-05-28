@@ -95,21 +95,20 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const articleIdx = parseInt(data.get('articleIdx') as string);
-		const title = data.get('title') as string;
-		const body = data.get('body') as string;
+		const title = data.get('title') as string || 'New Section';
+		const body = data.get('body') as string || 'Section content...';
 		const rationale = data.get('rationale') as string;
 
-		if (!title || !body) {
-			return fail(400, { error: 'Title and body are required' });
-		}
-
 		try {
+			const doc = await loadGoverningDocument(params.slug);
+			const newSectionIdx = doc.content.articles[articleIdx].sections.length;
+			
 			addSection(params.slug, articleIdx, {
 				title,
 				body,
 				rationale: rationale || undefined
 			});
-			return { success: true };
+			return { success: true, articleIdx, newSectionIdx };
 		} catch (err) {
 			return fail(500, { error: (err as Error).message });
 		}
@@ -160,20 +159,19 @@ export const actions: Actions = {
 		}
 
 		const data = await request.formData();
-		const number = data.get('number') as string;
-		const title = data.get('title') as string;
-
-		if (!number || !title) {
-			return fail(400, { error: 'Number and title are required' });
-		}
+		const number = data.get('number') as string || 'I';
+		const title = data.get('title') as string || 'New Article';
 
 		try {
+			const doc = await loadGoverningDocument(params.slug);
+			const newArticleIdx = doc.content.articles.length;
+			
 			addArticle(params.slug, {
 				number,
 				title,
 				sections: []
 			});
-			return { success: true };
+			return { success: true, newArticleIdx };
 		} catch (err) {
 			return fail(500, { error: (err as Error).message });
 		}

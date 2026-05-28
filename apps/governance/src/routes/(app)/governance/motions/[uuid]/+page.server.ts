@@ -143,6 +143,21 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid target status' });
 		}
 
+		// Motions cannot be advanced to 'introduced' without a body_uuid
+		// (they must be introduced through the proper body's introduction flow)
+		if (to === 'introduced' && !motion.content.body_uuid) {
+			return fail(400, { 
+				error: 'Motion must be introduced through a governing body (General Assembly, Committee, etc.) to set the body association' 
+			});
+		}
+
+		// For record entry, use the motion's body_uuid if set
+		if (!motion.content.body_uuid) {
+			return fail(400, { 
+				error: 'Motion must have a body_uuid set before status can be changed' 
+			});
+		}
+
 		advanceMotion(motion.slug, to as MotionStatus);
 
 		const label = to === 'introduced' ? 'introduced'
@@ -150,7 +165,9 @@ export const actions: Actions = {
 			: to === 'voting' ? 'moved to voting'
 			: to === 'enacted' ? 'enacted'
 			: 'withdrawn';
-		addEntry(motion.owner_uuid, actingAs, `motion_${to}`, 'motion', motion.uuid,
+		
+		// Use the motion's body_uuid for the record entry
+		addEntry(motion.content.body_uuid, actingAs, `motion_${to}`, 'motion', motion.uuid,
 			`Motion "${motion.title}" ${label}`);
 		audit(actingAs, `motion.${to}`, 'motion', motion.uuid, `Motion "${motion.title}" ${label}`);
 

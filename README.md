@@ -45,6 +45,12 @@ This system is built on the premise that ordinary people, given adequate time an
 - Marketplace for goods and services
 - All authenticated through the governance system
 
+**Offline-First Design**
+- Banking operates with physical branches, passbooks, and paper slips
+- System functions completely without internet access
+- Digital ledger reconciles with paper records when connectivity returns
+- No dependency on continuous network access
+
 ## Quick Start
 
    A`Q### Two Deployment Types
