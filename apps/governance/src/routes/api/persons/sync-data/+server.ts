@@ -9,6 +9,9 @@ interface PersonSyncData {
 	family_name: string;
 	date_of_birth: string;
 	status: string;
+	street_address: string | null;
+	latitude: number | null;
+	longitude: number | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -27,7 +30,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	if (updatedSince) {
 		rows = db
 			.prepare(
-				`SELECT uuid, handle, given_name, family_name, date_of_birth, status, created_at, updated_at
+				`SELECT uuid, handle, given_name, family_name, date_of_birth, status, street_address, latitude, longitude, created_at, updated_at
          FROM person
          WHERE updated_at > ?
          ORDER BY updated_at ASC`
@@ -36,7 +39,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	} else {
 		rows = db
 			.prepare(
-				`SELECT uuid, handle, given_name, family_name, date_of_birth, status, created_at, updated_at
+				`SELECT uuid, handle, given_name, family_name, date_of_birth, status, street_address, latitude, longitude, created_at, updated_at
          FROM person
          ORDER BY created_at ASC`
 			)

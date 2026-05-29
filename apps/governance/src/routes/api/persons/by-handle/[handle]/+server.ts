@@ -8,6 +8,9 @@ interface Person {
 	given_name: string;
 	family_name: string;
 	status: string;
+	street_address: string | null;
+	latitude: number | null;
+	longitude: number | null;
 }
 
 /**
@@ -24,7 +27,7 @@ export const GET: RequestHandler = async ({ params }) => {
 
 	const row = db
 		.prepare(
-			`SELECT uuid, handle, given_name, family_name, status
+			`SELECT uuid, handle, given_name, family_name, status, street_address, latitude, longitude
        FROM person
        WHERE handle = ?`
 		)

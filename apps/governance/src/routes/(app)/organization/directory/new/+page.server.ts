@@ -14,36 +14,61 @@ export const actions: Actions = {
 		const familyName = String(fd.get('family_name') ?? '').trim();
 		const dob = String(fd.get('date_of_birth') ?? '').trim();
 		const phone = String(fd.get('phone') ?? '').trim();
+		const streetAddress = String(fd.get('street_address') ?? '').trim();
+		const latitudeStr = String(fd.get('latitude') ?? '').trim();
+		const longitudeStr = String(fd.get('longitude') ?? '').trim();
 		const password = String(fd.get('initial_password') ?? '').trim();
+
+		// Parse coordinates
+		const latitude = latitudeStr ? parseFloat(latitudeStr) : undefined;
+		const longitude = longitudeStr ? parseFloat(longitudeStr) : undefined;
 
 		// Validation
 		if (!handle || !givenName || !familyName || !dob || !password) {
 			return fail(400, { 
 				error: 'Handle, given name, family name, date of birth, and password are required.',
-				handle, givenName, familyName, dob, phone
+				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
 			});
 		}
 
 		if (!/^[a-z0-9_-]{2,32}$/.test(handle)) {
 			return fail(400, { 
 				error: 'Handle must be 2-32 lowercase letters, numbers, hyphens, or underscores.',
-				handle, givenName, familyName, dob, phone
+				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
 			});
 		}
 
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
 			return fail(400, { 
 				error: 'Date of birth must be in YYYY-MM-DD format.',
-				handle, givenName, familyName, dob, phone
+				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
 			});
 		}
 
 		if (password.length < 8) {
 			return fail(400, { 
 				error: 'Password must be at least 8 characters.',
-				handle, givenName, familyName, dob, phone
+				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
 			});
 		}
+
+		// Validate coordinates if provided
+		if (latitude !== undefined && (isNaN(latitude) || latitude < -90 || latitude > 90)) {
+			return fail(400, {
+				error: 'Latitude must be a number between -90 and 90.',
+				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
+			});
+		}
+
+		ifstreet_address: streetAddress || undefined,
+				latitude: latitude,
+				longitude: longitude,
+				initial_password: password,
+			});
+		} catch (err: any) {
+			return fail(400, { 
+				error: err.message || 'Failed to create person.',
+				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitud
 
 		let person;
 		try {

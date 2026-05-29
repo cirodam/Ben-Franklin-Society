@@ -1,37 +1,25 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Alert, Breadcrumb, Button, Card, FieldRow, Input, PageHeader } from '@bfs/ui';
-	import type { ActionData } from './$types.js';
+	import type { ActionData, PageData } from './$types.js';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <div class="page">
-	<PageHeader title="Add New Person">
-		<Breadcrumb items={[{ label: '← Back to Directory', href: '/directory' }]} />
+	<PageHeader title="Edit Profile">
+		<Breadcrumb items={[{ label: '← Back to Profile', href: '/me' }]} />
 	</PageHeader>
 
 	{#if form?.error}
 		<Alert variant="danger">{form.error}</Alert>
 	{/if}
 
-	<form method="POST" action="?/create" use:enhance class="form">
+	<form method="POST" action="?/update" use:enhance class="form">
 		<Card>
-			<h2>Basic Information</h2>
+			<h2>Personal Information</h2>
 			
 			<div class="field-group">
-				<Input
-					id="handle"
-					name="handle"
-					label="Handle"
-					type="text"
-					required
-					pattern="[a-z0-9_-]{2,32}"
-					placeholder="jane-doe"
-					value={form?.handle ?? ''}
-					hint="2-32 lowercase letters, numbers, hyphens, or underscores"
-				/>
-
 				<FieldRow>
 					<Input
 						id="given_name"
@@ -40,7 +28,7 @@
 						type="text"
 						required
 						placeholder="Jane"
-						value={form?.givenName ?? ''}
+						value={form?.givenName ?? data.person.given_name}
 					/>
 
 					<Input
@@ -50,7 +38,7 @@
 						type="text"
 						required
 						placeholder="Doe"
-						value={form?.familyName ?? ''}
+						value={form?.familyName ?? data.person.family_name}
 					/>
 				</FieldRow>
 
@@ -60,7 +48,7 @@
 					label="Date of Birth"
 					type="date"
 					required
-					value={form?.dob ?? ''}
+					value={form?.dob ?? data.person.date_of_birth}
 				/>
 
 				<Input
@@ -69,17 +57,23 @@
 					label="Phone Number"
 					type="tel"
 					placeholder="+1-555-555-5555"
-					value={form?.phone ?? ''}
+					value={form?.phone ?? data.person.phone ?? ''}
 					hint="Optional"
 				/>
+			</div>
+		</Card>
 
+		<Card>
+			<h2>Location</h2>
+			
+			<div class="field-group">
 				<Input
 					id="street_address"
 					name="street_address"
 					label="Street Address"
 					type="text"
 					placeholder="123 Main Street, City, State 12345"
-					value={form?.streetAddress ?? ''}
+					value={form?.streetAddress ?? data.person.street_address ?? ''}
 					hint="Optional"
 				/>
 
@@ -93,7 +87,7 @@
 						min="-90"
 						max="90"
 						placeholder="37.7749"
-						value={form?.latitude ?? ''}
+						value={form?.latitude ?? data.person.latitude ?? ''}
 						hint="Optional"
 					/>
 
@@ -106,31 +100,16 @@
 						min="-180"
 						max="180"
 						placeholder="-122.4194"
-						value={form?.longitude ?? ''}
+						value={form?.longitude ?? data.person.longitude ?? ''}
 						hint="Optional"
 					/>
 				</FieldRow>
 			</div>
 		</Card>
 
-		<Card>
-			<h2>Initial Password</h2>
-			
-			<Input
-				id="initial_password"
-				name="initial_password"
-				label="Password"
-				type="password"
-				required
-				minlength="8"
-				placeholder="Minimum 8 characters"
-				hint="User can change this after first login"
-			/>
-		</Card>
-
 		<div class="form-actions">
-			<Button variant="ghost" href="/organization/directory">Cancel</Button>
-			<Button type="submit">Create Person</Button>
+			<Button variant="ghost" href="/me">Cancel</Button>
+			<Button type="submit">Save Changes</Button>
 		</div>
 	</form>
 </div>
@@ -166,7 +145,5 @@
 		display: flex;
 		gap: var(--space-3);
 		justify-content: flex-end;
-		padding-top: var(--space-3);
-		border-top: 1px solid var(--color-border-faint);
 	}
 </style>

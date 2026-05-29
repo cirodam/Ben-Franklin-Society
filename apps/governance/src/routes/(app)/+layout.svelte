@@ -18,6 +18,7 @@
 
 			{#snippet nav()}
 			<SidebarLink href="/">Home</SidebarLink>
+			<SidebarLink href="/me">My Profile</SidebarLink>
 
 			<SidebarGroup label="Governance">
 				<SidebarLink href="/library">Society Code</SidebarLink>
@@ -44,8 +45,8 @@
 
 			<SidebarGroup label="Administration">
 				<SidebarLink href="/admin/settings/oidc-clients">OIDC Clients</SidebarLink>
-				<SidebarLink href="/admin/config">Settings</SidebarLink>
-			</SidebarGroup>
+				<SidebarLink href="/admin/config">Settings</SidebarLink>			<SidebarLink href="/admin/emergency/skills">Emergency Skills</SidebarLink>
+			<SidebarLink href="/admin/emergency/tools">Emergency Tools</SidebarLink>			</SidebarGroup>
 		{/snippet}
 
 		{#snippet footer()}

@@ -11,6 +11,9 @@ interface PersonDetails {
 	type: 'person';
 	status: string;
 	date_of_birth: string;
+	street_address: string | null;
+	latitude: number | null;
+	longitude: number | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -49,6 +52,9 @@ export const GET: RequestHandler = async ({ params }) => {
 				given_name || ' ' || family_name as name,
 				status,
 				date_of_birth,
+				street_address,
+				latitude,
+				longitude,
 				created_at,
 				updated_at
 			FROM person

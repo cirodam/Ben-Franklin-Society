@@ -38,6 +38,21 @@
 					<dt>Date of Birth</dt>
 					<dd>{new Date(data.person.date_of_birth).toLocaleDateString()}</dd>
 				{/if}
+
+				{#if data.person.phone}
+					<dt>Phone</dt>
+					<dd>{data.person.phone}</dd>
+				{/if}
+
+				{#if data.person.street_address}
+					<dt>Address</dt>
+					<dd>{data.person.street_address}</dd>
+				{/if}
+
+				{#if data.person.latitude !== null && data.person.longitude !== null}
+					<dt>Coordinates</dt>
+					<dd>{data.person.latitude.toFixed(6)}, {data.person.longitude.toFixed(6)}</dd>
+				{/if}
 				
 				{#if data.person.notes}
 					<dt>Notes</dt>

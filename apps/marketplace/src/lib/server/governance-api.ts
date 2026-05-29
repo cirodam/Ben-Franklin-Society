@@ -14,6 +14,9 @@ export interface Person {
 	given_name: string;
 	family_name: string;
 	status: string;
+	street_address?: string | null;
+	latitude?: number | null;
+	longitude?: number | null;
 }
 
 export interface Association {

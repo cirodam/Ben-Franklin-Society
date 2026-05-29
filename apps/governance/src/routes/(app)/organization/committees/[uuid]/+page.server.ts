@@ -25,7 +25,7 @@ import { audit } from '$lib/server/documents/audit.js';
 import { listEnactedMotions, getMotionByUuid, listMotions, createMotion } from '$lib/server/governance/motion/index.js';
 import { listDeliberationRules, getDeliberationRuleByUuid } from '$lib/server/governance/deliberation-rules.js';
 import { getVoteRuleByUuid } from '$lib/server/governance/vote-rules.js';
-import { getDocumentBySlug, listOrgChartDocuments } from '$lib/server/documents/society-docs.js';
+import { getDocumentBySlug } from '$lib/server/documents/society-docs.js';
 import { listVoteSessions, getSessionTally } from '$lib/server/governance/vote-sessions.js';
 import { db } from '$lib/server/db.js';
 
@@ -166,9 +166,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		? getDocumentBySlug(association.governing_document_slug)
 		: null;
 
-	// Load available org chart templates
-	const orgChartTemplates = listOrgChartDocuments();
-
 	// Load bulletin posts
 	const actorUuid = locals.session?.person_uuid ?? null;
 	const bulletinPosts = actorUuid ? bulletin.getAssociationPosts(association.uuid, actorUuid) : [];
@@ -195,7 +192,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		record,
 		deliberationRules,
 		governingDocument,
-		orgChartTemplates,
 		bulletinPosts
 	};
 };

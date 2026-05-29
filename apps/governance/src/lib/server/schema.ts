@@ -1,15 +1,18 @@
 export const schema = /* sql */ `
 
 CREATE TABLE IF NOT EXISTS person (
-  uuid          TEXT PRIMARY KEY,
-  handle        TEXT NOT NULL UNIQUE,
-  given_name    TEXT NOT NULL,
-  family_name   TEXT NOT NULL,
-  date_of_birth TEXT NOT NULL,
-  phone         TEXT NULL,
-  status        TEXT NOT NULL DEFAULT 'active',
-  joined_at     TEXT NOT NULL,
-  revoked_at    TEXT NULL
+  uuid           TEXT PRIMARY KEY,
+  handle         TEXT NOT NULL UNIQUE,
+  given_name     TEXT NOT NULL,
+  family_name    TEXT NOT NULL,
+  date_of_birth  TEXT NOT NULL,
+  phone          TEXT NULL,
+  street_address TEXT NULL,
+  latitude       REAL NULL,
+  longitude      REAL NULL,
+  status         TEXT NOT NULL DEFAULT 'active',
+  joined_at      TEXT NOT NULL,
+  revoked_at     TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS credentials (
@@ -770,5 +773,59 @@ CREATE TABLE IF NOT EXISTS bank_command_outbox (
 
 CREATE INDEX IF NOT EXISTS idx_bank_command_outbox_pending ON bank_command_outbox(delivered_at, next_retry_after);
 CREATE INDEX IF NOT EXISTS idx_bank_command_outbox_created ON bank_command_outbox(created_at);
+
+-- Emergency Registry: Predefined skills members can offer
+CREATE TABLE IF NOT EXISTS emergency_skill (
+  uuid        TEXT PRIMARY KEY,
+  name        TEXT NOT NULL UNIQUE,
+  category    TEXT NULL,
+  description TEXT NULL,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_emergency_skill_category ON emergency_skill(category);
+CREATE INDEX IF NOT EXISTS idx_emergency_skill_active ON emergency_skill(active);
+
+-- Emergency Registry: Predefined tools/equipment members can offer
+CREATE TABLE IF NOT EXISTS emergency_tool (
+  uuid        TEXT PRIMARY KEY,
+  name        TEXT NOT NULL UNIQUE,
+  category    TEXT NULL,
+  description TEXT NULL,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_emergency_tool_category ON emergency_tool(category);
+CREATE INDEX IF NOT EXISTS idx_emergency_tool_active ON emergency_tool(active);
+
+-- Person's registered emergency skills (many-to-many)
+CREATE TABLE IF NOT EXISTS person_emergency_skill (
+  person_uuid TEXT NOT NULL REFERENCES person(uuid) ON DELETE CASCADE,
+  skill_uuid  TEXT NOT NULL REFERENCES emergency_skill(uuid) ON DELETE CASCADE,
+  notes       TEXT NULL,
+  proficiency TEXT NULL,
+  available   INTEGER NOT NULL DEFAULT 1,
+  added_at    TEXT NOT NULL,
+  PRIMARY KEY (person_uuid, skill_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_person_emergency_skill_person ON person_emergency_skill(person_uuid);
+CREATE INDEX IF NOT EXISTS idx_person_emergency_skill_skill ON person_emergency_skill(skill_uuid);
+CREATE INDEX IF NOT EXISTS idx_person_emergency_skill_available ON person_emergency_skill(available);
+
+-- Person's registered emergency tools (many-to-many)
+CREATE TABLE IF NOT EXISTS person_emergency_tool (
+  person_uuid TEXT NOT NULL REFERENCES person(uuid) ON DELETE CASCADE,
+  tool_uuid   TEXT NOT NULL REFERENCES emergency_tool(uuid) ON DELETE CASCADE,
+  notes       TEXT NULL,
+  quantity    INTEGER NULL,
+  available   INTEGER NOT NULL DEFAULT 1,
+  added_at    TEXT NOT NULL,
+  PRIMARY KEY (person_uuid, tool_uuid)
+);
+CREATE INDEX IF NOT EXISTS idx_person_emergency_tool_person ON person_emergency_tool(person_uuid);
+CREATE INDEX IF NOT EXISTS idx_person_emergency_tool_tool ON person_emergency_tool(tool_uuid);
+CREATE INDEX IF NOT EXISTS idx_person_emergency_tool_available ON person_emergency_tool(available);
 
 `;

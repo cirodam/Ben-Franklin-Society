@@ -6,7 +6,11 @@
 </script>
 
 <div class="me-page">
-	<PageHeader title="My Profile" />
+	<PageHeader title="My Profile">
+		{#snippet actions()}
+			<Button href="/me/edit">Edit Profile</Button>
+		{/snippet}
+	</PageHeader>
 
 	<Card>
 		<h2>Personal Information</h2>
@@ -19,6 +23,21 @@
 			
 			<dt>Date of Birth</dt>
 			<dd>{new Date(data.person.date_of_birth).toLocaleDateString()}</dd>
+
+			{#if data.person.phone}
+				<dt>Phone</dt>
+				<dd>{data.person.phone}</dd>
+			{/if}
+
+			{#if data.person.street_address}
+				<dt>Address</dt>
+				<dd>{data.person.street_address}</dd>
+			{/if}
+
+			{#if data.person.latitude !== null && data.person.longitude !== null}
+				<dt>Coordinates</dt>
+				<dd>{data.person.latitude.toFixed(6)}, {data.person.longitude.toFixed(6)}</dd>
+			{/if}
 			
 			<dt>Member Since</dt>
 			<dd>{new Date(data.person.created_at).toLocaleDateString()}</dd>
@@ -90,6 +109,64 @@
 					</div>
 				</div>
 			{/each}
+		{/if}
+	</Card>
+
+	<Card>
+		<div class="section-header">
+			<h2>Emergency Registry</h2>
+			<Button variant="secondary" size="sm" href="/me/emergency">Manage Registry</Button>
+		</div>
+
+		{#if data.emergencySkills.length === 0 && data.emergencyTools.length === 0}
+			<p class="registry-empty">
+				You haven't registered any emergency skills or tools yet.
+				<a href="/me/emergency">Register now</a> to help coordinate community response during emergencies.
+			</p>
+		{:else}
+			{#if data.emergencySkills.length > 0}
+				<div class="registry-section">
+					<h3>Skills ({data.emergencySkills.length})</h3>
+					<ul class="registry-list">
+						{#each data.emergencySkills.slice(0, 5) as skill}
+							<li>
+								<span class="registry-item-name">{skill.skill_name}</span>
+								{#if skill.proficiency}
+									<span class="registry-meta">({skill.proficiency})</span>
+								{/if}
+								{#if !skill.available}
+									<span class="registry-unavailable">Unavailable</span>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+					{#if data.emergencySkills.length > 5}
+						<p class="registry-more">+{data.emergencySkills.length - 5} more</p>
+					{/if}
+				</div>
+			{/if}
+
+			{#if data.emergencyTools.length > 0}
+				<div class="registry-section">
+					<h3>Tools & Equipment ({data.emergencyTools.length})</h3>
+					<ul class="registry-list">
+						{#each data.emergencyTools.slice(0, 5) as tool}
+							<li>
+								<span class="registry-item-name">{tool.tool_name}</span>
+								{#if tool.quantity}
+									<span class="registry-meta">(Qty: {tool.quantity})</span>
+								{/if}
+								{#if !tool.available}
+									<span class="registry-unavailable">Unavailable</span>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+					{#if data.emergencyTools.length > 5}
+						<p class="registry-more">+{data.emergencyTools.length - 5} more</p>
+					{/if}
+				</div>
+			{/if}
 		{/if}
 	</Card>
 </div>
@@ -259,5 +336,75 @@
 	.btn-text:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	.registry-empty {
+		padding: var(--space-4);
+		text-align: center;
+		color: var(--color-text-muted);
+	}
+
+	.registry-empty a {
+		color: var(--color-accent);
+		text-decoration: none;
+		font-weight: var(--weight-medium);
+	}
+
+	.registry-empty a:hover {
+		text-decoration: underline;
+	}
+
+	.registry-section {
+		margin-bottom: var(--space-6);
+	}
+
+	.registry-section:last-child {
+		margin-bottom: 0;
+	}
+
+	.registry-section h3 {
+		font-size: var(--text-md);
+		font-weight: var(--weight-semibold);
+		margin-bottom: var(--space-3);
+	}
+
+	.registry-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.registry-list li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) 0;
+		border-bottom: 1px solid var(--color-border-faint);
+	}
+
+	.registry-list li:last-child {
+		border-bottom: none;
+	}
+
+	.registry-item-name {
+		font-weight: var(--weight-medium);
+	}
+
+	.registry-meta {
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+	}
+
+	.registry-unavailable {
+		font-size: var(--text-sm);
+		color: var(--color-warning);
+		font-weight: var(--weight-medium);
+	}
+
+	.registry-more {
+		margin-top: var(--space-2);
+		font-size: var(--text-sm);
+		color: var(--color-text-muted);
+		font-style: italic;
 	}
 </style>

@@ -2,6 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getPersonByUuid } from '$lib/server/organization/people.js';
 import { getHouseholdsByPerson, getHouseholdMembers, getDependentsByHousehold } from '$lib/server/organization/households.js';
+import { getPersonSkills, getPersonTools } from '$lib/server/organization/emergency-registry.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = locals.session;
@@ -29,8 +30,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		};
 	});
 
+	// Get emergency registry data
+	const emergencySkills = getPersonSkills(person.uuid);
+	const emergencyTools = getPersonTools(person.uuid);
+
 	return {
 		person,
-		households: householdDetails
+		households: householdDetails,
+		emergencySkills,
+		emergencyTools
 	};
 };
