@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Input, Textarea, Button } from '@bfs/ui';
-	import type { PageData } from './$types.js';
 	import type { Article, Section } from '@bfs/types';
 
-	let { data }: { data: PageData } = $props();
-
-	let title = $state(data.document.title);
-	let seniority = $state(data.document.content.seniority);
-	let preamble = $state(data.document.content.preamble || '');
-	let articles = $state<Article[]>(JSON.parse(JSON.stringify(data.document.content.articles)));
+	let title = $state('');
+	let seniority = $state<'charter' | 'constitution' | 'bylaw' | 'ordinance' | 'regulation' | 'policy'>('bylaw');
+	let preamble = $state('');
+	let articles = $state<Article[]>([
+		{
+			number: 'I',
+			title: '',
+			sections: []
+		}
+	]);
 
 	let isSubmitting = $state(false);
 
@@ -51,8 +54,8 @@
 
 <div class="page">
 	<header class="header">
-		<h1 class="page-title">Edit Governing Document</h1>
-		<p class="subtitle">{data.document.title}</p>
+		<h1 class="page-title">Create Governing Document</h1>
+		<p class="subtitle">Draft a new governing document for the society</p>
 	</header>
 
 	<form 
@@ -197,9 +200,9 @@
 		</div>
 
 		<div class="form-actions">
-			<a href="/library/{data.document.slug}" class="btn-secondary">Cancel</a>
+			<a href="/library" class="btn-secondary">Cancel</a>
 			<Button type="submit" disabled={isSubmitting}>
-				{isSubmitting ? 'Saving...' : 'Save Changes'}
+				{isSubmitting ? 'Creating...' : 'Create Document'}
 			</Button>
 		</div>
 	</form>

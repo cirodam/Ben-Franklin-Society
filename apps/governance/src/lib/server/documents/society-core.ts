@@ -1,27 +1,68 @@
 /**
  * Society Core - Shared utilities and cross-type operations for society code documents
  */
-import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, unlinkSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { db } from '../db.js';
-import type { LibraryDocument } from '@bfs/types';
+import type { LibraryDocument, GoverningStatus, MotionStatus } from '@bfs/types';
 
 // --- Constants ---
 
-export const SOCIETY_CODE_DIR = join(process.cwd(), 'data', 'society-code');
-export const GOVERNING_DOCS_DIR = join(SOCIETY_CODE_DIR, 'governing');
-export const MOTIONS_DIR = join(SOCIETY_CODE_DIR, 'motions');
+const DATA_DIR = join(process.cwd(), 'data');
+const SOCIETY_CODE_BASE = join(DATA_DIR, 'society-code');
+const MOTIONS_BASE = join(DATA_DIR, 'motions');
+
+// Society Code folders (by status)
+export const SOCIETY_CODE_FOLDERS = {
+	inbox: join(SOCIETY_CODE_BASE, 'inbox'),
+	enacted: join(SOCIETY_CODE_BASE, 'enacted'),
+	repealed: join(SOCIETY_CODE_BASE, 'repealed'),
+	sunsetted: join(SOCIETY_CODE_BASE, 'sunsetted'),
+} as const;
+
+// Motion folders (per body)
+export const MOTION_STATUSES = ['inbox', 'queued', 'deliberating', 'rejected', 'adopted', 'enacted'] as const;
+
+// Map old status values to new folder names for migration
+export const GOVERNING_STATUS_MAP: Record<string, keyof typeof SOCIETY_CODE_FOLDERS> = {
+	draft: 'inbox',
+	enacted: 'enacted',
+	repealed: 'repealed',
+	sunsetted: 'sunsetted',
+};
+
+export const MOTION_STATUS_MAP: Record<string, typeof MOTION_STATUSES[number]> = {
+	draft: 'inbox',
+	introduced: 'queued',
+	deliberation: 'deliberating',
+	voting: 'deliberating', // Keep in deliberating during voting
+	adopted: 'adopted',
+	enacted: 'enacted',
+	rejected: 'rejected',
+	withdrawn: 'rejected', // Treat withdrawn as rejected
+};
 
 // Ensure directories exist
-if (!existsSync(SOCIETY_CODE_DIR)) {
-	mkdirSync(SOCIETY_CODE_DIR, { recursive: true });
+function ensureSocietyCodeFolders() {
+	Object.values(SOCIETY_CODE_FOLDERS).forEach(dir => {
+		if (!existsSync(dir)) {
+			mkdirSync(dir, { recursive: true });
+		}
+	});
 }
-if (!existsSync(GOVERNING_DOCS_DIR)) {
-	mkdirSync(GOVERNING_DOCS_DIR, { recursive: true });
+
+// Ensure motion folders exist for a body
+export function ensureMotionFolders(bodySlug: string) {
+	MOTION_STATUSES.forEach(status => {
+		const dir = join(MOTIONS_BASE, bodySlug, status);
+		if (!existsSync(dir)) {
+			mkdirSync(dir, { recursive: true });
+		}
+	});
 }
-if (!existsSync(MOTIONS_DIR)) {
-	mkdirSync(MOTIONS_DIR, { recursive: true });
-}
+
+// Initialize folder structure
+ensureSocietyCodeFolders();
 
 // --- Utilities ---
 
@@ -36,272 +77,114 @@ export function getSocietyUuid(): string | null {
 }
 
 /**
- * Sync a library document to the database index
+ * Get the folder path for a governing document based on status
  */
-export function syncToDatabase(doc: LibraryDocument): void {
-	const existing = db
-		.prepare('SELECT uuid FROM library_item WHERE slug = ?')
-		.get(doc.slug) as { uuid: string } | undefined;
-
-	if (existing) {
-		// Update existing
-		db.prepare(
-			`UPDATE library_item 
-			 SET uuid = ?, type = ?, document_id = ?, version = ?, title = ?, owner_uuid = ?, updated_at = ?, file_path = ?
-			 WHERE slug = ?`
-		).run(
-			doc.uuid,
-			doc.type,
-			doc.document_id,
-			doc.version,
-			doc.title,
-			doc.owner_uuid,
-			doc.updated_at,
-			doc.slug + '.json',
-			doc.slug
-		);
-	} else {
-		// Insert new
-		db.prepare(
-			`INSERT INTO library_item (uuid, type, slug, document_id, version, title, owner_uuid, created_at, updated_at, file_path)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-		).run(
-			doc.uuid,
-			doc.type,
-			doc.slug,
-			doc.document_id,
-			doc.version,
-			doc.title,
-			doc.owner_uuid,
-			doc.created_at,
-			doc.updated_at,
-			doc.slug + '.json'
-		);
-	}
-}
-
-// --- Search and Stats ---
-
-export interface LibrarySearchOptions {
-	type?: string | string[]; // 'governing', 'motion', etc. or array of types
-	status?: string;
-	owner_uuid?: string | string[]; // Single UUID or array of UUIDs
-	query?: string; // Search in title/slug
-	limit?: number;
-	offset?: number;
-}
-
-export interface LibraryItemSummary {
-	uuid: string;
-	type: string;
-	slug: string;
-	document_id: string | null;
-	version: number;
-	title: string;
-	owner_uuid: string;
-	created_at: string;
-	updated_at: string;
+export function getGoverningFolder(status: keyof typeof SOCIETY_CODE_FOLDERS): string {
+	return SOCIETY_CODE_FOLDERS[status];
 }
 
 /**
- * Search library items across all types using the database index
+ * Get the folder path for a motion based on body and status
  */
-export function searchLibrary(options: LibrarySearchOptions = {}): LibraryItemSummary[] {
-	let query = 'SELECT * FROM library_item WHERE 1=1';
-	const params: any[] = [];
-
-	// Filter by type(s)
-	if (options.type) {
-		if (Array.isArray(options.type)) {
-			const placeholders = options.type.map(() => '?').join(', ');
-			query += ` AND type IN (${placeholders})`;
-			params.push(...options.type);
-		} else {
-			query += ' AND type = ?';
-			params.push(options.type);
-		}
-	}
-
-	// Filter by owner (supports single UUID or array)
-	if (options.owner_uuid) {
-		if (Array.isArray(options.owner_uuid)) {
-			const placeholders = options.owner_uuid.map(() => '?').join(', ');
-			query += ` AND owner_uuid IN (${placeholders})`;
-			params.push(...options.owner_uuid);
-		} else {
-			query += ' AND owner_uuid = ?';
-			params.push(options.owner_uuid);
-		}
-	}
-
-	// Search in title/slug
-	if (options.query) {
-		query += ' AND (title LIKE ? OR slug LIKE ?)';
-		const searchTerm = `%${options.query}%`;
-		params.push(searchTerm, searchTerm);
-	}
-
-	// Order by updated_at descending (most recent first)
-	query += ' ORDER BY updated_at DESC';
-
-	// Pagination
-	if (options.limit) {
-		query += ' LIMIT ?';
-		params.push(options.limit);
-		if (options.offset) {
-			query += ' OFFSET ?';
-			params.push(options.offset);
-		}
-	}
-
-	const rows = db.prepare(query).all(...params) as Array<{
-		uuid: string;
-		type: string;
-		slug: string;
-		document_id: string | null;
-		version: number;
-		title: string;
-		owner_uuid: string;
-		created_at: string;
-		updated_at: string;
-		file_path: string;
-	}>;
-
-	return rows.map(row => ({
-		uuid: row.uuid,
-		type: row.type,
-		slug: row.slug,
-		document_id: row.document_id,
-		version: row.version,
-		title: row.title,
-		owner_uuid: row.owner_uuid,
-		created_at: row.created_at,
-		updated_at: row.updated_at,
-	}));
+export function getMotionFolder(bodySlug: string, status: typeof MOTION_STATUSES[number]): string {
+	ensureMotionFolders(bodySlug);
+	return join(MOTIONS_BASE, bodySlug, status);
 }
 
 /**
- * Get library statistics by type
+ * Extract status from a governing document file path
  */
-export function getLibraryStats(): Record<string, { total: number }> {
-	const items = db.prepare('SELECT type FROM library_item').all() as Array<{
-		type: string;
-	}>;
-
-	const stats: Record<string, { total: number }> = {};
-
-	for (const item of items) {
-		if (!stats[item.type]) {
-			stats[item.type] = { total: 0 };
+export function getGoverningStatusFromPath(filePath: string): keyof typeof SOCIETY_CODE_FOLDERS | null {
+	for (const [status, folder] of Object.entries(SOCIETY_CODE_FOLDERS)) {
+		if (filePath.startsWith(folder)) {
+			return status as keyof typeof SOCIETY_CODE_FOLDERS;
 		}
-		stats[item.type].total++;
 	}
-
-	return stats;
+	return null;
 }
 
 /**
- * Delete a document by UUID
+ * Extract body slug and status from a motion file path
  */
-export function deleteDocument(uuid: string): boolean {
+export function getMotionLocationFromPath(filePath: string): { bodySlug: string; status: typeof MOTION_STATUSES[number] } | null {
+	const relativePath = filePath.replace(MOTIONS_BASE + '/', '');
+	const parts = relativePath.split('/');
+	if (parts.length >= 2) {
+		const bodySlug = parts[0];
+		const status = parts[1] as typeof MOTION_STATUSES[number];
+		if (MOTION_STATUSES.includes(status)) {
+			return { bodySlug, status };
+		}
+	}
+	return null;
+}
+
+/**
+ * List all body slugs that have motion folders
+ */
+export function getAllBodySlugs(): string[] {
+	if (!existsSync(MOTIONS_BASE)) {
+		return [];
+	}
+	return readdirSync(MOTIONS_BASE, { withFileTypes: true })
+		.filter(dirent => dirent.isDirectory())
+		.map(dirent => dirent.name);
+}
+
+/**
+ * Move a governing document to a new status folder
+ */
+export function moveGoverningDocument(slug: string, fromStatus: keyof typeof SOCIETY_CODE_FOLDERS, toStatus: keyof typeof SOCIETY_CODE_FOLDERS): boolean {
 	try {
-		// Get document info from database
-		const row = db.prepare('SELECT type, slug FROM library_item WHERE uuid = ?').get(uuid) as { type: string; slug: string } | undefined;
+		const fromPath = join(SOCIETY_CODE_FOLDERS[fromStatus], `${slug}.json`);
+		const toPath = join(SOCIETY_CODE_FOLDERS[toStatus], `${slug}.json`);
 		
-		if (!row) return false;
-		
-		// Get directory based on type
-		let directory: string;
-		switch (row.type) {
-			case 'governing':
-				directory = 'governing';
-				break;
-			case 'motion':
-				directory = 'motions';
-				break;
-			case 'prose':
-				directory = 'prose';
-				break;
-			case 'contract':
-				directory = 'contracts';
-				break;
-			case 'org_chart':
-				directory = 'org-charts';
-				break;
-			default:
-				return false;
+		if (!existsSync(fromPath)) {
+			console.error(`Document not found at ${fromPath}`);
+			return false;
 		}
 		
-		// Delete file
-		const filePath = join(SOCIETY_CODE_DIR, directory, `${row.slug}.json`);
-		if (existsSync(filePath)) {
-			unlinkSync(filePath);
-		}
-		
-		// Delete from database
-		db.prepare('DELETE FROM library_item WHERE uuid = ?').run(uuid);
-		
+		renameSync(fromPath, toPath);
 		return true;
 	} catch (err) {
-		console.error(`Error deleting document ${uuid}:`, err);
+		console.error(`Error moving governing document ${slug}:`, err);
 		return false;
 	}
 }
 
 /**
- * Change the owner of a document by slug
+ * Move a motion to a new status folder (within same body)
  */
-export function changeDocumentOwner(slug: string, newOwnerUuid: string): boolean {
+export function moveMotion(slug: string, bodySlug: string, fromStatus: typeof MOTION_STATUSES[number], toStatus: typeof MOTION_STATUSES[number]): boolean {
 	try {
-		// Get document info from database
-		const row = db.prepare('SELECT type, uuid FROM library_item WHERE slug = ?').get(slug) as { type: string; uuid: string } | undefined;
+		const fromPath = join(getMotionFolder(bodySlug, fromStatus), `${slug}.json`);
+		const toPath = join(getMotionFolder(bodySlug, toStatus), `${slug}.json`);
 		
-		if (!row) return false;
-		
-		// Get directory based on type
-		let directory: string;
-		switch (row.type) {
-			case 'governing':
-				directory = 'governing';
-				break;
-			case 'motion':
-				directory = 'motions';
-				break;
-			case 'prose':
-				directory = 'prose';
-				break;
-			case 'contract':
-				directory = 'contracts';
-				break;
-			case 'org_chart':
-				directory = 'org-charts';
-				break;
-			default:
-				return false;
-		}
-		
-		// Load the file
-		const filePath = join(SOCIETY_CODE_DIR, directory, `${slug}.json`);
-		if (!existsSync(filePath)) {
+		if (!existsSync(fromPath)) {
+			console.error(`Motion not found at ${fromPath}`);
 			return false;
 		}
-
-		const content = readFileSync(filePath, 'utf-8');
-		const doc = JSON.parse(content) as LibraryDocument;
 		
-		// Update owner
-		doc.owner_uuid = newOwnerUuid;
-		doc.updated_at = new Date().toISOString();
-		
-		// Write back to file
-		writeFileSync(filePath, JSON.stringify(doc, null, 2), 'utf-8');
-		
-		// Sync to database
-		syncToDatabase(doc);
-		
+		renameSync(fromPath, toPath);
 		return true;
 	} catch (err) {
-		console.error(`Error changing owner for document ${slug}:`, err);
+		console.error(`Error moving motion ${slug}:`, err);
+		return false;
+	}
+}
+
+/**
+ * Delete a document file
+ */
+export function deleteDocumentFile(filePath: string): boolean {
+	try {
+		if (existsSync(filePath)) {
+			unlinkSync(filePath);
+			return true;
+		}
+		return false;
+	} catch (err) {
+		console.error(`Error deleting file ${filePath}:`, err);
 		return false;
 	}
 }

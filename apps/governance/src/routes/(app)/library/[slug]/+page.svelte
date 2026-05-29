@@ -1,19 +1,29 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import ProseDocumentView from './views/ProseDocumentView.svelte';
-	import ContractDocumentView from './views/ContractDocumentView.svelte';
 	import MotionDocumentView from './views/MotionDocumentView.svelte';
 	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
-	import { Modal } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
-	const { document: doc, canEdit, canChangeOwner, members, documentType } = $derived(data);
+	const { document: doc, canEdit, documentType, status, bodySlug } = $derived(data);
 	
-	let showChangeOwnerModal = $state(false);
-	let selectedOwnerUuid = $state('');
-	let isSubmitting = $state(false);
+	let isMoving = $state(false);
+
+	// Available statuses for each document type
+	const governingStatuses = ['inbox', 'enacted', 'repealed', 'sunsetted'];
+	const motionStatuses = ['inbox', 'queued', 'deliberating', 'rejected', 'adopted', 'enacted'];
+
+	const statusLabels: Record<string, string> = {
+		inbox: 'Inbox',
+		enacted: 'Enacted',
+		repealed: 'Repealed',
+		sunsetted: 'Sunsetted',
+		queued: 'Queued',
+		deliberating: 'Deliberating',
+		rejected: 'Rejected',
+		adopted: 'Adopted'
+	};
 </script>
 
 <svelte:head>
@@ -32,65 +42,72 @@
 
 <div class="document-page">
 	<div class="document-controls">
-		<a href="/library" class="back">← Society Code</a>
-		{#if canChangeOwner}
-			<button type="button" class="change-owner-btn" onclick={() => showChangeOwnerModal = true}>
-				Change Owner
-			</button>
+		{#if documentType === 'governing'}
+			<a href="/library" class="back">← Society Code</a>
+		{:else if documentType === 'motion'}
+			<a href="/governance/motions" class="back">← Motions</a>
 		{/if}
+		
+		<div class="status-indicator">
+			<span class="status-label">Status:</span>
+			<span class="status-value">{statusLabels[status] || status}</span>
+		</div>
+
+		{#if canEdit && documentType === 'governing'}
+			<a href="/library/{doc.slug}/edit" class="edit-btn">Edit Document</a>
+		{/if}
+
+		<form 
+			method="POST" 
+			action="?/moveDocument"
+			class="move-form"
+			use:enhance={() => {
+				isMoving = true;
+				return async ({ update }) => {
+					await update();
+					isMoving = false;
+				};
+			}}
+		>
+			<input type="hidden" name="documentType" value={documentType} />
+			{#if documentType === 'motion' && bodySlug}
+				<input type="hidden" name="bodySlug" value={bodySlug} />
+			{/if}
+			
+			<label for="toStatus" class="move-label">Move to:</label>
+			<select 
+				id="toStatus" 
+				name="toStatus" 
+				class="move-select"
+				disabled={isMoving}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			>
+				<option value="">--</option>
+				{#if documentType === 'governing'}
+					{#each governingStatuses as s}
+						{#if s !== status}
+							<option value={s}>{statusLabels[s] || s}</option>
+						{/if}
+					{/each}
+				{:else if documentType === 'motion'}
+					{#each motionStatuses as s}
+						{#if s !== status}
+							<option value={s}>{statusLabels[s] || s}</option>
+						{/if}
+					{/each}
+				{/if}
+			</select>
+		</form>
 	</div>
 
 	<div class="document-wrapper">
-		{#if documentType === 'prose'}
-			<ProseDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ProseDocument} />
-		{:else if documentType === 'contract'}
-			<ContractDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').ContractDocument} />
-		{:else if documentType === 'motion'}
+		{#if documentType === 'motion'}
 			<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} canEdit={canEdit} />
 		{:else if documentType === 'governing'}
 			<GoverningDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').GoverningDocument} canEdit={canEdit} />
 		{/if}
 	</div>
 </div>
-
-<Modal bind:open={showChangeOwnerModal} title="Change Document Owner">
-	<form 
-		method="POST" 
-		action="?/changeOwner"
-		use:enhance={() => {
-			isSubmitting = true;
-			return async ({ update }) => {
-				await update();
-				isSubmitting = false;
-				showChangeOwnerModal = false;
-			};
-		}}
-	>
-		<div class="form-group">
-			<label for="newOwnerUuid">New Owner</label>
-			<select 
-				id="newOwnerUuid" 
-				name="newOwnerUuid" 
-				bind:value={selectedOwnerUuid}
-				required
-			>
-				<option value="">Select a member...</option>
-				{#each members as member}
-					<option value={member.uuid}>{member.name}</option>
-				{/each}
-			</select>
-		</div>
-		
-		<div class="modal-actions">
-			<button type="button" onclick={() => showChangeOwnerModal = false} disabled={isSubmitting}>
-				Cancel
-			</button>
-			<button type="submit" class="primary" disabled={isSubmitting || !selectedOwnerUuid}>
-				{isSubmitting ? 'Changing...' : 'Change Owner'}
-			</button>
-		</div>
-	</form>
-</Modal>
 
 <style>
 	.document-page {
@@ -111,8 +128,9 @@
 		margin: 0 auto var(--space-6);
 		display: flex;
 		align-items: center;
-		gap: var(--space-3);
+		gap: var(--space-4);
 		padding: 0 var(--space-4);
+		flex-wrap: wrap;
 	}
 
 	.back {
@@ -137,7 +155,28 @@
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
-	.change-owner-btn {
+	.status-indicator {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-4);
+		background: var(--paper);
+		border: 1px solid var(--border);
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: var(--text-sm);
+	}
+
+	.status-label {
+		font-weight: 600;
+		color: var(--ink-mid);
+	}
+
+	.status-value {
+		color: var(--ink);
+		text-transform: capitalize;
+	}
+
+	.edit-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
@@ -145,87 +184,56 @@
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.1em;
-		color: var(--gold);
+		color: var(--paper);
 		text-decoration: none;
-		background: transparent;
-		border: 1px solid var(--border);
+		background: var(--gold);
+		border: 1px solid var(--gold);
 		transition: all 0.2s;
-		cursor: pointer;
 	}
 
-	.change-owner-btn:hover {
-		background: var(--paper);
-		color: var(--gold);
+	.edit-btn:hover {
+		background: var(--gold-hover);
 		border-color: var(--gold-hover);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
-	.form-group {
-		margin-bottom: var(--space-4);
+	.move-form {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-left: auto;
 	}
 
-	.form-group label {
-		display: block;
-		margin-bottom: var(--space-2);
+	.move-label {
 		font-family: 'IM Fell English SC', Georgia, serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.1em;
-		color: var(--ink);
+		color: var(--ink-mid);
 	}
 
-	.form-group select {
-		width: 100%;
+	.move-select {
 		padding: var(--space-2) var(--space-3);
 		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: var(--text-base);
+		font-size: var(--text-sm);
 		border: 1px solid var(--border);
 		background: var(--paper);
 		color: var(--ink);
 		border-radius: 2px;
+		cursor: pointer;
 		transition: border-color 0.2s;
+		min-width: 150px;
 	}
 
-	.form-group select:focus {
+	.move-select:hover:not(:disabled) {
+		border-color: var(--gold);
+	}
+
+	.move-select:focus {
 		outline: none;
 		border-color: var(--gold);
 	}
 
-	.modal-actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: var(--space-3);
-		margin-top: var(--space-5);
-	}
-
-	.modal-actions button {
-		padding: var(--space-2) var(--space-4);
-		font-family: 'IM Fell English SC', Georgia, serif;
-		font-size: var(--text-sm);
-		letter-spacing: 0.1em;
-		border: 1px solid var(--border);
-		background: transparent;
-		color: var(--ink-mid);
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.modal-actions button:hover:not(:disabled) {
-		background: var(--paper);
-		border-color: var(--gold-hover);
-	}
-
-	.modal-actions button.primary {
-		background: var(--gold);
-		color: white;
-		border-color: var(--gold);
-	}
-
-	.modal-actions button.primary:hover:not(:disabled) {
-		background: var(--gold-hover);
-		border-color: var(--gold-hover);
-	}
-
-	.modal-actions button:disabled {
+	.move-select:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}

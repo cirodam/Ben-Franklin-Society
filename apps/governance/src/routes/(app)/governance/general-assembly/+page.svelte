@@ -112,7 +112,8 @@
 {#if showModal}
 	<MotionCreationModal 
 		bind:show={showModal} 
-		bodyName="the General Assembly" 
+		bodyName="the General Assembly"
+		bodyUuid={association.uuid}
 		draftMotions={draftMotions}
 	/>
 {/if}

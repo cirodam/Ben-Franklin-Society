@@ -1,18 +1,26 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { getDocumentBySlug, updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle, loadProseDocument, loadContract, loadMotion, loadGoverningDocument, changeDocumentOwner } from '$lib/server/documents/society-docs.js';
-import { updateMotion } from '$lib/server/documents/society-motions.js';
-import { hasPermission } from '$lib/server/infrastructure/permissions.js';
+import { updateSection, addSection, deleteSection, updateArticle, addArticle, deleteArticle } from '$lib/server/documents/society-docs.js';
+import { loadMotion } from '$lib/server/documents/society-motions.js';
+import { loadGoverningDocument } from '$lib/server/documents/society-governing.js';
+import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
+import { 
+	getGoverningStatusFromPath, 
+	SOCIETY_CODE_FOLDERS, 
+	getAllBodySlugs, 
+	getMotionFolder, 
+	MOTION_STATUSES,
+	moveGoverningDocument,
+	moveMotion
+} from '$lib/server/documents/society-core.js';
 import { db } from '$lib/server/db.js';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	// First, check what type of document this is
-	const item = db
-		.prepare('SELECT type, slug FROM library_item WHERE slug = ?')
-		.get(params.slug) as { type: string; slug: string } | undefined;
-
-	if (!item) error(404, 'Document not found');
-
+	// Try to load as governing document first (search all status folders)
+	const governingDoc = loadGoverningDocument(params.slug);
+	
 	// Get list of active members for owner change dropdown
 	const members = db
 		.prepare(`
@@ -23,45 +31,71 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		`)
 		.all() as Array<{ uuid: string; name: string }>;
 
-	// Load based on document type
-	if (item.type === 'prose') {
-		const document = loadProseDocument(params.slug);
-		if (!document) error(404, 'Document not found');
+	if (governingDoc) {
+		// Determine status from folder location by checking which folder contains the file
+		let docStatus: keyof typeof SOCIETY_CODE_FOLDERS = 'inbox';
+		for (const [status, folder] of Object.entries(SOCIETY_CODE_FOLDERS)) {
+			const filePath = join(folder, `${params.slug}.json`);
+			if (existsSync(filePath)) {
+				docStatus = status as keyof typeof SOCIETY_CODE_FOLDERS;
+				break;
+			}
+		}
 
-		const canEdit = locals.person?.uuid === document.owner_uuid;
-		const canChangeOwner = locals.person?.uuid === document.owner_uuid || hasPermission(locals.person?.uuid, 'documents:edit');
-		return { document, canEdit, canChangeOwner, members, documentType: 'prose' };
-	} else if (item.type === 'contract') {
-		const document = loadContract(params.slug);
-		if (!document) error(404, 'Document not found');
-
-		// Contracts can be edited while draft
-		const canEdit = document.content.status === 'draft';
-		const canChangeOwner = locals.person?.uuid === document.owner_uuid || hasPermission(locals.person?.uuid, 'documents:edit');
-		return { document, canEdit, canChangeOwner, members, documentType: 'contract' };
-	} else if (item.type === 'governing') {
-		const document = loadGoverningDocument(params.slug);
-		if (!document) error(404, 'Document not found');
-
-		const canEdit = hasPermission(locals.person.uuid, 'documents:edit');
-		const canChangeOwner = hasPermission(locals.person?.uuid, 'documents:edit');
-		return { document, canEdit, canChangeOwner, members, documentType: 'governing' };
-	} else if (item.type === 'motion') {
-		const document = loadMotion(params.slug);
-		if (!document) error(404, 'Document not found');
-
-		// Motions can only be edited in draft status by their introducer
-		const canEdit = document.content.status === 'draft' && locals.person?.uuid === document.content.introducer_uuid;
-		const canChangeOwner = locals.person?.uuid === document.owner_uuid || hasPermission(locals.person?.uuid, 'documents:edit');
-		return { document, canEdit, canChangeOwner, members, documentType: 'motion' };
-	} else {
-		error(404, 'Document type not supported for viewing');
+		const canEdit = docStatus === 'inbox' && hasPermission(locals.person?.uuid, PERMISSIONS.LIBRARY_EDIT);
+		const canChangeOwner = hasPermission(locals.person?.uuid, PERMISSIONS.LIBRARY_EDIT);
+		
+		return { 
+			document: governingDoc, 
+			canEdit, 
+			canChangeOwner, 
+			members, 
+			documentType: 'governing',
+			status: docStatus
+		};
 	}
+
+	// Try to load as motion (search all bodies/statuses)
+	const motionDoc = loadMotion(params.slug);
+	if (motionDoc) {
+		// Find the body and status by checking which folder contains the file
+		let motionBody: string | null = null;
+		let motionStatus: typeof MOTION_STATUSES[number] | null = null;
+
+		const bodies = getAllBodySlugs();
+		for (const body of bodies) {
+			for (const status of MOTION_STATUSES) {
+				const filePath = join(getMotionFolder(body, status), `${params.slug}.json`);
+				if (existsSync(filePath)) {
+					motionBody = body;
+					motionStatus = status;
+					break;
+				}
+			}
+			if (motionBody) break;
+		}
+
+		// Motions can only be edited in inbox status by their introducer
+		const canEdit = motionStatus === 'inbox' && locals.person?.uuid === motionDoc.content.introducer_uuid;
+		const canChangeOwner = locals.person?.uuid === motionDoc.owner_uuid || hasPermission(locals.person?.uuid, PERMISSIONS.LIBRARY_EDIT);
+		
+		return { 
+			document: motionDoc, 
+			canEdit, 
+			canChangeOwner, 
+			members, 
+			documentType: 'motion',
+			bodySlug: motionBody,
+			status: motionStatus
+		};
+	}
+
+	error(404, 'Document not found');
 };
 
 export const actions: Actions = {
 	updateSection: async ({ params, request, locals }) => {
-		if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 			return fail(403, { error: 'Permission denied' });
 		}
 
@@ -89,7 +123,7 @@ export const actions: Actions = {
 	},
 
 	addSection: async ({ params, request, locals }) => {
-		if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 			return fail(403, { error: 'Permission denied' });
 		}
 
@@ -115,7 +149,7 @@ export const actions: Actions = {
 	},
 
 	deleteSection: async ({ params, request, locals }) => {
-		if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 			return fail(403, { error: 'Permission denied' });
 		}
 
@@ -132,7 +166,7 @@ export const actions: Actions = {
 	},
 
 	updateArticle: async ({ params, request, locals }) => {
-		if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 			return fail(403, { error: 'Permission denied' });
 		}
 
@@ -154,7 +188,7 @@ export const actions: Actions = {
 	},
 
 	addArticle: async ({ params, request, locals }) => {
-		if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 			return fail(403, { error: 'Permission denied' });
 		}
 
@@ -178,7 +212,7 @@ export const actions: Actions = {
 	},
 
 	deleteArticle: async ({ params, request, locals }) => {
-		if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 			return fail(403, { error: 'Permission denied' });
 		}
 
@@ -187,41 +221,6 @@ export const actions: Actions = {
 
 		try {
 			deleteArticle(params.slug, articleIdx);
-			return { success: true };
-		} catch (err) {
-			return fail(500, { error: (err as Error).message });
-		}
-	},
-
-	changeOwner: async ({ params, request, locals }) => {
-		const data = await request.formData();
-		const newOwnerUuid = data.get('newOwnerUuid') as string;
-
-		if (!newOwnerUuid) {
-			return fail(400, { error: 'New owner is required' });
-		}
-
-		// Get the document to check permissions
-		const item = db
-			.prepare('SELECT owner_uuid FROM library_item WHERE slug = ?')
-			.get(params.slug) as { owner_uuid: string } | undefined;
-
-		if (!item) {
-			return fail(404, { error: 'Document not found' });
-		}
-
-		// Check if user can change owner (must be current owner or have documents:edit permission)
-		const canChangeOwner = locals.person?.uuid === item.owner_uuid || hasPermission(locals.person?.uuid, 'documents:edit');
-		
-		if (!canChangeOwner) {
-			return fail(403, { error: 'Permission denied' });
-		}
-
-		try {
-			const success = changeDocumentOwner(params.slug, newOwnerUuid);
-			if (!success) {
-				return fail(500, { error: 'Failed to change document owner' });
-			}
 			return { success: true };
 		} catch (err) {
 			return fail(500, { error: (err as Error).message });
@@ -294,7 +293,7 @@ export const actions: Actions = {
 				saveMotion(document);
 			} else if (item.type === 'governing') {
 				// Check governing doc permissions
-				if (!hasPermission(locals.person.uuid, 'documents:edit')) {
+				if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
 					return fail(403, { error: 'Permission denied' });
 				}
 
@@ -307,6 +306,100 @@ export const actions: Actions = {
 			return { success: true };
 		} catch (err) {
 			console.error('Error updating document:', err);
+			return fail(500, { error: (err as Error).message });
+		}
+	},
+
+	moveDocument: async ({ params, request, locals }) => {
+		// Check if user is authenticated
+		if (!locals.person) {
+			return fail(401, { error: 'Authentication required' });
+		}
+
+		if (!hasPermission(locals.person.uuid, PERMISSIONS.LIBRARY_EDIT)) {
+			return fail(403, { error: 'Permission denied' });
+		}
+
+		const data = await request.formData();
+		const toStatus = data.get('toStatus') as string;
+		const documentType = data.get('documentType') as string;
+
+		if (!toStatus) {
+			return fail(400, { error: 'Target status is required' });
+		}
+
+		try {
+			if (documentType === 'governing') {
+				// Find current status
+				let fromStatus: keyof typeof SOCIETY_CODE_FOLDERS | null = null;
+				for (const [status, folder] of Object.entries(SOCIETY_CODE_FOLDERS)) {
+					const filePath = join(folder, `${params.slug}.json`);
+					if (existsSync(filePath)) {
+						fromStatus = status as keyof typeof SOCIETY_CODE_FOLDERS;
+						break;
+					}
+				}
+
+				if (!fromStatus) {
+					return fail(404, { error: 'Document not found' });
+				}
+
+				if (!Object.keys(SOCIETY_CODE_FOLDERS).includes(toStatus)) {
+					return fail(400, { error: 'Invalid target status' });
+				}
+
+				const success = moveGoverningDocument(
+					params.slug, 
+					fromStatus, 
+					toStatus as keyof typeof SOCIETY_CODE_FOLDERS
+				);
+
+				if (!success) {
+					return fail(500, { error: 'Failed to move document' });
+				}
+
+				return { success: true };
+			} else if (documentType === 'motion') {
+				// Find current body and status
+				const bodySlug = data.get('bodySlug') as string;
+				if (!bodySlug) {
+					return fail(400, { error: 'Body slug is required for motions' });
+				}
+
+				let fromStatus: typeof MOTION_STATUSES[number] | null = null;
+				for (const status of MOTION_STATUSES) {
+					const filePath = join(getMotionFolder(bodySlug, status), `${params.slug}.json`);
+					if (existsSync(filePath)) {
+						fromStatus = status;
+						break;
+					}
+				}
+
+				if (!fromStatus) {
+					return fail(404, { error: 'Motion not found' });
+				}
+
+				if (!MOTION_STATUSES.includes(toStatus as any)) {
+					return fail(400, { error: 'Invalid target status' });
+				}
+
+				const success = moveMotion(
+					params.slug,
+					bodySlug,
+					fromStatus,
+					toStatus as typeof MOTION_STATUSES[number]
+				);
+
+				if (!success) {
+					return fail(500, { error: 'Failed to move motion' });
+				}
+
+				return { success: true };
+			} else {
+				return fail(400, { error: 'Invalid document type' });
+			}
+		} catch (err) {
+			console.error('Error moving document:', err);
 			return fail(500, { error: (err as Error).message });
 		}
 	}

@@ -52,7 +52,6 @@ export interface Section {
 }
 
 export interface GoverningDocContent {
-	status: GoverningStatus;
 	seniority: SeniorityLevel;
 	articles: Article[];
 	preamble?: string;
@@ -102,13 +101,14 @@ export interface MotionSignature {
 }
 
 export interface MotionContent {
-	status: MotionStatus;
-
 	// Core content
 	provisions: Provision[];
 	introducer_uuid: string;
 	body_uuid?: string; // Association/body this motion belongs to
 	body_name?: string; // Human-readable name of the body (denormalized)
+
+	// Document references (informational - for linking motions to governing docs)
+	referenced_documents?: string[]; // Slugs of documents this motion references
 
 	// Discussion and voting
 	discussion_thread_uuid?: string;

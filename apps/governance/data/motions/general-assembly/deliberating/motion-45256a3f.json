@@ -1,0 +1,24 @@
+{
+  "uuid": "e3f4be13-bfcb-4d89-b8f6-f92a4ba4c885",
+  "type": "motion",
+  "slug": "motion-45256a3f",
+  "document_id": null,
+  "version": 1,
+  "title": "test",
+  "owner_uuid": "aebcf34a-1ae3-4470-89e9-34b86283d7eb",
+  "created_at": "2026-05-29T00:16:47.701Z",
+  "updated_at": "2026-05-29T00:16:47.701Z",
+  "content": {
+    "provisions": [
+      {
+        "number": "1",
+        "text": "test",
+        "reasoning": "tet"
+      }
+    ],
+    "introducer_uuid": "90786b82-7a95-41a3-affb-256721714993",
+    "body_uuid": "aebcf34a-1ae3-4470-89e9-34b86283d7eb",
+    "body_name": "General Assembly",
+    "discussion_thread_uuid": "0e2975fb-c59b-435e-b4a3-80f60d5a1eb3"
+  }
+}

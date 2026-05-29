@@ -5,12 +5,66 @@
 import { randomUUID } from 'node:crypto';
 import * as library from '../../documents/society-docs.js';
 import * as discussions from '../../communications/discussions.js';
+import { db } from '../../db.js';
 import type { MotionDocument, MotionStatus } from './types.js';
 import { ALLOWED_TRANSITIONS } from './types.js';
 import { getMotionByUuid, getMotionBySlug } from './queries.js';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 function now(): string {
 	return new Date().toISOString();
+}
+
+/**
+ * Helper: Get body slug (handle) from body UUID
+ */
+function getBodySlugFromUuid(bodyUuid: string): string {
+	const body = db
+		.prepare('SELECT handle FROM association WHERE uuid = ?')
+		.get(bodyUuid) as { handle: string } | undefined;
+	
+	if (!body) {
+		throw new Error(`Body not found for UUID: ${bodyUuid}`);
+	}
+	
+	return body.handle;
+}
+
+/**
+ * Helper: Find the current status and bodySlug of a motion by searching filesystem
+ */
+function findMotionLocation(slug: string): { bodySlug: string; status: typeof library.MOTION_STATUSES[number] } | null {
+	const allBodies = library.getAllBodySlugs();
+	
+	for (const bodySlug of allBodies) {
+		for (const status of library.MOTION_STATUSES) {
+			const folder = library.getMotionFolder(bodySlug, status);
+			const filePath = join(folder, `${slug}.json`);
+			if (existsSync(filePath)) {
+				return { bodySlug, status };
+			}
+		}
+	}
+	
+	return null;
+}
+
+/**
+ * Helper: Map old status names to new folder-based status names
+ */
+function mapStatusToFolder(status: MotionStatus): typeof library.MOTION_STATUSES[number] {
+	const statusMap: Record<string, typeof library.MOTION_STATUSES[number]> = {
+		draft: 'inbox',
+		introduced: 'queued',
+		deliberation: 'deliberating',
+		voting: 'deliberating',
+		adopted: 'adopted',
+		enacted: 'enacted',
+		rejected: 'rejected',
+		withdrawn: 'rejected',
+	};
+	return statusMap[status] || 'inbox';
 }
 
 /**
@@ -33,9 +87,12 @@ export function createMotion(input: {
 }): MotionDocument {
 	const uuid = randomUUID();
 	
-	// Get next motion number for this body from library
-	const libraryMotions = library.listMotions({ owner_uuid: input.body_uuid });
-	const maxNumber = libraryMotions.reduce((max, m) => {
+	// Get body slug from UUID
+	const bodySlug = getBodySlugFromUuid(input.body_uuid);
+	
+	// Get existing motions for this body to determine next motion number
+	const existingMotions = library.listMotions(bodySlug);
+	const maxNumber = existingMotions.reduce((max, m) => {
 		// Extract number from format "M-2026-001"
 		const match = m.content.motion_number?.match(/-(\d+)$/);
 		const num = match ? parseInt(match[1], 10) : 0;
@@ -62,12 +119,15 @@ export function createMotion(input: {
 		}
 	];
 	
+	// Create motion in inbox folder
 	const motion = library.createMotion({
 		slug,
 		title: input.title,
 		provisions,
 		introducer_uuid: input.introduced_by_uuid,
 		owner_uuid: input.body_uuid,
+		bodySlug,
+		body_uuid: input.body_uuid,
 		body_name: input.body_name,
 		deliberation_rule_uuid: input.deliberation_rule_uuid ?? undefined,
 		deliberation_rule_name: input.deliberation_rule_name,
@@ -76,10 +136,7 @@ export function createMotion(input: {
 		discussion_thread_uuid: thread.uuid,
 	});
 	
-	// Set status to introduced (library creates as draft)
-	return library.updateMotionStatus(slug, 'introduced', {
-		introduced_at: now(),
-	});
+	return motion;
 }
 
 /**
@@ -106,11 +163,36 @@ export function advanceMotion(slugOrUuid: string, to: MotionStatus): MotionDocum
 		}
 	}
 	
-	// Update motion status in library
-	return library.updateMotionStatus(motion.slug, to, {
-		introduced_at: introducedAt || undefined,
-		vote_closed_at: resolvedAt || undefined,
-	});
+	// Create discussion thread if entering deliberation and no thread exists
+	let threadUuid: string | undefined;
+	if (to === 'deliberation' && !motion.content.discussion_thread_uuid) {
+		const thread = discussions.createThread();
+		threadUuid = thread.uuid;
+	}
+	
+	// Find current location and update status
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
+	const toFolder = mapStatusToFolder(to);
+	
+	return library.updateMotionStatus(
+		motion.slug,
+		bodySlug,
+		location.status,
+		toFolder,
+		{
+			introduced_at: introducedAt || undefined,
+			vote_closed_at: resolvedAt || undefined,
+			discussion_thread_uuid: threadUuid || undefined,
+		}
+	);
 }
 
 /**
@@ -141,8 +223,19 @@ export function setMotionStatus(slugOrUuid: string, to: MotionStatus): MotionDoc
 		updates.vote_closed_at = now();
 	}
 	
-	// Update motion status in library
-	return library.updateMotionStatus(motion.slug, to, updates);
+	// Find current location and update status
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
+	const toFolder = mapStatusToFolder(to);
+	
+	return library.updateMotionStatus(motion.slug, bodySlug, location.status, toFolder, updates);
 }
 
 /**
@@ -155,7 +248,17 @@ export function setMotionVoteRule(motionSlugOrUuid: string, voteRuleUuid: string
 	if (motion.content.status === 'voting' || motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
 		throw new Error(`Cannot change vote rule on a motion in status '${motion.content.status}'`);
 	}
-	return library.updateMotion(motion.slug, { vote_rule_uuid: voteRuleUuid ?? undefined });
+	
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
+	return library.updateMotion(motion.slug, bodySlug, location.status, { vote_rule_uuid: voteRuleUuid ?? undefined });
 }
 
 /**
@@ -168,7 +271,17 @@ export function setMotionDeliberationRule(motionSlugOrUuid: string, deliberation
 	if (motion.content.status === 'voting' || motion.content.status === 'deliberation' || motion.content.status === 'enacted' || motion.content.status === 'rejected' || motion.content.status === 'withdrawn') {
 		throw new Error(`Cannot change deliberation rule on a motion in status '${motion.content.status}'`);
 	}
-	return library.updateMotion(motion.slug, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
+	
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
+	return library.updateMotion(motion.slug, bodySlug, location.status, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
 }
 
 /**
@@ -178,7 +291,17 @@ export function setMotionClerkNotes(motionSlugOrUuid: string, clerkNotes: string
 	let motion = getMotionBySlug(motionSlugOrUuid);
 	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
-	return library.updateMotion(motion.slug, { clerk_notes: clerkNotes ?? undefined });
+	
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
+	return library.updateMotion(motion.slug, bodySlug, location.status, { clerk_notes: clerkNotes ?? undefined });
 }
 
 /**
@@ -188,7 +311,17 @@ export function setMotionParliamentarianNotes(motionSlugOrUuid: string, parliame
 	let motion = getMotionBySlug(motionSlugOrUuid);
 	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
 	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
-	return library.updateMotion(motion.slug, { parliamentarian_notes: parliamentarianNotes ?? undefined });
+	
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
+	return library.updateMotion(motion.slug, bodySlug, location.status, { parliamentarian_notes: parliamentarianNotes ?? undefined });
 }
 
 /**
@@ -205,12 +338,24 @@ export function enactMotion(motionSlugOrUuid: string, voteSessionUuid: string): 
 		return motion;
 	}
 	
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
 	const adopted_at = now();
 	
-	return library.updateMotion(motion.slug, {
-		status: 'adopted',
-		adopted_at
-	});
+	return library.updateMotionStatus(
+		motion.slug,
+		bodySlug,
+		location.status,
+		'adopted',
+		{ adopted_at }
+	);
 }
 
 /**
@@ -227,12 +372,24 @@ export function rejectMotion(motionSlugOrUuid: string, voteSessionUuid: string):
 		return motion;
 	}
 	
+	if (!motion.content.body_uuid) {
+		throw new Error('Motion has no body_uuid');
+	}
+	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
+	const location = findMotionLocation(motion.slug);
+	if (!location) {
+		throw new Error(`Motion file not found: ${motion.slug}`);
+	}
+	
 	const vote_closed_at = now();
 	
-	return library.updateMotion(motion.slug, {
-		status: 'rejected',
-		vote_closed_at
-	});
+	return library.updateMotionStatus(
+		motion.slug,
+		bodySlug,
+		location.status,
+		'rejected',
+		{ vote_closed_at }
+	);
 }
 
 /**
@@ -246,10 +403,10 @@ export function addMotionComment(
 ) {
 	const motion = getMotionByUuid(motionUuid);
 	if (!motion) throw new Error('Motion not found');
-	if (!motion.content.thread_uuid) throw new Error('Motion has no discussion thread');
+	if (!motion.content.discussion_thread_uuid) throw new Error('Motion has no discussion thread');
 	
 	return discussions.addComment({
-		thread_uuid: motion.content.thread_uuid,
+		thread_uuid: motion.content.discussion_thread_uuid,
 		author_uuid: authorUuid,
 		body,
 		parent_comment_uuid: parentCommentUuid

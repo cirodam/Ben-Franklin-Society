@@ -35,7 +35,14 @@ import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissio
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
 import { db } from '$lib/server/db.js';
-import { syncToDatabase } from '$lib/server/documents/society-core.js';
+import { 
+	getAllBodySlugs, 
+	getMotionFolder, 
+	MOTION_STATUSES,
+	moveMotion
+} from '$lib/server/documents/society-core.js';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	// Try to load by UUID first, then by slug
@@ -49,9 +56,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 	
 	if (!motion) error(404, 'Motion not found');
-	
-	// Ensure motion is synced to database (fixes any stale UUIDs)
-	syncToDatabase(motion);
 	
 	// If loaded by UUID, redirect to slug-based URL
 	if (loadedByUuid && motion.slug !== params.uuid) {
@@ -98,6 +102,22 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
+	// Determine current folder location (status and bodySlug)
+	let currentStatus: typeof MOTION_STATUSES[number] = 'inbox';
+	let bodySlugForMove: string | null = null;
+	const bodies = getAllBodySlugs();
+	for (const bodySlug of bodies) {
+		for (const status of MOTION_STATUSES) {
+			const filePath = join(getMotionFolder(bodySlug, status), `${motion.slug}.json`);
+			if (existsSync(filePath)) {
+				currentStatus = status;
+				bodySlugForMove = bodySlug;
+				break;
+			}
+		}
+		if (bodySlugForMove) break;
+	}
+
 	// Flatten motion for backward compatibility with page expectations
 	const flatMotion = {
 		...motion,
@@ -122,7 +142,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		canCreateVoteSession,
 		alreadyVoted,
 		userCanVote,
-		actingAs
+		actingAs,
+		currentStatus,
+		bodySlugForMove
 	};
 };
 
@@ -556,5 +578,67 @@ export const actions: Actions = {
 		}
 
 		return { success: true };
+	},
+
+	moveDocument: async ({ params, request, locals }) => {
+		if (!locals.session) {
+			return fail(401, { error: 'Authentication required' });
+		}
+
+		const data = await request.formData();
+		const toStatus = data.get('toStatus') as string;
+		const bodySlug = data.get('bodySlug') as string;
+
+		if (!toStatus) {
+			return fail(400, { error: 'Target status is required' });
+		}
+
+		if (!bodySlug) {
+			return fail(400, { error: 'Body slug is required' });
+		}
+
+		try {
+			// Try to load motion
+			let motion = getMotionByUuid(params.uuid);
+			if (!motion) motion = getMotionBySlug(params.uuid);
+			if (!motion) error(404, 'Motion not found');
+
+			// Find current status
+			let fromStatus: typeof MOTION_STATUSES[number] | null = null;
+			for (const status of MOTION_STATUSES) {
+				const filePath = join(getMotionFolder(bodySlug, status), `${motion.slug}.json`);
+				if (existsSync(filePath)) {
+					fromStatus = status;
+					break;
+				}
+			}
+
+			if (!fromStatus) {
+				return fail(404, { error: 'Motion file not found' });
+			}
+
+			if (!MOTION_STATUSES.includes(toStatus as any)) {
+				return fail(400, { error: 'Invalid target status' });
+			}
+
+			const success = moveMotion(
+				motion.slug,
+				bodySlug,
+				fromStatus,
+				toStatus as typeof MOTION_STATUSES[number]
+			);
+
+			if (!success) {
+				return fail(500, { error: 'Failed to move motion' });
+			}
+
+			const actingAs = locals.session.acting_as_uuid;
+			audit(actingAs, 'motion.move', 'motion', motion.uuid, 
+				`Moved motion "${motion.title}" from ${fromStatus} to ${toStatus}`);
+
+			return { success: true };
+		} catch (err) {
+			return fail(500, { error: err instanceof Error ? err.message : 'Failed to move motion' });
+		}
 	},
 };

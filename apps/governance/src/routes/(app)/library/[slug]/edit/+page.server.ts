@@ -1,94 +1,82 @@
 import type { PageServerLoad, Actions } from './$types.js';
-import { getMotionBySlug, saveMotion } from '$lib/server/documents/society-motions.js';
+import { fail, redirect } from '@sveltejs/kit';
 import { loadGoverningDocument, saveGoverningDocument } from '$lib/server/documents/society-governing.js';
-import { error, fail } from '@sveltejs/kit';
-import { db } from '$lib/server/db.js';
-import type { MotionDocument, GoverningDocument } from '@bfs/types';
+import type { Article } from '@bfs/types';
 
-export const load: PageServerLoad = async ({ params }) => {
-	// Check document type first
-	const item = db
-		.prepare('SELECT type FROM library_item WHERE slug = ?')
-		.get(params.slug) as { type: string } | undefined;
-
-	if (!item) {
-		throw error(404, 'Document not found');
+export const load: PageServerLoad = async ({ params, locals }) => {
+	if (!locals.person) {
+		throw redirect(303, '/login');
 	}
 
-	if (item.type === 'motion') {
-		const doc = getMotionBySlug(params.slug);
-		if (!doc) throw error(404, 'Motion not found');
-		return { document: doc, documentType: 'motion' };
-	} else if (item.type === 'governing') {
-		const doc = loadGoverningDocument(params.slug);
-		if (!doc) throw error(404, 'Governing document not found');
-		return { document: doc, documentType: 'governing' };
-	} else {
-		throw error(400, 'Document type not editable in governance app');
+	// Only load from inbox (documents under consideration)
+	const doc = loadGoverningDocument(params.slug, 'inbox');
+	
+	if (!doc) {
+		// Document either doesn't exist or is not in inbox
+		throw redirect(303, `/library/${params.slug}`);
 	}
+
+	return {
+		document: doc,
+		person: locals.person
+	};
 };
 
 export const actions: Actions = {
-	save: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
+		if (!locals.person) {
+			return fail(401, { error: 'Not authenticated' });
+		}
+
+		// Only allow editing documents in inbox
+		const doc = loadGoverningDocument(params.slug, 'inbox');
+		if (!doc) {
+			return fail(404, { error: 'Document not found in inbox' });
+		}
+
 		const data = await request.formData();
-		
-		// Check document type
-		const item = db
-			.prepare('SELECT type FROM library_item WHERE slug = ?')
-			.get(params.slug) as { type: string } | undefined;
+		const title = data.get('title') as string;
+		const seniority = data.get('seniority') as string;
+		const preamble = data.get('preamble') as string;
+		const articlesJson = data.get('articles') as string;
 
-		if (!item) {
-			return fail(404, { error: 'Document not found' });
+		// Validation
+		if (!title || title.trim().length === 0) {
+			return fail(400, { error: 'Title is required' });
 		}
 
-		if (item.type === 'motion') {
-			const doc = getMotionBySlug(params.slug);
-			if (!doc || doc.type !== 'motion') {
-				return fail(400, { error: 'Invalid motion' });
-			}
-
-			const documentJson = data.get('document') as string;
-
-			try {
-				const updatedDoc = JSON.parse(documentJson) as MotionDocument;
-				
-				// Preserve original metadata
-				updatedDoc.uuid = doc.uuid;
-				updatedDoc.slug = doc.slug;
-				updatedDoc.created_at = doc.created_at;
-				updatedDoc.owner_uuid = doc.owner_uuid;
-
-				saveMotion(updatedDoc);
-				return { success: true };
-			} catch (err) {
-				console.error('Failed to save motion:', err);
-				return fail(400, { error: 'Failed to save motion' });
-			}
-		} else if (item.type === 'governing') {
-			const doc = loadGoverningDocument(params.slug);
-			if (!doc || doc.type !== 'governing') {
-				return fail(400, { error: 'Invalid governing document' });
-			}
-
-			const documentJson = data.get('document') as string;
-
-			try {
-				const updatedDoc = JSON.parse(documentJson) as GoverningDocument;
-				
-				// Preserve original metadata
-				updatedDoc.uuid = doc.uuid;
-				updatedDoc.slug = doc.slug;
-				updatedDoc.created_at = doc.created_at;
-				updatedDoc.owner_uuid = doc.owner_uuid;
-
-				saveGoverningDocument(updatedDoc);
-				return { success: true };
-			} catch (err) {
-				console.error('Failed to save governing document:', err);
-				return fail(400, { error: 'Failed to save governing document' });
-			}
+		if (!seniority) {
+			return fail(400, { error: 'Seniority level is required' });
 		}
 
-		return fail(400, { error: 'Unsupported document type for governance app' });
+		const validSeniority = ['charter', 'constitution', 'bylaw', 'ordinance', 'regulation', 'policy'];
+		if (!validSeniority.includes(seniority)) {
+			return fail(400, { error: 'Invalid seniority level' });
+		}
+
+		let articles: Article[] = [];
+		try {
+			articles = JSON.parse(articlesJson);
+		} catch {
+			return fail(400, { error: 'Invalid articles data' });
+		}
+
+		// Update the document
+		const updatedDoc = {
+			...doc,
+			title,
+			updated_at: new Date().toISOString(),
+			content: {
+				...doc.content,
+				seniority: seniority as any,
+				articles,
+				preamble: preamble?.trim() || undefined
+			}
+		};
+
+		// Save back to inbox
+		saveGoverningDocument(updatedDoc, 'inbox');
+
+		throw redirect(303, `/library/${params.slug}`);
 	}
 };

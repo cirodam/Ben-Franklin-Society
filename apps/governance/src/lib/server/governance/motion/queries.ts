@@ -4,6 +4,7 @@
 
 import * as library from '../../documents/society-docs.js';
 import * as discussions from '../../communications/discussions.js';
+import { db } from '../../db.js';
 import type { MotionDocument, MotionStatus } from './types.js';
 
 /**
@@ -27,17 +28,62 @@ export function listMotions(opts: {
 	bodyUuid?: string;
 	status?: MotionStatus;
 } = {}): MotionDocument[] {
-	return library.listMotions({
-		owner_uuid: opts.bodyUuid,
-		status: opts.status,
-	});
+	// If bodyUuid is provided, look up the body's handle to use as slug
+	if (opts.bodyUuid) {
+		const body = db
+			.prepare('SELECT handle FROM association WHERE uuid = ?')
+			.get(opts.bodyUuid) as { handle: string } | undefined;
+		
+		if (!body) {
+			console.warn(`Body not found for UUID: ${opts.bodyUuid}`);
+			return [];
+		}
+		
+		// Map old status values to new folder-based statuses
+		let folderStatus: typeof library.MOTION_STATUSES[number] | undefined;
+		if (opts.status) {
+			const statusMap: Record<string, typeof library.MOTION_STATUSES[number]> = {
+				draft: 'inbox',
+				introduced: 'queued',
+				deliberation: 'deliberating',
+				voting: 'deliberating',
+				adopted: 'adopted',
+				enacted: 'enacted',
+				rejected: 'rejected',
+				withdrawn: 'rejected',
+			};
+			folderStatus = statusMap[opts.status];
+		}
+		
+		return library.listMotions(body.handle, folderStatus);
+	}
+	
+	// If no bodyUuid, need to search all bodies
+	const allBodies = library.getAllBodySlugs();
+	const allMotions: MotionDocument[] = [];
+	
+	for (const bodySlug of allBodies) {
+		const motions = library.listMotions(bodySlug, opts.status as any);
+		allMotions.push(...motions);
+	}
+	
+	return allMotions;
 }
 
 /**
  * List enacted motions
  */
 export function listEnactedMotions(): MotionDocument[] {
-	return library.listMotions({ status: 'enacted' });
+	// Search all bodies for enacted motions
+	const allBodies = library.getAllBodySlugs();
+	const enactedMotions: MotionDocument[] = [];
+	
+	for (const bodySlug of allBodies) {
+		const motions = library.listMotions(bodySlug, 'enacted');
+		enactedMotions.push(...motions);
+	}
+	
+	return enactedMotions;
 }
 
 /**
@@ -45,9 +91,9 @@ export function listEnactedMotions(): MotionDocument[] {
  */
 export function getMotionComments(motionUuid: string) {
 	const motion = getMotionByUuid(motionUuid);
-	if (!motion?.content.thread_uuid) return [];
+	if (!motion?.content.discussion_thread_uuid) return [];
 	
-	return discussions.getCommentsWithAuthors(motion.content.thread_uuid);
+	return discussions.getCommentsWithAuthors(motion.content.discussion_thread_uuid);
 }
 
 /**

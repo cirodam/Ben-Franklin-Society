@@ -97,19 +97,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const draws = listSortitions(association.uuid);
 
-	// Get all motions for this body (docket)
-	const allMotions = listMotions({ bodyUuid: association.uuid });
+	// Get motions for this body grouped by status
+	// Active: inbox, queued, deliberating
+	const inboxMotions = listMotions({ bodyUuid: association.uuid, status: 'draft' }); // maps to 'inbox' folder
+	const queuedMotions = listMotions({ bodyUuid: association.uuid, status: 'introduced' }); // maps to 'queued' folder
+	const deliberatingMotions = listMotions({ bodyUuid: association.uuid, status: 'deliberation' }); // maps to 'deliberating' folder
+	const activeMotions = [...inboxMotions, ...queuedMotions, ...deliberatingMotions];
 
-	// Group motions by status category
-	const activeMotions = allMotions.filter(m =>
-		['draft', 'introduced', 'deliberation', 'voting'].includes(m.content.status)
-	);
-	const concludedMotions = allMotions.filter(m =>
-		['adopted', 'enacted'].includes(m.content.status)
-	);
-	const archivedMotions = allMotions.filter(m =>
-		['rejected', 'withdrawn'].includes(m.content.status)
-	);
+	// Concluded: adopted, enacted
+	const adoptedMotions = listMotions({ bodyUuid: association.uuid, status: 'adopted' });
+	const enactedBodyMotions = listMotions({ bodyUuid: association.uuid, status: 'enacted' });
+	const concludedMotions = [...adoptedMotions, ...enactedBodyMotions];
+
+	// Archived: rejected
+	const archivedMotions = listMotions({ bodyUuid: association.uuid, status: 'rejected' }); // includes 'withdrawn' mapped to 'rejected'
 
 	const canCreateMotion = !!actingAs; // Anyone logged in can create motions
 
@@ -143,7 +144,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		config,
 		termHolders,
 		draws,
-		allMotions,
 		activeMotions,
 		concludedMotions,
 		archivedMotions,
@@ -163,34 +163,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	createAndIntroduce: async ({ request, locals }) => {
-		if (!locals.session) return fail(401, { message: 'Not authenticated' });
-		const actingAs = locals.session.acting_as_uuid;
-
-		const association = getAssociationByHandle('general-assembly');
-		if (!association) return fail(404, { message: 'General Assembly not found' });
-
-		const data = await request.formData();
-		const title = String(data.get('title') ?? '').trim();
-		const body = String(data.get('body') ?? '').trim();
-		const reasoning = String(data.get('reasoning') ?? '').trim();
-
-		if (!title) return fail(400, { message: 'Title is required' });
-		if (!body) return fail(400, { message: 'Motion text is required' });
-
-		// Create motion with status=introduced
-		const motion = createMotion({
-			title,
-			body,
-			reasoning: reasoning || null,
-			introduced_by_uuid: actingAs,
-			body_uuid: association.uuid,
-			body_name: association.name,
-		});
-
-		return { introduced: motion.slug };
-	},
-
 	introduceMotion: async ({ request, locals }) => {
 		if (!locals.session) return fail(401, { message: 'Not authenticated' });
 		const actingAs = locals.session.acting_as_uuid;

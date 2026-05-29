@@ -7,28 +7,32 @@
 
 // Re-export core functionality
 export {
-	searchLibrary,
-	getLibraryStats,
-	deleteDocument,
-	changeDocumentOwner,
-	type LibrarySearchOptions,
-	type LibraryItemSummary
+	SOCIETY_CODE_FOLDERS,
+	MOTION_STATUSES,
+	getSocietyUuid,
+	getGoverningFolder,
+	getMotionFolder,
+	getGoverningStatusFromPath,
+	getMotionLocationFromPath,
+	getAllBodySlugs,
+	moveGoverningDocument,
+	moveMotion,
+	deleteDocumentFile,
+	ensureMotionFolders
 } from './society-core.js';
 
 // Re-export governing documents
 export {
 	loadGoverningDocument,
 	saveGoverningDocument,
+	getAllGoverningDocs,
 	getDocumentBySlug,
 	updateSection,
 	addSection,
 	deleteSection,
 	updateArticle,
 	addArticle,
-	deleteArticle,
-	type DocumentStatus,
-	type Document,
-	type LegacyDocument
+	deleteArticle
 } from './society-governing.js';
 
 // Re-export motions
@@ -42,18 +46,3 @@ export {
 	updateMotion,
 	updateMotionStatus
 } from './society-motions.js';
-
-// Re-export simple documents (prose, contracts, org charts)
-export {
-	loadProseDocument,
-	saveProseDocument,
-	loadContract,
-	saveContract,
-	loadOrgChartDocument,
-	listOrgChartDocuments
-} from './society-simple-docs.js';
-
-// Re-export types for backward compatibility
-export type { Article, Section } from '@bfs/types';
-export type { GoverningDocContent as GoverningDocContentType } from '@bfs/types';
-

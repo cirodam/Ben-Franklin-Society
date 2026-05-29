@@ -1,0 +1,22 @@
+{
+  "uuid": "2bbe7019-d69e-4395-b563-aa5775def9dc",
+  "type": "governing",
+  "slug": "test",
+  "document_id": null,
+  "version": 1,
+  "title": "test",
+  "owner_uuid": "SOCIETY",
+  "created_at": "2026-05-29T00:20:55.703Z",
+  "updated_at": "2026-05-29T00:20:55.703Z",
+  "content": {
+    "seniority": "bylaw",
+    "articles": [
+      {
+        "number": "I",
+        "title": "test",
+        "sections": []
+      }
+    ],
+    "preamble": "test"
+  }
+}

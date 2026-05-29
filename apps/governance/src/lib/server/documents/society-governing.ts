@@ -5,32 +5,39 @@ import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { GoverningDocument, Article, Section } from '@bfs/types';
-import { GOVERNING_DOCS_DIR, getSocietyUuid, syncToDatabase } from './society-core.js';
+import { 
+	SOCIETY_CODE_FOLDERS, 
+	getSocietyUuid, 
+	getGoverningFolder,
+	getGoverningStatusFromPath,
+	moveGoverningDocument
+} from './society-core.js';
 
 // --- File I/O ---
 
 /**
- * Load a governing document from file
+ * Load a governing document from file (searches all status folders if status not specified)
  */
-export function loadGoverningDocument(slug: string): GoverningDocument | null {
+export function loadGoverningDocument(slug: string, status?: keyof typeof SOCIETY_CODE_FOLDERS): GoverningDocument | null {
 	try {
-		const filePath = join(GOVERNING_DOCS_DIR, `${slug}.json`);
-		if (!existsSync(filePath)) {
-			return null;
+		// If status is specified, look in that folder only
+		if (status) {
+			const filePath = join(SOCIETY_CODE_FOLDERS[status], `${slug}.json`);
+			if (!existsSync(filePath)) {
+				return null;
+			}
+			return readAndParseGoverningDoc(filePath);
 		}
 
-		const content = readFileSync(filePath, 'utf-8');
-		const doc = JSON.parse(content) as GoverningDocument;
-
-		// Handle special owner_uuid value "SOCIETY"
-		if (doc.owner_uuid === 'SOCIETY') {
-			const societyUuid = getSocietyUuid();
-			if (societyUuid) {
-				doc.owner_uuid = societyUuid;
+		// Otherwise search all status folders
+		for (const folder of Object.values(SOCIETY_CODE_FOLDERS)) {
+			const filePath = join(folder, `${slug}.json`);
+			if (existsSync(filePath)) {
+				return readAndParseGoverningDoc(filePath);
 			}
 		}
 
-		return doc;
+		return null;
 	} catch (err) {
 		console.error(`Error loading document ${slug}:`, err);
 		return null;
@@ -38,10 +45,29 @@ export function loadGoverningDocument(slug: string): GoverningDocument | null {
 }
 
 /**
- * Save a governing document to file and sync to database
+ * Read and parse a governing document file
  */
-export function saveGoverningDocument(doc: GoverningDocument): void {
-	const filePath = join(GOVERNING_DOCS_DIR, `${doc.slug}.json`);
+function readAndParseGoverningDoc(filePath: string): GoverningDocument {
+	const content = readFileSync(filePath, 'utf-8');
+	const doc = JSON.parse(content) as GoverningDocument;
+
+	// Handle special owner_uuid value "SOCIETY"
+	if (doc.owner_uuid === 'SOCIETY') {
+		const societyUuid = getSocietyUuid();
+		if (societyUuid) {
+			doc.owner_uuid = societyUuid;
+		}
+	}
+
+	return doc;
+}
+
+/**
+ * Save a governing document to file in the appropriate status folder
+ */
+export function saveGoverningDocument(doc: GoverningDocument, status: keyof typeof SOCIETY_CODE_FOLDERS = 'inbox'): void {
+	const folder = SOCIETY_CODE_FOLDERS[status];
+	const filePath = join(folder, `${doc.slug}.json`);
 
 	// Create a clean copy for saving
 	const toSave = { ...doc };
@@ -55,9 +81,35 @@ export function saveGoverningDocument(doc: GoverningDocument): void {
 
 	// Write to file
 	writeFileSync(filePath, JSON.stringify(toSave, null, 2), 'utf-8');
+}
 
-	// Sync to database
-	syncToDatabase(toSave);
+/**
+ * Get all governing documents in a specific status folder
+ */
+export function getAllGoverningDocs(status?: keyof typeof SOCIETY_CODE_FOLDERS): GoverningDocument[] {
+	const docs: GoverningDocument[] = [];
+
+	// If status specified, only search that folder
+	const foldersToSearch = status 
+		? [SOCIETY_CODE_FOLDERS[status]]
+		: Object.values(SOCIETY_CODE_FOLDERS);
+
+	for (const folder of foldersToSearch) {
+		if (!existsSync(folder)) continue;
+
+		const files = readdirSync(folder).filter(f => f.endsWith('.json'));
+		for (const file of files) {
+			const filePath = join(folder, file);
+			try {
+				const doc = readAndParseGoverningDoc(filePath);
+				docs.push(doc);
+			} catch (err) {
+				console.error(`Error reading ${filePath}:`, err);
+			}
+		}
+	}
+
+	return docs;
 }
 
 // --- Public API ---
@@ -72,7 +124,7 @@ export function getDocumentBySlug(slug: string): GoverningDocument | null {
 // --- Edit Operations ---
 
 /**
- * Update a section within a document
+ * Update a section within a document (must be in inbox to edit)
  */
 export function updateSection(
 	slug: string,
@@ -80,8 +132,8 @@ export function updateSection(
 	sectionIdx: number,
 	updates: { title?: string; body?: string; rationale?: string }
 ): GoverningDocument {
-	const doc = loadGoverningDocument(slug);
-	if (!doc) throw new Error(`Document not found: ${slug}`);
+	const doc = loadGoverningDocument(slug, 'inbox');
+	if (!doc) throw new Error(`Document not found in inbox: ${slug}`);
 	if (!doc.content.articles[articleIdx])
 		throw new Error(`Article ${articleIdx} not found`);
 	if (!doc.content.articles[articleIdx].sections[sectionIdx])
@@ -92,54 +144,54 @@ export function updateSection(
 	if (updates.body !== undefined) section.body = updates.body;
 	if (updates.rationale !== undefined) section.rationale = updates.rationale || undefined;
 
-	saveGoverningDocument(doc);
+	saveGoverningDocument(doc, 'inbox');
 	return doc;
 }
 
 /**
- * Add a new section to an article
+ * Add a new section to an article (must be in inbox to edit)
  */
 export function addSection(slug: string, articleIdx: number, section: Section): GoverningDocument {
-	const doc = loadGoverningDocument(slug);
-	if (!doc) throw new Error(`Document not found: ${slug}`);
+	const doc = loadGoverningDocument(slug, 'inbox');
+	if (!doc) throw new Error(`Document not found in inbox: ${slug}`);
 	if (!doc.content.articles[articleIdx])
 		throw new Error(`Article ${articleIdx} not found`);
 
 	doc.content.articles[articleIdx].sections.push(section);
-	saveGoverningDocument(doc);
+	saveGoverningDocument(doc, 'inbox');
 	return doc;
 }
 
 /**
- * Delete a section from an article
+ * Delete a section from an article (must be in inbox to edit)
  */
 export function deleteSection(
 	slug: string,
 	articleIdx: number,
 	sectionIdx: number
 ): GoverningDocument {
-	const doc = loadGoverningDocument(slug);
-	if (!doc) throw new Error(`Document not found: ${slug}`);
+	const doc = loadGoverningDocument(slug, 'inbox');
+	if (!doc) throw new Error(`Document not found in inbox: ${slug}`);
 	if (!doc.content.articles[articleIdx])
 		throw new Error(`Article ${articleIdx} not found`);
 	if (!doc.content.articles[articleIdx].sections[sectionIdx])
 		throw new Error(`Section ${sectionIdx} not found`);
 
 	doc.content.articles[articleIdx].sections.splice(sectionIdx, 1);
-	saveGoverningDocument(doc);
+	saveGoverningDocument(doc, 'inbox');
 	return doc;
 }
 
 /**
- * Update an article's title
+ * Update an article's title (must be in inbox to edit)
  */
 export function updateArticle(
 	slug: string,
 	articleIdx: number,
 	updates: { title?: string; number?: string }
 ): GoverningDocument {
-	const doc = loadGoverningDocument(slug);
-	if (!doc) throw new Error(`Document not found: ${slug}`);
+	const doc = loadGoverningDocument(slug, 'inbox');
+	if (!doc) throw new Error(`Document not found in inbox: ${slug}`);
 	if (!doc.content.articles[articleIdx])
 		throw new Error(`Article ${articleIdx} not found`);
 
@@ -147,32 +199,32 @@ export function updateArticle(
 	if (updates.title !== undefined) article.title = updates.title;
 	if (updates.number !== undefined) article.number = updates.number;
 
-	saveGoverningDocument(doc);
+	saveGoverningDocument(doc, 'inbox');
 	return doc;
 }
 
 /**
- * Add a new article to a document
+ * Add a new article to a document (must be in inbox to edit)
  */
 export function addArticle(slug: string, article: Article): GoverningDocument {
-	const doc = loadGoverningDocument(slug);
-	if (!doc) throw new Error(`Document not found: ${slug}`);
+	const doc = loadGoverningDocument(slug, 'inbox');
+	if (!doc) throw new Error(`Document not found in inbox: ${slug}`);
 
 	doc.content.articles.push(article);
-	saveGoverningDocument(doc);
+	saveGoverningDocument(doc, 'inbox');
 	return doc;
 }
 
 /**
- * Delete an article from a document
+ * Delete an article from a document (must be in inbox to edit)
  */
 export function deleteArticle(slug: string, articleIdx: number): GoverningDocument {
-	const doc = loadGoverningDocument(slug);
-	if (!doc) throw new Error(`Document not found: ${slug}`);
+	const doc = loadGoverningDocument(slug, 'inbox');
+	if (!doc) throw new Error(`Document not found in inbox: ${slug}`);
 	if (!doc.content.articles[articleIdx])
 		throw new Error(`Article ${articleIdx} not found`);
 
 	doc.content.articles.splice(articleIdx, 1);
-	saveGoverningDocument(doc);
+	saveGoverningDocument(doc, 'inbox');
 	return doc;
 }

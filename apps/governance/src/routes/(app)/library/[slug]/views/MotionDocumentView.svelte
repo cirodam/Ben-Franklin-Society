@@ -5,13 +5,16 @@
 
 	let { 
 		document: doc,
-		canEdit = false 
+		canEdit = false,
+		isCreating = false
 	}: { 
 		document: MotionDocument;
 		canEdit?: boolean;
+		isCreating?: boolean;
 	} = $props();
 
 	// Edit state - always track provisions if editable
+	let editedTitle = $state(doc.title);
 	let editedProvisions = $state([...doc.content.provisions]);
 	let editedClerkNotes = $state(doc.content.clerk_notes || '');
 	let editedParliamentarianNotes = $state(doc.content.parliamentarian_notes || '');
@@ -44,11 +47,23 @@
 		<div class="document-title-block">
 			<div class="document-letterhead">
 				<div class="letterhead-body">The Ben Franklin Society</div>
-				<div class="letterhead-doc-number">
-					{doc.document_id || `#${doc.uuid.slice(0, 8)}`}
-				</div>
+				{#if !isCreating}
+					<div class="letterhead-doc-number">
+						{doc.document_id || `#${doc.uuid.slice(0, 8)}`}
+					</div>
+				{/if}
 			</div>
-			<h1 class="document-title">{doc.title}</h1>
+			{#if isCreating}
+				<input 
+					type="text" 
+					bind:value={editedTitle}
+					oninput={handleInput}
+					placeholder="Enter motion title..."
+					class="document-title-input"
+				/>
+			{:else}
+				<h1 class="document-title">{doc.title}</h1>
+			{/if}
 		</div>
 		<div class="motion-meta">
 			<div class="meta-row">
@@ -86,7 +101,7 @@
 		<form 
 			id="save-form"
 			method="POST" 
-			action="?/updateMotion"
+			action={isCreating ? '' : '?/updateMotion'}
 			use:enhance={() => {
 				isSaving = true;
 				return async ({ update, result }) => {
@@ -94,11 +109,15 @@
 					isSaving = false;
 					if (result.type === 'success') {
 						hasChanges = false;
-						window.location.reload();
+						if (!isCreating) {
+							window.location.reload();
+						}
+						// For creating, the server will redirect
 					}
 				};
 			}}
 		>
+			<input type="hidden" name="title" value={editedTitle} />
 			<input type="hidden" name="provisions" value={JSON.stringify(editedProvisions)} />
 			<input type="hidden" name="clerk_notes" value={editedClerkNotes} />
 			<input type="hidden" name="parliamentarian_notes" value={editedParliamentarianNotes} />
@@ -222,7 +241,7 @@
 				</div>
 			</div>
 
-			{#if canEdit && hasChanges}
+			{#if canEdit && (hasChanges || isCreating)}
 				<div class="save-notice">
 					<button 
 						type="button" 
@@ -230,7 +249,7 @@
 						onclick={() => document.getElementById('save-form')?.requestSubmit()} 
 						disabled={isSaving}
 					>
-						{isSaving ? 'Saving...' : 'Save Document'}
+						{isSaving ? 'Saving...' : isCreating ? 'Create Motion' : 'Save Document'}
 					</button>
 				</div>
 			{/if}
@@ -262,6 +281,34 @@
 		text-transform: uppercase;
 		letter-spacing: 0.2em;
 		color: #7a5c1a;
+	}
+
+	/* Document title input for creating new motions */
+	.document-title-input {
+		width: 100%;
+		padding: var(--space-2) 0;
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: 2rem;
+		font-weight: 400;
+		text-align: center;
+		color: #151c1a;
+		background: transparent;
+		border: none;
+		border-bottom: 2px dotted rgba(122, 92, 26, 0.3);
+		margin-bottom: var(--space-6);
+		transition: all 0.2s ease;
+	}
+
+	.document-title-input:focus {
+		outline: none;
+		border-bottom-style: solid;
+		border-bottom-color: #7a5c1a;
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	.document-title-input::placeholder {
+		color: rgba(122, 92, 26, 0.4);
+		font-style: italic;
 	}
 
 	.motion-meta {

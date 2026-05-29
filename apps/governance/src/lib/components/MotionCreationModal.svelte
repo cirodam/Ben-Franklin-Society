@@ -8,10 +8,12 @@
 	let { 
 		show = $bindable(false),
 		bodyName = 'this body',
+		bodyUuid = '',
 		draftMotions = []
 	}: {
 		show?: boolean;
 		bodyName?: string;
+		bodyUuid?: string;
 		draftMotions?: MotionDocument[];
 	} = $props();
 
@@ -30,11 +32,25 @@
 	let loadingLibraryFiles = $state(false);
 	let libraryError = $state<string | null>(null);
 	let importingFromLibrary = $state(false);
+	
+	// Governing document import state
+	let alsoImportGoverning = $state(false);
+	let selectedGoverningFile = $state<number | null>(null);
+	let governingFiles = $state<LibraryFile[]>([]);
+	let loadingGoverningFiles = $state(false);
+	let governingError = $state<string | null>(null);
 
 	// Load library files when library mode is selected
 	$effect(() => {
 		if (mode === 'library' && libraryFiles.length === 0 && !loadingLibraryFiles) {
 			loadLibraryFiles();
+		}
+	});
+	
+	// Load governing files when "Also import governing" is checked
+	$effect(() => {
+		if (alsoImportGoverning && governingFiles.length === 0 && !loadingGoverningFiles) {
+			loadGoverningFiles();
 		}
 	});
 
@@ -53,6 +69,24 @@
 			libraryError = err.message || 'Failed to load library files';
 		} finally {
 			loadingLibraryFiles = false;
+		}
+	}
+	
+	async function loadGoverningFiles() {
+		loadingGoverningFiles = true;
+		governingError = null;
+		try {
+			const response = await fetch('/api/library/list-governing-files');
+			if (!response.ok) {
+				throw new Error('Failed to load governing document files');
+			}
+			const data = await response.json();
+			governingFiles = data.files || [];
+		} catch (err: any) {
+			console.error('Error loading governing files:', err);
+			governingError = err.message || 'Failed to load governing document files';
+		} finally {
+			loadingGoverningFiles = false;
 		}
 	}
 
@@ -75,12 +109,31 @@
 			}
 
 			const { motion_uuid, slug } = await importResponse.json();
+			
+			// Step 2: Also import governing document if requested
+			if (alsoImportGoverning && selectedGoverningFile) {
+				const governingResponse = await fetch('/api/library/import-governing', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ library_file_id: selectedGoverningFile })
+				});
 
-			// Step 2: Reload page data to include the new draft, then switch to "From Drafts" tab
+				if (!governingResponse.ok) {
+					const errorData = await governingResponse.json();
+					console.warn('Failed to import governing document:', errorData.message);
+					// Don't throw - motion already imported successfully
+					alert(`Motion imported successfully, but governing document import failed: ${errorData.message}`);
+				}
+			}
+
+			// Step 3: Reload page data to include the new draft, then switch to "From Drafts" tab
 			await invalidateAll();
 			mode = 'introduce';
 			selectedLibraryFile = null;
 			libraryFiles = [];
+			alsoImportGoverning = false;
+			selectedGoverningFile = null;
+			governingFiles = [];
 		} catch (err: any) {
 			console.error('Error importing from library:', err);
 			alert(err.message || 'Failed to import motion from library');
@@ -96,6 +149,10 @@
 		mode = 'create';
 		libraryFiles = [];
 		libraryError = null;
+		alsoImportGoverning = false;
+		selectedGoverningFile = null;
+		governingFiles = [];
+		governingError = null;
 	}
 
 	function handleOverlayClick(e: MouseEvent) {
@@ -123,7 +180,10 @@
 			<button 
 				class="mode-tab"
 				class:active={mode === 'create'}
-				onclick={() => mode = 'create'}
+				onclick={() => {
+					closeModal();
+					goto(`/governance/motions/new?body=${encodeURIComponent(bodyUuid)}`);
+				}}
 			>
 				Create New
 			</button>
@@ -143,40 +203,7 @@
 			</button>
 		</div>
 
-			{#if mode === 'create'}
-				<form method="POST" action="?/createAndIntroduce" use:enhance>
-					<div class="form-content">
-						<Input
-							name="title"
-							label="Motion Title"
-							placeholder="e.g., Establish Community Garden Committee"
-							required
-						/>
-
-						<Textarea
-							name="body"
-							label="Motion Text"
-							hint="What should be done?"
-							placeholder="Be it resolved that..."
-							rows={6}
-							required
-						/>
-
-						<Textarea
-							name="reasoning"
-							label="Reasoning (optional)"
-							hint="Why should this be done?"
-							placeholder="Explanation and justification..."
-							rows={4}
-						/>
-					</div>
-					
-					<div class="modal__actions">
-						<Button variant="secondary" onclick={closeModal}>Cancel</Button>
-						<Button type="submit">Introduce Motion</Button>
-					</div>
-				</form>
-			{:else if mode === 'introduce'}
+			{#if mode === 'introduce'}
 				<form method="POST" action="?/introduceMotion" use:enhance>
 					<div class="motion-list">
 						{#if draftMotions.length === 0}
@@ -253,6 +280,58 @@
 							{/each}
 						{/if}
 					</div>
+					
+					<!-- Optional governing document import -->
+					{#if selectedLibraryFile}
+						<div class="governing-import-section">
+							<label class="checkbox-label">
+								<input 
+									type="checkbox" 
+									bind:checked={alsoImportGoverning}
+								/>
+								<span>Also import a governing document</span>
+							</label>
+							
+							{#if alsoImportGoverning}
+								<div class="governing-list">
+									{#if loadingGoverningFiles}
+										<div class="empty-state small">
+											<p>Loading governing documents...</p>
+										</div>
+									{:else if governingError}
+										<div class="empty-state error small">
+											<p>Error: {governingError}</p>
+											<Button variant="secondary" size="sm" onclick={loadGoverningFiles}>Retry</Button>
+										</div>
+									{:else if governingFiles.length === 0}
+										<div class="empty-state small">
+											<p>No governing document files found in your library.</p>
+										</div>
+									{:else}
+										{#each governingFiles as file}
+											<label class="motion-card small">
+												<input 
+													type="radio" 
+													name="governing_file_id" 
+													value={file.id}
+													bind:group={selectedGoverningFile}
+												/>
+												<div class="motion-card__content">
+													<div class="motion-card__title">{file.filename}</div>
+													<div class="motion-card__preview">
+														{file.path}
+													</div>
+													<div class="motion-card__meta">
+														{formatFileSize(file.size_bytes)} • {new Date(file.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+													</div>
+												</div>
+											</label>
+										{/each}
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/if}
 					
 					<div class="modal__actions">
 						<Button variant="secondary" onclick={closeModal}>Cancel</Button>
@@ -460,5 +539,53 @@
 		justify-content: flex-end;
 		padding-top: var(--space-4);
 		border-top: 1px solid rgba(45, 90, 79, 0.1);
+	}
+
+	.governing-import-section {
+		margin-top: var(--space-5);
+		padding-top: var(--space-5);
+		border-top: 2px solid rgba(45, 90, 79, 0.1);
+	}
+
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		cursor: pointer;
+		font-family: var(--font-prose);
+		font-size: var(--text-base);
+		color: var(--ink);
+		margin-bottom: var(--space-4);
+	}
+
+	.checkbox-label input[type="checkbox"] {
+		width: 1.25rem;
+		height: 1.25rem;
+		cursor: pointer;
+	}
+
+	.governing-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		max-height: 40vh;
+		overflow-y: auto;
+		padding: var(--space-1);
+	}
+
+	.motion-card.small {
+		padding: var(--space-3);
+	}
+
+	.motion-card.small .motion-card__title {
+		font-size: var(--text-base);
+	}
+
+	.motion-card.small .motion-card__preview {
+		font-size: var(--text-xs);
+	}
+
+	.empty-state.small {
+		padding: var(--space-4) var(--space-3);
 	}
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { EmptyState, Badge } from '@bfs/ui';
+	import { EmptyState } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
 	import type { GoverningDocument, MotionDocument } from '@bfs/types';
@@ -25,30 +25,22 @@
 		});
 	}
 
-	function getStatusBadgeVariant(status: string): 'success' | 'accent' | 'neutral' | 'warn' {
-		if (status === 'enacted') return 'success';
-		if (['draft', 'introduced', 'deliberation', 'voting', 'adopted'].includes(status)) return 'accent';
-		return 'neutral';
-	}
-
-	const currentData = $derived(() => {
+	const allDocs = $derived(() => {
 		if (currentView === 'enacted') return data.enacted;
 		if (currentView === 'under-consideration') return data.underConsideration;
 		return data.archived;
-	});
-
-	const allDocs = $derived(() => {
-		const docs = currentData();
-		return [...docs.governing, ...docs.motions].sort((a, b) => 
-			new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-		);
 	});
 </script>
 
 <div class="page">
 	<header class="header">
 		<h1 class="page-title">Society Code</h1>
-		<p class="subtitle">Official motions and governing documents of the society</p>
+		<p class="subtitle">Official governing documents of the society</p>
+		<div class="header-actions">
+			<a href="/library/new" class="create-btn">
+				Create New Document
+			</a>
+		</div>
 	</header>
 
 	<div class="tabs">
@@ -58,7 +50,7 @@
 			onclick={() => switchView('enacted')}
 		>
 			Enacted
-			<span class="count">{data.enacted.governing.length + data.enacted.motions.length}</span>
+			<span class="count">{data.enacted.length}</span>
 		</button>
 		<button 
 			class="tab"
@@ -66,7 +58,7 @@
 			onclick={() => switchView('under-consideration')}
 		>
 			Under Consideration
-			<span class="count">{data.underConsideration.governing.length + data.underConsideration.motions.length}</span>
+			<span class="count">{data.underConsideration.length}</span>
 		</button>
 		<button 
 			class="tab"
@@ -74,7 +66,7 @@
 			onclick={() => switchView('archived')}
 		>
 			Archived
-			<span class="count">{data.archived.governing.length + data.archived.motions.length}</span>
+			<span class="count">{data.archived.length}</span>
 		</button>
 	</div>
 
@@ -94,10 +86,6 @@
 					<div class="document-main">
 						<div class="document-header-row">
 							<h2 class="document-title">{doc.title}</h2>
-							<Badge 
-								label={doc.content.status} 
-								variant={getStatusBadgeVariant(doc.content.status)} 
-							/>
 						</div>
 						<div class="document-meta-line">
 							<span class="document-type">
@@ -151,6 +139,27 @@
 	.header-actions {
 		display: flex;
 		justify-content: center;
+		margin-top: var(--space-4);
+	}
+
+	.create-btn {
+		padding: var(--space-2) var(--space-4);
+		border: 2px solid var(--gold);
+		background: var(--gold);
+		color: var(--paper);
+		font-family: 'IM Fell English SC', serif;
+		font-size: var(--text-sm);
+		letter-spacing: 0.08em;
+		text-decoration: none;
+		cursor: pointer;
+		transition: all 0.2s;
+		border-radius: 4px;
+		display: inline-block;
+	}
+
+	.create-btn:hover {
+		background: var(--gold-hover);
+		border-color: var(--gold-hover);
 	}
 
 	.tabs {

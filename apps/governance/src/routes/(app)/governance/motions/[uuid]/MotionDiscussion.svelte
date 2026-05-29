@@ -29,7 +29,7 @@
 </script>
 
 <div class="discussion">
-	<h2 class="discussion-title">Deliberation</h2>
+	<h2 class="discussion-title">Discussion</h2>
 	
 	<CommentForm {actingAs} />
 
