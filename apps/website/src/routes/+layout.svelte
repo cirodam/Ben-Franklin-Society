@@ -9,6 +9,7 @@
 		<div class="nav-links">
 			<a href="/">Home</a>
 			<a href="/faq">FAQ</a>
+			<a href="/resources">Resources</a>
 		</div>
 	</nav>
 </header>

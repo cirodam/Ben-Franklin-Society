@@ -70,14 +70,14 @@
 			that affect their daily lives.
 		</p>
 		<p>
-			Waiting for existing institutions to fix these problems isn't a plan. They might not be able
-			to, or they might not want to. The answer is local resilience. Communities that can meet their
-			own needs and govern themselves democratically don't depend on distant institutions that may or
-			may not function.
+			Voluntary associations and mutual aid have always been how Americans supplemented government
+			services and took care of each other. This isn't about replacing existing institutions—it's
+			about people organizing within their communities to help one another, just like credit unions,
+			food co-ops, and community organizations have always done.
 		</p>
 		<p>
-			This isn't pessimism. It's practical preparation. And it's not just about survival. It's about
-			reviving real democracy from the ground up.
+			This isn't pessimism. It's practical community building. And it's not just about mutual support.
+			It's about reviving the tradition of voluntary association and civic participation.
 		</p>
 	</details>
 
@@ -294,19 +294,19 @@
 	<details class="question">
 		<summary>Are you trying to replace the government?</summary>
 		<p>
-			No. We're exercising the constitutional right to free association: forming voluntary
-			organizations just like any club, cooperative, or community network. We work within existing
-			legal frameworks and respect government authority.
+			Absolutely not. We're exercising the constitutional right to free association: forming voluntary
+			organizations just like any club, cooperative, union, or community network. We operate entirely
+			within existing legal frameworks, comply with all applicable laws, and respect government authority.
 		</p>
 		<p>
-			The goal is to supplement what existing institutions do, not replace them. Government provides
-			public goods. We're building private voluntary associations where people help each other through
-			cooperation. These things coexist. They're not in competition.
+			The goal is to supplement what existing institutions provide, not replace them. Government provides
+			public goods and services. We're building private voluntary associations where people help each
+			other through cooperation. These things coexist peacefully. They're not in competition.
 		</p>
 		<p>
 			Think of it like any private organization. A credit union doesn't replace banks, a food co-op
 			doesn't replace grocery stores, and a Ben Franklin Society doesn't replace government. We're just
-			people organizing to take care of each other.
+			people exercising our right to organize and take care of each other—nothing more, nothing less.
 		</p>
 	</details>
 

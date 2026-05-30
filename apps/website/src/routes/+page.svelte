@@ -10,10 +10,10 @@
 	<h1>What is a Ben Franklin Society?</h1>
 
 	<p>
-		A Ben Franklin Society is a group of people who organize to meet each other's essential
-		needs (food, housing, healthcare) while governing themselves democratically. These aren't
-		separate goals. They're inseparable. Democracy doesn't work when people are struggling to
-		survive, and taking care of each other doesn't scale without democratic coordination.
+		A Ben Franklin Society is a voluntary association where people organize to meet each other's
+		essential needs (food, housing, healthcare) while making collective decisions democratically.
+		These aren't separate goals. They're inseparable. Democracy doesn't work when people are
+		struggling to survive, and taking care of each other doesn't scale without democratic coordination.
 	</p>
 
 	<p>
@@ -28,12 +28,12 @@
 	</p>
 
 	<p>
-		Democratic self-governance means people taking direct responsibility for the decisions that
-		affect their lives, not just voting every few years for the lesser of two evils. Alexis de
+		Democratic self-organization means people taking direct responsibility for collective decisions
+		within their communities, not just voting every few years for the lesser of two evils. Alexis de
 		Tocqueville called this the "art of association": Americans forming voluntary groups to solve
-		problems together through cooperation. That was the foundation of American democracy. Not
-		representatives in distant capitals, but people cooperating and governing themselves at the
-		local level. We've lost that capacity, but it hasn't disappeared. We just need to relearn it.
+		problems together through cooperation. That was the foundation of American civil society—not
+		representatives in distant capitals, but people cooperating at the local level. We've lost that
+		capacity, but it hasn't disappeared. We just need to relearn it.
 	</p>
 
 	<p>
