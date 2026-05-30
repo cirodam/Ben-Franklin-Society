@@ -42,33 +42,29 @@
 ### Font Families
 
 **Product Names/Headings:**
-- **Crimson Pro** or **Merriweather** (fallback: Georgia, serif)
+- **Crimson Pro** (fallback: Merriweather, Georgia, serif)
 - Warm serif with artisan quality
-- Use for product titles, seller names
+- Use for product titles, headings
 
-**Body Text:**
-- **Inter** or **system-ui** (fallback: sans-serif)
-- Clean, readable sans-serif for descriptions
-- Use for product descriptions, details
-
-**Pricing/Numbers:**
-- **DM Sans** or **Public Sans** (fallback: system-ui, sans-serif)
-- Clear, bold sans-serif for prices and quantities
-- Use for prices, stock counts, quantities
-
-**Metadata:**
+**UI Elements (Body, Prices, Metadata):**
 - **Inter** (fallback: system-ui, sans-serif)
-- Use for timestamps, categories, tags
+- Clean, readable sans-serif for all interface text
+- Use for product descriptions, prices, stock counts, metadata, tags
+
+**Technical/Monospace:**
+- **SF Mono** (fallback: Monaco, Courier New, monospace)
+- Use for seller handles, technical identifiers
 
 ### Type Scale & Classes
 
 ```css
+.t-heading     /* Headings: Crimson Pro, 24px, weight 600, color: charcoal */
 .t-product     /* Product name: Crimson Pro, 18px, weight 600, color: charcoal */
-.t-seller      /* Seller name: Crimson Pro, 14px, weight 500, color: market-green */
-.t-price       /* Price: DM Sans, 20px, weight 700, color: charcoal */
+.t-price       /* Price: Inter, 20px, weight 700, color: market-green, tabular-nums */
 .t-body        /* Description: Inter, 15px, line-height 1.6, color: slate */
-.t-tag         /* Category/tag: Inter, 12px, weight 600, uppercase, tracking 0.08em */
+.t-tag         /* Category/tag: Inter, 12px, weight 600, uppercase, tracking 0.05em */
 .t-meta        /* Metadata: Inter, 13px, color: ash */
+.t-seller      /* Seller handle: SF Mono, 13px, weight 500, color: slate */
 ```
 
 ---
@@ -315,12 +311,12 @@ The marketplace overrides shared component tokens with market theme colors:
 
 ### Typography Setup
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=DM+Sans:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --font-serif: 'Crimson Pro', 'Merriweather', Georgia, serif;
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'DM Sans', 'Public Sans', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Courier New', monospace;
 }
 ```
 
