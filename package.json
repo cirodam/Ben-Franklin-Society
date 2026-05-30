@@ -11,6 +11,7 @@
     "federation:reset": "bash scripts/federation-reset.sh",
     "publish:society": "bash scripts/publish-images.sh",
     "publish:federation": "bash scripts/publish-federation-images.sh",
+    "publish:website": "bash scripts/publish-website-image.sh",
     "check": "turbo check",
     "lint": "turbo lint"
   },

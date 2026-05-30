@@ -15,11 +15,11 @@ echo ""
 IMAGE_NAME="$REGISTRY_USER/ben-franklin-society-website:$VERSION"
 
 echo "Building website image: $IMAGE_NAME"
-docker build --no-cache -t "$IMAGE_NAME" -f apps/website/Dockerfile .
+sudo docker build --no-cache -t "$IMAGE_NAME" -f apps/website/Dockerfile .
 
 echo ""
 echo "Pushing website image to Docker Hub..."
-docker push "$IMAGE_NAME"
+sudo docker push "$IMAGE_NAME"
 
 echo ""
 echo "======================================"
