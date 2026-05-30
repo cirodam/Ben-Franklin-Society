@@ -293,7 +293,7 @@
 
 	.select-input:focus {
 		outline: none;
-		border-color: var(--gold);
+		border-color: var(--accent);
 	}
 
 	.field-hint {
@@ -368,7 +368,7 @@
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-sm);
 		letter-spacing: 0.08em;
-		color: var(--gold);
+		color: var(--accent);
 		text-transform: uppercase;
 	}
 
@@ -410,12 +410,12 @@
 	}
 
 	.btn-text {
-		color: var(--gold);
+		color: var(--accent);
 		padding: 0;
 	}
 
 	.btn-text:hover {
-		color: var(--gold-hover);
+		color: var(--accent-hover);
 		text-decoration: underline;
 	}
 

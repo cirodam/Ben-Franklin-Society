@@ -26,15 +26,16 @@ body {
 	--divider:        rgba(0, 0, 0, 0.08);
 	
 	/* Font families */
-	--font-display:   'IM Fell English', serif;
+	--font-display:   'Libre Baskerville', Georgia, serif;
 	--font-label:     'IM Fell English SC', serif;
 	--font-prose:     'Libre Baskerville', Georgia, serif;
 	--font-mono:      'Courier New', monospace;
 	
 	/* Green palette - primary institutional colors */
-	--accent:     #2d5a4f;
-	--accent-mid: #4a8070;
-	--accent-lt:  #e8f0ee;
+	--accent:       #2d5a4f;
+	--accent-hover: #3d6b5e;
+	--accent-mid:   #4a8070;
+	--accent-lt:    #e8f0ee;
 	
 	/* Ink colors - text hierarchy */
 	--ink:        #151c1a;  /* Primary text */
@@ -90,12 +91,12 @@ body {
 /* ── TYPOGRAPHY TOKENS ── */
 /*
  * Font Hierarchy:
- * - IM Fell English: Formal document titles (Charter, Constitution, articles)
- * - Libre Baskerville: Page titles, body text, readable prose
+ * - IM Fell English: Document content only (formal documents, letterheads)
+ * - Libre Baskerville: Page titles, headers, body text, readable prose
  * - IM Fell English SC: Small caps labels, buttons, navigation
  */
 
-/* Display — document titles (Charter, Constitution), article headings */
+/* Display — page titles, section headers, article headings */
 .t-display {
 	font-family: var(--font-display);
 	font-weight: 400;

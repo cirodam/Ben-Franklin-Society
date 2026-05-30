@@ -89,7 +89,7 @@
 						</div>
 						<div class="document-meta-line">
 							<span class="document-type">
-								{doc.type === 'governing' ? '📜 Governing Document' : '📋 Motion'}
+								{doc.type === 'governing' ? 'Governing Document' : 'Motion'}
 							</span>
 							{#if doc.type === 'governing' && doc.content.seniority}
 								<span class="meta-dot">•</span>
@@ -144,8 +144,8 @@
 
 	.create-btn {
 		padding: var(--space-2) var(--space-4);
-		border: 2px solid var(--gold);
-		background: var(--gold);
+		border: 2px solid var(--accent);
+		background: var(--accent);
 		color: var(--paper);
 		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-sm);
@@ -158,8 +158,8 @@
 	}
 
 	.create-btn:hover {
-		background: var(--gold-hover);
-		border-color: var(--gold-hover);
+		background: var(--accent-hover);
+		border-color: var(--accent-hover);
 	}
 
 	.tabs {
@@ -192,7 +192,7 @@
 	}
 
 	.tab.active {
-		color: var(--gold);
+		color: var(--accent);
 		font-weight: 500;
 	}
 
@@ -203,7 +203,7 @@
 		left: 0;
 		right: 0;
 		height: 2px;
-		background: var(--gold);
+		background: var(--accent);
 	}
 
 	.count {
@@ -215,8 +215,8 @@
 	}
 
 	.tab.active .count {
-		background: rgba(212, 162, 74, 0.2);
-		color: var(--gold);
+		background: rgba(45, 90, 79, 0.2);
+		color: var(--accent);
 	}
 
 	.document-list {
@@ -244,7 +244,7 @@
 	}
 
 	.document-row:hover {
-		border-color: var(--gold-hover);
+		border-color: var(--accent);
 		box-shadow: 
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 8px rgba(0, 0, 0, 0.08);
@@ -275,7 +275,7 @@
 	}
 
 	.document-row:hover .document-title {
-		color: var(--gold);
+		color: var(--accent);
 	}
 
 	.document-meta-line {
@@ -304,7 +304,7 @@
 
 	.meta-dot {
 		font-size: var(--text-sm);
-		color: var(--gold);
+		color: var(--accent);
 	}
 
 	.document-date {

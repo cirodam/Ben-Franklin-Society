@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
-	import type { MotionDocument, GoverningDocument } from '@bfs/types';
-	import MotionDocumentView from './views/MotionDocumentView.svelte';
-	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
+	import type { MotionDocument as MotionDocumentType, GoverningDocument as GoverningDocumentType } from '@bfs/types';
+	import { MotionDocument, GoverningDocument } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 
 	const { data } = $props<{ data: PageData }>();
@@ -32,14 +31,14 @@
 
 	<div class="document-wrapper">
 		{#if document.type === 'motion'}
-			<MotionDocumentView 
-				document={document as MotionDocument}
-				canEdit={true}
+			<MotionDocument 
+				document={document as MotionDocumentType}
+				editable={false}
 			/>
 		{:else if document.type === 'governing'}
-			<GoverningDocumentView 
-				document={document as GoverningDocument}
-				canEdit={true}
+			<GoverningDocument 
+				document={document as GoverningDocumentType}
+				editable={false}
 			/>
 		{:else}
 			<div class="unsupported">

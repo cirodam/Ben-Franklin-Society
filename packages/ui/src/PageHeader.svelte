@@ -43,7 +43,7 @@
 
 	.page-header h1 {
 		margin: 0;
-		font-family: 'IM Fell English', serif;
+		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: var(--text-2xl);
 		font-weight: 400;
 		color: #151c1a;

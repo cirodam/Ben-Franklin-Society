@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
-	import MotionDocumentView from '../../../library/[slug]/views/MotionDocumentView.svelte';
+	import { MotionDocument } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -33,10 +33,9 @@
 	</div>
 
 	<div class="document-wrapper">
-		<MotionDocumentView 
-			document={draftMotion} 
-			canEdit={true}
-			isCreating={true}
+		<MotionDocument 
+			document={draftMotion as any} 
+			editable={false}
 		/>
 	</div>
 </div>

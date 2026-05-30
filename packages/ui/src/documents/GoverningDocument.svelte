@@ -218,21 +218,21 @@
 								onclick={() => openArticleModal(articleIdx)}
 								title="Edit article"
 							>
-								✏️
+								edit
 							</button>
 							<button
 								class="edit-btn"
 								onclick={() => openNewSectionModal(articleIdx)}
 								title="Add section"
 							>
-								➕
+								add
 							</button>
 							<button
 								class="delete-btn"
 								onclick={() => deleteArticle(articleIdx)}
 								title="Delete article"
 							>
-								🗑️
+								delete
 							</button>
 						</div>
 					{/if}
@@ -253,9 +253,9 @@
 									title="Copy link to this section"
 								>
 									{#if copiedId === `article-${article.number}-section-${sectionIdx}`}
-										✓
+										copied
 									{:else}
-										🔗
+										link
 									{/if}
 								</button>
 								{#if isEditMode}
@@ -264,14 +264,14 @@
 										onclick={() => openSectionModal(articleIdx, sectionIdx)}
 										title="Edit section"
 									>
-										✏️
+										edit
 									</button>
 									<button
 										class="delete-btn"
 										onclick={() => deleteSection(articleIdx, sectionIdx)}
 										title="Delete section"
 									>
-										🗑️
+										delete
 									</button>
 								{/if}
 							</div>
@@ -293,7 +293,7 @@
 		{#if isEditMode}
 			<div class="add-article-container">
 				<Button variant="secondary" onclick={openNewArticleModal}>
-					➕ Add Article
+					Add Article
 				</Button>
 			</div>
 		{/if}
@@ -388,16 +388,17 @@
 <style>
 	/* Document paper styling */
 	.document {
-		max-width: 1000px;
-		margin: 0 auto;
-		padding: var(--space-8, 2rem);
-		background: var(--paper, #fdfbf7);
+		max-width: 1400px;
+		margin: var(--space-12) auto;
+		padding: var(--space-16) 0;
+		background: #fffef8;
 		box-shadow: 
-			0 2px 4px rgba(0, 0, 0, 0.06),
-			0 8px 24px rgba(0, 0, 0, 0.10),
-			0 24px 64px rgba(0, 0, 0, 0.14),
-			0 48px 96px rgba(0, 0, 0, 0.08);
+			0 1px 3px rgba(0, 0, 0, 0.04),
+			0 4px 12px rgba(0, 0, 0, 0.08),
+			0 16px 48px rgba(0, 0, 0, 0.12);
 		position: relative;
+		box-sizing: border-box;
+		min-height: 11in;
 		width: 100%;
 		box-sizing: border-box;
 	}

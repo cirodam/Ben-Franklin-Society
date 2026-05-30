@@ -8,6 +8,7 @@ export { default as Card } from './Card.svelte';
 export { default as Checkbox } from './Checkbox.svelte';
 export { default as DataTable } from './DataTable.svelte';
 export { default as DescriptionList } from './DescriptionList.svelte';
+export { default as DocumentView } from './DocumentView.svelte';
 export { default as EmptyState } from './EmptyState.svelte';
 export { default as FieldRow } from './FieldRow.svelte';
 export { default as FormField } from './FormField.svelte';

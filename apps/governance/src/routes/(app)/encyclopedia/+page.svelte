@@ -4,19 +4,11 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Group articles by category
-	const articlesByCategory = $derived.by(() => {
-		const grouped = new Map<string, typeof data.articles>();
-		
-		data.articles.forEach(article => {
-			const category = article.metadata.category || 'Uncategorized';
-			if (!grouped.has(category)) {
-				grouped.set(category, []);
-			}
-			grouped.get(category)!.push(article);
-		});
-
-		return grouped;
+	// Sort articles alphabetically by title
+	const sortedArticles = $derived.by(() => {
+		return [...data.articles].sort((a, b) => 
+			a.metadata.title.localeCompare(b.metadata.title)
+		);
 	});
 </script>
 
@@ -32,28 +24,26 @@
 				<p class="t-prose">No articles yet. Add markdown files to <code>data/encyclopedia/</code> to get started.</p>
 			</Card>
 		{:else}
-			{#each articlesByCategory as [category, articles]}
-				<section class="category-section">
-					<h2 class="category-title">{category}</h2>
-					<div class="articles-grid">
-						{#each articles as article}
-							<Card>
-								<a href="/encyclopedia/{article.slug}" class="article-card">
-									<h3 class="article-title">{article.metadata.title}</h3>
-									<div class="article-meta">
-										{#if article.metadata.author}
-											<span class="meta-item">By {article.metadata.author}</span>
-										{/if}
-										{#if article.metadata.created}
-											<span class="meta-item">{new Date(article.metadata.created).toLocaleDateString()}</span>
-										{/if}
-									</div>
-								</a>
-							</Card>
-						{/each}
-					</div>
-				</section>
-			{/each}
+			<div class="articles-grid">
+				{#each sortedArticles as article}
+					<Card>
+						<a href="/encyclopedia/{article.slug}" class="article-card">
+							<h3 class="article-title">{article.metadata.title}</h3>
+							<div class="article-meta">
+								{#if article.metadata.category}
+									<Badge variant="neutral">{article.metadata.category}</Badge>
+								{/if}
+								{#if article.metadata.author}
+									<span class="meta-item">By {article.metadata.author}</span>
+								{/if}
+								{#if article.metadata.created}
+									<span class="meta-item">{new Date(article.metadata.created).toLocaleDateString()}</span>
+								{/if}
+							</div>
+						</a>
+					</Card>
+				{/each}
+			</div>
 		{/if}
 	</div>
 </div>
@@ -84,18 +74,6 @@
 		color: var(--ink-mid);
 	}
 
-	.category-section {
-		margin-bottom: var(--space-10);
-	}
-
-	.category-title {
-		font-family: 'IM Fell English', serif;
-		font-size: var(--text-xl);
-		font-weight: 400;
-		margin: 0 0 var(--space-5) 0;
-		color: var(--ink);
-	}
-
 	.articles-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -119,7 +97,6 @@
 	}
 
 	.article-title {
-		font-family: 'IM Fell English', serif;
 		font-size: var(--text-lg);
 		font-weight: 400;
 		margin: 0 0 var(--space-2) 0;
@@ -134,9 +111,8 @@
 	}
 
 	.meta-item {
-		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-xs);
-		letter-spacing: 0.1em;
+		letter-spacing: 0.05em;
 		text-transform: lowercase;
 		color: var(--ink-mid);
 	}

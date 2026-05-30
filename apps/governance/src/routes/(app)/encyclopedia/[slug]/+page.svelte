@@ -95,9 +95,8 @@
 
 	.breadcrumb {
 		margin-bottom: var(--space-6);
-		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-xs);
-		letter-spacing: 0.1em;
+		letter-spacing: 0.05em;
 		text-transform: lowercase;
 		color: var(--ink-mid);
 		display: flex;
@@ -143,9 +142,8 @@
 	}
 
 	.meta-item {
-		font-family: 'IM Fell English SC', serif;
 		font-size: var(--text-xs);
-		letter-spacing: 0.1em;
+		letter-spacing: 0.05em;
 		text-transform: lowercase;
 		color: var(--ink-mid);
 	}
@@ -157,7 +155,6 @@
 	}
 
 	.article-content :global(h1) {
-		font-family: 'IM Fell English', serif;
 		font-size: var(--text-2xl);
 		font-weight: 400;
 		margin: var(--space-8) 0 var(--space-4) 0;
@@ -166,7 +163,6 @@
 	}
 
 	.article-content :global(h2) {
-		font-family: 'IM Fell English', serif;
 		font-size: var(--text-xl);
 		font-weight: 400;
 		margin: var(--space-8) 0 var(--space-4) 0;
@@ -175,7 +171,6 @@
 	}
 
 	.article-content :global(h3) {
-		font-family: 'IM Fell English', serif;
 		font-size: var(--text-lg);
 		font-weight: 400;
 		margin: var(--space-6) 0 var(--space-3) 0;

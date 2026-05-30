@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import MotionDocumentView from './views/MotionDocumentView.svelte';
-	import GoverningDocumentView from './views/GoverningDocumentView.svelte';
+	import { MotionDocument, GoverningDocument } from '@bfs/ui';
 
 	let { data }: { data: PageData } = $props();
 
@@ -33,6 +32,7 @@
 		}
 		:global(.app-shell__content) {
 			padding: 0 !important;
+			max-width: none !important;
 		}
 		html {
 			scroll-behavior: smooth;
@@ -102,9 +102,9 @@
 
 	<div class="document-wrapper">
 		{#if documentType === 'motion'}
-			<MotionDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').MotionDocument} canEdit={canEdit} />
+			<MotionDocument document={doc as any} editable={false} />
 		{:else if documentType === 'governing'}
-			<GoverningDocumentView document={doc as unknown as import('$lib/server/documents/library-types.js').GoverningDocument} canEdit={canEdit} />
+			<GoverningDocument document={doc as any} editable={false} />
 		{/if}
 	</div>
 </div>
@@ -124,7 +124,7 @@
 	}
 
 	.document-controls {
-		max-width: 1000px;
+		max-width: 1400px;
 		margin: 0 auto var(--space-6);
 		display: flex;
 		align-items: center;
@@ -151,7 +151,7 @@
 	.back:hover {
 		background: var(--paper);
 		color: var(--ink);
-		border-color: var(--gold-hover);
+		border-color: var(--accent);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
@@ -186,14 +186,14 @@
 		letter-spacing: 0.1em;
 		color: var(--paper);
 		text-decoration: none;
-		background: var(--gold);
-		border: 1px solid var(--gold);
+		background: var(--accent);
+		border: 1px solid var(--accent);
 		transition: all 0.2s;
 	}
 
 	.edit-btn:hover {
-		background: var(--gold-hover);
-		border-color: var(--gold-hover);
+		background: var(--accent-hover);
+		border-color: var(--accent-hover);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 	}
 
@@ -225,12 +225,12 @@
 	}
 
 	.move-select:hover:not(:disabled) {
-		border-color: var(--gold);
+		border-color: var(--accent);
 	}
 
 	.move-select:focus {
 		outline: none;
-		border-color: var(--gold);
+		border-color: var(--accent);
 	}
 
 	.move-select:disabled {

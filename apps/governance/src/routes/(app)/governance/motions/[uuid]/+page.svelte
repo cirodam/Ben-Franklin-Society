@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types.js';
-	import { Button, Card } from '@bfs/ui';
+	import { Button, Card, MotionDocument } from '@bfs/ui';
 	
 	// Components
-	import MotionDocumentView from '../../../library/[slug]/views/MotionDocumentView.svelte';
 	import MotionVoteTally from './MotionVoteTally.svelte';
 	import VoteSessionControl from './VoteSessionControl.svelte';
 	import VoteSessionsList from './VoteSessionsList.svelte';
@@ -220,7 +219,7 @@
 	<div class="tab-content">
 		{#if activeTab === 'motion'}
 			<div class="tab-panel">
-				<MotionDocumentView document={motion} />
+				<MotionDocument document={motion as any} editable={false} />
 			</div>
 		{/if}
 
