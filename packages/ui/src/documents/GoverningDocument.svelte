@@ -1,46 +1,26 @@
 <script lang="ts">
 	import type { GoverningDocument, Article, Section } from '@bfs/types';
-	import Button from '../Button.svelte';
-	import Modal from '../Modal.svelte';
+	import Document from './Document.svelte';
 
 	let {
-		document: doc,
-		editable = false,
-		onSave
+		doc,
+		mode = 'view',
+		onChange,
+		readonly = false
 	}: {
-		document: GoverningDocument;
-		editable?: boolean;
-		onSave?: (updates: Partial<GoverningDocument>) => void | Promise<void>;
+		doc: GoverningDocument;
+		mode?: 'view' | 'edit';
+		onChange?: (updates: Partial<GoverningDocument>) => void;
+		readonly?: boolean;
 	} = $props();
 
-	// Edit state
-	let isEditMode = $state(false);
-	let editedTitle = $state(doc.title);
-	let editedArticles = $state<Article[]>([...doc.content.articles]);
-	let editedPreamble = $state(doc.content.preamble || '');
-	let isSaving = $state(false);
+	// Local editable state
+	let title = $state(doc.title);
+	let preamble = $state(doc.content.preamble || '');
+	let articles = $state<Article[]>(structuredClone($state.snapshot(doc.content.articles)));
 
-	// Modal state for editing articles/sections
-	let showArticleModal = $state(false);
-	let editingArticleIndex = $state<number | null>(null);
-	let modalArticle = $state<Article>({ number: '', title: '', sections: [] });
-
-	let showSectionModal = $state(false);
-	let editingSectionArticleIdx = $state<number | null>(null);
-	let editingSectionIndex = $state<number | null>(null);
-	let modalSection = $state<Section>({ title: '', body: '', rationale: '' });
-
-	// Copy link state
+	// Copy link state (view mode only)
 	let copiedId = $state<string | null>(null);
-
-	function toggleEditMode() {
-		isEditMode = !isEditMode;
-		if (isEditMode) {
-			editedTitle = doc.title;
-			editedArticles = JSON.parse(JSON.stringify(doc.content.articles));
-			editedPreamble = doc.content.preamble || '';
-		}
-	}
 
 	function copyLink(articleNumber: string, sectionIdx: number) {
 		if (typeof window !== 'undefined') {
@@ -53,424 +33,262 @@
 		}
 	}
 
-	// Article management
-	function openArticleModal(index: number) {
-		editingArticleIndex = index;
-		modalArticle = JSON.parse(JSON.stringify(editedArticles[index]));
-		showArticleModal = true;
+	// Edit mode functions
+	function handleTitleChange(e: Event) {
+		title = (e.target as HTMLInputElement).value;
+		emitChange();
 	}
 
-	function openNewArticleModal() {
-		editingArticleIndex = null;
-		const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-		const nextNumber = romanNumerals[editedArticles.length] || (editedArticles.length + 1).toString();
-		modalArticle = { number: nextNumber, title: '', sections: [] };
-		showArticleModal = true;
+	function handlePreambleChange(e: Event) {
+		preamble = (e.target as HTMLTextAreaElement).value;
+		emitChange();
 	}
 
-	function saveArticle() {
-		if (editingArticleIndex !== null) {
-			editedArticles[editingArticleIndex] = { ...modalArticle };
-		} else {
-			editedArticles = [...editedArticles, { ...modalArticle }];
-		}
-		showArticleModal = false;
+	function addArticle() {
+		const nextNumber = toRomanNumeral(articles.length + 1);
+		articles = [...articles, { number: nextNumber, title: '', sections: [] }];
+		emitChange();
 	}
 
-	function deleteArticle(index: number) {
-		if (confirm('Delete this article and all its sections?')) {
-			editedArticles = editedArticles.filter((_, i) => i !== index);
-		}
+	function removeArticle(index: number) {
+		articles = articles.filter((_, i) => i !== index);
+		// Renumber remaining articles
+		articles = articles.map((article, i) => ({
+			...article,
+			number: toRomanNumeral(i + 1)
+		}));
+		emitChange();
 	}
 
-	// Section management
-	function openSectionModal(articleIdx: number, sectionIdx: number) {
-		editingSectionArticleIdx = articleIdx;
-		editingSectionIndex = sectionIdx;
-		modalSection = JSON.parse(JSON.stringify(editedArticles[articleIdx].sections[sectionIdx]));
-		showSectionModal = true;
+	function updateArticle(index: number, field: 'number' | 'title', value: string) {
+		articles = articles.map((a, i) => 
+			i === index ? { ...a, [field]: value } : a
+		);
+		emitChange();
 	}
 
-	function openNewSectionModal(articleIdx: number) {
-		editingSectionArticleIdx = articleIdx;
-		editingSectionIndex = null;
-		modalSection = { title: '', body: '', rationale: '' };
-		showSectionModal = true;
+	function addSection(articleIndex: number) {
+		articles = articles.map((article, i) => 
+			i === articleIndex 
+				? { ...article, sections: [...article.sections, { title: '', body: '', rationale: '' }] }
+				: article
+		);
+		emitChange();
 	}
 
-	function saveSection() {
-		if (editingSectionArticleIdx !== null) {
-			if (editingSectionIndex !== null) {
-				editedArticles[editingSectionArticleIdx].sections[editingSectionIndex] = { ...modalSection };
-			} else {
-				editedArticles[editingSectionArticleIdx].sections = [
-					...editedArticles[editingSectionArticleIdx].sections,
-					{ ...modalSection }
-				];
-			}
-			editedArticles = [...editedArticles]; // Trigger reactivity
-		}
-		showSectionModal = false;
+	function removeSection(articleIndex: number, sectionIndex: number) {
+		articles = articles.map((article, i) => 
+			i === articleIndex 
+				? { ...article, sections: article.sections.filter((_, si) => si !== sectionIndex) }
+				: article
+		);
+		emitChange();
 	}
 
-	function deleteSection(articleIdx: number, sectionIdx: number) {
-		if (confirm('Delete this section?')) {
-			editedArticles[articleIdx].sections = editedArticles[articleIdx].sections.filter(
-				(_, i) => i !== sectionIdx
-			);
-			editedArticles = [...editedArticles]; // Trigger reactivity
-		}
+	function updateSection(articleIndex: number, sectionIndex: number, field: keyof Section, value: string) {
+		articles = articles.map((article, i) => 
+			i === articleIndex 
+				? {
+					...article,
+					sections: article.sections.map((section, si) => 
+						si === sectionIndex ? { ...section, [field]: value } : section
+					)
+				}
+				: article
+		);
+		emitChange();
 	}
 
-	function cancelEdit() {
-		isEditMode = false;
-	}
-
-	async function handleSave() {
-		if (onSave) {
-			isSaving = true;
-			try {
-				await onSave({
-					title: editedTitle,
-					content: {
-						...doc.content,
-						articles: editedArticles,
-						preamble: editedPreamble || undefined
-					}
-				});
-				isEditMode = false;
-			} finally {
-				isSaving = false;
-			}
+	function emitChange() {
+		if (onChange) {
+			onChange({
+				title,
+				content: {
+					...doc.content,
+					preamble: preamble || undefined,
+					articles
+				}
+			});
 		}
 	}
+
+	function toRomanNumeral(num: number): string {
+		const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+			'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+		return romanNumerals[num - 1] || String(num);
+	}
+
+	const isEditMode = $derived(mode === 'edit' && !readonly);
 </script>
 
-<article class="document">
-	<div class="document-header">
-		<div
-			class="document-title-block"
-			class:document-title-block--charter={doc.content.seniority === 'charter'}
-		>
-			<div class="document-letterhead">
-				<div class="letterhead-body">The Ben Franklin Society</div>
-				<div class="letterhead-doc-number">
-					{doc.document_id || `#${doc.uuid.slice(0, 8)}`}
-				</div>
-			</div>
+<Document 
+	documentId={doc.document_id || `#${doc.uuid.slice(0, 8)}`}
+	title={isEditMode ? '' : title}
+>
+	{#snippet header()}
+		<div class="document-title-block" class:document-title-block--charter={doc.content.seniority === 'charter'}>
 			{#if isEditMode}
 				<input
 					type="text"
-					bind:value={editedTitle}
-					class="document-title-input"
-					placeholder="Document Title"
+					value={title}
+					oninput={handleTitleChange}
+					class="title-input"
+					class:title-input--charter={doc.content.seniority === 'charter'}
+					placeholder="Document title"
 				/>
-			{:else}
-				<h1
-					class="document-title"
-					class:document-title--charter={doc.content.seniority === 'charter'}
-				>
-					{doc.title}
-				</h1>
 			{/if}
-			{#if isEditMode && doc.content.seniority === 'charter'}
-				<textarea
-					bind:value={editedPreamble}
-					class="preamble-input"
-					placeholder="Preamble (optional)"
-					rows="4"
-				></textarea>
-			{:else if doc.content.preamble && doc.content.seniority === 'charter'}
-				<div class="preamble">
-					{doc.content.preamble}
+
+			{#if doc.content.preamble || isEditMode}
+				<div class="preamble-section">
+					{#if isEditMode}
+						<textarea
+							value={preamble}
+							oninput={handlePreambleChange}
+							class="preamble-input"
+							placeholder="Preamble (optional)"
+							rows="4"
+						></textarea>
+					{:else if doc.content.preamble && doc.content.seniority === 'charter'}
+						<div class="preamble">{doc.content.preamble}</div>
+					{/if}
 				</div>
 			{/if}
 		</div>
+	{/snippet}
 
-		{#if editable}
-			<div class="edit-toolbar">
-				{#if !isEditMode}
-					<Button variant="secondary" size="sm" onclick={toggleEditMode}>
-						Edit Document
-					</Button>
-				{:else}
-					<Button variant="secondary" size="sm" onclick={cancelEdit}>Cancel</Button>
-					<Button variant="primary" size="sm" onclick={handleSave} disabled={isSaving}>
-						{isSaving ? 'Saving...' : 'Save Changes'}
-					</Button>
-				{/if}
-			</div>
-		{/if}
-	</div>
-
-	<div class="document-body">
-		{#each (isEditMode ? editedArticles : doc.content.articles) as article, articleIdx}
+	<div class="articles-container">
+		{#each articles as article, articleIdx}
 			<div class="article">
 				<div class="article-heading-container">
-					<h2 class="article-heading">
-						<span class="article-number">Article {article.number}</span>
-						<span class="article-title">{article.title}</span>
-					</h2>
 					{#if isEditMode}
-						<div class="article-actions">
+						<div class="article-edit-header">
+							<input
+								type="text"
+								value={article.number}
+								oninput={(e) => updateArticle(articleIdx, 'number', (e.target as HTMLInputElement).value)}
+								class="article-number-input"
+								placeholder="I"
+							/>
+							<input
+								type="text"
+								value={article.title}
+								oninput={(e) => updateArticle(articleIdx, 'title', (e.target as HTMLInputElement).value)}
+								class="article-title-input"
+								placeholder="Article title"
+							/>
 							<button
-								class="edit-btn"
-								onclick={() => openArticleModal(articleIdx)}
-								title="Edit article"
-							>
-								edit
-							</button>
-							<button
-								class="edit-btn"
-								onclick={() => openNewSectionModal(articleIdx)}
-								title="Add section"
-							>
-								add
-							</button>
-							<button
-								class="delete-btn"
-								onclick={() => deleteArticle(articleIdx)}
+								type="button"
+								class="btn-delete-article"
+								onclick={() => removeArticle(articleIdx)}
 								title="Delete article"
 							>
-								delete
+								×
 							</button>
 						</div>
+					{:else}
+						<h2 class="article-heading">
+							<span class="article-number">Article {article.number}</span>
+							<span class="article-title">{article.title}</span>
+						</h2>
 					{/if}
 				</div>
 
 				{#each article.sections as section, sectionIdx}
 					<div
 						class="section"
+						class:section--edit={isEditMode}
 						id="article-{article.number}-section-{sectionIdx}"
 					>
-						<div class="section-header">
-							<span class="section-number">§ {sectionIdx + 1}.</span>
-							<span class="section-title">{section.title}</span>
-							<div class="section-actions">
-								<button
-									class="copy-link-btn"
-									onclick={() => copyLink(article.number, sectionIdx)}
-									title="Copy link to this section"
-								>
-									{#if copiedId === `article-${article.number}-section-${sectionIdx}`}
-										copied
-									{:else}
-										link
-									{/if}
-								</button>
-								{#if isEditMode}
+						{#if isEditMode}
+							<div class="section-edit">
+								<div class="section-edit-header">
+									<input
+										type="text"
+										value={section.title}
+										oninput={(e) => updateSection(articleIdx, sectionIdx, 'title', (e.target as HTMLInputElement).value)}
+										class="section-title-input"
+										placeholder="Section title"
+									/>
 									<button
-										class="edit-btn"
-										onclick={() => openSectionModal(articleIdx, sectionIdx)}
-										title="Edit section"
-									>
-										edit
-									</button>
-									<button
-										class="delete-btn"
-										onclick={() => deleteSection(articleIdx, sectionIdx)}
+										type="button"
+										class="btn-delete-section"
+										onclick={() => removeSection(articleIdx, sectionIdx)}
 										title="Delete section"
 									>
-										delete
+										×
 									</button>
-								{/if}
+								</div>
+								<textarea
+									value={section.body}
+									oninput={(e) => updateSection(articleIdx, sectionIdx, 'body', (e.target as HTMLTextAreaElement).value)}
+									class="section-body-input"
+									placeholder="Section body"
+									rows="4"
+								></textarea>
+								<textarea
+									value={section.rationale || ''}
+									oninput={(e) => updateSection(articleIdx, sectionIdx, 'rationale', (e.target as HTMLTextAreaElement).value)}
+									class="section-rationale-input"
+									placeholder="Rationale (optional)"
+									rows="2"
+								></textarea>
 							</div>
-						</div>
-						<div class="section-body">
-							{section.body}
-						</div>
-						{#if section.rationale}
-							<details class="section-rationale">
-								<summary>Rationale</summary>
-								<p>{section.rationale}</p>
-							</details>
+						{:else}
+							<div class="section-header">
+								<span class="section-number">§ {sectionIdx + 1}.</span>
+								<span class="section-title">{section.title}</span>
+								<div class="section-actions">
+									<button
+										class="copy-link-btn"
+										onclick={() => copyLink(article.number, sectionIdx)}
+										title="Copy link to this section"
+									>
+										{#if copiedId === `article-${article.number}-section-${sectionIdx}`}
+											copied
+										{:else}
+											link
+										{/if}
+									</button>
+								</div>
+							</div>
+							<div class="section-body">{section.body}</div>
+							{#if section.rationale}
+								<details class="section-rationale">
+									<summary>Rationale</summary>
+									<p>{section.rationale}</p>
+								</details>
+							{/if}
 						{/if}
 					</div>
 				{/each}
+
+				{#if isEditMode}
+					<button
+						type="button"
+						class="btn-add-section"
+						onclick={() => addSection(articleIdx)}
+					>
+						+ Add Section
+					</button>
+				{/if}
 			</div>
 		{/each}
 
 		{#if isEditMode}
-			<div class="add-article-container">
-				<Button variant="secondary" onclick={openNewArticleModal}>
-					Add Article
-				</Button>
-			</div>
+			<button
+				type="button"
+				class="btn-add-article"
+				onclick={addArticle}
+			>
+				+ Add Article
+			</button>
 		{/if}
 	</div>
-</article>
-
-<!-- Article Edit Modal -->
-<Modal
-	bind:open={showArticleModal}
-	title={editingArticleIndex !== null ? 'Edit Article' : 'Add Article'}
->
-	<div class="modal-content">
-		<div class="form-group">
-			<label for="article-number">Number</label>
-			<input
-				id="article-number"
-				type="text"
-				bind:value={modalArticle.number}
-				placeholder="I"
-				class="modal-input"
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="article-title">Title</label>
-			<input
-				id="article-title"
-				type="text"
-				bind:value={modalArticle.title}
-				placeholder="Article title"
-				class="modal-input"
-			/>
-		</div>
-
-		<div class="modal-actions">
-			<Button variant="secondary" onclick={() => (showArticleModal = false)}>Cancel</Button>
-			<Button variant="primary" onclick={saveArticle}>
-				{editingArticleIndex !== null ? 'Save' : 'Add'}
-			</Button>
-		</div>
-	</div>
-</Modal>
-
-<!-- Section Edit Modal -->
-<Modal
-	bind:open={showSectionModal}
-	title={editingSectionIndex !== null ? 'Edit Section' : 'Add Section'}
->
-	<div class="modal-content">
-		<div class="form-group">
-			<label for="section-title">Title</label>
-			<input
-				id="section-title"
-				type="text"
-				bind:value={modalSection.title}
-				placeholder="Section title"
-				class="modal-input"
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="section-body">Content</label>
-			<textarea
-				id="section-body"
-				bind:value={modalSection.body}
-				placeholder="Section content..."
-				rows="8"
-				class="modal-textarea"
-			></textarea>
-		</div>
-
-		<div class="form-group">
-			<label for="section-rationale">Rationale (optional)</label>
-			<textarea
-				id="section-rationale"
-				bind:value={modalSection.rationale}
-				placeholder="Explanation or reasoning for this section..."
-				rows="4"
-				class="modal-textarea"
-			></textarea>
-		</div>
-
-		<div class="modal-actions">
-			<Button variant="secondary" onclick={() => (showSectionModal = false)}>Cancel</Button>
-			<Button variant="primary" onclick={saveSection}>
-				{editingSectionIndex !== null ? 'Save' : 'Add'}
-			</Button>
-		</div>
-	</div>
-</Modal>
+</Document>
 
 <style>
-	/* Document paper styling */
-	.document {
-		max-width: 1400px;
-		margin: var(--space-12) auto;
-		padding: var(--space-16) 0;
-		background: #fffef8;
-		box-shadow: 
-			0 1px 3px rgba(0, 0, 0, 0.04),
-			0 4px 12px rgba(0, 0, 0, 0.08),
-			0 16px 48px rgba(0, 0, 0, 0.12);
-		position: relative;
-		box-sizing: border-box;
-		min-height: 11in;
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.document::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: 
-			repeating-linear-gradient(
-				0deg,
-				transparent,
-				transparent 1.5rem,
-				rgba(45, 90, 79, 0.02) 1.5rem,
-				rgba(45, 90, 79, 0.02) calc(1.5rem + 1px)
-			);
-		pointer-events: none;
-	}
-
-	.document-header {
-		padding: var(--space-10, 2.5rem);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
-		position: relative;
-		z-index: 1;
-	}
-
-	.document-body {
-		padding: var(--space-10, 2.5rem);
-		position: relative;
-		z-index: 1;
-	}
-
-	.document-letterhead {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: var(--space-4, 1rem);
-		font-family: 'IM Fell English SC', serif;
-	}
-
-	.letterhead-body {
-		font-size: var(--text-xs, 0.75rem);
-		font-weight: 400;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: #7a5c1a;
-	}
-
-	.letterhead-doc-number {
-		font-size: var(--text-xs, 0.75rem);
-		font-weight: 400;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: #7a5c1a;
-	}
-
-	.document-title {
-		font-family: 'IM Fell English', serif;
-		font-size: clamp(2rem, 5vw, 3rem);
-		font-weight: 400;
-		line-height: 1.15;
-		color: #151c1a;
-		margin: var(--space-8, 2rem) 0 var(--space-5, 1.25rem);
-		text-align: center;
-		letter-spacing: -0.01em;
-	}
-
-	.document-title-input,
-	.preamble-input {
+	/* Title editing */
+	.title-input {
 		font-family: 'IM Fell English', serif;
 		font-size: clamp(2rem, 5vw, 3rem);
 		font-weight: 400;
@@ -480,16 +298,28 @@
 		text-align: center;
 		letter-spacing: -0.01em;
 		width: 100%;
-		border: 2px dashed rgba(45, 90, 79, 0.3);
-		background: rgba(255, 255, 255, 0.5);
-		padding: 0.5rem;
+		border: 2px dashed rgba(45, 90, 79, 0.2);
+		background: rgba(255, 255, 255, 0.3);
+		padding: var(--space-2, 0.5rem);
 		border-radius: 4px;
 	}
 
-	.preamble-input {
-		font-size: 1.25rem;
-		line-height: 1.7;
-		resize: vertical;
+	.title-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.4);
+		background: rgba(255, 255, 255, 0.6);
+	}
+
+	.title-input--charter {
+		font-size: clamp(3rem, 6vw, 4.5rem) !important;
+		letter-spacing: 0.02em;
+		margin-top: 0 !important;
+		margin-bottom: var(--space-8, 2rem) !important;
+	}
+
+	/* Preamble styling */
+	.preamble-section {
+		margin-top: var(--space-8, 2rem);
 	}
 
 	.preamble {
@@ -497,7 +327,6 @@
 		font-size: 1.25rem;
 		line-height: 2;
 		color: #2d2d28;
-		margin-top: var(--space-8, 2rem);
 		padding: 0 var(--space-8, 2rem);
 		text-align: center;
 		max-width: 800px;
@@ -515,24 +344,35 @@
 		color: #2d2d28;
 	}
 
+	.preamble-input {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: 1.125rem;
+		line-height: 1.75;
+		color: #2d2d28;
+		width: 100%;
+		max-width: 800px;
+		margin: 0 auto;
+		display: block;
+		border: 2px dashed rgba(45, 90, 79, 0.2);
+		background: rgba(255, 255, 255, 0.3);
+		padding: var(--space-4, 1rem);
+		border-radius: 4px;
+		resize: vertical;
+	}
+
+	.preamble-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.4);
+		background: rgba(255, 255, 255, 0.6);
+	}
+
 	.document-title-block--charter {
 		padding-top: var(--space-16, 4rem) !important;
 	}
 
-	.document-title--charter {
-		font-size: clamp(3rem, 6vw, 4.5rem) !important;
-		letter-spacing: 0.02em;
-		margin-top: 0 !important;
-		margin-bottom: var(--space-8, 2rem) !important;
-	}
-
-	.edit-toolbar {
-		display: flex;
-		gap: var(--space-3, 0.75rem);
-		justify-content: center;
-		margin-top: var(--space-6, 1.5rem);
-		padding-top: var(--space-6, 1.5rem);
-		border-top: 1px solid rgba(45, 90, 79, 0.1);
+	/* Articles container */
+	.articles-container {
+		position: relative;
 	}
 
 	.article {
@@ -553,6 +393,7 @@
 		position: relative;
 	}
 
+	/* View mode article heading */
 	.article-heading {
 		text-align: center;
 		margin: 0;
@@ -582,19 +423,73 @@
 		letter-spacing: 0.01em;
 	}
 
-	.article-actions,
-	.section-actions {
+	/* Edit mode article inputs */
+	.article-edit-header {
 		display: flex;
-		gap: var(--space-1, 0.25rem);
 		align-items: center;
+		gap: var(--space-3, 0.75rem);
+		width: 100%;
+		max-width: 800px;
+		margin: 0 auto;
 	}
 
-	.article-actions {
-		position: absolute;
-		right: 0;
-		top: 0;
+	.article-number-input {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 1rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		width: 4rem;
+		padding: var(--space-2, 0.5rem);
+		border: 2px dashed rgba(45, 90, 79, 0.2);
+		background: rgba(255, 255, 255, 0.3);
+		border-radius: 4px;
+		text-align: center;
 	}
 
+	.article-number-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.4);
+		background: rgba(255, 255, 255, 0.6);
+	}
+
+	.article-title-input {
+		font-family: 'IM Fell English', serif;
+		font-size: 1.5rem;
+		font-weight: 400;
+		flex: 1;
+		padding: var(--space-2, 0.5rem);
+		border: 2px dashed rgba(45, 90, 79, 0.2);
+		background: rgba(255, 255, 255, 0.3);
+		border-radius: 4px;
+	}
+
+	.article-title-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.4);
+		background: rgba(255, 255, 255, 0.6);
+	}
+
+	.btn-delete-article {
+		width: 2rem;
+		height: 2rem;
+		border: 1px solid rgba(211, 47, 47, 0.3);
+		background: white;
+		color: #c62828;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 1.5rem;
+		line-height: 1;
+		padding: 0;
+		transition: all 0.15s;
+	}
+
+	.btn-delete-article:hover {
+		background: rgba(211, 47, 47, 0.1);
+		border-color: #c62828;
+	}
+
+	/* Sections */
 	.section {
 		margin-bottom: var(--space-8, 2rem);
 		scroll-margin-top: var(--space-8, 2rem);
@@ -611,6 +506,14 @@
 		border-radius: 2px;
 	}
 
+	.section--edit {
+		background: rgba(255, 255, 255, 0.3);
+		padding: var(--space-4, 1rem);
+		border: 2px dashed rgba(45, 90, 79, 0.15);
+		border-radius: 4px;
+	}
+
+	/* View mode section */
 	.section-header {
 		display: flex;
 		align-items: baseline;
@@ -635,9 +538,13 @@
 		font-style: italic;
 	}
 
-	.copy-link-btn,
-	.edit-btn,
-	.delete-btn {
+	.section-actions {
+		display: flex;
+		gap: var(--space-1, 0.25rem);
+		align-items: center;
+	}
+
+	.copy-link-btn {
 		padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
 		border: 1px solid rgba(45, 90, 79, 0.2);
 		border-radius: 2px;
@@ -660,18 +567,6 @@
 		background: rgba(212, 162, 74, 0.15);
 		border-color: #d4a24a;
 		color: #d4a24a;
-	}
-
-	.edit-btn:hover {
-		opacity: 1;
-		background: rgba(91, 140, 184, 0.15);
-		border-color: #5b8cb8;
-	}
-
-	.delete-btn:hover {
-		opacity: 1;
-		background: rgba(184, 108, 108, 0.15);
-		border-color: #b86c6c;
 	}
 
 	.section-body {
@@ -713,70 +608,118 @@
 		hyphens: auto;
 	}
 
-	.add-article-container {
-		margin-top: var(--space-12, 3rem);
-		display: flex;
-		justify-content: center;
-		padding-top: var(--space-8, 2rem);
-		border-top: 1px solid rgba(45, 90, 79, 0.1);
-	}
-
-	/* Modal styling */
-	.modal-content {
+	/* Edit mode section inputs */
+	.section-edit {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4, 1rem);
+		gap: var(--space-3, 0.75rem);
 	}
 
-	.form-group {
+	.section-edit-header {
 		display: flex;
-		flex-direction: column;
+		align-items: center;
 		gap: var(--space-2, 0.5rem);
 	}
 
-	.form-group label {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #2d2d28;
+	.section-title-input {
+		font-weight: 700;
+		font-style: italic;
+		flex: 1;
+		padding: var(--space-2, 0.5rem);
+		border: 1px solid rgba(45, 90, 79, 0.25);
+		background: white;
+		border-radius: 4px;
+		font-size: 1rem;
 	}
 
-	.modal-input,
-	.modal-textarea {
+	.section-title-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.5);
+	}
+
+	.btn-delete-section {
+		width: 1.75rem;
+		height: 1.75rem;
+		border: 1px solid rgba(211, 47, 47, 0.3);
+		background: white;
+		color: #c62828;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 1.25rem;
+		line-height: 1;
+		padding: 0;
+		transition: all 0.15s;
+	}
+
+	.btn-delete-section:hover {
+		background: rgba(211, 47, 47, 0.1);
+		border-color: #c62828;
+	}
+
+	.section-body-input,
+	.section-rationale-input {
 		font-family: 'Libre Baskerville', Georgia, serif;
 		font-size: 1rem;
+		line-height: 1.75;
 		padding: var(--space-3, 0.75rem);
-		border: 1px solid rgba(45, 90, 79, 0.3);
-		border-radius: 4px;
+		border: 1px solid rgba(45, 90, 79, 0.25);
 		background: white;
-	}
-
-	.modal-textarea {
+		border-radius: 4px;
 		resize: vertical;
+		width: 100%;
 	}
 
-	.modal-actions {
-		display: flex;
-		gap: var(--space-3, 0.75rem);
-		justify-content: flex-end;
-		margin-top: var(--space-4, 1rem);
-		padding-top: var(--space-4, 1rem);
-		border-top: 1px solid rgba(45, 90, 79, 0.1);
+	.section-body-input:focus,
+	.section-rationale-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.5);
+	}
+
+	.section-rationale-input {
+		font-size: 0.9375rem;
+		background: rgba(212, 162, 74, 0.05);
+	}
+
+	/* Add buttons */
+	.btn-add-section,
+	.btn-add-article {
+		display: block;
+		margin: var(--space-6, 1.5rem) auto;
+		padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+		border: 2px dashed rgba(45, 90, 79, 0.3);
+		background: rgba(255, 255, 255, 0.5);
+		color: #2d5a4f;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		transition: all 0.15s;
+	}
+
+	.btn-add-section:hover,
+	.btn-add-article:hover {
+		background: rgba(45, 90, 79, 0.05);
+		border-color: #2d5a4f;
+	}
+
+	.btn-add-article {
+		margin-top: var(--space-10, 2.5rem);
+		font-size: 1rem;
 	}
 
 	@media (max-width: 768px) {
-		.document {
-			padding: var(--space-4, 1rem);
-		}
-
-		.document-header,
-		.document-body {
-			padding: var(--space-6, 1.5rem);
-		}
-
 		.section-body,
 		.section-rationale {
 			margin-left: 0;
+		}
+
+		.article-edit-header {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.article-number-input {
+			width: 100%;
 		}
 	}
 </style>

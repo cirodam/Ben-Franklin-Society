@@ -101,6 +101,7 @@ export interface MotionSignature {
 }
 
 export interface MotionContent {
+
 	// Core content
 	provisions: Provision[];
 	introducer_uuid: string;
@@ -144,8 +145,6 @@ export interface LineItem {
 }
 
 export interface BudgetContent {
-	status: BudgetStatus;
-
 	fiscal_year: number;
 	period: 'annual' | 'quarterly' | 'monthly';
 
@@ -172,8 +171,6 @@ export interface ReportSection {
 }
 
 export interface ReportContent {
-	status: ReportStatus;
-
 	summary: string;
 	report_date: string;
 
@@ -191,8 +188,6 @@ export type ReportDocument = LibraryDocument<ReportContent>;
 export type ProseStatus = 'draft' | 'published' | 'archived';
 
 export interface ProseDocContent {
-	status: ProseStatus;
-	
 	// Document body as paragraphs
 	paragraphs: string[];
 	

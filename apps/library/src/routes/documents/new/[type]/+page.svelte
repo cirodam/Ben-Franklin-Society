@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types.js';
-	import { MotionEditor, GoverningDocEditor } from '@bfs/ui';
-	import type { MotionDocument, GoverningDocument } from '@bfs/types';
+	import { MotionDocument, GoverningDocument } from '@bfs/ui';
+	import type { MotionDocument as MotionDocType, GoverningDocument as GoverningDocType } from '@bfs/types';
 	import { goto } from '$app/navigation';
 
 	const { data } = $props<{ data: PageData }>();
@@ -15,7 +15,7 @@
 	const initialBucketKey = data.buckets[0]?.bucket_key || '';
 
 	// Create document based on type
-	let document = $state<MotionDocument | GoverningDocument>(
+	let document = $state<MotionDocType | GoverningDocType>(
 		documentType === 'motion'
 			? {
 					uuid: crypto.randomUUID(),
@@ -28,7 +28,6 @@
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
 					content: {
-						status: 'draft',
 						provisions: [],
 						introducer_uuid: initialPersonUuid
 					}
@@ -44,7 +43,6 @@
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
 					content: {
-						status: 'draft',
 						seniority: 'bylaw',
 						articles: [],
 						preamble: undefined
@@ -55,7 +53,11 @@
 	let selectedBucket = $state(initialBucketKey);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
-	let editorRef: any;
+
+	// Handle changes from unified component
+	function handleDocumentChange(updates: Partial<MotionDocType | GoverningDocType>) {
+		document = { ...document, ...updates, updated_at: new Date().toISOString() };
+	}
 
 	// Document type metadata
 	const typeMetadata = {
@@ -77,12 +79,6 @@
 		if (!selectedBucket) {
 			error = 'Please select a bucket';
 			return;
-		}
-
-		// Get current state from editor
-		if (editorRef) {
-			const updates = editorRef.getUpdates();
-			document = { ...document, ...updates, updated_at: new Date().toISOString() };
 		}
 
 		if (!document.title) {
@@ -183,9 +179,17 @@
 		{/if}
 
 		{#if documentType === 'motion'}
-			<MotionEditor bind:this={editorRef} motion={document as MotionDocument} />
+			<MotionDocument 
+				motion={document as MotionDocType}
+				mode="edit"
+				onChange={handleDocumentChange}
+			/>
 		{:else if documentType === 'governing'}
-			<GoverningDocEditor bind:this={editorRef} document={document as GoverningDocument} />
+			<GoverningDocument 
+				doc={document as GoverningDocType}
+				mode="edit"
+				onChange={handleDocumentChange}
+			/>
 		{/if}
 
 		<div class="actions">

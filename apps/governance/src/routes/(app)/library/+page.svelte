@@ -2,7 +2,6 @@
 	import { EmptyState } from '@bfs/ui';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types.js';
-	import type { GoverningDocument, MotionDocument } from '@bfs/types';
 
 	let { data }: { data: PageData } = $props();
 	

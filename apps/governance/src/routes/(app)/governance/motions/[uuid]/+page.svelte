@@ -219,7 +219,7 @@
 	<div class="tab-content">
 		{#if activeTab === 'motion'}
 			<div class="tab-panel">
-				<MotionDocument document={motion as any} editable={false} />
+				<MotionDocument motion={motion as any} mode="view" />
 			</div>
 		{/if}
 

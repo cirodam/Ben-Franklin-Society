@@ -102,9 +102,9 @@
 
 	<div class="document-wrapper">
 		{#if documentType === 'motion'}
-			<MotionDocument document={doc as any} editable={false} />
+			<MotionDocument motion={doc as any} mode="view" />
 		{:else if documentType === 'governing'}
-			<GoverningDocument document={doc as any} editable={false} />
+			<GoverningDocument doc={doc as any} mode="view" />
 		{/if}
 	</div>
 </div>

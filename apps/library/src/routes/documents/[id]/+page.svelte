@@ -32,13 +32,13 @@
 	<div class="document-wrapper">
 		{#if document.type === 'motion'}
 			<MotionDocument 
-				document={document as MotionDocumentType}
-				editable={false}
+				motion={document as MotionDocumentType}
+				mode="view"
 			/>
 		{:else if document.type === 'governing'}
 			<GoverningDocument 
-				document={document as GoverningDocumentType}
-				editable={false}
+				doc={document as GoverningDocumentType}
+				mode="view"
 			/>
 		{:else}
 			<div class="unsupported">

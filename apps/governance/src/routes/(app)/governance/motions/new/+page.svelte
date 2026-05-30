@@ -34,8 +34,8 @@
 
 	<div class="document-wrapper">
 		<MotionDocument 
-			document={draftMotion as any} 
-			editable={false}
+			motion={draftMotion as any} 
+			mode="view"
 		/>
 	</div>
 </div>

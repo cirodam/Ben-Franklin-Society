@@ -1,178 +1,162 @@
 <script lang="ts">
 	import type { MotionDocument, Provision } from '@bfs/types';
-	import Button from '../Button.svelte';
-	import Modal from '../Modal.svelte';
+	import Document from './Document.svelte';
 
 	let {
 		motion,
-		editable = false,
-		onSave
+		mode = 'view',
+		onChange,
+		readonly = false
 	}: {
 		motion: MotionDocument;
-		editable?: boolean;
-		onSave?: (updates: Partial<MotionDocument>) => void | Promise<void>;
+		mode?: 'view' | 'edit';
+		onChange?: (updates: Partial<MotionDocument>) => void;
+		readonly?: boolean;
 	} = $props();
 
-	// Edit state
-	let isEditMode = $state(false);
-	let editedTitle = $state(motion.title);
-	let editedSlug = $state(motion.slug);
-	let editedProvisions = $state<Provision[]>([...motion.content.provisions]);
-	let editedClerkNotes = $state(motion.content.clerk_notes || '');
-	let editedParliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
-	let isSaving = $state(false);
+	// Local editable state
+	let title = $state(motion.title);
+	let provisions = $state<Provision[]>(structuredClone($state.snapshot(motion.content.provisions)));
+	let clerkNotes = $state(motion.content.clerk_notes || '');
+	let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
 
-	// Modal state for editing provisions
-	let showProvisionModal = $state(false);
-	let editingProvisionIndex = $state<number | null>(null);
-	let modalProvision = $state<Provision>({ number: '', text: '', reasoning: '' });
+	// Edit mode functions
+	function handleTitleChange(e: Event) {
+		title = (e.target as HTMLInputElement).value;
+		emitChange();
+	}
 
-	function toggleEditMode() {
-		isEditMode = !isEditMode;
-		if (isEditMode) {
-			editedTitle = motion.title;
-			editedSlug = motion.slug;
-			editedProvisions = [...motion.content.provisions];
-			editedClerkNotes = motion.content.clerk_notes || '';
-			editedParliamentarianNotes = motion.content.parliamentarian_notes || '';
+	function addProvision() {
+		const nextNumber = (provisions.length + 1).toString();
+		provisions = [...provisions, { number: nextNumber, text: '', title: '', reasoning: '' }];
+		emitChange();
+	}
+
+	function removeProvision(index: number) {
+		provisions = provisions.filter((_, i) => i !== index);
+		// Renumber remaining provisions
+		provisions = provisions.map((provision, i) => ({
+			...provision,
+			number: (i + 1).toString()
+		}));
+		emitChange();
+	}
+
+	function updateProvision(index: number, field: keyof Provision, value: string) {
+		provisions = provisions.map((p, i) => 
+			i === index ? { ...p, [field]: value } : p
+		);
+		emitChange();
+	}
+
+	function handleClerkNotesChange(e: Event) {
+		clerkNotes = (e.target as HTMLTextAreaElement).value;
+		emitChange();
+	}
+
+	function handleParliamentarianNotesChange(e: Event) {
+		parliamentarianNotes = (e.target as HTMLTextAreaElement).value;
+		emitChange();
+	}
+
+	function emitChange() {
+		if (onChange) {
+			onChange({
+				title,
+				content: {
+					...motion.content,
+					provisions,
+					clerk_notes: clerkNotes || undefined,
+					parliamentarian_notes: parliamentarianNotes || undefined
+				}
+			});
 		}
 	}
 
-	function openProvisionModal(index: number) {
-		editingProvisionIndex = index;
-		modalProvision = { ...editedProvisions[index] };
-		showProvisionModal = true;
-	}
-
-	function openNewProvisionModal() {
-		editingProvisionIndex = null;
-		const nextNumber = (editedProvisions.length + 1).toString();
-		modalProvision = { number: nextNumber, text: '', reasoning: '' };
-		showProvisionModal = true;
-	}
-
-	function saveProvision() {
-		if (editingProvisionIndex !== null) {
-			editedProvisions[editingProvisionIndex] = { ...modalProvision };
-		} else {
-			editedProvisions = [...editedProvisions, { ...modalProvision }];
-		}
-		showProvisionModal = false;
-	}
-
-	function deleteProvision(index: number) {
-		if (confirm('Delete this provision?')) {
-			editedProvisions = editedProvisions.filter((_, i) => i !== index);
-			// Renumber provisions
-			editedProvisions = editedProvisions.map((p, i) => ({
-				...p,
-				number: (i + 1).toString()
-			}));
-		}
-	}
-
-	function cancelEdit() {
-		isEditMode = false;
-	}
-
-	async function handleSave() {
-		if (onSave) {
-			isSaving = true;
-			try {
-				await onSave({
-					title: editedTitle,
-					slug: editedSlug,
-					content: {
-						...motion.content,
-						provisions: editedProvisions,
-						clerk_notes: editedClerkNotes || undefined,
-						parliamentarian_notes: editedParliamentarianNotes || undefined
-					}
-				});
-				isEditMode = false;
-			} finally {
-				isSaving = false;
-			}
-		}
-	}
+	const isEditMode = $derived(mode === 'edit' && !readonly);
 </script>
 
-<article class="document">
-	<div class="document-header">
-		<div class="document-title-block">
-			<div class="document-letterhead">
-				<div class="letterhead-body">The Ben Franklin Society</div>
-				<div class="letterhead-doc-number">
-					{motion.document_id || `#${motion.uuid.slice(0, 8)}`}
-				</div>
-			</div>
-			{#if isEditMode}
-				<input
-					type="text"
-					bind:value={editedTitle}
-					class="document-title-input"
-					placeholder="Motion Title"
-				/>
-			{:else}
-				<h1 class="document-title">{motion.title}</h1>
-			{/if}
-		</div>
+<Document 
+	documentId={motion.document_id || `#${motion.uuid.slice(0, 8)}`}
+	title={isEditMode ? '' : title}
+>
+	{#snippet header()}
+		{#if isEditMode}
+			<input
+				type="text"
+				value={title}
+				oninput={handleTitleChange}
+				class="title-input"
+				placeholder="Motion title"
+			/>
+		{/if}
 
 		<div class="motion-meta">
-			<div class="meta-row">
-				<span class="meta-label">Status:</span>
-				<span class="meta-value status-{motion.content.status}">{motion.content.status}</span>
-			</div>
 			{#if motion.content.body_name}
 				<div class="meta-row">
 					<span class="meta-label">Body:</span>
 					<span class="meta-value">{motion.content.body_name}</span>
 				</div>
 			{/if}
-			{#if motion.content.status !== 'draft'}
-				<div class="meta-row">
-					<span class="meta-label">Introduced:</span>
-					<span class="meta-value">
-						{new Date(motion.created_at).toLocaleDateString('en-US', {
-							year: 'numeric',
-							month: 'long',
-							day: 'numeric'
-						})}
-					</span>
-				</div>
-			{/if}
-		</div>
-
-		{#if editable}
-			<div class="edit-toolbar">
-				{#if !isEditMode}
-					<Button variant="secondary" size="sm" onclick={toggleEditMode}>
-						Edit Motion
-					</Button>
-				{:else}
-					<Button variant="secondary" size="sm" onclick={cancelEdit}>Cancel</Button>
-					<Button variant="primary" size="sm" onclick={handleSave} disabled={isSaving}>
-						{isSaving ? 'Saving...' : 'Save Changes'}
-					</Button>
-				{/if}
+			<div class="meta-row">
+				<span class="meta-label">Introduced:</span>
+				<span class="meta-value">
+					{new Date(motion.created_at).toLocaleDateString('en-US', {
+						year: 'numeric',
+						month: 'long',
+						day: 'numeric'
+					})}
+				</span>
 			</div>
-		{/if}
-	</div>
+		</div>
+	{/snippet}
 
-	<div class="document-body">
-		<div class="motion-body">
-			<div class="provisions-section">
-				{#if isEditMode}
-					<div class="section-header">
-						<h2 class="section-heading">Provisions</h2>
-						<Button variant="secondary" size="sm" onclick={openNewProvisionModal}>
-							+ Add Provision
-						</Button>
-					</div>
-				{/if}
-
-				{#each (isEditMode ? editedProvisions : motion.content.provisions) as provision, index}
-					<div class="provision" class:edit-mode={isEditMode}>
+	<div class="motion-body">
+		<div class="provisions-section">
+			{#each provisions as provision, provisionIdx}
+				<div class="provision" class:provision--edit={isEditMode}>
+					{#if isEditMode}
+						<div class="provision-edit">
+							<div class="provision-edit-header">
+								<input
+									type="text"
+									value={provision.number}
+									oninput={(e) => updateProvision(provisionIdx, 'number', (e.target as HTMLInputElement).value)}
+									class="provision-number-input"
+									placeholder="1"
+								/>
+								<input
+									type="text"
+									value={provision.title || ''}
+									oninput={(e) => updateProvision(provisionIdx, 'title', (e.target as HTMLInputElement).value)}
+									class="provision-title-input"
+									placeholder="Provision title (optional)"
+								/>
+								<button
+									type="button"
+									class="btn-delete-provision"
+									onclick={() => removeProvision(provisionIdx)}
+									title="Delete provision"
+								>
+									×
+								</button>
+							</div>
+							<textarea
+								value={provision.text}
+								oninput={(e) => updateProvision(provisionIdx, 'text', (e.target as HTMLTextAreaElement).value)}
+								class="provision-text-input"
+								placeholder="Provision text"
+								rows="3"
+							></textarea>
+							<textarea
+								value={provision.reasoning || ''}
+								oninput={(e) => updateProvision(provisionIdx, 'reasoning', (e.target as HTMLTextAreaElement).value)}
+								class="provision-reasoning-input"
+								placeholder="Reasoning (optional)"
+								rows="2"
+							></textarea>
+						</div>
+					{:else}
 						<div class="provision-number">{provision.number}</div>
 						<div class="provision-content">
 							{#if provision.title}
@@ -186,232 +170,90 @@
 								</div>
 							{/if}
 						</div>
-						{#if isEditMode}
-							<div class="provision-actions">
-								<button
-									type="button"
-									class="btn-edit-provision"
-									onclick={() => openProvisionModal(index)}
-								>
-									Edit
-								</button>
-								<button
-									type="button"
-									class="btn-delete-provision"
-									onclick={() => deleteProvision(index)}
-								>
-									Delete
-								</button>
-							</div>
-						{/if}
-					</div>
-				{/each}
-			</div>
-
-			{#if !isEditMode && motion.content.signatures && motion.content.signatures.length > 0}
-				<div class="signatures-section">
-					<h2 class="section-heading">Signatures</h2>
-					<div class="signatures-list">
-						{#each motion.content.signatures as signature}
-							<div class="signature" style={signature.font ? `font-family: ${signature.font}` : ''}>
-								<div class="signature-text">{signature.signature_text}</div>
-								<div class="signature-date">
-									{new Date(signature.signed_at).toLocaleDateString('en-US', {
-										year: 'numeric',
-										month: 'long',
-										day: 'numeric'
-									})}
-								</div>
-							</div>
-						{/each}
-					</div>
+					{/if}
 				</div>
+			{/each}
+
+			{#if isEditMode}
+				<button
+					type="button"
+					class="btn-add-provision"
+					onclick={addProvision}
+				>
+					+ Add Provision
+				</button>
 			{/if}
+		</div>
 
-			<div class="official-notes-section">
-				<div class="form-box clerk-box">
-					<div class="form-box-header">
-						<span class="form-box-label">Clerk's Notes</span>
-					</div>
-					<div class="form-box-content">
-						{#if isEditMode}
-							<textarea
-								bind:value={editedClerkNotes}
-								placeholder="Administrative notes, filing information, cross-references..."
-								class="form-textarea"
-								rows="4"
-							></textarea>
-						{:else if motion.content.clerk_notes}
-							<div class="form-box-text">{motion.content.clerk_notes}</div>
-						{:else}
-							<div class="form-box-empty">No notes recorded.</div>
-						{/if}
-					</div>
+		{#if !isEditMode && motion.content.signatures && motion.content.signatures.length > 0}
+			<div class="signatures-section">
+				<h2 class="section-heading">Signatures</h2>
+				<div class="signatures-list">
+					{#each motion.content.signatures as signature}
+						<div class="signature" style={signature.font ? `font-family: ${signature.font}` : ''}>
+							<div class="signature-text">{signature.signature_text}</div>
+							<div class="signature-date">
+								{new Date(signature.signed_at).toLocaleDateString('en-US', {
+									year: 'numeric',
+									month: 'long',
+									day: 'numeric'
+								})}
+							</div>
+						</div>
+					{/each}
 				</div>
+			</div>
+		{/if}
 
-				<div class="form-box parliamentarian-box">
-					<div class="form-box-header">
-						<span class="form-box-label">Parliamentarian's Notes</span>
-					</div>
-					<div class="form-box-content">
-						{#if isEditMode}
-							<textarea
-								bind:value={editedParliamentarianNotes}
-								placeholder="Procedural notes, rules applied, precedents..."
-								class="form-textarea"
-								rows="4"
-							></textarea>
-						{:else if motion.content.parliamentarian_notes}
-							<div class="form-box-text">{motion.content.parliamentarian_notes}</div>
-						{:else}
-							<div class="form-box-empty">No notes recorded.</div>
-						{/if}
-					</div>
+		<div class="official-notes-section">
+			<div class="form-box clerk-box">
+				<div class="form-box-header">
+					<span class="form-box-label">Clerk's Notes</span>
+				</div>
+				<div class="form-box-content">
+					{#if isEditMode}
+						<textarea
+							value={clerkNotes}
+							oninput={handleClerkNotesChange}
+							class="form-textarea"
+							placeholder="Administrative notes, filing information, cross-references..."
+							rows="4"
+						></textarea>
+					{:else if motion.content.clerk_notes}
+						<div class="form-box-text">{motion.content.clerk_notes}</div>
+					{:else}
+						<div class="form-box-empty">No notes recorded.</div>
+					{/if}
+				</div>
+			</div>
+
+			<div class="form-box parliamentarian-box">
+				<div class="form-box-header">
+					<span class="form-box-label">Parliamentarian's Notes</span>
+				</div>
+				<div class="form-box-content">
+					{#if isEditMode}
+						<textarea
+							value={parliamentarianNotes}
+							oninput={handleParliamentarianNotesChange}
+							class="form-textarea"
+							placeholder="Procedural notes, rules applied, precedents..."
+							rows="4"
+						></textarea>
+					{:else if motion.content.parliamentarian_notes}
+						<div class="form-box-text">{motion.content.parliamentarian_notes}</div>
+					{:else}
+						<div class="form-box-empty">No notes recorded.</div>
+					{/if}
 				</div>
 			</div>
 		</div>
 	</div>
-</article>
-
-<Modal bind:open={showProvisionModal} title={editingProvisionIndex !== null ? 'Edit Provision' : 'Add Provision'}>
-	<div class="modal-content">
-		<div class="form-group">
-			<label for="provision-number">Number</label>
-			<input
-				id="provision-number"
-				type="text"
-				bind:value={modalProvision.number}
-				placeholder="1"
-				class="modal-input"
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="provision-title">Title (optional)</label>
-			<input
-				id="provision-title"
-				type="text"
-				bind:value={modalProvision.title}
-				placeholder="Provision heading"
-				class="modal-input"
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="provision-text">Text</label>
-			<textarea
-				id="provision-text"
-				bind:value={modalProvision.text}
-				placeholder="The text of this provision..."
-				rows="6"
-				class="modal-textarea"
-			></textarea>
-		</div>
-
-		<div class="form-group">
-			<label for="provision-reasoning">Reasoning (optional)</label>
-			<textarea
-				id="provision-reasoning"
-				bind:value={modalProvision.reasoning}
-				placeholder="Rationale for this provision..."
-				rows="4"
-				class="modal-textarea"
-			></textarea>
-		</div>
-
-		<div class="modal-actions">
-			<Button variant="secondary" onclick={() => (showProvisionModal = false)}>Cancel</Button>
-			<Button variant="primary" onclick={saveProvision}>
-				{editingProvisionIndex !== null ? 'Save' : 'Add'}
-			</Button>
-		</div>
-	</div>
-</Modal>
+</Document>
 
 <style>
-	/* Document paper styling */
-	.document {
-		max-width: 1000px;
-		margin: 0 auto;
-		padding: var(--space-8);
-		background: var(--paper, #fdfbf7);
-		box-shadow: 
-			0 2px 4px rgba(0, 0, 0, 0.06),
-			0 8px 24px rgba(0, 0, 0, 0.10),
-			0 24px 64px rgba(0, 0, 0, 0.14),
-			0 48px 96px rgba(0, 0, 0, 0.08);
-		position: relative;
-		width: 100%;
-		box-sizing: border-box;
-	}
-
-	.document::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: 
-			repeating-linear-gradient(
-				0deg,
-				transparent,
-				transparent 1.5rem,
-				rgba(45, 90, 79, 0.02) 1.5rem,
-				rgba(45, 90, 79, 0.02) calc(1.5rem + 1px)
-			);
-		pointer-events: none;
-	}
-
-	.document-header {
-		padding: var(--space-10, 2.5rem);
-		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
-		position: relative;
-		z-index: 1;
-	}
-
-	.document-body {
-		padding: var(--space-10, 2.5rem);
-		position: relative;
-		z-index: 1;
-	}
-
-	.document-letterhead {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: var(--space-4, 1rem);
-		font-family: 'IM Fell English SC', serif;
-	}
-
-	.letterhead-body {
-		font-size: var(--text-xs, 0.75rem);
-		font-weight: 400;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: #7a5c1a;
-	}
-
-	.letterhead-doc-number {
-		font-size: var(--text-xs, 0.75rem);
-		font-weight: 400;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: #7a5c1a;
-	}
-
-	.document-title {
-		font-family: 'IM Fell English', serif;
-		font-size: clamp(2rem, 5vw, 3rem);
-		font-weight: 400;
-		line-height: 1.15;
-		color: #151c1a;
-		margin: var(--space-8, 2rem) 0 var(--space-5, 1.25rem);
-		text-align: center;
-		letter-spacing: -0.01em;
-	}
-
-	.document-title-input {
+	/* Title editing */
+	.title-input {
 		font-family: 'IM Fell English', serif;
 		font-size: clamp(2rem, 5vw, 3rem);
 		font-weight: 400;
@@ -421,12 +263,19 @@
 		text-align: center;
 		letter-spacing: -0.01em;
 		width: 100%;
-		border: 2px dashed rgba(45, 90, 79, 0.3);
-		background: rgba(255, 255, 255, 0.5);
-		padding: 0.5rem;
+		border: 2px dashed rgba(45, 90, 79, 0.2);
+		background: rgba(255, 255, 255, 0.3);
+		padding: var(--space-2, 0.5rem);
 		border-radius: 4px;
 	}
 
+	.title-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.4);
+		background: rgba(255, 255, 255, 0.6);
+	}
+
+	/* Motion metadata */
 	.motion-meta {
 		display: flex;
 		flex-direction: column;
@@ -451,46 +300,14 @@
 		color: #2d2d28;
 	}
 
-	.meta-value.status-draft { color: #666; }
-	.meta-value.status-introduced { color: #1565c0; }
-	.meta-value.status-deliberation { color: #f57c00; }
-	.meta-value.status-voting { color: #7b1fa2; }
-	.meta-value.status-adopted { color: #2e7d32; }
-	.meta-value.status-enacted { color: #1b5e20; }
-	.meta-value.status-rejected { color: #c62828; }
-	.meta-value.status-withdrawn { color: #757575; }
-
-	.edit-toolbar {
-		display: flex;
-		gap: var(--space-3, 0.75rem);
-		justify-content: center;
-		margin-top: var(--space-6, 1.5rem);
-		padding-top: var(--space-6, 1.5rem);
-		border-top: 1px solid rgba(45, 90, 79, 0.1);
-	}
-
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--space-6, 1.5rem);
-	}
-
-	.section-heading {
-		font-family: 'IM Fell English', serif;
-		font-size: 1.5rem;
-		font-weight: 400;
-		color: #2d2d28;
-		margin: 0;
-	}
-
+	/* Provisions */
 	.provisions-section {
 		margin-bottom: var(--space-8, 2rem);
 	}
 
 	.provision {
 		display: grid;
-		grid-template-columns: auto 1fr auto;
+		grid-template-columns: auto 1fr;
 		gap: var(--space-4, 1rem);
 		margin-bottom: var(--space-6, 1.5rem);
 		padding-bottom: var(--space-6, 1.5rem);
@@ -501,13 +318,15 @@
 		border-bottom: none;
 	}
 
-	.provision.edit-mode {
-		background: rgba(255, 255, 255, 0.5);
+	.provision--edit {
+		grid-template-columns: 1fr;
+		background: rgba(255, 255, 255, 0.3);
 		padding: var(--space-4, 1rem);
+		border: 2px dashed rgba(45, 90, 79, 0.15);
 		border-radius: 4px;
-		border: 1px solid rgba(45, 90, 79, 0.15);
 	}
 
+	/* View mode provision */
 	.provision-number {
 		font-family: 'IM Fell English SC', serif;
 		font-size: 1.25rem;
@@ -548,52 +367,134 @@
 		font-style: italic;
 	}
 
-	.provision-actions {
+	/* Edit mode provision inputs */
+	.provision-edit {
 		display: flex;
 		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.provision-edit-header {
+		display: flex;
+		align-items: center;
 		gap: var(--space-2, 0.5rem);
 	}
 
-	.btn-edit-provision,
-	.btn-delete-provision {
-		padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-		font-size: 0.875rem;
-		border-radius: 4px;
-		border: 1px solid;
+	.provision-number-input {
+		font-family: 'IM Fell English SC', serif;
+		font-size: 1rem;
+		font-weight: 600;
+		width: 4rem;
+		padding: var(--space-2, 0.5rem);
+		border: 1px solid rgba(45, 90, 79, 0.25);
 		background: white;
-		cursor: pointer;
-		white-space: nowrap;
+		border-radius: 4px;
+		text-align: center;
 	}
 
-	.btn-edit-provision {
-		border-color: rgba(45, 90, 79, 0.3);
-		color: #2d5a4f;
+	.provision-number-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.5);
 	}
 
-	.btn-edit-provision:hover {
-		background: rgba(45, 90, 79, 0.05);
+	.provision-title-input {
+		font-family: 'IM Fell English', serif;
+		font-size: 1rem;
+		font-weight: 600;
+		flex: 1;
+		padding: var(--space-2, 0.5rem);
+		border: 1px solid rgba(45, 90, 79, 0.25);
+		background: white;
+		border-radius: 4px;
+	}
+
+	.provision-title-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.5);
 	}
 
 	.btn-delete-provision {
-		border-color: rgba(211, 47, 47, 0.3);
+		width: 1.75rem;
+		height: 1.75rem;
+		border: 1px solid rgba(211, 47, 47, 0.3);
+		background: white;
 		color: #c62828;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 1.25rem;
+		line-height: 1;
+		padding: 0;
+		transition: all 0.15s;
 	}
 
 	.btn-delete-provision:hover {
-		background: rgba(211, 47, 47, 0.05);
+		background: rgba(211, 47, 47, 0.1);
+		border-color: #c62828;
+	}
+
+	.provision-text-input,
+	.provision-reasoning-input {
+		font-family: 'Libre Baskerville', Georgia, serif;
+		font-size: 1rem;
+		line-height: 1.7;
+		padding: var(--space-3, 0.75rem);
+		border: 1px solid rgba(45, 90, 79, 0.25);
+		background: white;
+		border-radius: 4px;
+		resize: vertical;
+		width: 100%;
+	}
+
+	.provision-text-input:focus,
+	.provision-reasoning-input:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.5);
+	}
+
+	.provision-reasoning-input {
+		font-size: 0.9rem;
+		color: #5a5a50;
+		background: rgba(45, 90, 79, 0.02);
+	}
+
+	.btn-add-provision {
+		display: block;
+		margin: var(--space-6, 1.5rem) auto;
+		padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+		border: 2px dashed rgba(45, 90, 79, 0.3);
+		background: rgba(255, 255, 255, 0.5);
+		color: #2d5a4f;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 1rem;
+		font-weight: 600;
+		transition: all 0.15s;
+	}
+
+	.btn-add-provision:hover {
+		background: rgba(45, 90, 79, 0.05);
+		border-color: #2d5a4f;
+	}
+
+	/* Signatures */
+	.section-heading {
+		font-family: 'IM Fell English', serif;
+		font-size: 1.5rem;
+		font-weight: 400;
+		color: #2d2d28;
+		margin: 0 0 var(--space-4, 1rem) 0;
 	}
 
 	.signatures-section {
-		margin-top: var(--space-10, 2.5rem);
-		padding-top: var(--space-8, 2rem);
-		border-top: 2px solid rgba(45, 90, 79, 0.15);
+		margin-bottom: var(--space-8, 2rem);
+		padding-bottom: var(--space-8, 2rem);
+		border-bottom: 1px solid rgba(45, 90, 79, 0.15);
 	}
 
 	.signatures-list {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6, 1.5rem);
-		margin-top: var(--space-6, 1.5rem);
 	}
 
 	.signature {
@@ -615,6 +516,7 @@
 		color: #5a5a50;
 	}
 
+	/* Official notes */
 	.official-notes-section {
 		margin-top: var(--space-10, 2.5rem);
 		display: grid;
@@ -668,73 +570,32 @@
 		font-size: 0.9rem;
 		line-height: 1.6;
 		color: #2d2d28;
-		border: 1px solid rgba(45, 90, 79, 0.2);
+		border: 1px solid rgba(45, 90, 79, 0.25);
 		border-radius: 4px;
 		padding: var(--space-3, 0.75rem);
 		background: white;
 		resize: vertical;
 	}
 
-	/* Modal styling */
-	.modal-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-4, 1rem);
-	}
-
-	.form-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2, 0.5rem);
-	}
-
-	.form-group label {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: #2d2d28;
-	}
-
-	.modal-input,
-	.modal-textarea {
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: 1rem;
-		padding: var(--space-3, 0.75rem);
-		border: 1px solid rgba(45, 90, 79, 0.3);
-		border-radius: 4px;
-		background: white;
-	}
-
-	.modal-textarea {
-		resize: vertical;
-	}
-
-	.modal-actions {
-		display: flex;
-		gap: var(--space-3, 0.75rem);
-		justify-content: flex-end;
-		margin-top: var(--space-4, 1rem);
-		padding-top: var(--space-4, 1rem);
-		border-top: 1px solid rgba(45, 90, 79, 0.1);
+	.form-textarea:focus {
+		outline: none;
+		border-color: rgba(45, 90, 79, 0.5);
 	}
 
 	@media (max-width: 768px) {
-		.document {
-			padding: var(--space-4, 1rem);
+		.provision--edit .provision-edit-header {
+			flex-direction: column;
+			align-items: stretch;
 		}
 
-		.document-header,
-		.document-body {
-			padding: var(--space-6, 1.5rem);
+		.provision-number-input {
+			width: 100%;
 		}
 
-		.provision {
-			grid-template-columns: 1fr;
-			gap: var(--space-3, 0.75rem);
-		}
-
-		.provision-actions {
-			flex-direction: row;
+		.signature {
+			flex-direction: column;
+			gap: var(--space-2, 0.5rem);
 		}
 	}
 </style>
+	.
