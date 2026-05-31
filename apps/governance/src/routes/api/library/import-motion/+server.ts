@@ -4,7 +4,7 @@ import { LibraryClient, downloadFileAsBuffer } from '$lib/library-client.js';
 import type { MotionDocument } from '@bfs/types';
 import { saveMotion } from '$lib/server/documents/society-motions.js';
 import { randomUUID } from 'node:crypto';
-import { issueTokens } from '$lib/server/infrastructure/oidc.js';
+import { issueTokens } from '$lib/server/infrastructure/oidc/tokens.js';
 import { db } from '$lib/server/db.js';
 
 /**

@@ -60,33 +60,33 @@ export const actions: Actions = {
 			});
 		}
 
-		ifstreet_address: streetAddress || undefined,
-				latitude: latitude,
-				longitude: longitude,
-				initial_password: password,
-			});
-		} catch (err: any) {
-			return fail(400, { 
-				error: err.message || 'Failed to create person.',
-				handle, givenName, familyName, dob, phone, streetAddress, latitude, longitud
-
-		let person;
-		try {
-			person = await createPerson({
-				handle,
-				given_name: givenName,
-				family_name: familyName,
-				date_of_birth: dob,
-				phone: phone || undefined,
-				initial_password: password,
-			});
-		} catch (err: any) {
-			return fail(400, { 
-				error: err.message || 'Failed to create person.',
-				handle, givenName, familyName, dob, phone
-			});
-		}
-
-		throw redirect(303, `/organization/people/${person.uuid}`);
+	if (longitude !== undefined && (isNaN(longitude) || longitude < -180 || longitude > 180)) {
+		return fail(400, {
+			error: 'Longitude must be a number between -180 and 180.',
+			handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
+		});
 	}
+
+	let person;
+	try {
+		person = await createPerson({
+			handle,
+			given_name: givenName,
+			family_name: familyName,
+			date_of_birth: dob,
+			phone: phone || undefined,
+			street_address: streetAddress || undefined,
+			latitude: latitude,
+			longitude: longitude,
+			initial_password: password,
+		});
+	} catch (err: any) {
+		return fail(400, { 
+			error: err.message || 'Failed to create person.',
+			handle, givenName, familyName, dob, phone, streetAddress, latitude, longitude
+		});
+	}
+
+	throw redirect(303, `/organization/people/${person.uuid}`);
+}
 };

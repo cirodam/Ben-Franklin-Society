@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { verifyAccessToken } from '$lib/server/infrastructure/oidc.js';
+import { verifyAccessToken } from '$lib/server/infrastructure/oidc/jwt.js';
 import { db } from '$lib/server/db.js';
 
 export const GET: RequestHandler = async ({ request }) => {

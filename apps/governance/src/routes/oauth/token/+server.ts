@@ -1,6 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { exchangeAuthCode, exchangeRefreshToken, getClient, verifyClientSecret, issueServiceToken } from '$lib/server/infrastructure/oidc.js';
+import { exchangeAuthCode, exchangeRefreshToken } from '$lib/server/infrastructure/oidc/grants.js';
+import { getClient, verifyClientSecret } from '$lib/server/infrastructure/oidc/clients.js';
+import { issueServiceToken } from '$lib/server/infrastructure/oidc/tokens.js';
 import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 import { createLogger } from '@bfs/db';
 

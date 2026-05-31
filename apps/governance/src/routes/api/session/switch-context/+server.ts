@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { updateActingAs, getAvailableContexts, resolveSession } from '$lib/server/infrastructure/auth.js';
-import { verifyAccessToken } from '$lib/server/infrastructure/oidc.js';
+import { verifyAccessToken } from '$lib/server/infrastructure/oidc/jwt.js';
 import { createLogger } from '@bfs/db';
 
 const logger = createLogger('api/session/switch-context');

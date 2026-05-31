@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types.js';
-import { listClients, createClient, deleteClient } from '$lib/server/infrastructure/oidc.js';
+import { listClients, createClient, deleteClient } from '$lib/server/infrastructure/oidc/clients.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { env } from '$env/dynamic/private';
 

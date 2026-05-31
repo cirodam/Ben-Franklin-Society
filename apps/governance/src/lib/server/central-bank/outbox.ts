@@ -8,7 +8,7 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../db.js';
 import { getCommunityConfig } from '../infrastructure/config.js';
-import { issueServiceToken } from '../infrastructure/oidc.js';
+import { issueServiceToken } from '../infrastructure/oidc/tokens.js';
 
 // Cached service token with expiration
 let cachedServiceToken: { token: string; expiresAt: number } | null = null;

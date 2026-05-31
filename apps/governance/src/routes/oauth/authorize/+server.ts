@@ -1,6 +1,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { getClient, validateRedirectUri, createAuthCode } from '$lib/server/infrastructure/oidc.js';
+import { getClient, validateRedirectUri } from '$lib/server/infrastructure/oidc/clients.js';
+import { createAuthCode } from '$lib/server/infrastructure/oidc/grants.js';
 import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 import { logAuditEvent } from '$lib/server/infrastructure/audit.js';
 

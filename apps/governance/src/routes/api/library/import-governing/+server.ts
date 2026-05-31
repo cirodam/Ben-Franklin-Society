@@ -5,7 +5,7 @@ import type { GoverningDocument } from '@bfs/types';
 import { saveGoverningDocument } from '$lib/server/documents/society-governing.js';
 import { getSocietyUuid } from '$lib/server/documents/society-core.js';
 import { randomUUID } from 'node:crypto';
-import { issueTokens } from '$lib/server/infrastructure/oidc.js';
+import { issueTokens } from '$lib/server/infrastructure/oidc/tokens.js';
 import { db } from '$lib/server/db.js';
 
 /**

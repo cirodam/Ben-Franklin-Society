@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types.js';
 import { json, error } from '@sveltejs/kit';
 import { LibraryClient } from '$lib/library-client.js';
-import { issueTokens } from '$lib/server/infrastructure/oidc.js';
+import { issueTokens } from '$lib/server/infrastructure/oidc/tokens.js';
 import { db } from '$lib/server/db.js';
 
 /**

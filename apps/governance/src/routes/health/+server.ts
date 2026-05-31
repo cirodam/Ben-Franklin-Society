@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db.js';
-import { getKeyPair } from '$lib/server/infrastructure/oidc.js';
+import { getKeyPair } from '$lib/server/infrastructure/oidc/jwt.js';
 
 interface HealthCheck {
 	status: 'ok' | 'error';
