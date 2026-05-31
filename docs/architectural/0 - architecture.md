@@ -7,7 +7,7 @@ principles:
         no dark patterns
 
 one core app: governance
-    holds the identieis of principals
+    holds the identities of principals
     two principal types:
         person
         association
@@ -24,3 +24,7 @@ the goal:
 
     all apps can run on one device or
     all apps can run on different devices
+
+
+all apps live at a subdomain of the root domain
+apps communicate via rest API calls

@@ -18,8 +18,6 @@ CREATE TABLE IF NOT EXISTS person (
 CREATE TABLE IF NOT EXISTS credentials (
   person_uuid          TEXT PRIMARY KEY REFERENCES person(uuid),
   password_hash        TEXT NOT NULL,
-  mfa_enabled          INTEGER NOT NULL DEFAULT 0,
-  mfa_secret_encrypted TEXT NULL,
   failed_attempt_count INTEGER NOT NULL DEFAULT 0,
   locked_until         TEXT NULL,
   password_changed_at  TEXT NOT NULL,
