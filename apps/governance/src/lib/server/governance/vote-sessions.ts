@@ -12,7 +12,6 @@ export interface VoteSession {
 	uuid: string;
 	motion_uuid: string;
 	opened_by: string;
-	meeting_uuid: string | null;
 	passing_threshold: number;
 	requires_quorum: number; // 0 or 1 (boolean)
 	quorum_threshold: number | null;
@@ -48,7 +47,6 @@ function now(): string {
 export function createVoteSession(input: {
 	motion_uuid: string;
 	opened_by: string;
-	meeting_uuid?: string | null;
 	passing_threshold?: number;
 	requires_quorum?: boolean;
 	quorum_threshold?: number | null;
@@ -68,15 +66,14 @@ export function createVoteSession(input: {
 	
 	db.prepare(`
 		INSERT INTO vote_session (
-			uuid, motion_uuid, opened_by, meeting_uuid,
+			uuid, motion_uuid, opened_by,
 			passing_threshold, requires_quorum, quorum_threshold,
 			opens_at, closes_at, status, created_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`).run(
 		uuid,
 		input.motion_uuid,
 		input.opened_by,
-		input.meeting_uuid ?? null,
 		passing_threshold,
 		requires_quorum,
 		quorum_threshold,
@@ -111,7 +108,6 @@ export function getVoteSession(uuid: string): VoteSession | null {
  */
 export function listVoteSessions(filters: {
 	motion_uuid?: string;
-	meeting_uuid?: string;
 	status?: VoteSessionStatus;
 	opened_by?: string;
 }): VoteSession[] {
@@ -121,11 +117,6 @@ export function listVoteSessions(filters: {
 	if (filters.motion_uuid) {
 		query += ' AND motion_uuid = ?';
 		params.push(filters.motion_uuid);
-	}
-	
-	if (filters.meeting_uuid) {
-		query += ' AND meeting_uuid = ?';
-		params.push(filters.meeting_uuid);
 	}
 	
 	if (filters.status) {

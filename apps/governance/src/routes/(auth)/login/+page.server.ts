@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
-import { authenticatePerson } from '$lib/server/infrastructure/auth.js';
+import { authenticatePerson, getClientIp } from '$lib/server/infrastructure/auth.js';
 import { getCommunityConfig } from '$lib/server/infrastructure/config.js';
 import { checkRateLimit, resetRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 import { env } from '$env/dynamic/private';
@@ -65,7 +65,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Handle and password are required.' });
 		}
 
-		const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+		const ip = getClientIp(request);
 		const ua = request.headers.get('user-agent') ?? undefined;
 
 		// Rate limit by IP address

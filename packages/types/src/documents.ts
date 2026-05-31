@@ -108,6 +108,14 @@ export interface MotionContent {
 	body_uuid?: string; // Association/body this motion belongs to
 	body_name?: string; // Human-readable name of the body (denormalized)
 
+	// Lifecycle tracking
+	status?: string; // Current motion status (tracked in some contexts)
+	motion_number?: string; // Formatted motion number like "M-2026-001"
+	introduced_at?: string; // ISO timestamp when motion was introduced
+	adopted_at?: string; // ISO timestamp when motion was adopted
+	enacted_at?: string; // ISO timestamp when motion was enacted
+	vote_closed_at?: string; // ISO timestamp when voting concluded
+
 	// Document references (informational - for linking motions to governing docs)
 	referenced_documents?: string[]; // Slugs of documents this motion references
 
@@ -120,10 +128,6 @@ export interface MotionContent {
 	vote_rule_name?: string;
 	deliberation_rule_uuid?: string;
 	deliberation_rule_name?: string;
-
-	// Notes
-	clerk_notes?: string;
-	parliamentarian_notes?: string;
 
 	// Signatures
 	signatures?: MotionSignature[];

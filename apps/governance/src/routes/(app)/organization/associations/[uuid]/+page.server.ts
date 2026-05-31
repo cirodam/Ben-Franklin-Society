@@ -34,12 +34,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Redirect to canonical routes for typed pages
 	const canonicalRoutes: Record<string, string> = {
-		general_assembly:      '/general-assembly',
-		social_insurance_fund: '/social-insurance',
-		community_bank:        '/community-bank',
-		service:               `/services/${params.uuid}`,
-		committee:             `/organization/committees/${params.uuid}`,
-		college:               `/colleges/${params.uuid}`,
+		general_assembly: '/general-assembly',
+		service: `/services/${params.uuid}`,
+		committee: `/organization/committees/${params.uuid}`,
+		college: `/colleges/${params.uuid}`,
 	};
 	if (canonicalRoutes[association.type]) {
 		redirect(302, canonicalRoutes[association.type]);

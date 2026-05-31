@@ -19,18 +19,4 @@ export const coreAssociations: CoreAssociationConfig[] = [
 		abbreviation: 'GA',
 		description: 'The primary legislative body, populated by sortition from all members',
 	},
-	{
-		handle: 'treasury',
-		name: 'Treasury',
-		type: 'association',
-		abbreviation: 'TRES',
-		description: 'Manages society-wide revenue collection and expenditure distribution',
-	},
-	{
-		handle: 'social-insurance',
-		name: 'Social Insurance Fund',
-		type: 'social_insurance_fund',
-		abbreviation: 'SIF',
-		description: 'Provides mutual aid and insurance to members during times of need',
-	},
 ];

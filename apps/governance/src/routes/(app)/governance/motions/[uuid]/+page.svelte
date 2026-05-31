@@ -442,23 +442,6 @@
 		color: #374340;
 	}
 
-	.meeting-notice {
-		padding: var(--space-4);
-		font-family: 'Libre Baskerville', Georgia, serif;
-		font-size: var(--text-sm);
-		background: rgba(250, 250, 247, 0.5);
-		border: 1px solid rgba(45, 90, 79, 0.2);
-	}
-
-	.meeting-notice--waiting {
-		background: #fff3e0;
-		border-color: #ffb74d;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
 	.adopted-notice {
 		padding: var(--space-4);
 		background: #f0f9f4;

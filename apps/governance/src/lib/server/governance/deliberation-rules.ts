@@ -3,8 +3,7 @@ import { db } from '../db.js';
 
 /**
  * Deliberation rules define recommended discussion periods before voting.
- * In the meeting-gated voting system, these serve as guidelines rather than
- * enforced waiting periods. Clerks can reference these when scheduling meetings.
+ * These serve as guidelines for minimum deliberation time before vote sessions.
  */
 export interface DeliberationRule {
 	uuid: string;

@@ -132,7 +132,7 @@ export const actions: Actions = {
 
 		// Queue bank account creation for all seeded associations
 		console.log('\n💰 Queueing bank account creation for system associations...');
-		const associationsNeedingAccounts = ['society', 'general-assembly', 'treasury', 'social-insurance'];
+		const associationsNeedingAccounts = ['society', 'general-assembly'];
 		for (const handle of associationsNeedingAccounts) {
 			const assoc = getAssociationByHandle(handle);
 			if (assoc) {
@@ -140,7 +140,7 @@ export const actions: Actions = {
 					const commandUuid = queueCreateAccountCommand({
 						owner_uuid: assoc.uuid,
 						name: assoc.name,
-						demurrage_exempt: handle === 'treasury' || handle === 'social-insurance' // Treasury and SIF exempt from demurrage
+						demurrage_exempt: false
 					});
 					console.log(`  ✓ Queued account creation for ${assoc.name}: ${commandUuid}`);
 				} catch (err) {
@@ -163,7 +163,7 @@ export const actions: Actions = {
 					const commandUuid = queueCreateAccountCommand({
 						owner_uuid: assoc.uuid,
 						name: assoc.name,
-						demurrage_exempt: false // Services subject to normal demurrage
+						demurrage_exempt: service.handle === 'treasury' // Treasury exempt from demurrage
 					});
 					console.log(`  ✓ Queued account creation for ${assoc.name}: ${commandUuid}`);
 				} catch (err) {

@@ -103,14 +103,5 @@ export function seedAdminRoles(founderUuid: string): void {
 		permissions: [],
 	}, founderUuid);
 
-	// Social Insurance Fund Administrator
-	createAdminRole({
-		associationHandle: 'social-insurance',
-		title: 'Administrator',
-		description: 'Manages Social Insurance Fund accounts and disbursements',
-		app: 'bank',
-		permissions: [],
-	}, founderUuid);
-
 	console.log('✅ Seeded admin roles');
 }

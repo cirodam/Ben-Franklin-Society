@@ -221,7 +221,6 @@ CREATE TABLE IF NOT EXISTS vote_session (
   uuid              TEXT PRIMARY KEY,
   motion_uuid       TEXT NOT NULL,
   opened_by         TEXT NOT NULL REFERENCES person(uuid),
-  meeting_uuid      TEXT NULL REFERENCES meeting(uuid),
   passing_threshold REAL NOT NULL,
   requires_quorum   INTEGER NOT NULL DEFAULT 0,
   quorum_threshold  REAL NULL,
@@ -245,53 +244,6 @@ CREATE TABLE IF NOT EXISTS vote_receipt (
   UNIQUE (vote_session_uuid, voter_uuid)
 );
 CREATE INDEX IF NOT EXISTS idx_vote_receipt_session ON vote_receipt(vote_session_uuid);
-
--- Meetings: Scheduled assembly gatherings where votes are taken
-CREATE TABLE IF NOT EXISTS meeting (
-  uuid            TEXT PRIMARY KEY,
-  body_uuid       TEXT NOT NULL REFERENCES association(uuid),
-  title           TEXT NOT NULL,
-  scheduled_at    TEXT NOT NULL,
-  location        TEXT NULL,
-  status          TEXT NOT NULL DEFAULT 'scheduled',
-  created_by_uuid TEXT NOT NULL REFERENCES person(uuid),
-  created_at      TEXT NOT NULL,
-  started_at      TEXT NULL,
-  completed_at    TEXT NULL,
-  cancelled_at    TEXT NULL,
-  notes           TEXT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_meeting_body ON meeting(body_uuid);
-CREATE INDEX IF NOT EXISTS idx_meeting_scheduled ON meeting(scheduled_at);
-CREATE INDEX IF NOT EXISTS idx_meeting_status ON meeting(status);
-
-CREATE TABLE IF NOT EXISTS meeting_agenda_item (
-  uuid          TEXT PRIMARY KEY,
-  meeting_uuid  TEXT NOT NULL REFERENCES meeting(uuid),
-  motion_uuid   TEXT NOT NULL,
-  display_order INTEGER NOT NULL,
-  notes         TEXT NULL,
-  added_at      TEXT NOT NULL,
-  removed_at    TEXT NULL,
-  UNIQUE (meeting_uuid, motion_uuid)
-);
-CREATE INDEX IF NOT EXISTS idx_agenda_item_meeting ON meeting_agenda_item(meeting_uuid);
-CREATE INDEX IF NOT EXISTS idx_agenda_item_motion ON meeting_agenda_item(motion_uuid);
-
-CREATE TABLE IF NOT EXISTS meeting_outcome (
-  uuid          TEXT PRIMARY KEY,
-  meeting_uuid  TEXT NOT NULL REFERENCES meeting(uuid),
-  motion_uuid   TEXT NOT NULL,
-  action_taken  TEXT NOT NULL,
-  vote_aye      INTEGER NULL,
-  vote_nay      INTEGER NULL,
-  vote_abstain  INTEGER NULL,
-  notes         TEXT NULL,
-  recorded_at   TEXT NOT NULL,
-  recorded_by_uuid TEXT NOT NULL REFERENCES person(uuid)
-);
-CREATE INDEX IF NOT EXISTS idx_meeting_outcome_meeting ON meeting_outcome(meeting_uuid);
-CREATE INDEX IF NOT EXISTS idx_meeting_outcome_motion ON meeting_outcome(motion_uuid);
 
 -- Petitions: Community members signal priorities/concerns to assembly
 CREATE TABLE IF NOT EXISTS petition (

@@ -30,8 +30,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-	// Verify access (user buckets use person_uuid)
-	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
+		// Verify access (user buckets use person_uuid)
+		if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
+			throw error(403, 'Not authorized to access this bucket');
+		}
+
+		// List root folders in this bucket
+		const folders = listRootFolders(bucket.id);
 
 		return json({ folders });
 	} catch (err: any) {

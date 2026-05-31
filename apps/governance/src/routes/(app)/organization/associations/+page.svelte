@@ -45,16 +45,11 @@
 
 	const typeVariant = (t: string) =>
 		t === 'general_assembly' ? 'accent'
-		: t === 'central_bank' ? 'accent'
-		: t === 'social_insurance_fund' ? 'accent'
-		: t === 'community_bank' ? 'accent'
 		: t === 'college' ? 'accent'
 		: 'neutral';
 
 	const systemRoute: Record<string, string> = {
-		general_assembly:    '/general-assembly',
-		social_insurance_fund: '/social-insurance',
-		community_bank:      '/community-bank',
+		general_assembly: '/general-assembly',
 	};
 
 	function hrefFor(a: { type: string; uuid: string }): string {
@@ -80,12 +75,10 @@
 			<Select bind:value={typeFilter}>
 				<option value="all">All Types</option>
 				<option value="general_assembly">General Assembly</option>
-				<option value="central_bank">Central Bank</option>
-				<option value="social_insurance_fund">Social Insurance Fund</option>
-				<option value="community_bank">Community Bank</option>
 				<option value="college">College</option>
 				<option value="service">Service</option>
 				<option value="committee">Committee</option>
+				<option value="association">Association</option>
 			</Select>
 
 			<Select bind:value={statusFilter}>

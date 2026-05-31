@@ -31,8 +31,6 @@ export {
 	setMotionStatus,
 	setMotionVoteRule,
 	setMotionDeliberationRule,
-	setMotionClerkNotes,
-	setMotionParliamentarianNotes,
 	enactMotion,
 	rejectMotion,
 	addMotionComment,

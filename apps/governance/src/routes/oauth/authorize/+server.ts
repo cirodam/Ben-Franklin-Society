@@ -2,12 +2,13 @@ import { redirect, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { getClient, validateRedirectUri } from '$lib/server/infrastructure/oidc/clients.js';
 import { createAuthCode } from '$lib/server/infrastructure/oidc/grants.js';
+import { getClientIp } from '$lib/server/infrastructure/auth.js';
 import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 import { logAuditEvent } from '$lib/server/infrastructure/audit.js';
 
 export const GET: RequestHandler = async ({ url, locals, request }) => {
 	// Rate limit by IP
-	const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+	const ip = getClientIp(request);
 	const rateLimitKey = `oidc_authorize:${ip}`;
 	const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMITS.OIDC_AUTHORIZE);
 	

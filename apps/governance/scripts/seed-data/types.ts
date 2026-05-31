@@ -10,7 +10,7 @@ export interface BaseAssociationConfig {
 }
 
 export interface CoreAssociationConfig extends BaseAssociationConfig {
-	type: 'society' | 'general_assembly' | 'association' | 'social_insurance_fund';
+	type: 'society' | 'general_assembly';
 }
 
 export interface ServiceConfig extends BaseAssociationConfig {

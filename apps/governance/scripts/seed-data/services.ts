@@ -6,6 +6,14 @@ import type { ServiceConfig } from './types.js';
  */
 export const services: ServiceConfig[] = [
 	{
+		handle: 'treasury',
+		name: 'Treasury Service',
+		type: 'service',
+		abbreviation: 'TRES',
+		governs_app: null,
+		description: 'Manages society-wide revenue collection, demurrage receipts, and expenditure distribution',
+	},
+	{
 		handle: 'community-bank',
 		name: 'Community Bank Association',
 		type: 'service',

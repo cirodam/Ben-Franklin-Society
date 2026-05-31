@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types.js';
 import { exchangeAuthCode, exchangeRefreshToken } from '$lib/server/infrastructure/oidc/grants.js';
 import { getClient, verifyClientSecret } from '$lib/server/infrastructure/oidc/clients.js';
 import { issueServiceToken } from '$lib/server/infrastructure/oidc/tokens.js';
+import { getClientIp } from '$lib/server/infrastructure/auth.js';
 import { checkRateLimit, RATE_LIMITS } from '$lib/server/infrastructure/rate-limiter.js';
 import { createLogger } from '@bfs/db';
 
@@ -10,7 +11,7 @@ const logger = createLogger('oauth/token');
 
 export const POST: RequestHandler = async ({ request }) => {
 	// Rate limit by IP
-	const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+	const ip = getClientIp(request);
 	const rateLimitKey = `oidc_token:${ip}`;
 	const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMITS.OIDC_TOKEN);
 	

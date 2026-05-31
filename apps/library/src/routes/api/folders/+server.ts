@@ -39,15 +39,23 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw error(404, 'Bucket not found');
 		}
 
-	// Verify ownership (user buckets use person_uuid)
-	if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
-		throw error(403, 'Not authorized to create folders in this bucket');
-	}
+		// Verify ownership (user buckets use person_uuid)
+		if (bucket.owner_type === 'user' && bucket.owner_id !== session.person_uuid) {
+			throw error(403, 'Not authorized to create folders in this bucket');
+		}
 
-	// Create folder
-	const folder = createFolder({
-		bucketId: bucket.id,
-		parentFolderId: parent_folder_id || undefined,
-		name,
-		createdBy: session.person_uuid,
+		// Create folder
+		const folder = createFolder({
+			bucketId: bucket.id,
+			parentFolderId: parent_folder_id || undefined,
+			name,
+			createdBy: session.person_uuid,
+		});
+
+		return json(folder);
+	} catch (err: any) {
+		console.error('[library/api/folders] Create error:', err);
+		if (err.status) throw err;
+		throw error(500, err.message || 'Failed to create folder');
+	}
 };

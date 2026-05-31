@@ -8,8 +8,6 @@ import {
 	setMotionStatus,
 	setMotionVoteRule,
 	setMotionDeliberationRule,
-	setMotionClerkNotes,
-	setMotionParliamentarianNotes,
 	getMotionComments,
 	addMotionComment,
 	editMotionComment,
@@ -319,48 +317,6 @@ export const actions: Actions = {
 				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" assigned to motion "${motion.title}"`);
 			audit(actingAs, 'motion.set_deliberation_rule', 'motion', motion.uuid,
 				`Deliberation rule "${rule?.name ?? deliberation_rule_uuid}" set on motion "${motion.title}"`);
-		}
-
-		return { success: true };
-	},
-
-	setClerkNotes: async ({ params, locals, request }) => {
-		if (!locals.session) error(401, 'Not authenticated');
-		const actingAs = locals.session.acting_as_uuid;
-
-		// Try UUID first, then slug
-		let motion = getMotionByUuid(params.uuid);
-		if (!motion) motion = getMotionBySlug(params.uuid);
-		if (!motion) error(404, 'Motion not found');
-
-		const data = await request.formData();
-		const clerk_notes = String(data.get('clerk_notes') ?? '').trim() || null;
-
-		try {
-			setMotionClerkNotes(motion.slug, clerk_notes);
-		} catch (err) {
-			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set clerk notes' });
-		}
-
-		return { success: true };
-	},
-
-	setParliamentarianNotes: async ({ params, locals, request }) => {
-		if (!locals.session) error(401, 'Not authenticated');
-		const actingAs = locals.session.acting_as_uuid;
-
-		// Try UUID first, then slug
-		let motion = getMotionByUuid(params.uuid);
-		if (!motion) motion = getMotionBySlug(params.uuid);
-		if (!motion) error(404, 'Motion not found');
-
-		const data = await request.formData();
-		const parliamentarian_notes = String(data.get('parliamentarian_notes') ?? '').trim() || null;
-
-		try {
-			setMotionParliamentarianNotes(motion.slug, parliamentarian_notes);
-		} catch (err) {
-			return fail(400, { error: err instanceof Error ? err.message : 'Failed to set parliamentarian notes' });
 		}
 
 		return { success: true };

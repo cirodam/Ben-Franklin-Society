@@ -17,8 +17,6 @@
 	// Local editable state
 	let title = $state(motion.title);
 	let provisions = $state<Provision[]>(structuredClone($state.snapshot(motion.content.provisions)));
-	let clerkNotes = $state(motion.content.clerk_notes || '');
-	let parliamentarianNotes = $state(motion.content.parliamentarian_notes || '');
 
 	// Edit mode functions
 	function handleTitleChange(e: Event) {
@@ -49,25 +47,13 @@
 		emitChange();
 	}
 
-	function handleClerkNotesChange(e: Event) {
-		clerkNotes = (e.target as HTMLTextAreaElement).value;
-		emitChange();
-	}
-
-	function handleParliamentarianNotesChange(e: Event) {
-		parliamentarianNotes = (e.target as HTMLTextAreaElement).value;
-		emitChange();
-	}
-
 	function emitChange() {
 		if (onChange) {
 			onChange({
 				title,
 				content: {
 					...motion.content,
-					provisions,
-					clerk_notes: clerkNotes || undefined,
-					parliamentarian_notes: parliamentarianNotes || undefined
+					provisions
 				}
 			});
 		}
@@ -204,50 +190,6 @@
 				</div>
 			</div>
 		{/if}
-
-		<div class="official-notes-section">
-			<div class="form-box clerk-box">
-				<div class="form-box-header">
-					<span class="form-box-label">Clerk's Notes</span>
-				</div>
-				<div class="form-box-content">
-					{#if isEditMode}
-						<textarea
-							value={clerkNotes}
-							oninput={handleClerkNotesChange}
-							class="form-textarea"
-							placeholder="Administrative notes, filing information, cross-references..."
-							rows="4"
-						></textarea>
-					{:else if motion.content.clerk_notes}
-						<div class="form-box-text">{motion.content.clerk_notes}</div>
-					{:else}
-						<div class="form-box-empty">No notes recorded.</div>
-					{/if}
-				</div>
-			</div>
-
-			<div class="form-box parliamentarian-box">
-				<div class="form-box-header">
-					<span class="form-box-label">Parliamentarian's Notes</span>
-				</div>
-				<div class="form-box-content">
-					{#if isEditMode}
-						<textarea
-							value={parliamentarianNotes}
-							oninput={handleParliamentarianNotesChange}
-							class="form-textarea"
-							placeholder="Procedural notes, rules applied, precedents..."
-							rows="4"
-						></textarea>
-					{:else if motion.content.parliamentarian_notes}
-						<div class="form-box-text">{motion.content.parliamentarian_notes}</div>
-					{:else}
-						<div class="form-box-empty">No notes recorded.</div>
-					{/if}
-				</div>
-			</div>
-		</div>
 	</div>
 </Document>
 

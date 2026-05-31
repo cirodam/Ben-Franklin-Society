@@ -5,7 +5,6 @@
  *   DATABASE_PATH=./bank.sqlite \
  *   CENTRAL_BANK_UUID=... \
  *   TREASURY_UUID=... \
- *   SIF_UUID=... \
  *   CLEARINGHOUSE_UUID=... \
  *   tsx scripts/seed.ts
  *
@@ -80,12 +79,11 @@ console.log('Seeding Community Bank special accounts…');
 // Get UUIDs from environment variables (copied from governance associations)
 const centralBankUuid = process.env.CENTRAL_BANK_UUID;
 const treasuryUuid = process.env.TREASURY_UUID;
-const sifUuid = process.env.SIF_UUID;
 const clearinghouseUuid = process.env.CLEARINGHOUSE_UUID;
 
-if (!centralBankUuid || !treasuryUuid || !sifUuid || !clearinghouseUuid) {
+if (!centralBankUuid || !treasuryUuid || !clearinghouseUuid) {
 	console.error('Error: Missing required environment variables:');
-	console.error('  CENTRAL_BANK_UUID, TREASURY_UUID, SIF_UUID, CLEARINGHOUSE_UUID');
+	console.error('  CENTRAL_BANK_UUID, TREASURY_UUID, CLEARINGHOUSE_UUID');
 	console.error('  These should be copied from governance app associations.');
 	process.exit(1);
 }
@@ -97,9 +95,6 @@ ensureAccountOwnerPermissions(centralBankUuid, true);
 // Treasury — receives issuance and demurrage; source of Assembly appropriations.
 ensureAccount(treasuryUuid, 'Treasury', 'treasury', 'official');
 ensureAccountOwnerPermissions(treasuryUuid, true);
-
-// Social Insurance Fund — disburses monthly allowances.
-ensureAccount(sifUuid, 'Social Insurance Fund', 'social-insurance', 'official');
 
 // Clearinghouse — the society's inter-society net position account.
 ensureAccount(clearinghouseUuid, 'Clearinghouse', 'society', 'official');

@@ -56,7 +56,6 @@
 		<div class="title-row">
 			<h1>{association.name}</h1>
 			<div class="button-group">
-				<Button variant="secondary" size="sm" href="/organization/committees/{association.uuid}/meetings">Meetings</Button>
 				<Button variant="secondary" size="sm" href="/organization/committees/{association.uuid}/edit">Edit</Button>
 			</div>
 		</div>

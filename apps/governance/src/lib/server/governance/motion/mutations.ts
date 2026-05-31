@@ -147,9 +147,14 @@ export function advanceMotion(slugOrUuid: string, to: MotionStatus): MotionDocum
 	if (!motion) motion = getMotionByUuid(slugOrUuid);
 	if (!motion) throw new Error(`Motion not found: ${slugOrUuid}`);
 
-	const allowed = ALLOWED_TRANSITIONS[motion.content.status] ?? [];
+	const currentStatus = motion.content.status;
+	if (!currentStatus) {
+		throw new Error('Motion has no status set');
+	}
+	
+	const allowed = ALLOWED_TRANSITIONS[currentStatus] ?? [];
 	if (!allowed.includes(to)) {
-		throw new Error(`Cannot transition motion from '${motion.content.status}' to '${to}'`);
+		throw new Error(`Cannot transition motion from '${currentStatus}' to '${to}'`);
 	}
 
 	const resolvedAt = (to === 'withdrawn') ? now() : null;
@@ -282,46 +287,6 @@ export function setMotionDeliberationRule(motionSlugOrUuid: string, deliberation
 	}
 	
 	return library.updateMotion(motion.slug, bodySlug, location.status, { deliberation_rule_uuid: deliberationRuleUuid ?? undefined });
-}
-
-/**
- * Set clerk notes for a motion
- */
-export function setMotionClerkNotes(motionSlugOrUuid: string, clerkNotes: string | null): MotionDocument {
-	let motion = getMotionBySlug(motionSlugOrUuid);
-	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
-	
-	if (!motion.content.body_uuid) {
-		throw new Error('Motion has no body_uuid');
-	}
-	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
-	const location = findMotionLocation(motion.slug);
-	if (!location) {
-		throw new Error(`Motion file not found: ${motion.slug}`);
-	}
-	
-	return library.updateMotion(motion.slug, bodySlug, location.status, { clerk_notes: clerkNotes ?? undefined });
-}
-
-/**
- * Set parliamentarian notes for a motion
- */
-export function setMotionParliamentarianNotes(motionSlugOrUuid: string, parliamentarianNotes: string | null): MotionDocument {
-	let motion = getMotionBySlug(motionSlugOrUuid);
-	if (!motion) motion = getMotionByUuid(motionSlugOrUuid);
-	if (!motion) throw new Error(`Motion not found: ${motionSlugOrUuid}`);
-	
-	if (!motion.content.body_uuid) {
-		throw new Error('Motion has no body_uuid');
-	}
-	const bodySlug = getBodySlugFromUuid(motion.content.body_uuid);
-	const location = findMotionLocation(motion.slug);
-	if (!location) {
-		throw new Error(`Motion file not found: ${motion.slug}`);
-	}
-	
-	return library.updateMotion(motion.slug, bodySlug, location.status, { parliamentarian_notes: parliamentarianNotes ?? undefined });
 }
 
 /**

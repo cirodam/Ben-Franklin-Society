@@ -27,33 +27,39 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw error(400, 'No bucket_key provided');
 		}
 
-	// Parse bucket key to get owner type and ID (split on first dash only, since owner_id may contain dashes)
-	const dashIndex = bucketKey.indexOf('-');
-	const ownerType = bucketKey.substring(0, dashIndex);
-	const ownerId = bucketKey.substring(dashIndex + 1);
+		// Parse bucket key to get owner type and ID (split on first dash only, since owner_id may contain dashes)
+		const dashIndex = bucketKey.indexOf('-');
+		const ownerType = bucketKey.substring(0, dashIndex);
+		const ownerId = bucketKey.substring(dashIndex + 1);
 		// Get bucket
 		const bucket = getBucket(ownerType as 'user' | 'association', ownerId);
 		if (!bucket) {
 			throw error(404, 'Bucket not found');
 		}
 
-	// Verify ownership (user buckets use person_uuid)
-	if (ownerType === 'user' && ownerId !== session.person_uuid) {
-		throw error(403, 'Not authorized to upload to this bucket');
-	}
+		// Verify ownership (user buckets use person_uuid)
+		if (ownerType === 'user' && ownerId !== session.person_uuid) {
+			throw error(403, 'Not authorized to upload to this bucket');
+		}
 
-	// Read file content
-	const arrayBuffer = await file.arrayBuffer();
-	const content = Buffer.from(arrayBuffer);
+		// Read file content
+		const arrayBuffer = await file.arrayBuffer();
+		const content = Buffer.from(arrayBuffer);
 
-	// Upload file
-	const fileMetadata = await uploadFile({
-		bucketId: bucket.id,
-		folderId: folderId ? parseInt(folderId, 10) : undefined,
-		filename: file.name,
-		content,
-		mimeType: file.type || undefined,
-		uploadedBy: session.person_uuid,
+		// Upload file
+		const fileMetadata = await uploadFile({
+			bucketId: bucket.id,
+			folderId: folderId ? parseInt(folderId, 10) : undefined,
+			filename: file.name,
+			content,
+			mimeType: file.type || undefined,
+			uploadedBy: session.person_uuid,
+		});
+
+		return json(fileMetadata);
+	} catch (err: any) {
+		console.error('[library/api/files] Upload error:', err);
+		if (err.status) throw err;
 		throw error(500, err.message || 'Failed to upload file');
 	}
 };
