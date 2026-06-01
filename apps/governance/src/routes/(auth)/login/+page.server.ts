@@ -50,7 +50,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		redirect(302, redirectUrl);
 	}
 	
-	const societyName = getCommunityConfig('society_name') ?? 'BFS Governance';
+	const societyName = getCommunityConfig('society_name') ?? 'The Working Society';
 	
 	return { societyName };
 };

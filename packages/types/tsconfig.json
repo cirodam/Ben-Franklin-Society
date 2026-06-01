@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,
-    "declarationDir": "dist"
+    "declarationDir": "dist",
+    "moduleResolution": "node",
+    "emitDeclarationOnly": false
   },
   "include": ["src"]
 }

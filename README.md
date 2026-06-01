@@ -1,4 +1,4 @@
-# Ben Franklin Society
+# The Working Society
 
 The Work Shall Not Be Lost
 
@@ -6,7 +6,7 @@ Software for deliberative democratic governance and community services.
 
 ## What is This?
 
-The Ben Franklin Society is a platform for communities to govern themselves through structured deliberation and sortition (random selection). It draws inspiration from the great mutual aid societies of the early 20th century—the Odd Fellows, the Grange, fraternal lodges, and neighborhood cooperatives that helped millions of Americans weather the Great Depression through collective action and democratic self-governance. This project aims to breathe new life into that tradition, adapting these time-tested principles to meet the challenges we face today: economic precarity, social atomization, and the erosion of genuine democratic participation.
+The Working Society is a platform for communities to govern themselves through structured deliberation and sortition (random selection). It draws inspiration from the great mutual aid societies of the early 20th century—the Odd Fellows, the Grange, fraternal lodges, and neighborhood cooperatives that helped millions of Americans weather the Great Depression through collective action and democratic self-governance. This project aims to breathe new life into that tradition, adapting these time-tested principles to meet the challenges we face today: economic precarity, social atomization, and the erosion of genuine democratic participation.
 
 The system provides:
 

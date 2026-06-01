@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PLATFORM_NAME } from '@bfs/types';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -18,7 +19,7 @@
 	<div class="document-header">
 		<div class="document-title-block">
 			<div class="document-letterhead">
-				<div class="letterhead-body">The Ben Franklin Society</div>
+				<div class="letterhead-body">{PLATFORM_NAME}</div>
 				<div class="letterhead-doc-number">
 					{documentId || '#--------'}
 				</div>

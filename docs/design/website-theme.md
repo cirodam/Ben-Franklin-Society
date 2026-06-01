@@ -4,7 +4,7 @@ This document outlines the design system for the public-facing BFS Website, crea
 
 ## Design Philosophy
 
-The website aesthetic embodies the Ben Franklin Society's values and mission:
+The website aesthetic embodies the platform's values and mission:
 - **Dignified simplicity** - Clean, classical design conveys credibility and permanence
 - **Accessible information** - Clear hierarchy and readable typography welcome all visitors
 - **Institutional authority** - Traditional serif fonts signal seriousness and scholarship
@@ -43,13 +43,13 @@ body: 1rem (16px)  /* Standard body text */
 
 ```html
 <!-- Hero heading -->
-<h1>Welcome to the Ben Franklin Society</h1>
+<h1>Welcome to The Working Society</h1>
 
 <!-- Section heading -->
 <h2>Our Mission</h2>
 
 <!-- Body content -->
-<p>The Ben Franklin Society is dedicated to fostering civic virtue...</p>
+<p>The Working Society is dedicated to fostering civic virtue...</p>
 
 <!-- Technical detail -->
 <code>https://bfs.example.org</code>

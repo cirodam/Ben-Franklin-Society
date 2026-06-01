@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { PLATFORM_NAME } from '@bfs/types';
 
 	let { children } = $props();
 </script>
@@ -20,7 +21,7 @@
 
 <footer>
 	<div class="container">
-		<p>&copy; {new Date().getFullYear()} Ben Franklin Society</p>
+		<p>&copy; {new Date().getFullYear()} {PLATFORM_NAME}</p>
 	</div>
 </footer>
 

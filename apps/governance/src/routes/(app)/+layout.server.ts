@@ -12,7 +12,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	const availableContexts = getAvailableContexts(locals.person.uuid);
 	
 	// Get society location for sidebar
-	const societyLocation = getCommunityConfig('society_location') ?? 'BFS';
+	const societyLocation = getCommunityConfig('society_location') ?? 'The Working Society';
 	
 	return {
 		person: locals.person,

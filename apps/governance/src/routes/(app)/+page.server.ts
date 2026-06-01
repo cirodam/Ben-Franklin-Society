@@ -1,10 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
-import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getSocietyPosts } from '$lib/server/communications/bulletin/queries.js';
+import { createPost } from '$lib/server/communications/bulletin/mutations.js';
 import { getCommunityConfig } from '$lib/server/infrastructure/config.js';
 
 export const load: PageServerLoad = async () => {
-	const posts = bulletin.getSocietyPosts();
+	const posts = getSocietyPosts();
 	const serviceUrls = {
 		bank: getCommunityConfig('bank_url') || '',
 		mail: getCommunityConfig('mail_url') || '',
@@ -32,7 +33,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const uuid = bulletin.createPost({
+			const uuid = createPost({
 				author_uuid: session.person_uuid,
 				association_uuid: null, // Society-wide post
 				title: title,

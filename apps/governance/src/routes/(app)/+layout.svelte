@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider, SidebarGroup } from '@bfs/ui';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import ContextSwitcher from '$lib/components/ContextSwitcher.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
@@ -13,7 +14,7 @@
 	{#snippet sidebar()}
 		<Sidebar>
 			{#snippet brand()}
-				Benjamin Franklin Society
+				{PLATFORM_NAME}
 			{/snippet}
 
 			{#snippet nav()}

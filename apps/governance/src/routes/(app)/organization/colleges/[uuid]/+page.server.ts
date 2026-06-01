@@ -7,7 +7,8 @@ import {
 } from '$lib/server/organization/associations.js';
 import { db } from '$lib/server/db.js';
 import { getDocumentBySlug } from '$lib/server/documents/society-docs.js';
-import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getAssociationPosts } from '$lib/server/communications/bulletin/queries.js';
+import { createPost } from '$lib/server/communications/bulletin/mutations.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const association = getAssociationByUuid(params.uuid);
@@ -36,7 +37,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Load bulletin posts
 	const actingAs = locals.session?.person_uuid ?? null;
-	const bulletinPosts = actingAs ? bulletin.getAssociationPosts(association.uuid, actingAs) : [];
+	const bulletinPosts = actingAs ? getAssociationPosts(association.uuid, actingAs) : [];
 
 	return { association, members: memberDetails, roles, motions, governingDocument, bulletinPosts };
 };
@@ -61,7 +62,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			bulletin.createPost({
+			createPost({
 				author_uuid: session.person_uuid,
 				association_uuid: params.uuid,
 				title: title,

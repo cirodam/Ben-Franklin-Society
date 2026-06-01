@@ -23,7 +23,8 @@ import {
 	getVacantRoles,
 	calculateBudget,
 } from '$lib/server/organization/associations.js';
-import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getAssociationPosts } from '$lib/server/communications/bulletin/queries.js';
+import { createPost } from '$lib/server/communications/bulletin/mutations.js';
 import { hasPermission, PERMISSIONS } from '$lib/server/infrastructure/permissions.js';
 import { addEntry } from '$lib/server/communications/record.js';
 import { audit } from '$lib/server/documents/audit.js';
@@ -140,7 +141,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Load bulletin posts
 	const actorUuid = locals.session?.person_uuid ?? null;
-	const bulletinPosts = actorUuid ? bulletin.getAssociationPosts(association.uuid, actorUuid) : [];
+	const bulletinPosts = actorUuid ? getAssociationPosts(association.uuid, actorUuid) : [];
 
 	return { 
 		association, 
@@ -564,7 +565,7 @@ assignRoleToMember(role_uuid, person_uuid);
 		}
 
 		try {
-			bulletin.createPost({
+			createPost({
 				author_uuid: session.person_uuid,
 				association_uuid: params.uuid,
 				title: title,

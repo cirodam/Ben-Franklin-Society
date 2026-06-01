@@ -1,23 +1,25 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
-import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getPost, getComments } from '$lib/server/communications/bulletin/queries.js';
+import { canViewPost } from '$lib/server/communications/bulletin/permissions.js';
+import { createComment, deletePost, deleteComment } from '$lib/server/communications/bulletin/mutations.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const session = locals.session;
 	if (!session) throw error(401, 'Not authenticated');
 
-	const post = bulletin.getPost(params.uuid);
+	const post = getPost(params.uuid);
 
 	if (!post) {
 		throw error(404, 'Notice not found');
 	}
 
 	// Check if user can view this post
-	if (!bulletin.canViewPost(post, session.person_uuid)) {
+	if (!canViewPost(post, session.person_uuid)) {
 		throw error(403, 'Not authorized to view this post');
 	}
 
-	const comments = bulletin.getComments(params.uuid);
+	const comments = getComments(params.uuid);
 
 	return { post, comments };
 };
@@ -35,7 +37,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			bulletin.createComment({
+			createComment({
 				post_uuid: params.uuid,
 				author_uuid: session.person_uuid,
 				body: body
@@ -52,7 +54,7 @@ export const actions: Actions = {
 		if (!session) return fail(401, { error: 'Not authenticated' });
 
 		try {
-			bulletin.deletePost(params.uuid, session.person_uuid);
+			deletePost(params.uuid, session.person_uuid);
 			redirect(303, '/');
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Not authorized' });
@@ -71,7 +73,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			bulletin.deleteComment(commentUuid, session.person_uuid);
+			deleteComment(commentUuid, session.person_uuid);
 			return { success: true };
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Not authorized' });

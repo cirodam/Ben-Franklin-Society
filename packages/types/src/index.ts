@@ -1,4 +1,4 @@
-// Shared TypeScript types for the Ben Franklin Society platform.
+// Shared TypeScript types for the platform.
 // All cross-app contracts are defined here and imported by the apps that need them.
 
 // export * from './handles.js';
@@ -8,3 +8,4 @@
 // export * from './contracts.js';
 // export * from './events.js';
 export * from './documents.js';
+export * from './constants.js';

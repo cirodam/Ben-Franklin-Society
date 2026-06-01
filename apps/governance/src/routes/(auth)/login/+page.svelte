@@ -9,7 +9,7 @@
 <div class="login-wrap">
 	<div class="login-card">
 		<div class="login-header">
-			<h1 class="login-title">Benjamin Franklin Society</h1>
+			<h1 class="login-title">{data.societyName}</h1>
 			<p class="login-subtitle">Member Portal</p>
 		</div>
 		{#if form?.error}

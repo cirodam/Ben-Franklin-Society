@@ -1,5 +1,9 @@
+<script lang="ts">
+	import { PLATFORM_NAME } from '@bfs/types';
+</script>
+
 <svelte:head>
-	<title>What is a Ben Franklin Society?</title>
+	<title>What is {PLATFORM_NAME}?</title>
 	<meta
 		name="description"
 		content="A platform for communities to govern themselves through structured deliberation and sortition."
@@ -7,10 +11,10 @@
 </svelte:head>
 
 <article>
-	<h1>What is a Ben Franklin Society?</h1>
+	<h1>What is {PLATFORM_NAME}?</h1>
 
 	<p>
-		A Ben Franklin Society is a voluntary association where people organize to meet each other's
+		{PLATFORM_NAME} is a voluntary association where people organize to meet each other's
 		essential needs (food, housing, healthcare) while making collective decisions democratically.
 		These aren't separate goals. They're inseparable. Democracy doesn't work when people are
 		struggling to survive, and taking care of each other doesn't scale without democratic coordination.

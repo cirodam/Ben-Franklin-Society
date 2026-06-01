@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '@bfs/ui/src/theme.css';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import { page } from '$app/stores';
 	
 	let { children } = $props();
@@ -24,7 +25,7 @@
 	</main>
 
 	<footer class="footer">
-		<p>Federation Registry - Ben Franklin Society Network</p>
+		<p>Federation Registry - {PLATFORM_NAME} Network</p>
 	</footer>
 </div>
 

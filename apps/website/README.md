@@ -1,6 +1,6 @@
 # BFS Website
 
-Simple informational website for benfranklinsociety.org introducing people to the Ben Franklin Society concept.
+Simple informational website for benfranklinsociety.org introducing people to the concept.
 
 ## Pages
 

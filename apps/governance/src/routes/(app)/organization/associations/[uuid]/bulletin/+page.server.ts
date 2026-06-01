@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
-import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getAssociationPosts } from '$lib/server/communications/bulletin/queries.js';
+import { createPost } from '$lib/server/communications/bulletin/mutations.js';
 import { getAssociationByUuid } from '$lib/server/organization/associations.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -10,7 +11,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const association = getAssociationByUuid(params.uuid);
 	if (!association) throw error(404, 'Association not found');
 
-	const posts = bulletin.getAssociationPosts(params.uuid, session.person_uuid);
+	const posts = getAssociationPosts(params.uuid, session.person_uuid);
 
 	return { association, posts };
 };
@@ -44,7 +45,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const uuid = bulletin.createPost({
+			const uuid = createPost({
 				author_uuid: session.person_uuid,
 				association_uuid: params.uuid,
 				title: title,

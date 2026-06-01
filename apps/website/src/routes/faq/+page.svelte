@@ -1,8 +1,12 @@
+<script lang="ts">
+	import { PLATFORM_NAME } from '@bfs/types';
+</script>
+
 <svelte:head>
-	<title>FAQ - Ben Franklin Society</title>
+	<title>FAQ - {PLATFORM_NAME}</title>
 	<meta
 		name="description"
-		content="Frequently asked questions about the Ben Franklin Society governance platform."
+		content="Frequently asked questions about the governance platform."
 	/>
 </svelte:head>
 
@@ -41,22 +45,9 @@
 			help.
 		</p>
 		<p>
-			A Ben Franklin Society directly fights this isolation. It rebuilds the social infrastructure
+			{PLATFORM_NAME} directly fights this isolation. It rebuilds the social infrastructure
 			that used to exist, not through nostalgia, but because it's practically necessary. You can't
 			be resilient as an isolated individual.
-		</p>
-	</details>
-
-	<details class="question">
-		<summary>Why "Ben Franklin Society"?</summary>
-		<p>
-			Benjamin Franklin didn't wait for permission to build institutions. When Philadelphia needed
-			a fire company, he organized one. When the city needed a hospital, he founded one. He saw
-			problems and built solutions through voluntary association and collective action.
-		</p>
-		<p>
-			That's the model. You don't wait for existing institutions to fix things. You organize with
-			the people around you and build what you need.
 		</p>
 	</details>
 
@@ -161,7 +152,7 @@
 			manages authentication.
 		</p>
 		<p>
-			But the institutions we're building should live in the real world. A Ben Franklin Society is
+			But the institutions we're building should live in the real world. {PLATFORM_NAME} is
 			people who know each other, meet together, and make collective decisions about how to live.
 			The software is an organizing tool, not a replacement for real community.
 		</p>
@@ -192,7 +183,7 @@
 	<details class="question">
 		<summary>Is this local or national?</summary>
 		<p>
-			Local. Each Ben Franklin Society is an independent, self-governing community. There's no
+			Local. Each society is an independent, self-governing community. There's no
 			national organization. No headquarters. No one telling local communities what to do.
 		</p>
 		<p>
@@ -228,7 +219,7 @@
 	<details class="question">
 		<summary>Do I have to live near other members?</summary>
 		<p>
-			Eventually, yes. A Ben Franklin Society works best when people actually know each other,
+			Eventually, yes. {PLATFORM_NAME} works best when people actually know each other,
 			meet face-to-face, and share local context. That's how trust and reciprocity develop. You can't
 			build real community entirely online.
 		</p>
@@ -279,7 +270,7 @@
 	<details class="question">
 		<summary>Is this a political party?</summary>
 		<p>
-			No. This isn't about winning elections or gaining state power. A Ben Franklin Society is
+			No. This isn't about winning elections or gaining state power. {PLATFORM_NAME} is
 			about local self-governance and taking care of each other. It's people organizing to meet their own needs and make
 			their own decisions within their communities.
 		</p>
@@ -305,7 +296,7 @@
 		</p>
 		<p>
 			Think of it like any private organization. A credit union doesn't replace banks, a food co-op
-			doesn't replace grocery stores, and a Ben Franklin Society doesn't replace government. We're just
+			doesn't replace grocery stores, and {PLATFORM_NAME} doesn't replace government. We're just
 			people exercising our right to organize and take care of each other—nothing more, nothing less.
 		</p>
 	</details>

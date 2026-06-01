@@ -2,6 +2,7 @@
 	import '@bfs/ui/src/theme.css';
 	import '../marketplace-theme.css';
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider } from '@bfs/ui';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import ContextSwitcher from '$lib/components/ContextSwitcher.svelte';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
@@ -20,7 +21,7 @@
 					<span class="brand-icon">🧺</span>
 					<div class="brand-text">
 						<div class="brand-primary">Market</div>
-						<div class="brand-secondary">Ben Franklin Society</div>
+					<div class="brand-secondary">{PLATFORM_NAME}</div>
 					</div>
 				</div>
 			{/snippet}

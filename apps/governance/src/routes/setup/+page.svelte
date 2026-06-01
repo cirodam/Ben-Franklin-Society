@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Alert, Button, FieldRow, Input } from '@bfs/ui';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import type { ActionData } from './$types.js';
 
 	let { form }: { form: ActionData } = $props();
@@ -9,7 +10,7 @@
 <div class="setup-wrap">
 	<div class="setup-card">
 		<div class="setup-header">
-			<h1 class="setup-title t-prose">Benjamin Franklin Society Setup</h1>
+			<h1 class="setup-title t-prose">{PLATFORM_NAME} Setup</h1>
 			<p class="setup-subtitle t-prose-italic">Create the first administrator account to begin</p>
 		</div>
 
@@ -23,7 +24,7 @@
 				type="text"
 				label="Society Name"
 				hint="The full name of your local society"
-				placeholder="e.g. Ben Franklin Society of Athens, GA"
+				placeholder="e.g. {PLATFORM_NAME} of Athens, GA"
 				required
 			/>
 

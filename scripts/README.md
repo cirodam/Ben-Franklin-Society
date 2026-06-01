@@ -1,6 +1,6 @@
 # BFS Scripts
 
-Development and deployment scripts for the Ben Franklin Society platform.
+Development and deployment scripts for the platform.
 
 ## Two Workflows
 

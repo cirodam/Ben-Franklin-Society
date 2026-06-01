@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import type { LayoutData } from './$types';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
@@ -38,7 +39,7 @@
 <footer>
 	<div class="container">
 		<p style="text-align: center; color: var(--color-secondary);">
-			Ben Franklin Society Education System
+			{PLATFORM_NAME} Education System
 		</p>
 	</div>
 </footer>

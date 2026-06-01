@@ -1,8 +1,12 @@
+<script lang="ts">
+	import { PLATFORM_NAME } from '@bfs/types';
+</script>
+
 <svelte:head>
-	<title>Resources - Ben Franklin Society</title>
+	<title>Resources - {PLATFORM_NAME}</title>
 	<meta
 		name="description"
-		content="Developer resources and documentation for the Ben Franklin Society platform."
+		content="Developer resources and documentation for the platform."
 	/>
 </svelte:head>
 
@@ -10,7 +14,7 @@
 	<h1>Resources</h1>
 
 	<p>
-		A Ben Franklin Society is people organizing to take care of each other and make collective
+		{PLATFORM_NAME} is people organizing to take care of each other and make collective
 		decisions. The software helps coordinate membership, record decisions, manage authentication,
 		and track deliberations—but the real work happens between people in the real world.
 	</p>

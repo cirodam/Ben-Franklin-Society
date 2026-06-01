@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { Input, Textarea, Button } from '@bfs/ui';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import type { Article, Section } from '@bfs/types';
 
 	let title = $state('');
@@ -79,7 +80,7 @@
 				name="title"
 				label="Title"
 				bind:value={title}
-				placeholder="e.g., Constitution of the Ben Franklin Society"
+				placeholder="e.g., Constitution of {PLATFORM_NAME}"
 				required
 			/>
 

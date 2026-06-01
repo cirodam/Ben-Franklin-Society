@@ -1,5 +1,9 @@
+<script lang="ts">
+	import { PLATFORM_NAME } from '@bfs/types';
+</script>
+
 <svelte:head>
-	<title>Education - Ben Franklin Society</title>
+	<title>Education - {PLATFORM_NAME}</title>
 </svelte:head>
 
 <h1>Education Dashboard</h1>

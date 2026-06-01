@@ -19,7 +19,7 @@
 			{#snippet brand()}
 				<div class="brand-text">
 					<div class="brand-primary">Community Bank</div>
-					<div class="brand-secondary">Ben Franklin Society</div>
+					<div class="brand-secondary">{PLATFORM_NAME}</div>
 				</div>
 			{/snippet}
 

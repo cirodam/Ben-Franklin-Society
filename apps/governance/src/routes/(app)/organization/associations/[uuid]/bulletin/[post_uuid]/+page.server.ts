@@ -1,6 +1,8 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types.js';
-import * as bulletin from '$lib/server/communications/bulletin.js';
+import { getPost, getComments } from '$lib/server/communications/bulletin/queries.js';
+import { canViewPost, canEditPost, canDeletePost, canPinPost } from '$lib/server/communications/bulletin/permissions.js';
+import { createComment, deletePost as deleteBulletinPost, deleteComment, updatePost, pinPost, unpinPost } from '$lib/server/communications/bulletin/mutations.js';
 import { getAssociationByUuid } from '$lib/server/organization/associations.js';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -10,7 +12,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const association = getAssociationByUuid(params.uuid);
 	if (!association) throw error(404, 'Association not found');
 
-	const post = bulletin.getPost(params.post_uuid);
+	const post = getPost(params.post_uuid);
 	if (!post) throw error(404, 'Post not found');
 
 	// Verify this post belongs to this association
@@ -19,16 +21,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	// Check if user can view this post
-	if (!bulletin.canViewPost(post, params.uuid, session.person_uuid)) {
+	if (!canViewPost(post, session.person_uuid)) {
 		throw error(403, 'You do not have permission to view this post');
 	}
 
-	const comments = bulletin.getComments(params.post_uuid);
-	const canEdit = bulletin.canEditPost(post.uuid, session.person_uuid);
-	const canDelete = bulletin.canDeletePost(post.uuid, session.person_uuid, params.uuid);
-	const canPin = bulletin.canPinPost(params.uuid, session.person_uuid);
+	const comments = getComments(params.post_uuid);
+	const canEdit = canEditPost(post, session.person_uuid);
+	const canDelete = canDeletePost(post, session.person_uuid);
+	const canPinAction = canPinPost(params.uuid, session.person_uuid);
 
-	return { association, post, comments, canEdit, canDelete, canPin };
+	return { association, post, comments, canEdit, canDelete, canPin: canPinAction };
 };
 
 export const actions: Actions = {
@@ -44,7 +46,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			bulletin.createComment({
+			createComment({
 				post_uuid: params.post_uuid,
 				author_uuid: session.person_uuid,
 				body: body
@@ -60,7 +62,7 @@ export const actions: Actions = {
 		if (!session) return fail(401, { error: 'Not authenticated' });
 
 		try {
-			bulletin.deletePost(params.post_uuid, session.person_uuid, params.uuid);
+			deleteBulletinPost(params.post_uuid, session.person_uuid);
 			return { deleted: true };
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Failed to delete post' });
@@ -79,7 +81,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			bulletin.deleteComment(commentUuid, session.person_uuid, params.uuid);
+			deleteComment(commentUuid, session.person_uuid);
 			return { success: true };
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Failed to delete comment' });
@@ -91,7 +93,7 @@ export const actions: Actions = {
 		if (!session) return fail(401, { error: 'Not authenticated' });
 
 		try {
-			bulletin.pinPost(params.post_uuid, params.uuid, session.person_uuid);
+			pinPost(params.post_uuid, session.person_uuid);
 			return { success: true };
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Failed to pin post' });
@@ -103,7 +105,7 @@ export const actions: Actions = {
 		if (!session) return fail(401, { error: 'Not authenticated' });
 
 		try {
-			bulletin.unpinPost(params.post_uuid, params.uuid, session.person_uuid);
+			unpinPost(params.post_uuid, session.person_uuid);
 			return { success: true };
 		} catch (err) {
 			return fail(403, { error: err instanceof Error ? err.message : 'Failed to unpin post' });

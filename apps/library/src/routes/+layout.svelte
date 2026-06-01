@@ -2,6 +2,7 @@
 	import '@bfs/ui/src/theme.css';
 	import '../library-theme.css';
 	import { AppShell, Sidebar, SidebarLink, SidebarDivider } from '@bfs/ui';
+	import { PLATFORM_NAME } from '@bfs/types';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types.js';
 
@@ -17,7 +18,7 @@
 				<div class="brand-wrapper">
 					<div class="brand-text">
 						<div class="brand-primary">Library</div>
-						<div class="brand-secondary">Ben Franklin Society</div>
+					<div class="brand-secondary">{PLATFORM_NAME}</div>
 					</div>
 				</div>
 			{/snippet}

@@ -2,8 +2,8 @@
 set -e
 
 echo "======================================"
-echo "Ben Franklin Society - Website Setup"
-echo "======================================"
+echo "The Working Society - Website Setup"
+echo "====================================="
 
 # Update system
 echo "Updating system packages..."

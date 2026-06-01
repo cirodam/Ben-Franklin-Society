@@ -1,6 +1,6 @@
 # Federation Registry
 
-The Federation Registry is a centralized discovery and coordination service for the Ben Franklin Society network. It provides a lightweight index for society discovery, lineage verification, and network statistics.
+The Federation Registry is a centralized discovery and coordination service for the network. It provides a lightweight index for society discovery, lineage verification, and network statistics.
 
 ## Purpose
 
